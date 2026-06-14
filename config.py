@@ -15,6 +15,7 @@ SILVER_PROCESSED_ARCHIVE_DIR = os.path.join(PROJECT_DIR, "archive", "silver_proc
 SILVER_RUN_ARCHIVE_DIR = os.path.join("archive", "silver")
 KALSHI_RUN_ARCHIVE_DIR = os.path.join("archive", "kalshi")
 VALUE_BOARDS_RUN_ARCHIVE_DIR = os.path.join("archive", "value_boards")
+WAGER_LOGS_ARCHIVE_DIR = os.path.join(PROJECT_DIR, "archive", "wager_logs")
 
 SHEET_SILVER_FORECASTS = "Silver Forecasts"
 SHEET_SILVER_METADATA = "Silver Metadata"
