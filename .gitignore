@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Local system files
+.DS_Store
+
+# Generated reports and workbook outputs
+*.xlsx
+*.xls
+*.xlsm
+*.html
+~$*
+
+# Downloaded/raw data
+data-*.csv
+Kalshi-Recent-Activity-*.csv
+Downloads/
+
+# Archives and local backups
+archive/
+backup_stable/
+
+# Lock files
+*.lock
+*.lck
+*.pid
+
+# Secrets and credentials
+.env
+.env.*
+*.pem
+*.key
+*.secret
+secrets/
+credentials/
+config.local.py
