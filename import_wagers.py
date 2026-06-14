@@ -1,6 +1,7 @@
 import os
 import re
 import glob
+import shutil
 import pandas as pd
 from datetime import datetime
 
@@ -26,6 +27,7 @@ from config import (
     SHEET_SUMMARY,
     SHEET_WAGERS,
     VALUE_BOARD_FILE as VALUE_BOARD_FILENAME,
+    WAGER_LOGS_ARCHIVE_DIR,
 )
 
 VALUE_BOARD_FILE = os.path.join(PROJECT_DIR, VALUE_BOARD_FILENAME)
@@ -356,5 +358,13 @@ with pd.ExcelWriter(BET_LOG_FILE, engine="openpyxl") as writer:
     wagers.to_excel(writer, sheet_name=SHEET_WAGERS, index=False)
     summary.to_excel(writer, sheet_name=SHEET_SUMMARY, index=False)
 
+os.makedirs(WAGER_LOGS_ARCHIVE_DIR, exist_ok=True)
+archive_file = os.path.join(
+    WAGER_LOGS_ARCHIVE_DIR,
+    f"{datetime.now().strftime('%Y-%m-%d_%H%M')}_{BET_LOG_FILENAME}",
+)
+shutil.copy2(BET_LOG_FILE, archive_file)
+
 print(f"Saved wager log: {BET_LOG_FILE}")
+print(f"Archived wager log: {archive_file}")
 print(f"Wagers imported: {len(wagers)}")

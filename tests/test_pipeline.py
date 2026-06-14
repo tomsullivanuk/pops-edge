@@ -91,6 +91,7 @@ class PipelineTests(unittest.TestCase):
 
             self.assertEqual(len(wagers), 3)
             self.assertEqual(summary.loc[summary["Metric"] == "Total Wagers", "Value"].iloc[0], 3)
+            self.assertEqual(len(wager_log_archives(project_dir)), 1)
 
             usa = wagers[wagers["Market Ticker"] == "KXWCGAME-26JUN13-USAMEX-USA"].iloc[0]
             self.assertEqual(usa["Action"], "BUY YES")
@@ -145,6 +146,7 @@ class PipelineTests(unittest.TestCase):
             self.assertEqual(summary.loc[summary["Metric"] == "Closed Early", "Value"].iloc[0], 1)
             self.assertEqual(summary.loc[summary["Metric"] == "Settled", "Value"].iloc[0], 2)
             self.assertEqual(summary.loc[summary["Metric"] == "Open", "Value"].iloc[0], 3)
+            self.assertEqual(len(wager_log_archives(project_dir)), 1)
 
             closed = row_for(wagers, "KXWCGAME-26JUL01-AAAEEE-AAA")
             self.assertEqual(closed["Action"], "BUY YES")
@@ -329,6 +331,10 @@ def settlement(date, market_ticker, result):
 
 def row_for(wagers, market_ticker):
     return wagers[wagers["Market Ticker"] == market_ticker].iloc[0]
+
+
+def wager_log_archives(project_dir):
+    return list((project_dir / "archive" / "wager_logs").glob("*_World_Cup_Bet_Log.xlsx"))
 
 
 def write_expanded_value_board_lookup(path):
