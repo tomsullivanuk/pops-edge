@@ -9,6 +9,7 @@ The system produces:
 - A detailed Excel-based Value Board.
 - A Portfolio worksheet summarizing active exposure.
 - A sortable mobile-friendly web dashboard.
+- A sortable web wager log.
 - A wager log generated from Kalshi trading activity.
 - Position monitoring for active wagers.
 - Historical archives of Silver forecast files and Value Boards.
@@ -45,7 +46,7 @@ Wager imports are intentionally run separately:
 ./update_wagers.sh
 ```
 
-`update_wagers.sh` refreshes the wager log from the latest Kalshi activity CSV and opens `World_Cup_Bet_Log.xlsx`.
+`update_wagers.sh` refreshes the wager log from the latest Kalshi activity CSV, creates `World_Cup_Bet_Log.html`, and opens the web Bet Log.
 
 After placing a wager:
 
@@ -73,11 +74,13 @@ WorldCup_ValueBoard.xlsx
 WorldCup_BetSheet.html
 
 World_Cup_Bet_Log.xlsx
+World_Cup_Bet_Log.html
 
 process_silver.py
 kalshi_pull.py
 build_value_board.py
 build_web_betsheet.py
+build_web_betlog.py
 import_wagers.py
 update_wagers.sh
 
@@ -340,6 +343,11 @@ using:
 The wager log tracks:
 
 ```text
+Date Placed
+Match Date
+Match
+Outcome
+Action
 Entry Price
 Exit Price
 Contracts
@@ -363,6 +371,8 @@ Closing Price
 CLV
 CLV %
 ```
+
+`import_wagers.py` normalizes Match Date values to `YYYY-MM-DD` whenever possible. It preserves prior manual corrections first, then uses the current Value Board date, then falls back to parsing the market ticker.
 
 ---
 
@@ -421,6 +431,14 @@ Blank values displayed as empty fields
 ```
 
 The dashboard is intended to be the primary interface during live matches.
+
+The web Bet Log is generated from:
+
+```bash
+python build_web_betlog.py
+```
+
+It creates `World_Cup_Bet_Log.html` with sortable columns and blank display for missing values. `./update_wagers.sh` builds it automatically after importing wagers.
 
 ---
 

@@ -9,6 +9,7 @@ KALSHI_CURRENT_FILE = "Kalshi_Current.xlsx"
 VALUE_BOARD_FILE = "WorldCup_ValueBoard.xlsx"
 BET_LOG_FILE = "World_Cup_Bet_Log.xlsx"
 WEB_BETSHEET_FILE = "WorldCup_BetSheet.html"
+WEB_BETLOG_FILE = "World_Cup_Bet_Log.html"
 
 SILVER_RAW_ARCHIVE_DIR = os.path.join(PROJECT_DIR, "archive", "silver_raw")
 SILVER_PROCESSED_ARCHIVE_DIR = os.path.join(PROJECT_DIR, "archive", "silver_processed")

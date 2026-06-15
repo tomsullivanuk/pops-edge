@@ -133,6 +133,7 @@ class PipelineTests(unittest.TestCase):
             usa = wagers[wagers["Market Ticker"] == "KXWCGAME-26JUN13-USAMEX-USA"].iloc[0]
             self.assertEqual(usa["Action"], "BUY YES")
             self.assertEqual(usa["Status"], "Open")
+            self.assertEqual(usa["Match Date"], "2026-06-13")
             self.assertEqual(usa["Match"], "USA vs Mexico")
             self.assertEqual(usa["Outcome"], "United States")
             self.assertAlmostEqual(usa["Entry Price"], 0.45)
@@ -186,6 +187,7 @@ class PipelineTests(unittest.TestCase):
             self.assertEqual(len(wager_log_archives(project_dir)), 1)
 
             closed = row_for(wagers, "KXWCGAME-26JUL01-AAAEEE-AAA")
+            self.assertEqual(closed["Match Date"], "2026-07-01")
             self.assertEqual(closed["Action"], "BUY YES")
             self.assertEqual(closed["Status"], "Closed Early")
             self.assertAlmostEqual(closed["Entry Price"], 0.40)
@@ -193,6 +195,7 @@ class PipelineTests(unittest.TestCase):
             self.assertAlmostEqual(closed["Realized P/L"], 1.35)
 
             losing_buy = row_for(wagers, "KXWCGAME-26JUL02-BBBFFF-BBB")
+            self.assertEqual(losing_buy["Match Date"], "2026-07-02")
             self.assertEqual(losing_buy["Action"], "BUY YES")
             self.assertEqual(losing_buy["Status"], "Settled")
             self.assertEqual(losing_buy["Market Result"], "no")
@@ -228,6 +231,25 @@ class PipelineTests(unittest.TestCase):
             self.assertEqual(fallback["Match Date"], "2026-09-06")
             self.assertTrue(pd.isna(fallback["Match"]))
             self.assertTrue(pd.isna(fallback["Outcome"]))
+
+    def test_build_web_betlog_creates_sortable_html_with_expected_rows_and_blanks(self):
+        with TemporaryDirectory() as workspace:
+            workspace = Path(workspace)
+            write_sample_web_wager_log(workspace / "World_Cup_Bet_Log.xlsx")
+
+            with changed_dir(workspace):
+                run_pipeline_script(ROOT / "build_web_betlog.py")
+
+            output = workspace / "World_Cup_Bet_Log.html"
+            self.assertTrue(output.exists())
+
+            html = output.read_text(encoding="utf-8")
+            self.assertIn("World Cup Bet Log", html)
+            self.assertIn("sortTable(table, index, ascending)", html)
+            self.assertIn("USA vs Mexico", html)
+            self.assertIn("Canada vs Brazil", html)
+            self.assertIn("BUY YES", html)
+            self.assertNotIn("NaN", html)
 
 
 class changed_dir:
@@ -414,8 +436,8 @@ def wager_log_archives(project_dir):
 def write_expanded_value_board_lookup(path):
     bet_sheet = pd.DataFrame(
         [
-            lookup_row("KXWCGAME-26JUL01-AAAEEE-AAA", "2026-07-01", "AAA vs EEE", "AAA", "BUY YES", 0.58, 0.08, "B"),
-            lookup_row("KXWCGAME-26JUL02-BBBFFF-BBB", "2026-07-02", "BBB vs FFF", "BBB", "BUY YES", 0.48, 0.06, "C"),
+            lookup_row("KXWCGAME-26JUL01-AAAEEE-AAA", "Jul 1, 2026", "AAA vs EEE", "AAA", "BUY YES", 0.58, 0.08, "B"),
+            lookup_row("KXWCGAME-26JUL02-BBBFFF-BBB", "07/02/2026", "BBB vs FFF", "BBB", "BUY YES", 0.48, 0.06, "C"),
             lookup_row("KXWCGAME-26JUL03-CCCGGG-CCC", "2026-07-03", "CCC vs GGG", "CCC", "SELL YES", 0.38, 0.12, "A"),
             lookup_row("KXWCGAME-26JUL04-DDDHHH-DDD", "2026-07-04", "DDD vs HHH", "DDD", "BUY YES", 0.55, 0.07, "B"),
             lookup_row("KXWCGAME-26AUG05-IIIJJJ-III", "2026-08-05", "Current Match", "Current Outcome", "BUY YES", 0.99, 0.01, "C"),
@@ -443,7 +465,7 @@ def write_prior_wager_log_for_preservation(path):
         [
             {
                 "Date Placed": "2026-05-01 09:00:00",
-                "Match Date": "2026-08-05",
+                "Match Date": "August 5, 2026",
                 "Match": "Prior Match",
                 "Outcome": "Prior Outcome",
                 "Action": "BUY YES",
@@ -464,6 +486,51 @@ def write_prior_wager_log_for_preservation(path):
                 "CLV %": 0.28,
                 "Realized P/L": "",
             }
+        ]
+    )
+    with pd.ExcelWriter(path, engine="openpyxl") as writer:
+        wagers.to_excel(writer, sheet_name="Wagers", index=False)
+
+
+def write_sample_web_wager_log(path):
+    wagers = pd.DataFrame(
+        [
+            {
+                "Date Placed": "2026-06-10 09:00:00",
+                "Match Date": "2026-06-13",
+                "Match": "USA vs Mexico",
+                "Outcome": "United States",
+                "Action": "BUY YES",
+                "Silver Probability": 0.60,
+                "Edge": 0.10,
+                "Bucket": "A",
+                "Status": "Open",
+                "Contract Won": None,
+                "Entry Price": 0.45,
+                "Exit Price": None,
+                "Closing Price": None,
+                "CLV": None,
+                "CLV %": None,
+                "Realized P/L": None,
+            },
+            {
+                "Date Placed": "2026-06-11 10:00:00",
+                "Match Date": "2026-06-14",
+                "Match": "Canada vs Brazil",
+                "Outcome": "Brazil",
+                "Action": "SELL YES",
+                "Silver Probability": 0.35,
+                "Edge": 0.08,
+                "Bucket": "B",
+                "Status": "Settled",
+                "Contract Won": "Yes",
+                "Entry Price": 0.58,
+                "Exit Price": "",
+                "Closing Price": 0.50,
+                "CLV": 0.08,
+                "CLV %": 0.14,
+                "Realized P/L": 2.20,
+            },
         ]
     )
     with pd.ExcelWriter(path, engine="openpyxl") as writer:

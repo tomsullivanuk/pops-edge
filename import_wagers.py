@@ -95,6 +95,16 @@ def match_date_from_ticker(market_ticker):
 
     return f"{year}-{month:02d}-{day:02d}"
 
+def normalize_match_date(value):
+    if is_blank(value):
+        return ""
+
+    parsed = pd.to_datetime(value, errors="coerce")
+    if pd.isna(parsed):
+        return str(value).strip()
+
+    return parsed.strftime("%Y-%m-%d")
+
 # -----------------------------
 # Find latest Kalshi Activity CSV
 # -----------------------------
@@ -276,7 +286,7 @@ for market_ticker, trades in trade_rows.groupby("Market_Ticker"):
         if not old.empty:
             prior_row = old.iloc[0]
 
-    prior_match_date = get_prior_value(prior_row, COL_MATCH_DATE)
+    prior_match_date = normalize_match_date(get_prior_value(prior_row, COL_MATCH_DATE))
     prior_match = get_prior_value(prior_row, COL_MATCH)
     prior_outcome = get_prior_value(prior_row, COL_OUTCOME)
     prior_action = get_prior_value(prior_row, COL_ACTION)
@@ -287,7 +297,8 @@ for market_ticker, trades in trade_rows.groupby("Market_Ticker"):
     prior_clv = get_prior_value(prior_row, COL_CLV)
     prior_clv_pct = get_prior_value(prior_row, COL_CLV_PCT)
 
-    ticker_match_date = match_date_from_ticker(market_ticker)
+    current_match_date = normalize_match_date(current_match_date)
+    ticker_match_date = normalize_match_date(match_date_from_ticker(market_ticker))
 
     match_date = preserve_prior_then_current(
         prior_match_date,

@@ -9,7 +9,7 @@
 3. `build_value_board.py` combines Silver probabilities, Kalshi prices, active wager exposure, and portfolio summaries into `WorldCup_ValueBoard.xlsx`.
 4. `build_web_betsheet.py` creates `WorldCup_BetSheet.html`.
 
-`update_wagers.sh` is intentionally separate from `wcup`. It activates `venv/` when needed, runs `import_wagers.py`, prints a short wager summary, and opens `World_Cup_Bet_Log.xlsx`.
+`update_wagers.sh` is intentionally separate from `wcup`. It activates `venv/` when needed, runs `import_wagers.py`, builds `World_Cup_Bet_Log.html` with `build_web_betlog.py`, prints a short wager summary, and opens the web Bet Log.
 
 After placing a wager, download Kalshi Activity -> All -> This Month, run `./update_wagers.sh`, then run `wcup` if the new wager should appear on the Value Board.
 
@@ -23,9 +23,12 @@ Kalshi API -> kalshi_pull.py -> Kalshi_Current.xlsx
 Silver_Current.xlsx + Kalshi_Current.xlsx + World_Cup_Bet_Log.xlsx -> build_value_board.py -> WorldCup_ValueBoard.xlsx
 WorldCup_ValueBoard.xlsx -> build_web_betsheet.py -> WorldCup_BetSheet.html
 Kalshi-Recent-Activity-*.csv + WorldCup_ValueBoard.xlsx + prior World_Cup_Bet_Log.xlsx -> import_wagers.py -> World_Cup_Bet_Log.xlsx
+World_Cup_Bet_Log.xlsx -> build_web_betlog.py -> World_Cup_Bet_Log.html
 ```
 
 Shared filenames, sheet names, archive paths, and common column names live in `config.py`.
+
+`import_wagers.py` normalizes Match Date values to `YYYY-MM-DD` after reading prior manual values and current Value Board values. The selection order remains prior manual value, current Value Board value, then ticker-derived fallback.
 
 ## Value Board Workbook
 
@@ -70,6 +73,7 @@ Kalshi_Current.xlsx
 WorldCup_ValueBoard.xlsx
 WorldCup_BetSheet.html
 World_Cup_Bet_Log.xlsx
+World_Cup_Bet_Log.html
 archive/
 ```
 
@@ -83,7 +87,7 @@ Run the full test suite with:
 
 Tests use temporary directories and sample fixtures under `tests/fixtures/` so they do not overwrite live workbooks.
 
-The Value Board pipeline test checks the Portfolio worksheet section layout, open-position enrichment, summary totals, and team/date exposure rollups while preserving the existing Bet Sheet assertions.
+The Value Board pipeline test checks the Portfolio worksheet section layout, open-position enrichment, summary totals, and team/date exposure rollups while preserving the existing Bet Sheet assertions. Wager tests also cover Match Date normalization and the generated sortable web Bet Log.
 
 ## Git Workflow
 

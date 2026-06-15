@@ -15,9 +15,14 @@ else
 fi
 
 BET_LOG_FILE=$("$PYTHON_BIN" -c 'from config import BET_LOG_FILE; print(BET_LOG_FILE)')
+WEB_BETLOG_FILE=$("$PYTHON_BIN" -c 'from config import WEB_BETLOG_FILE; print(WEB_BETLOG_FILE)')
 
 echo "Refreshing wager log..."
 "$PYTHON_BIN" import_wagers.py
+
+echo
+echo "Building web wager log..."
+"$PYTHON_BIN" build_web_betlog.py
 
 echo
 "$PYTHON_BIN" - <<'PY'
@@ -50,8 +55,8 @@ print(values.get("Kalshi Activity File", ""))
 PY
 
 echo
-echo "Opening $BET_LOG_FILE..."
-open "$BET_LOG_FILE"
+echo "Opening $WEB_BETLOG_FILE..."
+open "$WEB_BETLOG_FILE"
 
 echo
 echo "Done."
