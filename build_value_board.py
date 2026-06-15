@@ -2,6 +2,7 @@ import os
 import re
 import pandas as pd
 from datetime import datetime
+from openpyxl.utils.dataframe import dataframe_to_rows
 
 from config import (
     BET_LOG_FILE,
@@ -25,6 +26,7 @@ from config import (
     SHEET_CANDIDATES,
     SHEET_DEFINITIONS,
     SHEET_KALSHI_NORMALIZED,
+    SHEET_PORTFOLIO,
     SHEET_RUN_METADATA,
     SHEET_SILVER_FORECASTS,
     SHEET_SILVER_METADATA,
@@ -41,6 +43,7 @@ OUTPUT_FILE = VALUE_BOARD_FILE
 
 BANKROLL = 500
 MIN_EDGE = 0.05
+ACTIVE_STATUSES = ["Open", "Partially Closed"]
 
 CODE_MAP = {
     "ALG": "DZA",
@@ -64,6 +67,221 @@ def bucket(edge):
     if edge >= 0.05:
         return "C"
     return ""
+
+def empty_portfolio_tables():
+    open_positions = pd.DataFrame(columns=[
+        "Match Date",
+        COL_MATCH,
+        COL_OUTCOME,
+        "Team",
+        COL_POSITION,
+        COL_ACTION,
+        COL_MARKET_TICKER_TITLE,
+        COL_CONTRACTS,
+        COL_ENTRY_PRICE,
+        "Current Price",
+        "Stake",
+        "Current Value",
+        "Unrealized P/L",
+        "Value Change",
+        COL_SILVER,
+        COL_EDGE,
+        COL_STATUS,
+    ])
+    exposure_by_team = pd.DataFrame(columns=[
+        "Team",
+        "Positions",
+        COL_CONTRACTS,
+        "Stake",
+        "Current Value",
+        "Unrealized P/L",
+    ])
+    exposure_by_match_date = pd.DataFrame(columns=[
+        "Match Date",
+        "Positions",
+        COL_CONTRACTS,
+        "Stake",
+        "Current Value",
+        "Unrealized P/L",
+    ])
+    summary = pd.DataFrame([
+        ["Open Positions", 0],
+        ["Total Contracts", 0],
+        ["Total Stake", 0],
+        ["Current Value", 0],
+        ["Unrealized P/L", 0],
+        ["BUY YES Positions", 0],
+        ["SELL YES Positions", 0],
+        ["Matches with Exposure", 0],
+        ["Teams with Exposure", 0],
+    ], columns=["Metric", "Value"])
+    return summary, open_positions, exposure_by_team, exposure_by_match_date
+
+def read_active_wagers():
+    try:
+        wager_log = pd.read_excel(BET_LOG_FILE, sheet_name=SHEET_WAGERS)
+    except FileNotFoundError:
+        return pd.DataFrame()
+
+    required_columns = [
+        COL_MARKET_TICKER_TITLE,
+        COL_ACTION,
+        COL_ENTRY_PRICE,
+        COL_CONTRACTS,
+        COL_STATUS,
+    ]
+    missing_columns = [col for col in required_columns if col not in wager_log.columns]
+    if missing_columns:
+        print(f"WARNING: Could not build portfolio; missing wager columns: {missing_columns}")
+        return pd.DataFrame()
+
+    return wager_log[wager_log[COL_STATUS].isin(ACTIVE_STATUSES)].copy()
+
+def first_present(row, columns):
+    for column in columns:
+        if column in row.index and pd.notna(row[column]) and row[column] != "":
+            return row[column]
+    return ""
+
+def build_portfolio_tables(active_wagers, value_board):
+    if active_wagers.empty:
+        return empty_portfolio_tables()
+
+    optional_columns = ["Match Date", COL_MATCH, COL_OUTCOME]
+    for column in optional_columns:
+        if column not in active_wagers.columns:
+            active_wagers[column] = pd.NA
+
+    lookup = value_board[[
+        "date",
+        "game",
+        "kalshi_outcome",
+        "outcome_code",
+        "silver_prob",
+        "yes_bid",
+        "yes_ask",
+        COL_MARKET_TICKER,
+    ]].copy()
+    lookup = lookup.rename(columns={
+        COL_MARKET_TICKER: COL_MARKET_TICKER_TITLE,
+        "date": "Value Board Match Date",
+        "game": "Value Board Match",
+        "kalshi_outcome": "Value Board Outcome",
+        "outcome_code": "Team",
+        "silver_prob": COL_SILVER,
+    })
+
+    positions = active_wagers.merge(
+        lookup,
+        on=COL_MARKET_TICKER_TITLE,
+        how="left",
+    )
+
+    rows = []
+    for _, row in positions.iterrows():
+        action = row[COL_ACTION]
+        entry_price = pd.to_numeric(row[COL_ENTRY_PRICE], errors="coerce")
+        contracts = pd.to_numeric(row[COL_CONTRACTS], errors="coerce")
+        yes_bid = pd.to_numeric(row["yes_bid"], errors="coerce")
+        yes_ask = pd.to_numeric(row["yes_ask"], errors="coerce")
+        silver_prob = pd.to_numeric(row[COL_SILVER], errors="coerce")
+
+        if action == "BUY YES":
+            position = "Yes"
+            stake = contracts * entry_price
+            current_price = yes_bid
+            current_value = contracts * current_price
+            edge = silver_prob - yes_ask
+            value_change = current_price - entry_price
+        else:
+            position = "No"
+            stake = contracts * (1 - entry_price)
+            current_price = yes_ask
+            current_value = contracts * (1 - current_price)
+            edge = yes_bid - silver_prob
+            value_change = entry_price - current_price
+
+        rows.append({
+            "Match Date": first_present(row, ["Match Date", "Value Board Match Date"]),
+            COL_MATCH: first_present(row, [COL_MATCH, "Value Board Match"]),
+            COL_OUTCOME: first_present(row, [COL_OUTCOME, "Value Board Outcome"]),
+            "Team": first_present(row, ["Team", COL_OUTCOME, "Value Board Outcome"]),
+            COL_POSITION: position,
+            COL_ACTION: action,
+            COL_MARKET_TICKER_TITLE: row[COL_MARKET_TICKER_TITLE],
+            COL_CONTRACTS: contracts,
+            COL_ENTRY_PRICE: entry_price,
+            "Current Price": current_price,
+            "Stake": stake,
+            "Current Value": current_value,
+            "Unrealized P/L": current_value - stake,
+            "Value Change": value_change,
+            COL_SILVER: silver_prob,
+            COL_EDGE: edge,
+            COL_STATUS: row[COL_STATUS],
+        })
+
+    open_positions = pd.DataFrame(rows)
+    money_columns = [
+        COL_ENTRY_PRICE,
+        "Current Price",
+        "Stake",
+        "Current Value",
+        "Unrealized P/L",
+        "Value Change",
+        COL_SILVER,
+        COL_EDGE,
+    ]
+    for column in money_columns:
+        open_positions[column] = pd.to_numeric(open_positions[column], errors="coerce").round(4)
+
+    summary = pd.DataFrame([
+        ["Open Positions", len(open_positions)],
+        ["Total Contracts", open_positions[COL_CONTRACTS].sum()],
+        ["Total Stake", open_positions["Stake"].sum().round(2)],
+        ["Current Value", open_positions["Current Value"].sum().round(2)],
+        ["Unrealized P/L", open_positions["Unrealized P/L"].sum().round(2)],
+        ["BUY YES Positions", (open_positions[COL_ACTION] == "BUY YES").sum()],
+        ["SELL YES Positions", (open_positions[COL_ACTION] == "SELL YES").sum()],
+        ["Matches with Exposure", open_positions[COL_MATCH].nunique()],
+        ["Teams with Exposure", open_positions["Team"].nunique()],
+    ], columns=["Metric", "Value"])
+
+    exposure_by_team = summarize_exposure(open_positions, "Team")
+    exposure_by_match_date = summarize_exposure(open_positions, "Match Date")
+
+    return summary, open_positions, exposure_by_team, exposure_by_match_date
+
+def summarize_exposure(open_positions, group_column):
+    return (
+        open_positions
+        .groupby(group_column, dropna=False)
+        .agg(
+            Positions=(COL_MARKET_TICKER_TITLE, "count"),
+            Contracts=(COL_CONTRACTS, "sum"),
+            Stake=("Stake", "sum"),
+            **{"Current Value": ("Current Value", "sum")},
+            **{"Unrealized P/L": ("Unrealized P/L", "sum")},
+        )
+        .reset_index()
+        .sort_values(group_column)
+        .round(2)
+    )
+
+def write_portfolio_sheet(writer, summary, open_positions, exposure_by_team, exposure_by_match_date):
+    worksheet = writer.book.create_sheet(SHEET_PORTFOLIO)
+    sections = [
+        ("Portfolio Summary", summary),
+        ("Open Positions", open_positions),
+        ("Exposure by Team", exposure_by_team),
+        ("Exposure by Match Date", exposure_by_match_date),
+    ]
+
+    for title, frame in sections:
+        worksheet.append([title])
+        for row in dataframe_to_rows(frame, index=False, header=True):
+            worksheet.append(row)
+        worksheet.append([])
 
 print("Loading files...")
 
@@ -284,11 +502,7 @@ if not bet_sheet.empty:
 
 if not bet_sheet.empty:
     try:
-        wager_log = pd.read_excel(BET_LOG_FILE, sheet_name=SHEET_WAGERS)
-
-        active_wagers = wager_log[
-            wager_log[COL_STATUS].isin(["Open", "Partially Closed"])
-        ].copy()
+        active_wagers = read_active_wagers()
 
         if not active_wagers.empty:
             active_wagers = active_wagers[[
@@ -373,6 +587,15 @@ if not bet_sheet.empty:
 candidates = bet_sheet.copy()
 
 # -----------------------------
+# Portfolio
+# -----------------------------
+
+portfolio_summary, portfolio_open_positions, exposure_by_team, exposure_by_match_date = build_portfolio_tables(
+    read_active_wagers(),
+    value_board,
+)
+
+# -----------------------------
 # Definitions
 # -----------------------------
 
@@ -432,6 +655,13 @@ with pd.ExcelWriter(OUTPUT_FILE, engine="openpyxl") as writer:
     run_metadata.to_excel(writer, sheet_name=SHEET_RUN_METADATA, index=False)
     candidates.to_excel(writer, sheet_name=SHEET_CANDIDATES, index=False)
     value_board.to_excel(writer, sheet_name=SHEET_VALUE_BOARD, index=False)
+    write_portfolio_sheet(
+        writer,
+        portfolio_summary,
+        portfolio_open_positions,
+        exposure_by_team,
+        exposure_by_match_date,
+    )
     silver_norm.to_excel(writer, sheet_name=SHEET_SILVER_NORMALIZED, index=False)
     kalshi_norm.to_excel(writer, sheet_name=SHEET_KALSHI_NORMALIZED, index=False)
     definitions.to_excel(writer, sheet_name=SHEET_DEFINITIONS, index=False)

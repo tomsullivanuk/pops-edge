@@ -7,6 +7,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import pandas as pd
+from openpyxl import load_workbook
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -53,6 +54,7 @@ class PipelineTests(unittest.TestCase):
             bet_sheet = pd.read_excel(output, sheet_name="Bet Sheet")
             metadata = pd.read_excel(output, sheet_name="Run Metadata")
             value_board = pd.read_excel(output, sheet_name="Value Board")
+            portfolio_sections = read_portfolio_sections(output)
 
             self.assertEqual(len(value_board), 3)
             self.assertEqual(metadata.loc[metadata["Field"] == "QC Status", "Value"].iloc[0], "PASS")
@@ -69,6 +71,41 @@ class PipelineTests(unittest.TestCase):
             mex = bet_sheet[bet_sheet["market_ticker"] == "KXWCGAME-26JUN13-USAMEX-MEX"].iloc[0]
             self.assertEqual(mex["Action"], "SELL YES")
             self.assertEqual(mex["Position"], "No")
+
+            self.assertEqual(
+                set(portfolio_sections),
+                {
+                    "Portfolio Summary",
+                    "Open Positions",
+                    "Exposure by Team",
+                    "Exposure by Match Date",
+                },
+            )
+
+            portfolio_summary = frame_for_section(portfolio_sections["Portfolio Summary"])
+            open_positions = frame_for_section(portfolio_sections["Open Positions"])
+            exposure_by_team = frame_for_section(portfolio_sections["Exposure by Team"])
+            exposure_by_match_date = frame_for_section(portfolio_sections["Exposure by Match Date"])
+
+            self.assertEqual(portfolio_summary.loc["Open Positions", "Value"], 1)
+            self.assertAlmostEqual(portfolio_summary.loc["Total Stake", "Value"], 9.00)
+            self.assertAlmostEqual(portfolio_summary.loc["Current Value", "Value"], 9.60)
+            self.assertAlmostEqual(portfolio_summary.loc["Unrealized P/L", "Value"], 0.60)
+
+            open_positions = open_positions.reset_index().set_index("Market Ticker")
+            usa_position = open_positions.loc["KXWCGAME-26JUN13-USAMEX-USA"]
+            self.assertEqual(usa_position["Match Date"], "2026-06-13")
+            self.assertEqual(usa_position["Match"], "USA vs Mexico")
+            self.assertEqual(usa_position["Outcome"], "United States")
+            self.assertEqual(usa_position["Team"], "USA")
+            self.assertEqual(usa_position["Position"], "Yes")
+            self.assertAlmostEqual(usa_position["Current Price"], 0.48)
+            self.assertAlmostEqual(usa_position["Stake"], 9.00)
+            self.assertAlmostEqual(usa_position["Current Value"], 9.60)
+            self.assertAlmostEqual(usa_position["Unrealized P/L"], 0.60)
+
+            self.assertAlmostEqual(exposure_by_team.loc["USA", "Stake"], 9.00)
+            self.assertAlmostEqual(exposure_by_match_date.loc["2026-06-13", "Current Value"], 9.60)
 
     def test_import_wagers_uses_sample_activity_and_value_board_lookup(self):
         with TemporaryDirectory() as home:
@@ -331,6 +368,43 @@ def settlement(date, market_ticker, result):
 
 def row_for(wagers, market_ticker):
     return wagers[wagers["Market Ticker"] == market_ticker].iloc[0]
+
+
+def read_portfolio_sections(path):
+    workbook = load_workbook(path, data_only=True)
+    worksheet = workbook["Portfolio"]
+    sections = {}
+    current_title = None
+    current_rows = []
+
+    for values in worksheet.iter_rows(values_only=True):
+        row = list(values)
+        if all(value is None for value in row):
+            if current_title is not None:
+                sections[current_title] = current_rows
+                current_title = None
+                current_rows = []
+            continue
+
+        first_cell = row[0]
+        if current_title is None:
+            current_title = first_cell
+            current_rows = []
+        else:
+            current_rows.append(row)
+
+    if current_title is not None:
+        sections[current_title] = current_rows
+
+    return sections
+
+
+def frame_for_section(rows):
+    header = rows[0]
+    body = rows[1:]
+    frame = pd.DataFrame(body, columns=header).dropna(how="all")
+    index_column = header[0]
+    return frame.set_index(index_column)
 
 
 def wager_log_archives(project_dir):

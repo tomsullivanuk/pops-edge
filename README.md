@@ -7,6 +7,7 @@ This project identifies positive expected value betting opportunities in Kalshi 
 The system produces:
 
 - A detailed Excel-based Value Board.
+- A Portfolio worksheet summarizing active exposure.
 - A sortable mobile-friendly web dashboard.
 - A wager log generated from Kalshi trading activity.
 - Position monitoring for active wagers.
@@ -292,6 +293,36 @@ Positive values indicate the market has moved in favor of the position.
 
 ---
 
+# Portfolio Worksheet
+
+`WorldCup_ValueBoard.xlsx` includes a `Portfolio` worksheet built from active rows in:
+
+```text
+World_Cup_Bet_Log.xlsx
+```
+
+and current prices from the merged Value Board data.
+
+The worksheet contains:
+
+```text
+Portfolio Summary
+Open Positions
+Exposure by Team
+Exposure by Match Date
+```
+
+Open positions include wagers with:
+
+```text
+Status = Open
+Status = Partially Closed
+```
+
+For BUY YES positions, current value uses the current Yes Bid. For SELL YES positions, current value uses the value of the opposing No position based on the current Yes Ask.
+
+---
+
 # Wager Log
 
 Generated from:
@@ -403,4 +434,3 @@ Potential improvements:
 4. Automatic CLV calculation.
 5. Position-level performance analytics.
 6. Silver model calibration reporting.
-7. Portfolio-level exposure reporting.

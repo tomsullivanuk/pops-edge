@@ -6,7 +6,7 @@
 
 1. `process_silver.py` normalizes the latest Silver forecast CSV into `Silver_Current.xlsx`.
 2. `kalshi_pull.py` pulls current Kalshi World Cup markets into `Kalshi_Current.xlsx`.
-3. `build_value_board.py` combines Silver probabilities, Kalshi prices, and active wager exposure into `WorldCup_ValueBoard.xlsx`.
+3. `build_value_board.py` combines Silver probabilities, Kalshi prices, active wager exposure, and portfolio summaries into `WorldCup_ValueBoard.xlsx`.
 4. `build_web_betsheet.py` creates `WorldCup_BetSheet.html`.
 
 `update_wagers.sh` is intentionally separate from `wcup`. It activates `venv/` when needed, runs `import_wagers.py`, prints a short wager summary, and opens `World_Cup_Bet_Log.xlsx`.
@@ -26,6 +26,19 @@ Kalshi-Recent-Activity-*.csv + WorldCup_ValueBoard.xlsx + prior World_Cup_Bet_Lo
 ```
 
 Shared filenames, sheet names, archive paths, and common column names live in `config.py`.
+
+## Value Board Workbook
+
+`build_value_board.py` writes the existing Bet Sheet outputs unchanged, then adds a `Portfolio` worksheet with four stacked sections:
+
+```text
+Portfolio Summary
+Open Positions
+Exposure by Team
+Exposure by Match Date
+```
+
+The Portfolio worksheet reads active wagers from `World_Cup_Bet_Log.xlsx`, using `Open` and `Partially Closed` statuses, and enriches them with match, outcome, team, Silver probability, and current bid/ask data from the merged Value Board. BUY YES current value uses the current Yes Bid; SELL YES current value uses `1 - Yes Ask`.
 
 ## Expected File Locations
 
@@ -70,6 +83,8 @@ Run the full test suite with:
 
 Tests use temporary directories and sample fixtures under `tests/fixtures/` so they do not overwrite live workbooks.
 
+The Value Board pipeline test checks the Portfolio worksheet section layout, open-position enrichment, summary totals, and team/date exposure rollups while preserving the existing Bet Sheet assertions.
+
 ## Git Workflow
 
 Use small commits. Before committing, run tests and inspect staged files:
@@ -82,4 +97,3 @@ git diff --cached --stat
 ```
 
 Commit source, docs, tests, and fixtures. Do not commit generated workbooks, HTML reports, archives, virtualenvs, downloaded activity files, lock files, or secrets.
-
