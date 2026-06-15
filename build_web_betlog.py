@@ -28,6 +28,17 @@ WEB_COLUMNS = [
     "Realized P/L",
 ]
 
+NUMERIC_COLUMNS = {
+    "Silver Probability",
+    "Edge",
+    "Entry Price",
+    "Exit Price",
+    "Closing Price",
+    "CLV",
+    "CLV %",
+    "Realized P/L",
+}
+
 
 def is_blank(value):
     return pd.isna(value) or value == ""
@@ -41,9 +52,23 @@ def normalize_date(value, include_time=False):
     if pd.isna(parsed):
         return ""
 
+    if parsed.year < 2000:
+        return ""
+
     if include_time:
         return parsed.strftime("%Y-%m-%d %H:%M:%S")
     return parsed.strftime("%Y-%m-%d")
+
+
+def format_number(value):
+    if is_blank(value):
+        return ""
+
+    numeric = pd.to_numeric(value, errors="coerce")
+    if pd.isna(numeric):
+        return ""
+
+    return f"{numeric:.2f}"
 
 
 def sort_value(column, value):
@@ -51,6 +76,8 @@ def sort_value(column, value):
         return normalize_date(value, include_time=True)
     if column == "Match Date":
         return normalize_date(value)
+    if column in NUMERIC_COLUMNS:
+        return format_number(value)
     if is_blank(value):
         return ""
     return str(value)
@@ -61,6 +88,8 @@ def display_value(column, value):
         return normalize_date(value, include_time=True)
     if column == "Match Date":
         return normalize_date(value)
+    if column in NUMERIC_COLUMNS:
+        return format_number(value)
     if is_blank(value):
         return ""
     return str(value)

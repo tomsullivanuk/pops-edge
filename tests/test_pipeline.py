@@ -242,6 +242,7 @@ class PipelineTests(unittest.TestCase):
                     trade("2026-06-01 09:00:00", "Yes", "KXWCGAME-26JUN14-STRONE-STR", 10, 40, 0.10),
                     trade("2026-06-02 09:00:00", "Yes", "KXWCGAME-26JUN14-TIMTWO-TIM", 8, 35, 0.08),
                     trade("2026-06-03 09:00:00", "Yes", "KXWCGAME-26JUN14-FALBAK-FAL", 7, 45, 0.07),
+                    trade("2026-06-04 09:00:00", "Yes", "KXWCGAME-26JUN12-BADOLD-BAD", 6, 44, 0.06),
                 ]
             )
             activity.to_csv(project_dir / "Kalshi-Recent-Activity-All-dates.csv", index=False)
@@ -261,6 +262,9 @@ class PipelineTests(unittest.TestCase):
 
             ticker_date = row_for(wagers, "KXWCGAME-26JUN14-FALBAK-FAL")
             self.assertEqual(ticker_date["Match Date"], "2026-06-14")
+
+            invalid_prior_date = row_for(wagers, "KXWCGAME-26JUN12-BADOLD-BAD")
+            self.assertEqual(invalid_prior_date["Match Date"], "2026-06-12")
 
     def test_build_web_betlog_creates_sortable_html_with_expected_rows_and_blanks(self):
         with TemporaryDirectory() as workspace:
@@ -282,6 +286,9 @@ class PipelineTests(unittest.TestCase):
             self.assertNotIn("NaN", html)
             self.assertIn('data-sort="2026-06-14"', html)
             self.assertIn('data-sort="2026-06-11 10:00:00"', html)
+            self.assertIn('data-sort="0.60">0.60</td>', html)
+            self.assertIn('data-sort="0.12">0.12</td>', html)
+            self.assertIn('data-sort="2.20">2.20</td>', html)
 
 
 class changed_dir:
@@ -545,6 +552,14 @@ def write_prior_timestamp_match_date_log(path):
                 "Match": "Prior Timestamp Match",
                 "Outcome": "Prior Timestamp Outcome",
                 "Action": "BUY YES",
+            },
+            {
+                "Date Placed": "2026-05-02 09:00:00",
+                "Match Date": "0001-06-12",
+                "Market Ticker": "KXWCGAME-26JUN12-BADOLD-BAD",
+                "Match": "Prior Invalid Date Match",
+                "Outcome": "Prior Invalid Date Outcome",
+                "Action": "BUY YES",
             }
         ]
     )
@@ -561,12 +576,12 @@ def write_sample_web_wager_log(path):
                 "Match": "USA vs Mexico",
                 "Outcome": "United States",
                 "Action": "BUY YES",
-                "Silver Probability": 0.60,
-                "Edge": 0.10,
+                "Silver Probability": 0.6000000000001,
+                "Edge": 0.123456,
                 "Bucket": "A",
                 "Status": "Open",
                 "Contract Won": None,
-                "Entry Price": 0.45,
+                "Entry Price": 0.456789,
                 "Exit Price": None,
                 "Closing Price": None,
                 "CLV": None,
@@ -586,10 +601,10 @@ def write_sample_web_wager_log(path):
                 "Contract Won": "Yes",
                 "Entry Price": 0.58,
                 "Exit Price": "",
-                "Closing Price": 0.50,
-                "CLV": 0.08,
-                "CLV %": 0.14,
-                "Realized P/L": 2.20,
+                "Closing Price": 0.501234,
+                "CLV": 0.083333,
+                "CLV %": 0.141592,
+                "Realized P/L": 2.2,
             },
         ]
     )

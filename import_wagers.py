@@ -107,6 +107,9 @@ def normalize_match_date(value):
     if pd.isna(parsed):
         return ""
 
+    if parsed.year < 2000:
+        return ""
+
     return parsed.strftime("%Y-%m-%d")
 
 # -----------------------------
