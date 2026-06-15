@@ -1,4 +1,5 @@
 from datetime import datetime
+from html import escape
 
 import pandas as pd
 
@@ -28,17 +29,70 @@ WEB_COLUMNS = [
 ]
 
 
+def is_blank(value):
+    return pd.isna(value) or value == ""
+
+
+def normalize_date(value, include_time=False):
+    if is_blank(value):
+        return ""
+
+    parsed = pd.to_datetime(value, errors="coerce")
+    if pd.isna(parsed):
+        return ""
+
+    if include_time:
+        return parsed.strftime("%Y-%m-%d %H:%M:%S")
+    return parsed.strftime("%Y-%m-%d")
+
+
+def sort_value(column, value):
+    if column == "Date Placed":
+        return normalize_date(value, include_time=True)
+    if column == "Match Date":
+        return normalize_date(value)
+    if is_blank(value):
+        return ""
+    return str(value)
+
+
+def display_value(column, value):
+    if column == "Date Placed":
+        return normalize_date(value, include_time=True)
+    if column == "Match Date":
+        return normalize_date(value)
+    if is_blank(value):
+        return ""
+    return str(value)
+
+
+def table_html(df):
+    header_cells = "".join(f"<th>{escape(column)}</th>" for column in df.columns)
+    body_rows = []
+
+    for _, row in df.iterrows():
+        cells = []
+        for column in df.columns:
+            raw_value = row[column]
+            cells.append(
+                f'<td data-sort="{escape(sort_value(column, raw_value))}">'
+                f"{escape(display_value(column, raw_value))}</td>"
+            )
+        body_rows.append(f"<tr>{''.join(cells)}</tr>")
+
+    return (
+        '<table class="betlog" id="betlog">\n'
+        f"  <thead><tr>{header_cells}</tr></thead>\n"
+        f"  <tbody>{''.join(body_rows)}</tbody>\n"
+        "</table>"
+    )
+
+
 def build_web_betlog(input_file=INPUT_FILE, output_file=OUTPUT_FILE):
     df = pd.read_excel(input_file, sheet_name=SHEET_WAGERS)
     available_columns = [col for col in WEB_COLUMNS if col in df.columns]
-    df = df[available_columns].fillna("")
-
-    html_table = df.to_html(
-        index=False,
-        classes="betlog",
-        border=0,
-        table_id="betlog",
-    )
+    df = df[available_columns]
+    html_table = table_html(df)
 
     html = f"""
 <!DOCTYPE html>
@@ -142,8 +196,8 @@ function sortTable(table, columnIndex, ascending) {{
     const rows = Array.from(tbody.rows);
 
     rows.sort((a, b) => {{
-        const aValue = parseCell(a.cells[columnIndex].innerText);
-        const bValue = parseCell(b.cells[columnIndex].innerText);
+        const aValue = parseCell(a.cells[columnIndex].dataset.sort || a.cells[columnIndex].innerText);
+        const bValue = parseCell(b.cells[columnIndex].dataset.sort || b.cells[columnIndex].innerText);
 
         if (aValue < bValue) return ascending ? -1 : 1;
         if (aValue > bValue) return ascending ? 1 : -1;

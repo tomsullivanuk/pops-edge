@@ -99,9 +99,13 @@ def normalize_match_date(value):
     if is_blank(value):
         return ""
 
-    parsed = pd.to_datetime(value, errors="coerce")
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        parsed = pd.to_datetime(value, unit="D", origin="1899-12-30", errors="coerce")
+    else:
+        parsed = pd.to_datetime(value, errors="coerce")
+
     if pd.isna(parsed):
-        return str(value).strip()
+        return ""
 
     return parsed.strftime("%Y-%m-%d")
 

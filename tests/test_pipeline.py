@@ -232,6 +232,36 @@ class PipelineTests(unittest.TestCase):
             self.assertTrue(pd.isna(fallback["Match"]))
             self.assertTrue(pd.isna(fallback["Outcome"]))
 
+    def test_import_wagers_normalizes_match_dates_from_strings_timestamps_and_tickers(self):
+        with TemporaryDirectory() as home:
+            project_dir = Path(home) / "kalshi"
+            project_dir.mkdir()
+
+            activity = pd.DataFrame(
+                [
+                    trade("2026-06-01 09:00:00", "Yes", "KXWCGAME-26JUN14-STRONE-STR", 10, 40, 0.10),
+                    trade("2026-06-02 09:00:00", "Yes", "KXWCGAME-26JUN14-TIMTWO-TIM", 8, 35, 0.08),
+                    trade("2026-06-03 09:00:00", "Yes", "KXWCGAME-26JUN14-FALBAK-FAL", 7, 45, 0.07),
+                ]
+            )
+            activity.to_csv(project_dir / "Kalshi-Recent-Activity-All-dates.csv", index=False)
+            write_date_format_value_board_lookup(project_dir / "WorldCup_ValueBoard.xlsx")
+            write_prior_timestamp_match_date_log(project_dir / "World_Cup_Bet_Log.xlsx")
+
+            with patched_environ(HOME=home):
+                run_pipeline_script(ROOT / "import_wagers.py")
+
+            wagers = pd.read_excel(project_dir / "World_Cup_Bet_Log.xlsx", sheet_name="Wagers")
+
+            string_date = row_for(wagers, "KXWCGAME-26JUN14-STRONE-STR")
+            self.assertEqual(string_date["Match Date"], "2026-06-14")
+
+            timestamp_date = row_for(wagers, "KXWCGAME-26JUN14-TIMTWO-TIM")
+            self.assertEqual(timestamp_date["Match Date"], "2026-06-14")
+
+            ticker_date = row_for(wagers, "KXWCGAME-26JUN14-FALBAK-FAL")
+            self.assertEqual(ticker_date["Match Date"], "2026-06-14")
+
     def test_build_web_betlog_creates_sortable_html_with_expected_rows_and_blanks(self):
         with TemporaryDirectory() as workspace:
             workspace = Path(workspace)
@@ -250,6 +280,8 @@ class PipelineTests(unittest.TestCase):
             self.assertIn("Canada vs Brazil", html)
             self.assertIn("BUY YES", html)
             self.assertNotIn("NaN", html)
+            self.assertIn('data-sort="2026-06-14"', html)
+            self.assertIn('data-sort="2026-06-11 10:00:00"', html)
 
 
 class changed_dir:
@@ -447,6 +479,17 @@ def write_expanded_value_board_lookup(path):
         bet_sheet.to_excel(writer, sheet_name="Bet Sheet", index=False)
 
 
+def write_date_format_value_board_lookup(path):
+    bet_sheet = pd.DataFrame(
+        [
+            lookup_row("KXWCGAME-26JUN14-STRONE-STR", "6/14/26", "STR vs ONE", "STR", "BUY YES", 0.58, 0.08, "B"),
+            lookup_row("KXWCGAME-26JUN14-TIMTWO-TIM", "2026-06-01", "TIM vs TWO", "TIM", "BUY YES", 0.48, 0.06, "C"),
+        ]
+    )
+    with pd.ExcelWriter(path, engine="openpyxl") as writer:
+        bet_sheet.to_excel(writer, sheet_name="Bet Sheet", index=False)
+
+
 def lookup_row(market_ticker, date, match, outcome, action, silver, edge, bucket):
     return {
         "Date": date,
@@ -492,6 +535,23 @@ def write_prior_wager_log_for_preservation(path):
         wagers.to_excel(writer, sheet_name="Wagers", index=False)
 
 
+def write_prior_timestamp_match_date_log(path):
+    wagers = pd.DataFrame(
+        [
+            {
+                "Date Placed": "2026-05-01 09:00:00",
+                "Match Date": pd.Timestamp("2026-06-14"),
+                "Market Ticker": "KXWCGAME-26JUN14-TIMTWO-TIM",
+                "Match": "Prior Timestamp Match",
+                "Outcome": "Prior Timestamp Outcome",
+                "Action": "BUY YES",
+            }
+        ]
+    )
+    with pd.ExcelWriter(path, engine="openpyxl") as writer:
+        wagers.to_excel(writer, sheet_name="Wagers", index=False)
+
+
 def write_sample_web_wager_log(path):
     wagers = pd.DataFrame(
         [
@@ -515,7 +575,7 @@ def write_sample_web_wager_log(path):
             },
             {
                 "Date Placed": "2026-06-11 10:00:00",
-                "Match Date": "2026-06-14",
+                "Match Date": "6/14/26",
                 "Match": "Canada vs Brazil",
                 "Outcome": "Brazil",
                 "Action": "SELL YES",
