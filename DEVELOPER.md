@@ -2,6 +2,13 @@
 
 ## Workflows
 
+`update_all.sh` is the combined update workflow. It changes into the project directory, activates `venv/` when needed, then runs the standalone workflows in order:
+
+1. `./update_wagers.sh`
+2. `./update_worldcup.sh`
+
+Keep this script thin. The wager and World Cup scripts remain usable on their own, so shared behavior should stay in the underlying Python modules or the standalone scripts unless there is a specific reason to coordinate it in `update_all.sh`.
+
 `wcup` is the main board refresh workflow. It should run the same sequence as `update_worldcup.sh`:
 
 1. `process_silver.py` normalizes the latest Silver forecast CSV into `Silver_Current.xlsx`.
@@ -9,9 +16,11 @@
 3. `build_value_board.py` combines Silver probabilities, Kalshi prices, active wager exposure, and portfolio summaries into `WorldCup_ValueBoard.xlsx`.
 4. `build_web_betsheet.py` creates `WorldCup_BetSheet.html`.
 
-`update_wagers.sh` is intentionally separate from `wcup`. It activates `venv/` when needed, runs `import_wagers.py`, builds `World_Cup_Bet_Log.html` with `build_web_betlog.py`, prints a short wager summary, and opens the web Bet Log. Closing Price is manually entered in `World_Cup_Bet_Log.xlsx`; `import_wagers.py` preserves it and automatically calculates CLV and CLV % when Closing Price is present.
+`update_worldcup.sh` refreshes Silver forecasts, Kalshi market data, `WorldCup_ValueBoard.xlsx`, and `WorldCup_BetSheet.html`.
 
-After placing a wager, download Kalshi Activity -> All -> This Month, run `./update_wagers.sh`, then run `wcup` if the new wager should appear on the Value Board.
+`update_wagers.sh` refreshes Bet Log outputs from the latest Kalshi activity export. It activates `venv/` when needed, runs `import_wagers.py`, builds `World_Cup_Bet_Log.html` with `build_web_betlog.py`, prints a short wager summary, and opens the web Bet Log. Closing Price is manually entered in `World_Cup_Bet_Log.xlsx`; `import_wagers.py` preserves it and automatically calculates CLV and CLV % when Closing Price is present.
+
+After placing a wager, download Kalshi Activity -> All -> This Month, then run `./update_all.sh` to refresh wagers first and then refresh the World Cup board. You can still run `./update_wagers.sh` or `./update_worldcup.sh` independently for narrower updates.
 
 ## Pipeline Dependencies
 
@@ -82,6 +91,9 @@ archive/
 Run the full test suite with:
 
 ```bash
+bash -n update_all.sh
+bash -n update_wagers.sh
+bash -n update_worldcup.sh
 ./venv/bin/python -m unittest discover -s tests
 ```
 

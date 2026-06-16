@@ -31,7 +31,7 @@ Typical execution:
 wcup
 ```
 
-`wcup` refreshes Silver, Kalshi, the Value Board, and the web dashboard. It runs:
+`wcup` refreshes Silver, Kalshi, the Value Board, and the web dashboard. It runs the same workflow as `update_worldcup.sh`:
 
 ```text
 process_silver.py
@@ -40,7 +40,9 @@ build_value_board.py
 build_web_betsheet.py
 ```
 
-Wager imports are intentionally run separately:
+`update_worldcup.sh` refreshes Silver forecasts, Kalshi market data, the Value Board, and the web dashboard.
+
+Wager imports can still be run separately:
 
 ```bash
 ./update_wagers.sh
@@ -48,11 +50,25 @@ Wager imports are intentionally run separately:
 
 `update_wagers.sh` refreshes the wager log from the latest Kalshi activity CSV, creates `World_Cup_Bet_Log.html`, and opens the web Bet Log.
 
+To refresh everything in order:
+
+```bash
+./update_all.sh
+```
+
+`update_all.sh` refreshes wagers first, then refreshes the World Cup board and dashboard by running:
+
+```text
+update_wagers.sh
+update_worldcup.sh
+```
+
 After placing a wager:
 
 1. Download Kalshi Activity -> All -> This Month.
-2. Run `./update_wagers.sh`.
-3. Run `wcup` if you want the wager reflected on the Value Board.
+2. Run `./update_all.sh` to refresh the Bet Log, Value Board, and dashboard.
+
+You can still run `./update_wagers.sh` by itself when only the Bet Log needs updating, or `./update_worldcup.sh` by itself when only the Silver/Kalshi/Value Board/dashboard workflow needs updating.
 
 Optional shell shortcut:
 
@@ -82,7 +98,9 @@ build_value_board.py
 build_web_betsheet.py
 build_web_betlog.py
 import_wagers.py
+update_all.sh
 update_wagers.sh
+update_worldcup.sh
 
 archive/
     silver_raw/
