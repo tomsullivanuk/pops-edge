@@ -364,13 +364,15 @@ Edge
 Bucket
 ```
 
-and user-maintained fields:
+and closing line value fields:
 
 ```text
 Closing Price
 CLV
 CLV %
 ```
+
+Closing Price is manually entered in `World_Cup_Bet_Log.xlsx`. `update_wagers.sh` runs `import_wagers.py`, which preserves that manually entered Closing Price and automatically calculates CLV and CLV % when Closing Price is present.
 
 `import_wagers.py` normalizes Match Date values to `YYYY-MM-DD` whenever possible. It preserves prior manual corrections first, then uses the current Value Board date, then falls back to parsing the market ticker.
 
@@ -391,6 +393,8 @@ CLV = Entry Price - Closing Price
 ```
 
 Positive CLV indicates the position beat the market.
+
+If Closing Price is blank, CLV and CLV % remain blank unless prior manually entered CLV values exist, in which case they are preserved as a fallback.
 
 ---
 
@@ -449,6 +453,5 @@ Potential improvements:
 1. Archive wager logs automatically.
 2. Recover model data from archived Value Boards.
 3. Automatic Closing Price capture.
-4. Automatic CLV calculation.
-5. Position-level performance analytics.
-6. Silver model calibration reporting.
+4. Position-level performance analytics.
+5. Silver model calibration reporting.

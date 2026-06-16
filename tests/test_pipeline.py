@@ -201,6 +201,9 @@ class PipelineTests(unittest.TestCase):
             self.assertEqual(losing_buy["Market Result"], "no")
             self.assertEqual(losing_buy["Contract Won"], "No")
             self.assertAlmostEqual(losing_buy["Realized P/L"], -2.88)
+            self.assertAlmostEqual(losing_buy["Closing Price"], 0.45)
+            self.assertAlmostEqual(losing_buy["CLV"], 0.10)
+            self.assertAlmostEqual(losing_buy["CLV %"], 0.2857)
 
             winning_sell = row_for(wagers, "KXWCGAME-26JUL03-CCCGGG-CCC")
             self.assertEqual(winning_sell["Action"], "SELL YES")
@@ -208,6 +211,9 @@ class PipelineTests(unittest.TestCase):
             self.assertEqual(winning_sell["Market Result"], "no")
             self.assertEqual(winning_sell["Contract Won"], "Yes")
             self.assertAlmostEqual(winning_sell["Realized P/L"], 7.32)
+            self.assertAlmostEqual(winning_sell["Closing Price"], 0.50)
+            self.assertAlmostEqual(winning_sell["CLV"], 0.12)
+            self.assertAlmostEqual(winning_sell["CLV %"], 0.1935)
 
             multiple_fill = row_for(wagers, "KXWCGAME-26JUL04-DDDHHH-DDD")
             self.assertEqual(multiple_fill["Action"], "BUY YES")
@@ -215,6 +221,9 @@ class PipelineTests(unittest.TestCase):
             self.assertAlmostEqual(multiple_fill["Contracts"], 40)
             self.assertAlmostEqual(multiple_fill["Entry Price"], 0.475)
             self.assertAlmostEqual(multiple_fill["Fee In"], 0.40)
+            self.assertTrue(pd.isna(multiple_fill["Closing Price"]))
+            self.assertAlmostEqual(multiple_fill["CLV"], 0.03)
+            self.assertAlmostEqual(multiple_fill["CLV %"], 0.0632)
 
             preserved = row_for(wagers, "KXWCGAME-26AUG05-IIIJJJ-III")
             self.assertEqual(preserved["Match Date"], "2026-08-05")
@@ -224,13 +233,16 @@ class PipelineTests(unittest.TestCase):
             self.assertAlmostEqual(preserved["Edge"], 0.08)
             self.assertEqual(preserved["Bucket"], "B")
             self.assertAlmostEqual(preserved["Closing Price"], 0.64)
-            self.assertAlmostEqual(preserved["CLV"], 0.14)
-            self.assertAlmostEqual(preserved["CLV %"], 0.28)
+            self.assertAlmostEqual(preserved["CLV"], 0.39)
+            self.assertAlmostEqual(preserved["CLV %"], 1.56)
 
             fallback = row_for(wagers, "KXWCGAME-26SEP06-KKKLLL-KKK")
             self.assertEqual(fallback["Match Date"], "2026-09-06")
             self.assertTrue(pd.isna(fallback["Match"]))
             self.assertTrue(pd.isna(fallback["Outcome"]))
+            self.assertTrue(pd.isna(fallback["Closing Price"]))
+            self.assertTrue(pd.isna(fallback["CLV"]))
+            self.assertTrue(pd.isna(fallback["CLV %"]))
 
     def test_import_wagers_normalizes_match_dates_from_strings_timestamps_and_tickers(self):
         with TemporaryDirectory() as home:
@@ -535,6 +547,27 @@ def write_prior_wager_log_for_preservation(path):
                 "CLV": 0.14,
                 "CLV %": 0.28,
                 "Realized P/L": "",
+            },
+            {
+                "Date Placed": "2026-05-02 09:00:00",
+                "Market Ticker": "KXWCGAME-26JUL02-BBBFFF-BBB",
+                "Closing Price": 0.45,
+                "CLV": 0.01,
+                "CLV %": 0.02,
+            },
+            {
+                "Date Placed": "2026-05-03 09:00:00",
+                "Market Ticker": "KXWCGAME-26JUL03-CCCGGG-CCC",
+                "Closing Price": 0.50,
+                "CLV": 0.01,
+                "CLV %": 0.02,
+            },
+            {
+                "Date Placed": "2026-05-04 09:00:00",
+                "Market Ticker": "KXWCGAME-26JUL04-DDDHHH-DDD",
+                "Closing Price": "",
+                "CLV": 0.03,
+                "CLV %": 0.0632,
             }
         ]
     )

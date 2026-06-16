@@ -9,7 +9,7 @@
 3. `build_value_board.py` combines Silver probabilities, Kalshi prices, active wager exposure, and portfolio summaries into `WorldCup_ValueBoard.xlsx`.
 4. `build_web_betsheet.py` creates `WorldCup_BetSheet.html`.
 
-`update_wagers.sh` is intentionally separate from `wcup`. It activates `venv/` when needed, runs `import_wagers.py`, builds `World_Cup_Bet_Log.html` with `build_web_betlog.py`, prints a short wager summary, and opens the web Bet Log.
+`update_wagers.sh` is intentionally separate from `wcup`. It activates `venv/` when needed, runs `import_wagers.py`, builds `World_Cup_Bet_Log.html` with `build_web_betlog.py`, prints a short wager summary, and opens the web Bet Log. Closing Price is manually entered in `World_Cup_Bet_Log.xlsx`; `import_wagers.py` preserves it and automatically calculates CLV and CLV % when Closing Price is present.
 
 After placing a wager, download Kalshi Activity -> All -> This Month, run `./update_wagers.sh`, then run `wcup` if the new wager should appear on the Value Board.
 
@@ -28,7 +28,7 @@ World_Cup_Bet_Log.xlsx -> build_web_betlog.py -> World_Cup_Bet_Log.html
 
 Shared filenames, sheet names, archive paths, and common column names live in `config.py`.
 
-`import_wagers.py` normalizes Match Date values to `YYYY-MM-DD` after reading prior manual values and current Value Board values. The selection order remains prior manual value, current Value Board value, then ticker-derived fallback.
+`import_wagers.py` normalizes Match Date values to `YYYY-MM-DD` after reading prior manual values and current Value Board values. The selection order remains prior manual value, current Value Board value, then ticker-derived fallback. It also carries forward manually entered Closing Price from the prior wager log, calculates CLV and CLV % for BUY YES and SELL YES positions, and leaves CLV fields blank when Closing Price is blank unless prior CLV values are available as a fallback.
 
 ## Value Board Workbook
 

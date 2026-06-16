@@ -74,6 +74,33 @@ def get_prior_value(prior_row, column):
         return ""
     return value
 
+def numeric_value(value):
+    if is_blank(value):
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+def calculate_clv(action, entry_price, closing_price, prior_clv="", prior_clv_pct=""):
+    closing_price = numeric_value(closing_price)
+    entry_price = numeric_value(entry_price)
+
+    if closing_price is None:
+        return prior_clv, prior_clv_pct
+
+    if entry_price is None or entry_price == 0:
+        return "", ""
+
+    if action == "BUY YES":
+        clv = closing_price - entry_price
+    elif action == "SELL YES":
+        clv = entry_price - closing_price
+    else:
+        return "", ""
+
+    return round(clv, 4), round(clv / entry_price, 4)
+
 def match_date_from_ticker(market_ticker):
     match = re.search(r"-(\d{2})([A-Z]{3})(\d{2})", str(market_ticker))
     if not match:
@@ -323,6 +350,14 @@ for market_ticker, trades in trade_rows.groupby("Market_Ticker"):
     if is_blank(action):
         action = preserve_prior_then_current(prior_action, current_action)
 
+    clv, clv_pct = calculate_clv(
+        action,
+        entry_price,
+        prior_closing_price,
+        prior_clv,
+        prior_clv_pct,
+    )
+
     wager_rows.append({
         "Date Placed": first_trade["Original_Date"].strftime("%Y-%m-%d %H:%M:%S")
             if pd.notna(first_trade["Original_Date"]) else "",
@@ -343,8 +378,8 @@ for market_ticker, trades in trade_rows.groupby("Market_Ticker"):
         "Fee Out": round(fee_out, 2),
         "Status": status,
         COL_CLOSING_PRICE: prior_closing_price,
-        COL_CLV: prior_clv,
-        COL_CLV_PCT: prior_clv_pct,
+        COL_CLV: clv,
+        COL_CLV_PCT: clv_pct,
         "Realized P/L": round(realized_pl, 2) if realized_pl is not None else "",
     })
 
