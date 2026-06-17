@@ -262,12 +262,23 @@ for market_ticker, trades in trade_rows.groupby("Market_Ticker"):
         else:
             realized_pl = exit_contracts * (entry_price - exit_price) - fee_in - fee_out
 
+    # -----------------------------
+    # Existing Bet Log fields
+    # -----------------------------
+
+    prior_row = None
+
+    if not prior_lookup.empty:
+        old = prior_lookup[prior_lookup[COL_MARKET_TICKER_TITLE] == market_ticker]
+        if not old.empty:
+            prior_row = old.iloc[0]
+
     settlement = settlement_rows[
         settlement_rows["Market_Ticker"] == market_ticker
     ]
 
-    market_result = ""
-    contract_won = ""
+    market_result = get_prior_value(prior_row, "Market Result")
+    contract_won = get_prior_value(prior_row, "Contract Won")
 
     if not settlement.empty:
         market_result = str(safe_first(settlement["Result"])).strip().lower()
@@ -308,17 +319,6 @@ for market_ticker, trades in trade_rows.groupby("Market_Ticker"):
             current_silver = vb.iloc[0].get(COL_SILVER, "")
             current_edge = vb.iloc[0].get(COL_EDGE, "")
             current_bucket = vb.iloc[0].get(COL_BUCKET, "")
-
-    # -----------------------------
-    # Existing Bet Log fields
-    # -----------------------------
-
-    prior_row = None
-
-    if not prior_lookup.empty:
-        old = prior_lookup[prior_lookup[COL_MARKET_TICKER_TITLE] == market_ticker]
-        if not old.empty:
-            prior_row = old.iloc[0]
 
     prior_match_date = normalize_match_date(get_prior_value(prior_row, COL_MATCH_DATE))
     prior_match = get_prior_value(prior_row, COL_MATCH)

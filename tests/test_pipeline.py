@@ -190,6 +190,8 @@ class PipelineTests(unittest.TestCase):
             self.assertEqual(closed["Match Date"], "2026-07-01")
             self.assertEqual(closed["Action"], "BUY YES")
             self.assertEqual(closed["Status"], "Closed Early")
+            self.assertEqual(closed["Market Result"], "yes")
+            self.assertEqual(closed["Contract Won"], "Yes")
             self.assertAlmostEqual(closed["Entry Price"], 0.40)
             self.assertAlmostEqual(closed["Exit Price"], 0.55)
             self.assertAlmostEqual(closed["Realized P/L"], 1.35)
@@ -240,6 +242,8 @@ class PipelineTests(unittest.TestCase):
             self.assertEqual(fallback["Match Date"], "2026-09-06")
             self.assertTrue(pd.isna(fallback["Match"]))
             self.assertTrue(pd.isna(fallback["Outcome"]))
+            self.assertTrue(pd.isna(fallback["Market Result"]))
+            self.assertTrue(pd.isna(fallback["Contract Won"]))
             self.assertTrue(pd.isna(fallback["Closing Price"]))
             self.assertTrue(pd.isna(fallback["CLV"]))
             self.assertTrue(pd.isna(fallback["CLV %"]))
@@ -526,6 +530,12 @@ def write_prior_wager_log_for_preservation(path):
     wagers = pd.DataFrame(
         [
             {
+                "Date Placed": "2026-05-01 08:00:00",
+                "Market Ticker": "KXWCGAME-26JUL01-AAAEEE-AAA",
+                "Market Result": "yes",
+                "Contract Won": "Yes",
+            },
+            {
                 "Date Placed": "2026-05-01 09:00:00",
                 "Match Date": "August 5, 2026",
                 "Match": "Prior Match",
@@ -551,6 +561,8 @@ def write_prior_wager_log_for_preservation(path):
             {
                 "Date Placed": "2026-05-02 09:00:00",
                 "Market Ticker": "KXWCGAME-26JUL02-BBBFFF-BBB",
+                "Market Result": "yes",
+                "Contract Won": "Yes",
                 "Closing Price": 0.45,
                 "CLV": 0.01,
                 "CLV %": 0.02,
