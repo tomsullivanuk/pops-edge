@@ -37,15 +37,37 @@ success_summary() {
     "$PYTHON_BIN" - <<'PY'
 import pandas as pd
 
-from config import BET_LOG_FILE, SHEET_SUMMARY, VALUE_BOARD_FILE
+from config import BET_LOG_FILE, SHEET_RUN_METADATA, SHEET_SUMMARY, VALUE_BOARD_FILE
 
-wager_summary = pd.read_excel(BET_LOG_FILE, sheet_name=SHEET_SUMMARY)
-wager_values = dict(zip(wager_summary["Metric"], wager_summary["Value"]))
-wagers_imported = int(wager_values.get("Total Wagers", 0))
+def read_wagers_imported():
+    wager_summary = pd.read_excel(BET_LOG_FILE, sheet_name=SHEET_SUMMARY)
+    wager_values = dict(zip(wager_summary["Metric"], wager_summary["Value"]))
+    return int(wager_values.get("Total Wagers", 0))
 
-metadata = pd.read_excel(VALUE_BOARD_FILE, sheet_name="Metadata")
-metadata_values = dict(zip(metadata["Field"], metadata["Value"]))
-candidate_bets = int(metadata_values.get("Candidate Bets", 0))
+def read_candidate_bets():
+    workbook = pd.ExcelFile(VALUE_BOARD_FILE)
+    sheet_names = [SHEET_RUN_METADATA, "Metadata"]
+
+    for sheet_name in dict.fromkeys(sheet_names):
+        if sheet_name in workbook.sheet_names:
+            metadata = pd.read_excel(workbook, sheet_name=sheet_name)
+            metadata_values = dict(zip(metadata["Field"], metadata["Value"]))
+            return int(metadata_values.get("Candidate Bets", 0))
+
+    raise ValueError(
+        "Value Board workbook has no supported metadata worksheet. "
+        f"Tried: {', '.join(sheet_names)}"
+    )
+
+try:
+    wagers_imported = read_wagers_imported()
+except Exception:
+    wagers_imported = "unavailable"
+
+try:
+    candidate_bets = read_candidate_bets()
+except Exception:
+    candidate_bets = "unavailable"
 
 print(f"Wagers imported: {wagers_imported}")
 print(f"Candidate bets: {candidate_bets}")
@@ -64,5 +86,5 @@ echo "Refreshing World Cup board..."
 echo
 echo "All updates complete."
 
-SUMMARY=$(success_summary)
+SUMMARY=$(success_summary || printf 'Wagers imported: unavailable\nCandidate bets: unavailable')
 notify "Kalshi update complete" "$SUMMARY"
