@@ -1,10 +1,10 @@
 import pandas as pd
 from datetime import datetime
 
-from config import SHEET_BET_SHEET, VALUE_BOARD_FILE, WEB_BETSHEET_FILE
+from config import SHEET_BET_SHEET, VALUE_BOARD_FILE, WEB_VALUE_BOARD_FILE
 
 INPUT_FILE = VALUE_BOARD_FILE
-OUTPUT_FILE = WEB_BETSHEET_FILE
+OUTPUT_FILE = WEB_VALUE_BOARD_FILE
 
 df = pd.read_excel(INPUT_FILE, sheet_name=SHEET_BET_SHEET)
 

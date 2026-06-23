@@ -92,7 +92,7 @@ echo "Refreshing wager log..."
 ./update_wagers.sh
 
 echo
-echo "Refreshing World Cup board..."
+echo "Refreshing World Cup value boards..."
 ./update_worldcup.sh
 
 echo

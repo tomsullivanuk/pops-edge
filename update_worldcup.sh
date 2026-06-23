@@ -7,8 +7,8 @@ SILVER_FUTURES_CURRENT_FILE=$(python3 -c 'from config import SILVER_FUTURES_CURR
 KALSHI_CURRENT_FILE=$(python3 -c 'from config import KALSHI_CURRENT_FILE; print(KALSHI_CURRENT_FILE)')
 VALUE_BOARD_FILE=$(python3 -c 'from config import VALUE_BOARD_FILE; print(VALUE_BOARD_FILE)')
 FUTURES_VALUE_BOARD_FILE=$(python3 -c 'from config import FUTURES_VALUE_BOARD_FILE; print(FUTURES_VALUE_BOARD_FILE)')
-WEB_BETSHEET_FILE=$(python3 -c 'from config import WEB_BETSHEET_FILE; print(WEB_BETSHEET_FILE)')
-WEB_FUTURES_BETSHEET_FILE=$(python3 -c 'from config import WEB_FUTURES_BETSHEET_FILE; print(WEB_FUTURES_BETSHEET_FILE)')
+WEB_VALUE_BOARD_FILE=$(python3 -c 'from config import WEB_VALUE_BOARD_FILE; print(WEB_VALUE_BOARD_FILE)')
+WEB_FUTURES_VALUE_BOARD_FILE=$(python3 -c 'from config import WEB_FUTURES_VALUE_BOARD_FILE; print(WEB_FUTURES_VALUE_BOARD_FILE)')
 BET_LOG_FILE=$(python3 -c 'from config import BET_LOG_FILE; print(BET_LOG_FILE)')
 SILVER_RUN_ARCHIVE_DIR=$(python3 -c 'from config import SILVER_RUN_ARCHIVE_DIR; print(SILVER_RUN_ARCHIVE_DIR)')
 KALSHI_RUN_ARCHIVE_DIR=$(python3 -c 'from config import KALSHI_RUN_ARCHIVE_DIR; print(KALSHI_RUN_ARCHIVE_DIR)')
@@ -64,17 +64,17 @@ ICLOUD_DIR="$HOME/Library/Mobile Documents/com~apple~CloudDocs/WorldCup"
 
 mkdir -p "$ICLOUD_DIR"
 
-cp "$WEB_BETSHEET_FILE" "$ICLOUD_DIR/"
+cp "$WEB_VALUE_BOARD_FILE" "$ICLOUD_DIR/"
 cp "$VALUE_BOARD_FILE" "$ICLOUD_DIR/"
-cp "$WEB_FUTURES_BETSHEET_FILE" "$ICLOUD_DIR/"
+cp "$WEB_FUTURES_VALUE_BOARD_FILE" "$ICLOUD_DIR/"
 cp "$FUTURES_VALUE_BOARD_FILE" "$ICLOUD_DIR/"
 cp "$BET_LOG_FILE" "$ICLOUD_DIR/" 2>/dev/null || true
 
 echo "Copied reports to iCloud Drive."
 
 echo
-echo "Opening web bet sheet..."
-open "$ICLOUD_DIR/$WEB_BETSHEET_FILE"
+echo "Opening web value board..."
+open "$ICLOUD_DIR/$WEB_VALUE_BOARD_FILE"
 
 echo
 echo "Done."

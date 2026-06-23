@@ -52,12 +52,12 @@ It creates:
 ```text
 Silver_Futures_Current.xlsx
 WorldCup_Futures_ValueBoard.xlsx
-WorldCup_Futures_BetSheet.html
+WorldCup_Futures_ValueBoard.html
 ```
 
 `build_futures_value_board.py` reads `Kalshi_Current.xlsx`, so the Kalshi workbook must include futures markets such as Round of 16 Qualifiers, Quarterfinals Qualifiers, Semifinals Qualifiers, and World Cup winner. The current match-board workflow is unchanged.
 
-Both Excel boards and both web Bet Sheets are copied to the existing World Cup folder in iCloud Drive. The workflow opens the match web Bet Sheet and creates/copies the futures web Bet Sheet without opening a second browser window.
+Both Excel boards and both HTML Value Boards are copied to the existing World Cup folder in iCloud Drive. The workflow opens the match HTML Value Board and creates/copies the futures HTML Value Board without opening a second browser window.
 
 Wager imports can still be run separately:
 
@@ -104,10 +104,10 @@ Silver_Current.xlsx
 Kalshi_Current.xlsx
 
 WorldCup_ValueBoard.xlsx
-WorldCup_BetSheet.html
+WorldCup_ValueBoard.html
 Silver_Futures_Current.xlsx
 WorldCup_Futures_ValueBoard.xlsx
-WorldCup_Futures_BetSheet.html
+WorldCup_Futures_ValueBoard.html
 
 World_Cup_Bet_Log.xlsx
 World_Cup_Bet_Log.html

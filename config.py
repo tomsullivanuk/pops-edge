@@ -10,8 +10,8 @@ VALUE_BOARD_FILE = "WorldCup_ValueBoard.xlsx"
 SILVER_FUTURES_CURRENT_FILE = "Silver_Futures_Current.xlsx"
 FUTURES_VALUE_BOARD_FILE = "WorldCup_Futures_ValueBoard.xlsx"
 BET_LOG_FILE = "World_Cup_Bet_Log.xlsx"
-WEB_BETSHEET_FILE = "WorldCup_BetSheet.html"
-WEB_FUTURES_BETSHEET_FILE = "WorldCup_Futures_BetSheet.html"
+WEB_VALUE_BOARD_FILE = "WorldCup_ValueBoard.html"
+WEB_FUTURES_VALUE_BOARD_FILE = "WorldCup_Futures_ValueBoard.html"
 WEB_BETLOG_FILE = "World_Cup_Bet_Log.html"
 
 SILVER_RAW_ARCHIVE_DIR = os.path.join(PROJECT_DIR, "archive", "silver_raw")

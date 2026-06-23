@@ -16,10 +16,10 @@ Keep this script thin. The wager and World Cup scripts remain usable on their ow
 3. `process_silver_futures.py` normalizes the latest Silver futures CSV into `Silver_Futures_Current.xlsx`.
 4. `build_value_board.py` combines Silver probabilities, Kalshi prices, active wager exposure, and portfolio summaries into `WorldCup_ValueBoard.xlsx`.
 5. `build_futures_value_board.py` creates `WorldCup_Futures_ValueBoard.xlsx`.
-6. `build_web_betsheet.py` creates `WorldCup_BetSheet.html`.
-7. `build_web_futures_betsheet.py` creates `WorldCup_Futures_BetSheet.html`.
+6. `build_web_betsheet.py` creates `WorldCup_ValueBoard.html`.
+7. `build_web_futures_betsheet.py` creates `WorldCup_Futures_ValueBoard.html`.
 
-`update_worldcup.sh` refreshes both match and futures outputs. It archives both Silver workbooks and both Value Board workbooks, copies both Excel boards and both web Bet Sheets to the existing iCloud World Cup folder, and opens only the match web Bet Sheet. `update_all.sh` invokes this workflow and includes futures candidate bets in its completion summary.
+`update_worldcup.sh` refreshes both match and futures outputs. It archives both Silver workbooks and both Value Board workbooks, copies both Excel boards and both HTML Value Boards to the existing iCloud World Cup folder, and opens only the match HTML Value Board. `update_all.sh` invokes this workflow and includes futures candidate bets in its completion summary.
 
 `build_futures_value_board.py` filters out `KXWCGAME-` match markets and classifies futures markets from the event ticker, market ticker, game, subtitle, and market title. `kalshi_pull.py` includes these World Cup event patterns:
 
@@ -45,10 +45,10 @@ The pipeline is file-based:
 data-*.csv -> process_silver.py -> Silver_Current.xlsx
 Kalshi API -> kalshi_pull.py -> Kalshi_Current.xlsx
 Silver_Current.xlsx + Kalshi_Current.xlsx + World_Cup_Bet_Log.xlsx -> build_value_board.py -> WorldCup_ValueBoard.xlsx
-WorldCup_ValueBoard.xlsx -> build_web_betsheet.py -> WorldCup_BetSheet.html
+WorldCup_ValueBoard.xlsx -> build_web_betsheet.py -> WorldCup_ValueBoard.html
 futures CSV -> process_silver_futures.py -> Silver_Futures_Current.xlsx
 Silver_Futures_Current.xlsx + Kalshi_Current.xlsx -> build_futures_value_board.py -> WorldCup_Futures_ValueBoard.xlsx
-WorldCup_Futures_ValueBoard.xlsx -> build_web_futures_betsheet.py -> WorldCup_Futures_BetSheet.html
+WorldCup_Futures_ValueBoard.xlsx -> build_web_futures_betsheet.py -> WorldCup_Futures_ValueBoard.html
 Kalshi-Recent-Activity-*.csv + WorldCup_ValueBoard.xlsx + prior World_Cup_Bet_Log.xlsx -> import_wagers.py -> World_Cup_Bet_Log.xlsx
 World_Cup_Bet_Log.xlsx -> build_web_betlog.py -> World_Cup_Bet_Log.html
 ```
@@ -120,10 +120,10 @@ Generated files are local outputs and should not be committed:
 Silver_Current.xlsx
 Kalshi_Current.xlsx
 WorldCup_ValueBoard.xlsx
-WorldCup_BetSheet.html
+WorldCup_ValueBoard.html
 Silver_Futures_Current.xlsx
 WorldCup_Futures_ValueBoard.xlsx
-WorldCup_Futures_BetSheet.html
+WorldCup_Futures_ValueBoard.html
 World_Cup_Bet_Log.xlsx
 World_Cup_Bet_Log.html
 archive/

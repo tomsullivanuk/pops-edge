@@ -308,7 +308,7 @@ class PipelineTests(unittest.TestCase):
             with changed_dir(workspace):
                 run_pipeline_script(ROOT / "build_web_futures_betsheet.py")
 
-            output = workspace / "WorldCup_Futures_BetSheet.html"
+            output = workspace / "WorldCup_Futures_ValueBoard.html"
             self.assertTrue(output.exists())
 
             html = output.read_text(encoding="utf-8")
