@@ -343,6 +343,9 @@ class PipelineTests(unittest.TestCase):
             self.assertEqual(len(wager_log_archives(project_dir)), 1)
 
             usa = wagers[wagers["Market Ticker"] == "KXWCGAME-26JUN13-USAMEX-USA"].iloc[0]
+            self.assertEqual(usa["Market Type"], "Match")
+            self.assertTrue(pd.isna(usa["Stage"]))
+            self.assertEqual(usa["Team"], "USA")
             self.assertEqual(usa["Action"], "BUY YES")
             self.assertEqual(usa["Status"], "Open")
             self.assertEqual(usa["Match Date"], "2026-06-13")
@@ -359,6 +362,54 @@ class PipelineTests(unittest.TestCase):
             self.assertEqual(bra["Status"], "Settled")
             self.assertEqual(bra["Contract Won"], "Yes")
             self.assertAlmostEqual(bra["Realized P/L"], 2.20)
+
+    def test_import_wagers_enriches_round_and_champion_futures_wagers(self):
+        with TemporaryDirectory() as home:
+            project_dir = Path(home) / "kalshi"
+            project_dir.mkdir()
+
+            activity = pd.DataFrame(
+                [
+                    trade("2026-06-20 09:00:00", "Yes", "KXWCROUND-26RO16-USA", 10, 61, 0.10),
+                    settlement("2026-07-02 18:00:00", "KXWCROUND-26RO16-USA", "yes"),
+                    trade("2026-06-20 10:00:00", "Yes", "KXMENWORLDCUP-26-AR", 12, 15, 0.12),
+                ]
+            )
+            activity.to_csv(project_dir / "Kalshi-Recent-Activity-All-futures.csv", index=False)
+            write_sample_futures_value_board(project_dir / "WorldCup_Futures_ValueBoard.xlsx")
+            write_sample_kalshi_futures_workbook(project_dir / "Kalshi_Current.xlsx")
+
+            with patched_environ(HOME=home):
+                run_pipeline_script(ROOT / "import_wagers.py")
+
+            wagers = pd.read_excel(project_dir / "World_Cup_Bet_Log.xlsx", sheet_name="Wagers")
+            self.assertEqual(len(wagers), 2)
+
+            round_of_16 = row_for(wagers, "KXWCROUND-26RO16-USA")
+            self.assertEqual(round_of_16["Market Type"], "Futures")
+            self.assertEqual(round_of_16["Stage"], "Round of 16")
+            self.assertEqual(round_of_16["Team"], "USA")
+            self.assertEqual(round_of_16["Outcome"], "United States")
+            self.assertTrue(pd.isna(round_of_16["Match Date"]))
+            self.assertTrue(pd.isna(round_of_16["Match"]))
+            self.assertAlmostEqual(round_of_16["Silver Probability"], 0.72)
+            self.assertAlmostEqual(round_of_16["Edge"], 0.11)
+            self.assertEqual(round_of_16["Bucket"], "A")
+            self.assertEqual(round_of_16["Status"], "Settled")
+            self.assertEqual(round_of_16["Contract Won"], "Yes")
+            self.assertAlmostEqual(round_of_16["Realized P/L"], 3.80)
+
+            champion = row_for(wagers, "KXMENWORLDCUP-26-AR")
+            self.assertEqual(champion["Market Type"], "Futures")
+            self.assertEqual(champion["Stage"], "Champion")
+            self.assertEqual(champion["Team"], "ARG")
+            self.assertEqual(champion["Outcome"], "Argentina")
+            self.assertTrue(pd.isna(champion["Match Date"]))
+            self.assertTrue(pd.isna(champion["Match"]))
+            self.assertAlmostEqual(champion["Silver Probability"], 0.241)
+            self.assertAlmostEqual(champion["Edge"], 0.091)
+            self.assertEqual(champion["Bucket"], "B")
+            self.assertEqual(champion["Status"], "Open")
 
     def test_import_wagers_covers_exits_settlements_multiple_fills_and_fallbacks(self):
         with TemporaryDirectory() as home:
@@ -508,6 +559,9 @@ class PipelineTests(unittest.TestCase):
             html = output.read_text(encoding="utf-8")
             self.assertIn("World Cup Bet Log", html)
             self.assertIn("sortTable(table, index, ascending)", html)
+            self.assertIn("<th>Market Type</th>", html)
+            self.assertIn("<th>Stage</th>", html)
+            self.assertIn("<th>Team</th>", html)
             self.assertIn("USA vs Mexico", html)
             self.assertIn("Canada vs Brazil", html)
             self.assertIn("BUY YES", html)
@@ -988,6 +1042,9 @@ def write_sample_web_wager_log(path):
         [
             {
                 "Date Placed": "2026-06-10 09:00:00",
+                "Market Type": "Match",
+                "Stage": None,
+                "Team": "USA",
                 "Match Date": "2026-06-13",
                 "Match": "USA vs Mexico",
                 "Outcome": "United States",
@@ -1006,6 +1063,9 @@ def write_sample_web_wager_log(path):
             },
             {
                 "Date Placed": "2026-06-11 10:00:00",
+                "Market Type": "Match",
+                "Stage": None,
+                "Team": "BRA",
                 "Match Date": "6/14/26",
                 "Match": "Canada vs Brazil",
                 "Outcome": "Brazil",

@@ -15,13 +15,18 @@ from config import (
     COL_EDGE,
     COL_MARKET_TICKER,
     COL_MARKET_TICKER_TITLE,
+    COL_MARKET_TYPE,
     COL_MATCH,
     COL_MATCH_DATE,
     COL_OUTCOME,
     COL_SILVER,
     COL_SILVER_PROBABILITY,
+    COL_STAGE,
+    COL_TEAM,
     COL_DATE,
     DOWNLOADS_DIR,
+    FUTURES_VALUE_BOARD_FILE as FUTURES_VALUE_BOARD_FILENAME,
+    KALSHI_CURRENT_FILE as KALSHI_CURRENT_FILENAME,
     PROJECT_DIR,
     SHEET_BET_SHEET,
     SHEET_SUMMARY,
@@ -31,7 +36,15 @@ from config import (
 )
 
 VALUE_BOARD_FILE = os.path.join(PROJECT_DIR, VALUE_BOARD_FILENAME)
+FUTURES_VALUE_BOARD_FILE = os.path.join(PROJECT_DIR, FUTURES_VALUE_BOARD_FILENAME)
+KALSHI_CURRENT_FILE = os.path.join(PROJECT_DIR, KALSHI_CURRENT_FILENAME)
 BET_LOG_FILE = os.path.join(PROJECT_DIR, BET_LOG_FILENAME)
+
+CODE_MAP = {
+    "ALG": "DZA",
+    "IRN": "IRI",
+    "HAI": "HTI",
+}
 
 def money(value):
     if pd.isna(value) or value == "":
@@ -101,6 +114,34 @@ def calculate_clv(action, entry_price, closing_price, prior_clv="", prior_clv_pc
 
     return round(clv, 4), round(clv / entry_price, 4)
 
+def normalize_team_code(value):
+    code = str(value).strip().upper()
+    return CODE_MAP.get(code, code)
+
+def classify_market_ticker(market_ticker):
+    ticker = str(market_ticker).strip().upper()
+
+    if ticker.startswith("KXWCGAME-"):
+        return "Match", ""
+    if re.match(r"^KXWCROUND-\d{2}RO16-", ticker):
+        return "Futures", "Round of 16"
+    if re.match(r"^KXWCROUND-\d{2}QUAR-", ticker):
+        return "Futures", "Quarterfinals"
+    if re.match(r"^KXWCROUND-\d{2}SEMI-", ticker):
+        return "Futures", "Semifinals"
+    if re.match(r"^KXMENWORLDCUP-\d{2}-", ticker):
+        return "Futures", "Champion"
+
+    return "", ""
+
+def team_from_ticker(market_ticker):
+    suffix = str(market_ticker).strip().upper().split("-")[-1]
+    if suffix == "TIE":
+        return ""
+    if re.fullmatch(r"[A-Z]{3}", suffix):
+        return normalize_team_code(suffix)
+    return ""
+
 def match_date_from_ticker(market_ticker):
     match = re.search(r"-(\d{2})([A-Z]{3})(\d{2})", str(market_ticker))
     if not match:
@@ -157,27 +198,66 @@ print(f"Using Kalshi activity file: {activity_file}")
 activity = pd.read_csv(activity_file)
 
 # -----------------------------
-# Load current Value Board lookup
+# Load current Value Board lookups
 # -----------------------------
 
-value_lookup = pd.DataFrame()
+LOOKUP_COLUMNS = [
+    COL_DATE,
+    COL_MARKET_TYPE,
+    COL_STAGE,
+    COL_TEAM,
+    COL_MATCH,
+    COL_OUTCOME,
+    COL_ACTION,
+    COL_SILVER,
+    COL_EDGE,
+    COL_BUCKET,
+    COL_MARKET_TICKER,
+]
 
-if os.path.exists(VALUE_BOARD_FILE):
-    bet_sheet = pd.read_excel(VALUE_BOARD_FILE, sheet_name=SHEET_BET_SHEET)
+def read_value_board_lookup(path, market_type):
+    if not os.path.exists(path):
+        return pd.DataFrame(columns=LOOKUP_COLUMNS)
 
-    if COL_MARKET_TICKER in bet_sheet.columns:
-        value_lookup = bet_sheet[[
-            COL_DATE,
-            COL_MATCH,
-            COL_OUTCOME,
-            COL_ACTION,
-            COL_SILVER,
-            COL_EDGE,
-            COL_BUCKET,
-            COL_MARKET_TICKER,
-        ]].drop_duplicates(subset=[COL_MARKET_TICKER]).copy()
-    else:
-        print(f"WARNING: Current Bet Sheet has no {COL_MARKET_TICKER} column.")
+    bet_sheet = pd.read_excel(path, sheet_name=SHEET_BET_SHEET)
+    if COL_MARKET_TICKER not in bet_sheet.columns:
+        print(f"WARNING: {path} Bet Sheet has no {COL_MARKET_TICKER} column.")
+        return pd.DataFrame(columns=LOOKUP_COLUMNS)
+
+    lookup = bet_sheet.copy()
+    lookup[COL_MARKET_TYPE] = market_type
+
+    if COL_STAGE not in lookup.columns:
+        lookup[COL_STAGE] = ""
+    if COL_TEAM not in lookup.columns:
+        lookup[COL_TEAM] = lookup[COL_MARKET_TICKER].apply(team_from_ticker)
+
+    for column in LOOKUP_COLUMNS:
+        if column not in lookup.columns:
+            lookup[column] = ""
+
+    return lookup[LOOKUP_COLUMNS].drop_duplicates(
+        subset=[COL_MARKET_TICKER],
+        keep="first",
+    )
+
+value_lookup = pd.concat(
+    [
+        read_value_board_lookup(VALUE_BOARD_FILE, "Match"),
+        read_value_board_lookup(FUTURES_VALUE_BOARD_FILE, "Futures"),
+    ],
+    ignore_index=True,
+).drop_duplicates(subset=[COL_MARKET_TICKER], keep="first")
+
+kalshi_outcome_lookup = pd.DataFrame(columns=[COL_MARKET_TICKER, "Kalshi Outcome"])
+if os.path.exists(KALSHI_CURRENT_FILE):
+    kalshi_current = pd.read_excel(KALSHI_CURRENT_FILE)
+    if COL_MARKET_TICKER in kalshi_current.columns and "outcome" in kalshi_current.columns:
+        kalshi_outcome_lookup = (
+            kalshi_current[[COL_MARKET_TICKER, "outcome"]]
+            .rename(columns={"outcome": "Kalshi Outcome"})
+            .drop_duplicates(subset=[COL_MARKET_TICKER], keep="first")
+        )
 
 # -----------------------------
 # Load existing Bet Log
@@ -301,6 +381,9 @@ for market_ticker, trades in trade_rows.groupby("Market_Ticker"):
     # -----------------------------
 
     current_match_date = ""
+    current_market_type = ""
+    current_stage = ""
+    current_team = ""
     current_match = ""
     current_outcome = ""
     current_action = ""
@@ -313,6 +396,9 @@ for market_ticker, trades in trade_rows.groupby("Market_Ticker"):
 
         if not vb.empty:
             current_match_date = vb.iloc[0].get(COL_DATE, "")
+            current_market_type = vb.iloc[0].get(COL_MARKET_TYPE, "")
+            current_stage = vb.iloc[0].get(COL_STAGE, "")
+            current_team = vb.iloc[0].get(COL_TEAM, "")
             current_match = vb.iloc[0].get(COL_MATCH, "")
             current_outcome = vb.iloc[0].get(COL_OUTCOME, "")
             current_action = vb.iloc[0].get(COL_ACTION, "")
@@ -320,7 +406,18 @@ for market_ticker, trades in trade_rows.groupby("Market_Ticker"):
             current_edge = vb.iloc[0].get(COL_EDGE, "")
             current_bucket = vb.iloc[0].get(COL_BUCKET, "")
 
+    current_kalshi_outcome = ""
+    if not kalshi_outcome_lookup.empty:
+        kalshi_market = kalshi_outcome_lookup[
+            kalshi_outcome_lookup[COL_MARKET_TICKER] == market_ticker
+        ]
+        if not kalshi_market.empty:
+            current_kalshi_outcome = kalshi_market.iloc[0].get("Kalshi Outcome", "")
+
     prior_match_date = normalize_match_date(get_prior_value(prior_row, COL_MATCH_DATE))
+    prior_market_type = get_prior_value(prior_row, COL_MARKET_TYPE)
+    prior_stage = get_prior_value(prior_row, COL_STAGE)
+    prior_team = get_prior_value(prior_row, COL_TEAM)
     prior_match = get_prior_value(prior_row, COL_MATCH)
     prior_outcome = get_prior_value(prior_row, COL_OUTCOME)
     prior_action = get_prior_value(prior_row, COL_ACTION)
@@ -333,6 +430,20 @@ for market_ticker, trades in trade_rows.groupby("Market_Ticker"):
 
     current_match_date = normalize_match_date(current_match_date)
     ticker_match_date = normalize_match_date(match_date_from_ticker(market_ticker))
+    classified_market_type, classified_stage = classify_market_ticker(market_ticker)
+    ticker_team = team_from_ticker(market_ticker)
+
+    market_type = classified_market_type or preserve_prior_then_current(
+        prior_market_type,
+        current_market_type,
+    )
+    stage = classified_stage or preserve_prior_then_current(prior_stage, current_stage)
+    team = preserve_prior_then_current(
+        prior_team,
+        preserve_prior_then_current(current_team, ticker_team),
+    )
+    if str(market_ticker).strip().upper().endswith("-TIE"):
+        team = ""
 
     match_date = preserve_prior_then_current(
         prior_match_date,
@@ -340,10 +451,17 @@ for market_ticker, trades in trade_rows.groupby("Market_Ticker"):
     )
 
     match = preserve_prior_then_current(prior_match, current_match)
-    outcome = preserve_prior_then_current(prior_outcome, current_outcome)
+    outcome = preserve_prior_then_current(
+        prior_outcome,
+        preserve_prior_then_current(current_outcome, current_kalshi_outcome),
+    )
     silver = preserve_prior_then_current(prior_silver, current_silver)
     edge = preserve_prior_then_current(prior_edge, current_edge)
     bucket = preserve_prior_then_current(prior_bucket, current_bucket)
+
+    if market_type == "Futures":
+        match_date = ""
+        match = ""
 
     # Kalshi action is authoritative unless blank; prior/current only fill blanks.
     action = kalshi_action
@@ -361,6 +479,9 @@ for market_ticker, trades in trade_rows.groupby("Market_Ticker"):
     wager_rows.append({
         "Date Placed": first_trade["Original_Date"].strftime("%Y-%m-%d %H:%M:%S")
             if pd.notna(first_trade["Original_Date"]) else "",
+        COL_MARKET_TYPE: market_type,
+        COL_STAGE: stage,
+        COL_TEAM: team,
         COL_MATCH_DATE: match_date,
         COL_MATCH: match,
         COL_OUTCOME: outcome,

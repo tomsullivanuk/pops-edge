@@ -11,6 +11,9 @@ OUTPUT_FILE = WEB_BETLOG_FILE
 
 WEB_COLUMNS = [
     "Date Placed",
+    "Market Type",
+    "Stage",
+    "Team",
     "Match Date",
     "Match",
     "Outcome",
@@ -155,7 +158,7 @@ def build_web_betlog(input_file=INPUT_FILE, output_file=OUTPUT_FILE):
         table.betlog {{
             border-collapse: collapse;
             width: 100%;
-            min-width: 1180px;
+            min-width: 1320px;
             background: white;
             font-size: 12px;
         }}

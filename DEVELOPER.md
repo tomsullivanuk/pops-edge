@@ -49,13 +49,15 @@ WorldCup_ValueBoard.xlsx -> build_web_betsheet.py -> WorldCup_ValueBoard.html
 futures CSV -> process_silver_futures.py -> Silver_Futures_Current.xlsx
 Silver_Futures_Current.xlsx + Kalshi_Current.xlsx -> build_futures_value_board.py -> WorldCup_Futures_ValueBoard.xlsx
 WorldCup_Futures_ValueBoard.xlsx -> build_web_futures_betsheet.py -> WorldCup_Futures_ValueBoard.html
-Kalshi-Recent-Activity-*.csv + WorldCup_ValueBoard.xlsx + prior World_Cup_Bet_Log.xlsx -> import_wagers.py -> World_Cup_Bet_Log.xlsx
+Kalshi-Recent-Activity-*.csv + match/futures Value Boards + Kalshi_Current.xlsx + prior World_Cup_Bet_Log.xlsx -> import_wagers.py -> World_Cup_Bet_Log.xlsx
 World_Cup_Bet_Log.xlsx -> build_web_betlog.py -> World_Cup_Bet_Log.html
 ```
 
 Shared filenames, sheet names, archive paths, and common column names live in `config.py`.
 
-`import_wagers.py` normalizes Match Date values to `YYYY-MM-DD` after reading prior manual values and current Value Board values. The selection order remains prior manual value, current Value Board value, then ticker-derived fallback. It also carries forward manually entered Closing Price from the prior wager log, calculates CLV and CLV % for BUY YES and SELL YES positions, and leaves CLV fields blank when Closing Price is blank unless prior CLV values are available as a fallback.
+`import_wagers.py` writes one unified Bet Log for match and futures wagers. `Market Type` distinguishes `Match` from `Futures`; futures rows populate `Stage`, `Team`, and the human-readable YES proposition in `Outcome`, while `Match` and `Match Date` remain blank. Match rows retain their existing match fields, and `Team` is blank for tie contracts.
+
+Enrichment combines `WorldCup_ValueBoard.xlsx` and `WorldCup_Futures_ValueBoard.xlsx` by `market_ticker`. `Kalshi_Current.xlsx` is the fallback source for proposition names, including champion tickers with two-letter suffixes. The importer normalizes match dates after reading prior manual values and current match Value Board values. The selection order remains prior manual value, current Value Board value, then ticker-derived fallback. It also carries forward manually entered Closing Price from the prior wager log, calculates CLV and CLV % for BUY YES and SELL YES positions, and leaves CLV fields blank when Closing Price is blank unless prior CLV values are available as a fallback.
 
 ## Value Board Workbook
 
@@ -143,7 +145,7 @@ bash -n update_worldcup.sh
 
 Tests use temporary directories and sample fixtures under `tests/fixtures/` so they do not overwrite live workbooks. Silver processor tests include mixed match/futures downloads and verify that each processor selects the newest valid file for its own schema.
 
-The Value Board pipeline test checks the Portfolio worksheet section layout, open-position enrichment, summary totals, and team/date exposure rollups while preserving the existing Bet Sheet assertions. Futures tests cover Silver futures processing, a champion edge example, an advancement edge example, and the generated sortable futures web Bet Sheet. Wager tests also cover Match Date normalization and the generated sortable web Bet Log.
+The Value Board pipeline test checks the Portfolio worksheet section layout, open-position enrichment, summary totals, and team/date exposure rollups while preserving the existing Bet Sheet assertions. Futures tests cover Silver futures processing, a champion edge example, an advancement edge example, and the generated sortable futures web Bet Sheet. Wager tests cover Match Date normalization, Round-of-16 settlement, two-letter champion ticker enrichment, and the generated sortable unified web Bet Log.
 
 ## Git Workflow
 

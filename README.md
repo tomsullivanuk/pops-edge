@@ -452,6 +452,9 @@ The wager log tracks:
 
 ```text
 Date Placed
+Market Type
+Stage
+Team
 Match Date
 Match
 Outcome
@@ -472,6 +475,12 @@ Edge
 Bucket
 ```
 
+One unified Bet Log tracks both match and futures wagers. `Market Type` is
+`Match` or `Futures`. Futures rows use `Stage` and `Team`, keep `Match` and
+`Match Date` blank, and show the human-readable YES proposition in `Outcome`.
+Match rows retain the existing match fields; `Team` identifies the normalized
+YES proposition team and remains blank for tie contracts.
+
 and closing line value fields:
 
 ```text
@@ -482,7 +491,7 @@ CLV %
 
 Closing Price is manually entered in `World_Cup_Bet_Log.xlsx`. `update_wagers.sh` runs `import_wagers.py`, which preserves that manually entered Closing Price and automatically calculates CLV and CLV % when Closing Price is present.
 
-`import_wagers.py` normalizes Match Date values to `YYYY-MM-DD` whenever possible. It preserves prior manual corrections first, then uses the current Value Board date, then falls back to parsing the market ticker.
+`import_wagers.py` normalizes Match Date values to `YYYY-MM-DD` whenever possible. It preserves prior manual corrections first, then uses the current match Value Board date, then falls back to parsing the market ticker. Enrichment combines `WorldCup_ValueBoard.xlsx` and `WorldCup_Futures_ValueBoard.xlsx`; `Kalshi_Current.xlsx` supplies a fallback proposition name for futures tickers whose suffix does not encode a three-letter team code.
 
 ---
 
