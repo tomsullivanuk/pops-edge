@@ -74,13 +74,16 @@ class PipelineTests(unittest.TestCase):
             futures = pd.read_excel(output, sheet_name="Silver Futures")
             metadata = pd.read_excel(output, sheet_name="Silver Metadata")
 
-            self.assertEqual(len(futures), 3)
-            self.assertEqual(futures["Team"].tolist(), ["ARG", "USA", "BRA"])
-            self.assertAlmostEqual(futures.loc[futures["Team"] == "ARG", "Champ"].iloc[0], 0.241)
+            self.assertEqual(len(futures), 4)
+            self.assertEqual(futures["Team"].tolist(), ["ARG", "USA", "BRA", "SCO"])
+            self.assertAlmostEqual(futures.loc[futures["Team"] == "ARG", "Champ"].iloc[0], 0.24113)
+            self.assertAlmostEqual(futures.loc[futures["Team"] == "ARG", "R16"].iloc[0], 0.86341)
             self.assertAlmostEqual(futures.loc[futures["Team"] == "USA", "R16"].iloc[0], 0.72)
+            self.assertAlmostEqual(futures.loc[futures["Team"] == "SCO", "Champ"].iloc[0], 0.00813)
+            self.assertAlmostEqual(futures.loc[futures["Team"] == "SCO", "R16"].iloc[0], 0.00813)
             self.assertEqual(
                 metadata.loc[metadata["Field"] == "Silver Futures Rows Output", "Value"].iloc[0],
-                3,
+                4,
             )
             self.assertEqual(
                 metadata.loc[metadata["Field"] == "Silver Futures Source File", "Value"].iloc[0],

@@ -72,9 +72,7 @@ def to_probability(value):
     if pd.isna(number):
         return pd.NA
 
-    if number > 1:
-        return number / 100
-    return number
+    return number / 100
 
 
 def archive_name_for(path):
