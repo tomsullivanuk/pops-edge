@@ -18,7 +18,6 @@ from config import (
 
 OUTPUT_FILE = os.path.join(PROJECT_DIR, SILVER_FUTURES_CURRENT_FILE)
 REQUIRED_COLUMNS = ["Team", "R16", "Qtr", "Semi", "Final"]
-CHAMP_COLUMN_CANDIDATES = ["Champ 🏆", "Champ", "Champion"]
 
 CODE_MAP = {
     "ALG": "DZA",
@@ -80,6 +79,13 @@ def archive_name_for(path):
     return f"{modified}_{os.path.basename(path)}"
 
 
+def find_champ_column(columns):
+    return next(
+        (column for column in columns if "champ" in str(column).lower()),
+        None,
+    )
+
+
 def has_futures_columns(path):
     try:
         columns = pd.read_csv(path, nrows=0).columns.tolist()
@@ -87,7 +93,7 @@ def has_futures_columns(path):
         return False
 
     has_required = all(column in columns for column in REQUIRED_COLUMNS)
-    has_champ = any(column in columns for column in CHAMP_COLUMN_CANDIDATES)
+    has_champ = find_champ_column(columns) is not None
     return has_required and has_champ
 
 
@@ -123,9 +129,9 @@ if not os.path.exists(raw_archive_path):
 
 df = pd.read_csv(project_csv_path)
 
-champ_column = next(
-    column for column in CHAMP_COLUMN_CANDIDATES if column in df.columns
-)
+champ_column = find_champ_column(df.columns)
+if champ_column is None:
+    raise ValueError("Silver futures CSV has no Champ probability column.")
 
 clean = pd.DataFrame({
     "Team": df["Team"].apply(normalize_code),

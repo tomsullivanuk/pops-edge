@@ -57,10 +57,11 @@ class PipelineTests(unittest.TestCase):
             downloads_dir.mkdir()
             futures_csv = downloads_dir / "data-futures.csv"
             match_csv = downloads_dir / "data-match.csv"
-            shutil.copy2(
-                FIXTURES / "sample_silver_futures.csv",
-                futures_csv,
+            futures_fixture = pd.read_csv(FIXTURES / "sample_silver_futures.csv")
+            futures_fixture = futures_fixture.rename(
+                columns={"Champ 🏆": "Champ ðŸ†"},
             )
+            futures_fixture.to_csv(futures_csv, index=False)
             shutil.copy2(FIXTURES / "sample_silver.csv", match_csv)
             os.utime(futures_csv, (1_700_000_000, 1_700_000_000))
             os.utime(match_csv, (1_700_000_100, 1_700_000_100))
@@ -77,16 +78,16 @@ class PipelineTests(unittest.TestCase):
             self.assertEqual(len(futures), 4)
             self.assertEqual(futures["Team"].tolist(), ["ARG", "USA", "BRA", "SCO"])
             self.assertAlmostEqual(futures.loc[futures["Team"] == "ARG", "Champ"].iloc[0], 0.24113)
-            self.assertAlmostEqual(futures.loc[futures["Team"] == "ARG", "R16"].iloc[0], 0.86341)
-            self.assertAlmostEqual(futures.loc[futures["Team"] == "USA", "R16"].iloc[0], 0.72)
+            self.assertAlmostEqual(futures.loc[futures["Team"] == "ARG", "R16"].iloc[0], 0.92284)
+            self.assertAlmostEqual(futures.loc[futures["Team"] == "USA", "R16"].iloc[0], 0.85356)
             scotland = futures.loc[futures["Team"] == "SCO"].iloc[0]
             expected_scotland = {
                 "R32": 0.86341,
-                "R16": 0.42,
-                "Qtr": 0.18,
-                "Semi": 0.06,
-                "Final": 0.02,
-                "Champ": 0.00813,
+                "R16": 0.14066,
+                "Qtr": 0.03408,
+                "Semi": 0.00813,
+                "Final": 0.002,
+                "Champ": 0.00047,
                 "3rd": 0.0014,
             }
             for column, expected in expected_scotland.items():
@@ -98,6 +99,10 @@ class PipelineTests(unittest.TestCase):
             self.assertEqual(
                 metadata.loc[metadata["Field"] == "Silver Futures Source File", "Value"].iloc[0],
                 "data-futures.csv",
+            )
+            self.assertEqual(
+                metadata.loc[metadata["Field"] == "Champion Column Used", "Value"].iloc[0],
+                "Champ ðŸ†",
             )
             self.assertTrue(match_csv.exists())
             self.assertEqual(len(list((project_dir / "archive" / "silver_futures_raw").glob("*.csv"))), 1)
