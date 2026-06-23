@@ -79,8 +79,18 @@ class PipelineTests(unittest.TestCase):
             self.assertAlmostEqual(futures.loc[futures["Team"] == "ARG", "Champ"].iloc[0], 0.24113)
             self.assertAlmostEqual(futures.loc[futures["Team"] == "ARG", "R16"].iloc[0], 0.86341)
             self.assertAlmostEqual(futures.loc[futures["Team"] == "USA", "R16"].iloc[0], 0.72)
-            self.assertAlmostEqual(futures.loc[futures["Team"] == "SCO", "Champ"].iloc[0], 0.00813)
-            self.assertAlmostEqual(futures.loc[futures["Team"] == "SCO", "R16"].iloc[0], 0.00813)
+            scotland = futures.loc[futures["Team"] == "SCO"].iloc[0]
+            expected_scotland = {
+                "R32": 0.86341,
+                "R16": 0.42,
+                "Qtr": 0.18,
+                "Semi": 0.06,
+                "Final": 0.02,
+                "Champ": 0.00813,
+                "3rd": 0.0014,
+            }
+            for column, expected in expected_scotland.items():
+                self.assertAlmostEqual(scotland[column], expected)
             self.assertEqual(
                 metadata.loc[metadata["Field"] == "Silver Futures Rows Output", "Value"].iloc[0],
                 4,
