@@ -5,6 +5,7 @@ import sys
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
 import pandas as pd
 from openpyxl import load_workbook
@@ -68,6 +69,94 @@ class PipelineTests(unittest.TestCase):
             )
             self.assertEqual(len(list((project_dir / "archive" / "silver_futures_raw").glob("*.csv"))), 1)
             self.assertTrue((project_dir / "archive" / "silver_futures_processed").exists())
+
+    def test_kalshi_pull_includes_match_and_world_cup_futures_markets(self):
+        with TemporaryDirectory() as workspace:
+            workspace = Path(workspace)
+
+            with changed_dir(workspace), patch("requests.get") as get:
+                get.return_value = fake_kalshi_response({
+                    "events": [
+                        kalshi_event(
+                            "KXWCGAME-26JUN13-USAMEX",
+                            "KXWCGAME",
+                            "USA vs Mexico",
+                            [
+                                kalshi_market("KXWCGAME-26JUN13-USAMEX-USA", "United States", "USA vs Mexico Winner?"),
+                            ],
+                        ),
+                        kalshi_event(
+                            "KXWCROUND-26RO16",
+                            "KXWCROUND",
+                            "World Soccer Cup Round of 16 Qualifiers",
+                            [
+                                kalshi_market("KXWCROUND-26RO16-USA", "USA", "Will USA qualify for FIFA World Cup Round of 16?"),
+                            ],
+                        ),
+                        kalshi_event(
+                            "KXWCROUND-26QUAR",
+                            "KXWCROUND",
+                            "World Soccer Cup Quarterfinals Qualifiers",
+                            [
+                                kalshi_market("KXWCROUND-26QUAR-USA", "USA", "Will USA qualify for FIFA World Cup Quarterfinals?"),
+                            ],
+                        ),
+                        kalshi_event(
+                            "KXWCROUND-26SEMI",
+                            "KXWCROUND",
+                            "World Soccer Cup Semifinals Qualifiers",
+                            [
+                                kalshi_market("KXWCROUND-26SEMI-USA", "USA", "Will USA qualify for FIFA World Cup Semifinals?"),
+                            ],
+                        ),
+                        kalshi_event(
+                            "KXMENWORLDCUP-26",
+                            "KXMENWORLDCUP",
+                            "2026 World Soccer Cup Winner",
+                            [
+                                kalshi_market("KXMENWORLDCUP-26-AR", "Argentina", "Will the Argentina win the 2026 Men's World Cup?"),
+                            ],
+                        ),
+                        kalshi_event(
+                            "KXWCROUND-26FINAL",
+                            "KXWCROUND",
+                            "World Soccer Cup Final Qualifiers",
+                            [
+                                kalshi_market("KXWCROUND-26FINAL-USA", "USA", "Will USA qualify for FIFA World Cup Final?"),
+                            ],
+                        ),
+                        kalshi_event(
+                            "KXWCHOST-2038",
+                            "KXWCHOST",
+                            "Who will host the 2038 World Soccer Cup?",
+                            [
+                                kalshi_market("KXWCHOST-2038-GER", "Germany", "Will Germany host?"),
+                            ],
+                        ),
+                    ],
+                    "cursor": None,
+                })
+
+                run_pipeline_script(ROOT / "kalshi_pull.py")
+
+            output = workspace / "Kalshi_Current.xlsx"
+            self.assertTrue(output.exists())
+
+            pulled = pd.read_excel(output)
+            self.assertEqual(
+                pulled["market_ticker"].tolist(),
+                [
+                    "KXWCGAME-26JUN13-USAMEX-USA",
+                    "KXWCROUND-26RO16-USA",
+                    "KXWCROUND-26QUAR-USA",
+                    "KXWCROUND-26SEMI-USA",
+                    "KXMENWORLDCUP-26-AR",
+                ],
+            )
+            self.assertIn("World Soccer Cup Round of 16 Qualifiers", pulled["game"].tolist())
+            self.assertIn("2026 World Soccer Cup Winner", pulled["game"].tolist())
+            self.assertNotIn("KXWCROUND-26FINAL-USA", pulled["market_ticker"].tolist())
+            self.assertNotIn("KXWCHOST-2038-GER", pulled["market_ticker"].tolist())
 
     def test_build_value_board_uses_sample_silver_kalshi_and_active_wager_files(self):
         with TemporaryDirectory() as workspace:
@@ -157,7 +246,7 @@ class PipelineTests(unittest.TestCase):
             self.assertEqual(metadata.loc[metadata["Field"] == "QC Status", "Value"].iloc[0], "PASS")
             self.assertEqual(len(value_board), 3)
 
-            argentina = bet_sheet[bet_sheet["market_ticker"] == "KXWCWINNER-26-ARG"].iloc[0]
+            argentina = bet_sheet[bet_sheet["market_ticker"] == "KXMENWORLDCUP-26-AR"].iloc[0]
             self.assertEqual(argentina["Stage"], "Champion")
             self.assertEqual(argentina["Team"], "ARG")
             self.assertEqual(argentina["Action"], "BUY YES")
@@ -166,7 +255,7 @@ class PipelineTests(unittest.TestCase):
             self.assertAlmostEqual(argentina["Edge"], 0.091)
             self.assertEqual(argentina["Bucket"], "B")
 
-            usa = bet_sheet[bet_sheet["market_ticker"] == "KXWCR16-26-USA"].iloc[0]
+            usa = bet_sheet[bet_sheet["market_ticker"] == "KXWCROUND-26RO16-USA"].iloc[0]
             self.assertEqual(usa["Stage"], "Round of 16")
             self.assertEqual(usa["Action"], "BUY YES")
             self.assertAlmostEqual(usa["Silver"], 0.72)
@@ -189,7 +278,7 @@ class PipelineTests(unittest.TestCase):
             self.assertIn("sortTable(table, columnIndex, ascending)", html)
             self.assertIn("Champion", html)
             self.assertIn("ARG", html)
-            self.assertIn("KXWCWINNER-26-ARG", html)
+            self.assertIn("KXMENWORLDCUP-26-AR", html)
             self.assertNotIn("NaN", html)
 
     def test_import_wagers_uses_sample_activity_and_value_board_lookup(self):
@@ -457,6 +546,42 @@ def write_sample_kalshi_workbook(path):
     pd.read_csv(FIXTURES / "sample_kalshi_current.csv").to_excel(path, index=False)
 
 
+class fake_kalshi_response:
+    def __init__(self, payload):
+        self.payload = payload
+
+    def raise_for_status(self):
+        return None
+
+    def json(self):
+        return self.payload
+
+
+def kalshi_event(event_ticker, series_ticker, title, markets):
+    return {
+        "event_ticker": event_ticker,
+        "series_ticker": series_ticker,
+        "title": title,
+        "sub_title": "",
+        "category": "Sports",
+        "markets": markets,
+    }
+
+
+def kalshi_market(ticker, yes_sub_title, title):
+    return {
+        "ticker": ticker,
+        "yes_sub_title": yes_sub_title,
+        "title": title,
+        "yes_bid_dollars": 0.48,
+        "yes_ask_dollars": 0.49,
+        "last_price_dollars": 0.49,
+        "volume_fp": 100,
+        "open_interest_fp": 50,
+        "close_time": "2026-07-19T23:59:00Z",
+    }
+
+
 def write_sample_silver_futures_workbook(path):
     futures = pd.DataFrame(
         [
@@ -477,11 +602,11 @@ def write_sample_kalshi_futures_workbook(path):
     rows = pd.DataFrame(
         [
             {
-                "event_ticker": "KXWCWINNER-26",
+                "event_ticker": "KXMENWORLDCUP-26",
                 "game": "World Cup winner",
                 "sub_title": "",
                 "category": "Sports",
-                "market_ticker": "KXWCWINNER-26-ARG",
+                "market_ticker": "KXMENWORLDCUP-26-AR",
                 "outcome": "Argentina",
                 "market_title": "Will Argentina win the World Cup?",
                 "yes_bid_dollars": 0.14,
@@ -492,11 +617,11 @@ def write_sample_kalshi_futures_workbook(path):
                 "close_time": "2026-07-19T23:59:00Z",
             },
             {
-                "event_ticker": "KXWCR16-26",
+                "event_ticker": "KXWCROUND-26RO16",
                 "game": "Round of 16 Qualifiers",
                 "sub_title": "",
                 "category": "Sports",
-                "market_ticker": "KXWCR16-26-USA",
+                "market_ticker": "KXWCROUND-26RO16-USA",
                 "outcome": "United States",
                 "market_title": "Will USA qualify for the Round of 16?",
                 "yes_bid_dollars": 0.60,
@@ -507,11 +632,11 @@ def write_sample_kalshi_futures_workbook(path):
                 "close_time": "2026-07-01T23:59:00Z",
             },
             {
-                "event_ticker": "KXWCQF-26",
+                "event_ticker": "KXWCROUND-26QUAR",
                 "game": "Quarterfinals Qualifiers",
                 "sub_title": "",
                 "category": "Sports",
-                "market_ticker": "KXWCQF-26-USA",
+                "market_ticker": "KXWCROUND-26QUAR-USA",
                 "outcome": "United States",
                 "market_title": "Will USA qualify for the Quarterfinals?",
                 "yes_bid_dollars": 0.42,
@@ -556,8 +681,8 @@ def write_sample_futures_value_board(path):
                 "Stake on $500": 26.76,
                 "Bucket": "B",
                 "Volume": 1000,
-                "event_ticker": "KXWCWINNER-26",
-                "market_ticker": "KXWCWINNER-26-ARG",
+                "event_ticker": "KXMENWORLDCUP-26",
+                "market_ticker": "KXMENWORLDCUP-26-AR",
             },
             {
                 "Stage": "Round of 16",
@@ -571,8 +696,8 @@ def write_sample_futures_value_board(path):
                 "Stake on $500": 70.51,
                 "Bucket": "A",
                 "Volume": 800,
-                "event_ticker": "KXWCR16-26",
-                "market_ticker": "KXWCR16-26-USA",
+                "event_ticker": "KXWCROUND-26RO16",
+                "market_ticker": "KXWCROUND-26RO16-USA",
             },
         ]
     )

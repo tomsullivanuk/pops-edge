@@ -4,6 +4,64 @@ import pandas as pd
 from config import KALSHI_CURRENT_FILE
 
 BASE = "https://external-api.kalshi.com/trade-api/v2"
+KALSHI_COLUMNS = [
+    "event_ticker",
+    "game",
+    "sub_title",
+    "category",
+    "market_ticker",
+    "outcome",
+    "market_title",
+    "yes_bid_dollars",
+    "yes_ask_dollars",
+    "last_price_dollars",
+    "volume_fp",
+    "open_interest_fp",
+    "close_time",
+]
+
+
+def is_world_cup_market_event(event):
+    event_ticker = event.get("event_ticker", "")
+
+    if event_ticker.startswith("KXWCGAME-"):
+        return True
+
+    if event_ticker.startswith("KXMENWORLDCUP-"):
+        return True
+
+    return is_world_cup_round_event(event_ticker)
+
+
+def is_world_cup_round_event(event_ticker):
+    return (
+        event_ticker.startswith("KXWCROUND-")
+        and event_ticker.endswith(("RO16", "QUAR", "SEMI"))
+    )
+
+
+def market_rows_for_event(event):
+    event_ticker = event.get("event_ticker", "")
+    rows = []
+
+    for market in event.get("markets", []):
+        rows.append({
+            "event_ticker": event_ticker,
+            "game": event.get("title"),
+            "sub_title": event.get("sub_title"),
+            "category": event.get("category"),
+            "market_ticker": market.get("ticker"),
+            "outcome": market.get("yes_sub_title"),
+            "market_title": market.get("title"),
+            "yes_bid_dollars": market.get("yes_bid_dollars"),
+            "yes_ask_dollars": market.get("yes_ask_dollars"),
+            "last_price_dollars": market.get("last_price_dollars"),
+            "volume_fp": market.get("volume_fp"),
+            "open_interest_fp": market.get("open_interest_fp"),
+            "close_time": market.get("close_time"),
+        })
+
+    return rows
 
 print("Pulling open events...")
 
@@ -36,32 +94,12 @@ while True:
 rows = []
 
 for event in events:
-    event_ticker = event.get("event_ticker", "")
-
-    # Keep only World Cup full-game winner markets
-    if not event_ticker.startswith("KXWCGAME-"):
+    if not is_world_cup_market_event(event):
         continue
 
-    markets = event.get("markets", [])
+    rows.extend(market_rows_for_event(event))
 
-    for market in markets:
-        rows.append({
-            "event_ticker": event_ticker,
-            "game": event.get("title"),
-            "sub_title": event.get("sub_title"),
-            "category": event.get("category"),
-            "market_ticker": market.get("ticker"),
-            "outcome": market.get("yes_sub_title"),
-            "market_title": market.get("title"),
-            "yes_bid_dollars": market.get("yes_bid_dollars"),
-            "yes_ask_dollars": market.get("yes_ask_dollars"),
-            "last_price_dollars": market.get("last_price_dollars"),
-            "volume_fp": market.get("volume_fp"),
-            "open_interest_fp": market.get("open_interest_fp"),
-            "close_time": market.get("close_time"),
-        })
-
-df = pd.DataFrame(rows)
+df = pd.DataFrame(rows, columns=KALSHI_COLUMNS)
 
 df.to_excel(KALSHI_CURRENT_FILE, index=False)
 

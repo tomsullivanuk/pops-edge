@@ -24,7 +24,17 @@ The futures workflow is intentionally parallel to the match workflow and is not 
 2. `build_futures_value_board.py` combines Silver futures probabilities and futures rows in `Kalshi_Current.xlsx` into `WorldCup_Futures_ValueBoard.xlsx`.
 3. `build_web_futures_betsheet.py` creates `WorldCup_Futures_BetSheet.html`.
 
-`build_futures_value_board.py` filters out `KXWCGAME-` match markets and classifies futures markets from the event ticker, market ticker, game, subtitle, and market title. The live `Kalshi_Current.xlsx` inspected when this was added contained only match winner markets, so futures output depends on the Kalshi workbook including Round of 16, Quarterfinals, Semifinals, or World Cup winner futures rows.
+`build_futures_value_board.py` filters out `KXWCGAME-` match markets and classifies futures markets from the event ticker, market ticker, game, subtitle, and market title. `kalshi_pull.py` includes these World Cup event patterns:
+
+```text
+KXWCGAME-*              match winner markets
+KXWCROUND-26RO16-*      Round of 16 qualifier markets
+KXWCROUND-26QUAR-*      Quarterfinal qualifier markets
+KXWCROUND-26SEMI-*      Semifinal qualifier markets
+KXMENWORLDCUP-26-*      World Cup winner markets
+```
+
+The outright winner markets use two-letter ticker suffixes, such as `KXMENWORLDCUP-26-AR`, but include team names in `yes_sub_title`; the futures board matches them by normalized outcome name.
 
 `update_wagers.sh` refreshes Bet Log outputs from the latest Kalshi activity export. It activates `venv/` when needed, runs `import_wagers.py`, builds `World_Cup_Bet_Log.html` with `build_web_betlog.py`, prints a short wager summary, and opens the web Bet Log. Closing Price is manually entered in `World_Cup_Bet_Log.xlsx`; `import_wagers.py` preserves it and automatically calculates CLV and CLV % when Closing Price is present.
 
