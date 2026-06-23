@@ -37,15 +37,21 @@ success_summary() {
     "$PYTHON_BIN" - <<'PY'
 import pandas as pd
 
-from config import BET_LOG_FILE, SHEET_RUN_METADATA, SHEET_SUMMARY, VALUE_BOARD_FILE
+from config import (
+    BET_LOG_FILE,
+    FUTURES_VALUE_BOARD_FILE,
+    SHEET_RUN_METADATA,
+    SHEET_SUMMARY,
+    VALUE_BOARD_FILE,
+)
 
 def read_wagers_imported():
     wager_summary = pd.read_excel(BET_LOG_FILE, sheet_name=SHEET_SUMMARY)
     wager_values = dict(zip(wager_summary["Metric"], wager_summary["Value"]))
     return int(wager_values.get("Total Wagers", 0))
 
-def read_candidate_bets():
-    workbook = pd.ExcelFile(VALUE_BOARD_FILE)
+def read_candidate_bets(path):
+    workbook = pd.ExcelFile(path)
     sheet_names = [SHEET_RUN_METADATA, "Metadata"]
 
     for sheet_name in dict.fromkeys(sheet_names):
@@ -65,12 +71,18 @@ except Exception:
     wagers_imported = "unavailable"
 
 try:
-    candidate_bets = read_candidate_bets()
+    candidate_bets = read_candidate_bets(VALUE_BOARD_FILE)
 except Exception:
     candidate_bets = "unavailable"
 
+try:
+    futures_candidate_bets = read_candidate_bets(FUTURES_VALUE_BOARD_FILE)
+except Exception:
+    futures_candidate_bets = "unavailable"
+
 print(f"Wagers imported: {wagers_imported}")
 print(f"Candidate bets: {candidate_bets}")
+print(f"Futures candidate bets: {futures_candidate_bets}")
 PY
 }
 
@@ -86,5 +98,5 @@ echo "Refreshing World Cup board..."
 echo
 echo "All updates complete."
 
-SUMMARY=$(success_summary || printf 'Wagers imported: unavailable\nCandidate bets: unavailable')
+SUMMARY=$(success_summary || printf 'Wagers imported: unavailable\nCandidate bets: unavailable\nFutures candidate bets: unavailable')
 notify "Kalshi update complete" "$SUMMARY"

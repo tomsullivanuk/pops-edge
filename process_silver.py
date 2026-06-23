@@ -17,6 +17,16 @@ from config import (
 
 ARCHIVE_DIR = SILVER_RAW_ARCHIVE_DIR
 OUTPUT_FILE = os.path.join(PROJECT_DIR, SILVER_CURRENT_FILE)
+REQUIRED_COLUMNS = [
+    "Date",
+    "Team",
+    "Win",
+    "GF",
+    "Opponent",
+    "Win.1",
+    "GF.1",
+    "Draw",
+]
 
 os.makedirs(ARCHIVE_DIR, exist_ok=True)
 
@@ -33,14 +43,24 @@ def archive_name_for(path):
     ).strftime("%Y-%m-%d_%H%M%S")
     return f"{modified}_{os.path.basename(path)}"
 
+def has_match_columns(path):
+    try:
+        columns = pd.read_csv(path, nrows=0).columns.tolist()
+    except Exception:
+        return False
+
+    return all(column in columns for column in REQUIRED_COLUMNS)
+
 candidate_files = (
     glob.glob(os.path.join(DOWNLOADS_DIR, "data-*.csv")) +
     glob.glob(os.path.join(PROJECT_DIR, "data-*.csv"))
 )
 
+candidate_files = [path for path in candidate_files if has_match_columns(path)]
+
 if not candidate_files:
     raise FileNotFoundError(
-        "No Silver CSV files found in Downloads or project folder."
+        "No Silver match forecast CSV files found in Downloads or project folder."
     )
 
 latest_file = max(candidate_files, key=os.path.getmtime)
@@ -57,6 +77,8 @@ all_csvs_after_copy = (
     glob.glob(os.path.join(DOWNLOADS_DIR, "data-*.csv")) +
     glob.glob(os.path.join(PROJECT_DIR, "data-*.csv"))
 )
+
+all_csvs_after_copy = [path for path in all_csvs_after_copy if has_match_columns(path)]
 
 for csv_file in all_csvs_after_copy:
     if os.path.abspath(csv_file) == os.path.abspath(project_csv_path):

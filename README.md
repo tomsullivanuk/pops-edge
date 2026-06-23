@@ -38,19 +38,14 @@ wcup
 ```text
 process_silver.py
 kalshi_pull.py
+process_silver_futures.py
 build_value_board.py
+build_futures_value_board.py
 build_web_betsheet.py
+build_web_futures_betsheet.py
 ```
 
-`update_worldcup.sh` refreshes Silver forecasts, Kalshi market data, the Value Board, and the web dashboard.
-
-The futures board is a parallel workflow:
-
-```bash
-./venv/bin/python process_silver_futures.py
-./venv/bin/python build_futures_value_board.py
-./venv/bin/python build_web_futures_betsheet.py
-```
+`update_worldcup.sh` refreshes Silver match and futures forecasts, Kalshi market data, both Value Boards, and both web dashboards.
 
 It creates:
 
@@ -61,6 +56,8 @@ WorldCup_Futures_BetSheet.html
 ```
 
 `build_futures_value_board.py` reads `Kalshi_Current.xlsx`, so the Kalshi workbook must include futures markets such as Round of 16 Qualifiers, Quarterfinals Qualifiers, Semifinals Qualifiers, and World Cup winner. The current match-board workflow is unchanged.
+
+Both Excel boards and both web Bet Sheets are copied to the existing World Cup folder in iCloud Drive. The workflow opens the match web Bet Sheet and creates/copies the futures web Bet Sheet without opening a second browser window.
 
 Wager imports can still be run separately:
 
@@ -76,7 +73,7 @@ To refresh everything in order:
 ./update_all.sh
 ```
 
-`update_all.sh` refreshes wagers first, then refreshes the World Cup board and dashboard by running:
+`update_all.sh` refreshes wagers first, then refreshes the match and futures World Cup boards and dashboards by running:
 
 ```text
 update_wagers.sh
@@ -86,7 +83,7 @@ update_worldcup.sh
 After placing a wager:
 
 1. Download Kalshi Activity -> All -> This Month.
-2. Run `./update_all.sh` to refresh the Bet Log, Value Board, and dashboard.
+2. Run `./update_all.sh` to refresh the Bet Log, match and futures Value Boards, and dashboards.
 
 You can still run `./update_wagers.sh` by itself when only the Bet Log needs updating, or `./update_worldcup.sh` by itself when only the Silver/Kalshi/Value Board/dashboard workflow needs updating.
 
@@ -148,6 +145,8 @@ Source:
 Download from Silver's World Cup forecast page.
 ```
 
+`process_silver.py` only considers CSVs with the required match columns. If a newer `data-*.csv` is a futures export, it skips that file and selects the newest valid match export.
+
 Used fields:
 
 ```text
@@ -203,6 +202,8 @@ Final
 Champ 🏆
 3rd
 ```
+
+`process_silver_futures.py` only considers CSVs with the required futures columns. If a newer `data-*.csv` is a match export, it skips that file and selects the newest valid futures export.
 
 The processor normalizes team codes and converts percentage values to decimals. The futures board uses:
 

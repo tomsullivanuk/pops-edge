@@ -22,7 +22,12 @@ class PipelineTests(unittest.TestCase):
             downloads_dir = Path(home) / "Downloads"
             project_dir.mkdir()
             downloads_dir.mkdir()
-            shutil.copy2(FIXTURES / "sample_silver.csv", downloads_dir / "data-sample.csv")
+            match_csv = downloads_dir / "data-match.csv"
+            futures_csv = downloads_dir / "data-futures.csv"
+            shutil.copy2(FIXTURES / "sample_silver.csv", match_csv)
+            shutil.copy2(FIXTURES / "sample_silver_futures.csv", futures_csv)
+            os.utime(match_csv, (1_700_000_000, 1_700_000_000))
+            os.utime(futures_csv, (1_700_000_100, 1_700_000_100))
 
             with patched_environ(HOME=home):
                 run_pipeline_script(ROOT / "process_silver.py")
@@ -37,6 +42,11 @@ class PipelineTests(unittest.TestCase):
             self.assertEqual(forecasts["Team"].tolist(), ["USA", "CAN"])
             self.assertEqual(forecasts["Opponent"].tolist(), ["MEX", "BRA"])
             self.assertEqual(metadata.loc[metadata["Field"] == "Silver Rows Output", "Value"].iloc[0], 2)
+            self.assertEqual(
+                metadata.loc[metadata["Field"] == "Silver Source File", "Value"].iloc[0],
+                "data-match.csv",
+            )
+            self.assertTrue(futures_csv.exists())
             self.assertTrue((project_dir / "archive" / "silver_processed").exists())
 
     def test_process_silver_futures_builds_clean_workbook_from_sample_csv(self):
@@ -45,10 +55,15 @@ class PipelineTests(unittest.TestCase):
             downloads_dir = Path(home) / "Downloads"
             project_dir.mkdir()
             downloads_dir.mkdir()
+            futures_csv = downloads_dir / "data-futures.csv"
+            match_csv = downloads_dir / "data-match.csv"
             shutil.copy2(
                 FIXTURES / "sample_silver_futures.csv",
-                downloads_dir / "silver-futures-sample.csv",
+                futures_csv,
             )
+            shutil.copy2(FIXTURES / "sample_silver.csv", match_csv)
+            os.utime(futures_csv, (1_700_000_000, 1_700_000_000))
+            os.utime(match_csv, (1_700_000_100, 1_700_000_100))
 
             with patched_environ(HOME=home):
                 run_pipeline_script(ROOT / "process_silver_futures.py")
@@ -67,6 +82,11 @@ class PipelineTests(unittest.TestCase):
                 metadata.loc[metadata["Field"] == "Silver Futures Rows Output", "Value"].iloc[0],
                 3,
             )
+            self.assertEqual(
+                metadata.loc[metadata["Field"] == "Silver Futures Source File", "Value"].iloc[0],
+                "data-futures.csv",
+            )
+            self.assertTrue(match_csv.exists())
             self.assertEqual(len(list((project_dir / "archive" / "silver_futures_raw").glob("*.csv"))), 1)
             self.assertTrue((project_dir / "archive" / "silver_futures_processed").exists())
 
