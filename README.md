@@ -7,8 +7,10 @@ This project identifies positive expected value betting opportunities in Kalshi 
 The system produces:
 
 - A detailed Excel-based Value Board.
+- A parallel Excel futures Value Board for advancement and title markets.
 - A Portfolio worksheet summarizing active exposure.
 - A sortable mobile-friendly web dashboard.
+- A sortable futures web dashboard.
 - A sortable web wager log.
 - A wager log generated from Kalshi trading activity.
 - Position monitoring for active wagers.
@@ -41,6 +43,24 @@ build_web_betsheet.py
 ```
 
 `update_worldcup.sh` refreshes Silver forecasts, Kalshi market data, the Value Board, and the web dashboard.
+
+The futures board is a parallel workflow:
+
+```bash
+./venv/bin/python process_silver_futures.py
+./venv/bin/python build_futures_value_board.py
+./venv/bin/python build_web_futures_betsheet.py
+```
+
+It creates:
+
+```text
+Silver_Futures_Current.xlsx
+WorldCup_Futures_ValueBoard.xlsx
+WorldCup_Futures_BetSheet.html
+```
+
+`build_futures_value_board.py` reads `Kalshi_Current.xlsx`, so the Kalshi workbook must include futures markets such as Round of 16 Qualifiers, Quarterfinals Qualifiers, Semifinals Qualifiers, and World Cup winner. The current match-board workflow is unchanged.
 
 Wager imports can still be run separately:
 
@@ -88,14 +108,20 @@ Kalshi_Current.xlsx
 
 WorldCup_ValueBoard.xlsx
 WorldCup_BetSheet.html
+Silver_Futures_Current.xlsx
+WorldCup_Futures_ValueBoard.xlsx
+WorldCup_Futures_BetSheet.html
 
 World_Cup_Bet_Log.xlsx
 World_Cup_Bet_Log.html
 
 process_silver.py
+process_silver_futures.py
 kalshi_pull.py
 build_value_board.py
+build_futures_value_board.py
 build_web_betsheet.py
+build_web_futures_betsheet.py
 build_web_betlog.py
 import_wagers.py
 update_all.sh
@@ -105,6 +131,8 @@ update_worldcup.sh
 archive/
     silver_raw/
     silver_processed/
+    silver_futures_raw/
+    silver_futures_processed/
     value_boards/
 ```
 
@@ -158,6 +186,67 @@ volume_fp
 ```
 
 Each Kalshi outcome is matched to the corresponding Silver forecast probability.
+
+---
+
+## Nate Silver Futures File
+
+The futures workflow uses a Silver CSV with:
+
+```text
+Team
+R32
+R16
+Qtr
+Semi
+Final
+Champ 🏆
+3rd
+```
+
+The processor normalizes team codes and converts percentage values to decimals. The futures board uses:
+
+```text
+R16 = reaches Round of 16
+Qtr = reaches Quarterfinals
+Semi = reaches Semifinals
+Champ 🏆 = wins World Cup
+```
+
+Raw futures CSVs are archived under `archive/silver_futures_raw/`; processed workbooks are archived under `archive/silver_futures_processed/`.
+
+---
+
+# Futures Value Board
+
+`WorldCup_Futures_ValueBoard.xlsx` compares Silver futures probabilities against Kalshi futures prices for:
+
+```text
+Round of 16 qualification
+Quarterfinal qualification
+Semifinal qualification
+World Cup champion
+```
+
+The futures Bet Sheet uses the same BUY YES, SELL YES, edge, ROI, Half Kelly, stake, and bucket logic as the match board.
+
+Important futures fields:
+
+| Field | Description |
+|---------|---------|
+| Stage | Futures stage |
+| Team | Normalized team code |
+| Action | BUY YES or SELL YES |
+| Silver | Silver futures probability |
+| Market Price | Relevant Kalshi price |
+| Edge | Model edge |
+| ROI | Expected return on capital |
+| Half Kelly | Suggested Kelly fraction |
+| Stake on $500 | Suggested position size |
+| Bucket | A/B/C ranking |
+| Volume | Market liquidity |
+| event_ticker | Kalshi event ticker |
+| market_ticker | Kalshi market ticker |
 
 ---
 

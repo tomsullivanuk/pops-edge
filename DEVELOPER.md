@@ -18,6 +18,14 @@ Keep this script thin. The wager and World Cup scripts remain usable on their ow
 
 `update_worldcup.sh` refreshes Silver forecasts, Kalshi market data, `WorldCup_ValueBoard.xlsx`, and `WorldCup_BetSheet.html`.
 
+The futures workflow is intentionally parallel to the match workflow and is not wired into `update_worldcup.sh` yet:
+
+1. `process_silver_futures.py` normalizes the latest Silver futures CSV into `Silver_Futures_Current.xlsx`.
+2. `build_futures_value_board.py` combines Silver futures probabilities and futures rows in `Kalshi_Current.xlsx` into `WorldCup_Futures_ValueBoard.xlsx`.
+3. `build_web_futures_betsheet.py` creates `WorldCup_Futures_BetSheet.html`.
+
+`build_futures_value_board.py` filters out `KXWCGAME-` match markets and classifies futures markets from the event ticker, market ticker, game, subtitle, and market title. The live `Kalshi_Current.xlsx` inspected when this was added contained only match winner markets, so futures output depends on the Kalshi workbook including Round of 16, Quarterfinals, Semifinals, or World Cup winner futures rows.
+
 `update_wagers.sh` refreshes Bet Log outputs from the latest Kalshi activity export. It activates `venv/` when needed, runs `import_wagers.py`, builds `World_Cup_Bet_Log.html` with `build_web_betlog.py`, prints a short wager summary, and opens the web Bet Log. Closing Price is manually entered in `World_Cup_Bet_Log.xlsx`; `import_wagers.py` preserves it and automatically calculates CLV and CLV % when Closing Price is present.
 
 After placing a wager, download Kalshi Activity -> All -> This Month, then run `./update_all.sh` to refresh wagers first and then refresh the World Cup board. You can still run `./update_wagers.sh` or `./update_worldcup.sh` independently for narrower updates.
@@ -31,6 +39,9 @@ data-*.csv -> process_silver.py -> Silver_Current.xlsx
 Kalshi API -> kalshi_pull.py -> Kalshi_Current.xlsx
 Silver_Current.xlsx + Kalshi_Current.xlsx + World_Cup_Bet_Log.xlsx -> build_value_board.py -> WorldCup_ValueBoard.xlsx
 WorldCup_ValueBoard.xlsx -> build_web_betsheet.py -> WorldCup_BetSheet.html
+futures CSV -> process_silver_futures.py -> Silver_Futures_Current.xlsx
+Silver_Futures_Current.xlsx + Kalshi_Current.xlsx -> build_futures_value_board.py -> WorldCup_Futures_ValueBoard.xlsx
+WorldCup_Futures_ValueBoard.xlsx -> build_web_futures_betsheet.py -> WorldCup_Futures_BetSheet.html
 Kalshi-Recent-Activity-*.csv + WorldCup_ValueBoard.xlsx + prior World_Cup_Bet_Log.xlsx -> import_wagers.py -> World_Cup_Bet_Log.xlsx
 World_Cup_Bet_Log.xlsx -> build_web_betlog.py -> World_Cup_Bet_Log.html
 ```
@@ -52,6 +63,24 @@ Exposure by Match Date
 
 The Portfolio worksheet reads active wagers from `World_Cup_Bet_Log.xlsx`, using `Open` and `Partially Closed` statuses, and enriches them with match, outcome, team, Silver probability, and current bid/ask data from the merged Value Board. BUY YES current value uses the current Yes Bid; SELL YES current value uses `1 - Yes Ask`.
 
+## Futures Value Board Workbook
+
+`build_futures_value_board.py` writes the same core workbook tabs as the match board:
+
+```text
+Bet Sheet
+Run Metadata
+Candidates
+Value Board
+Silver Normalized
+Kalshi Normalized
+Definitions
+```
+
+The futures Bet Sheet columns are `Stage`, `Team`, `Action`, `Silver`, `Market Price`, `Edge`, `ROI`, `Half Kelly`, `Stake on $500`, `Bucket`, `Volume`, `event_ticker`, and `market_ticker`. It uses the same `BANKROLL = 500`, `MIN_EDGE = 0.05`, and A/B/C bucket thresholds as `build_value_board.py`.
+
+Silver futures CSV detection requires the columns `Team`, `R16`, `Qtr`, `Semi`, `Final`, and one of `Champ 🏆`, `Champ`, or `Champion`. The processor archives the selected source CSV under `archive/silver_futures_raw/` and the processed workbook under `archive/silver_futures_processed/`.
+
 ## Expected File Locations
 
 The project expects to live at:
@@ -67,6 +96,8 @@ Silver forecast downloads may be in either:
 ~/kalshi/data-*.csv
 ```
 
+Silver futures downloads may be named `data-*.csv` or include `futures` in the filename, but must have the futures columns listed above. They may be in either `~/Downloads` or `~/kalshi`.
+
 Kalshi activity exports may be in either:
 
 ```text
@@ -81,6 +112,9 @@ Silver_Current.xlsx
 Kalshi_Current.xlsx
 WorldCup_ValueBoard.xlsx
 WorldCup_BetSheet.html
+Silver_Futures_Current.xlsx
+WorldCup_Futures_ValueBoard.xlsx
+WorldCup_Futures_BetSheet.html
 World_Cup_Bet_Log.xlsx
 World_Cup_Bet_Log.html
 archive/
@@ -95,11 +129,12 @@ bash -n update_all.sh
 bash -n update_wagers.sh
 bash -n update_worldcup.sh
 ./venv/bin/python -m unittest discover -s tests
+./venv/bin/python -m py_compile process_silver_futures.py build_futures_value_board.py build_web_futures_betsheet.py
 ```
 
 Tests use temporary directories and sample fixtures under `tests/fixtures/` so they do not overwrite live workbooks.
 
-The Value Board pipeline test checks the Portfolio worksheet section layout, open-position enrichment, summary totals, and team/date exposure rollups while preserving the existing Bet Sheet assertions. Wager tests also cover Match Date normalization and the generated sortable web Bet Log.
+The Value Board pipeline test checks the Portfolio worksheet section layout, open-position enrichment, summary totals, and team/date exposure rollups while preserving the existing Bet Sheet assertions. Futures tests cover Silver futures processing, a champion edge example, an advancement edge example, and the generated sortable futures web Bet Sheet. Wager tests also cover Match Date normalization and the generated sortable web Bet Log.
 
 ## Git Workflow
 

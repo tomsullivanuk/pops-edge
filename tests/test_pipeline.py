@@ -38,6 +38,37 @@ class PipelineTests(unittest.TestCase):
             self.assertEqual(metadata.loc[metadata["Field"] == "Silver Rows Output", "Value"].iloc[0], 2)
             self.assertTrue((project_dir / "archive" / "silver_processed").exists())
 
+    def test_process_silver_futures_builds_clean_workbook_from_sample_csv(self):
+        with TemporaryDirectory() as home:
+            project_dir = Path(home) / "kalshi"
+            downloads_dir = Path(home) / "Downloads"
+            project_dir.mkdir()
+            downloads_dir.mkdir()
+            shutil.copy2(
+                FIXTURES / "sample_silver_futures.csv",
+                downloads_dir / "silver-futures-sample.csv",
+            )
+
+            with patched_environ(HOME=home):
+                run_pipeline_script(ROOT / "process_silver_futures.py")
+
+            output = project_dir / "Silver_Futures_Current.xlsx"
+            self.assertTrue(output.exists())
+
+            futures = pd.read_excel(output, sheet_name="Silver Futures")
+            metadata = pd.read_excel(output, sheet_name="Silver Metadata")
+
+            self.assertEqual(len(futures), 3)
+            self.assertEqual(futures["Team"].tolist(), ["ARG", "USA", "BRA"])
+            self.assertAlmostEqual(futures.loc[futures["Team"] == "ARG", "Champ"].iloc[0], 0.241)
+            self.assertAlmostEqual(futures.loc[futures["Team"] == "USA", "R16"].iloc[0], 0.72)
+            self.assertEqual(
+                metadata.loc[metadata["Field"] == "Silver Futures Rows Output", "Value"].iloc[0],
+                3,
+            )
+            self.assertEqual(len(list((project_dir / "archive" / "silver_futures_raw").glob("*.csv"))), 1)
+            self.assertTrue((project_dir / "archive" / "silver_futures_processed").exists())
+
     def test_build_value_board_uses_sample_silver_kalshi_and_active_wager_files(self):
         with TemporaryDirectory() as workspace:
             workspace = Path(workspace)
@@ -106,6 +137,60 @@ class PipelineTests(unittest.TestCase):
 
             self.assertAlmostEqual(exposure_by_team.loc["USA", "Stake"], 9.00)
             self.assertAlmostEqual(exposure_by_match_date.loc["2026-06-13", "Current Value"], 9.60)
+
+    def test_build_futures_value_board_matches_champion_and_advancement_markets(self):
+        with TemporaryDirectory() as workspace:
+            workspace = Path(workspace)
+            write_sample_silver_futures_workbook(workspace / "Silver_Futures_Current.xlsx")
+            write_sample_kalshi_futures_workbook(workspace / "Kalshi_Current.xlsx")
+
+            with changed_dir(workspace):
+                run_pipeline_script(ROOT / "build_futures_value_board.py")
+
+            output = workspace / "WorldCup_Futures_ValueBoard.xlsx"
+            self.assertTrue(output.exists())
+
+            bet_sheet = pd.read_excel(output, sheet_name="Bet Sheet")
+            metadata = pd.read_excel(output, sheet_name="Run Metadata")
+            value_board = pd.read_excel(output, sheet_name="Value Board")
+
+            self.assertEqual(metadata.loc[metadata["Field"] == "QC Status", "Value"].iloc[0], "PASS")
+            self.assertEqual(len(value_board), 3)
+
+            argentina = bet_sheet[bet_sheet["market_ticker"] == "KXWCWINNER-26-ARG"].iloc[0]
+            self.assertEqual(argentina["Stage"], "Champion")
+            self.assertEqual(argentina["Team"], "ARG")
+            self.assertEqual(argentina["Action"], "BUY YES")
+            self.assertAlmostEqual(argentina["Silver"], 0.241)
+            self.assertAlmostEqual(argentina["Market Price"], 0.15)
+            self.assertAlmostEqual(argentina["Edge"], 0.091)
+            self.assertEqual(argentina["Bucket"], "B")
+
+            usa = bet_sheet[bet_sheet["market_ticker"] == "KXWCR16-26-USA"].iloc[0]
+            self.assertEqual(usa["Stage"], "Round of 16")
+            self.assertEqual(usa["Action"], "BUY YES")
+            self.assertAlmostEqual(usa["Silver"], 0.72)
+            self.assertAlmostEqual(usa["Market Price"], 0.61)
+            self.assertAlmostEqual(usa["Edge"], 0.11)
+
+    def test_build_web_futures_betsheet_creates_sortable_html_with_expected_rows(self):
+        with TemporaryDirectory() as workspace:
+            workspace = Path(workspace)
+            write_sample_futures_value_board(workspace / "WorldCup_Futures_ValueBoard.xlsx")
+
+            with changed_dir(workspace):
+                run_pipeline_script(ROOT / "build_web_futures_betsheet.py")
+
+            output = workspace / "WorldCup_Futures_BetSheet.html"
+            self.assertTrue(output.exists())
+
+            html = output.read_text(encoding="utf-8")
+            self.assertIn("World Cup Futures Value Board", html)
+            self.assertIn("sortTable(table, columnIndex, ascending)", html)
+            self.assertIn("Champion", html)
+            self.assertIn("ARG", html)
+            self.assertIn("KXWCWINNER-26-ARG", html)
+            self.assertNotIn("NaN", html)
 
     def test_import_wagers_uses_sample_activity_and_value_board_lookup(self):
         with TemporaryDirectory() as home:
@@ -370,6 +455,129 @@ def write_sample_silver_workbook(path):
 
 def write_sample_kalshi_workbook(path):
     pd.read_csv(FIXTURES / "sample_kalshi_current.csv").to_excel(path, index=False)
+
+
+def write_sample_silver_futures_workbook(path):
+    futures = pd.DataFrame(
+        [
+            {"Team": "ARG", "Team Raw": "ARG Argentina", "R16": 0.864, "Qtr": 0.552, "Semi": 0.376, "Final": 0.293, "Champ": 0.241},
+            {"Team": "USA", "Team Raw": "USA United States", "R16": 0.72, "Qtr": 0.35, "Semi": 0.18, "Final": 0.08, "Champ": 0.03},
+        ]
+    )
+    metadata = pd.DataFrame(
+        [["Silver Futures Source File", "sample_silver_futures.csv"], ["Silver Futures Rows Output", 2]],
+        columns=["Field", "Value"],
+    )
+    with pd.ExcelWriter(path, engine="openpyxl") as writer:
+        futures.to_excel(writer, sheet_name="Silver Futures", index=False)
+        metadata.to_excel(writer, sheet_name="Silver Metadata", index=False)
+
+
+def write_sample_kalshi_futures_workbook(path):
+    rows = pd.DataFrame(
+        [
+            {
+                "event_ticker": "KXWCWINNER-26",
+                "game": "World Cup winner",
+                "sub_title": "",
+                "category": "Sports",
+                "market_ticker": "KXWCWINNER-26-ARG",
+                "outcome": "Argentina",
+                "market_title": "Will Argentina win the World Cup?",
+                "yes_bid_dollars": 0.14,
+                "yes_ask_dollars": 0.15,
+                "last_price_dollars": 0.15,
+                "volume_fp": 1000,
+                "open_interest_fp": 500,
+                "close_time": "2026-07-19T23:59:00Z",
+            },
+            {
+                "event_ticker": "KXWCR16-26",
+                "game": "Round of 16 Qualifiers",
+                "sub_title": "",
+                "category": "Sports",
+                "market_ticker": "KXWCR16-26-USA",
+                "outcome": "United States",
+                "market_title": "Will USA qualify for the Round of 16?",
+                "yes_bid_dollars": 0.60,
+                "yes_ask_dollars": 0.61,
+                "last_price_dollars": 0.61,
+                "volume_fp": 800,
+                "open_interest_fp": 300,
+                "close_time": "2026-07-01T23:59:00Z",
+            },
+            {
+                "event_ticker": "KXWCQF-26",
+                "game": "Quarterfinals Qualifiers",
+                "sub_title": "",
+                "category": "Sports",
+                "market_ticker": "KXWCQF-26-USA",
+                "outcome": "United States",
+                "market_title": "Will USA qualify for the Quarterfinals?",
+                "yes_bid_dollars": 0.42,
+                "yes_ask_dollars": 0.43,
+                "last_price_dollars": 0.43,
+                "volume_fp": 600,
+                "open_interest_fp": 200,
+                "close_time": "2026-07-05T23:59:00Z",
+            },
+            {
+                "event_ticker": "KXWCGAME-26JUN13-USAMEX",
+                "game": "USA vs Mexico",
+                "sub_title": "",
+                "category": "Sports",
+                "market_ticker": "KXWCGAME-26JUN13-USAMEX-USA",
+                "outcome": "United States",
+                "market_title": "USA vs Mexico Winner?",
+                "yes_bid_dollars": 0.48,
+                "yes_ask_dollars": 0.49,
+                "last_price_dollars": 0.49,
+                "volume_fp": 100,
+                "open_interest_fp": 50,
+                "close_time": "2026-06-13T23:59:00Z",
+            },
+        ]
+    )
+    rows.to_excel(path, index=False)
+
+
+def write_sample_futures_value_board(path):
+    bet_sheet = pd.DataFrame(
+        [
+            {
+                "Stage": "Champion",
+                "Team": "ARG",
+                "Action": "BUY YES",
+                "Silver": 0.241,
+                "Market Price": 0.15,
+                "Edge": 0.091,
+                "ROI": 0.61,
+                "Half Kelly": 0.05,
+                "Stake on $500": 26.76,
+                "Bucket": "B",
+                "Volume": 1000,
+                "event_ticker": "KXWCWINNER-26",
+                "market_ticker": "KXWCWINNER-26-ARG",
+            },
+            {
+                "Stage": "Round of 16",
+                "Team": "USA",
+                "Action": "BUY YES",
+                "Silver": 0.72,
+                "Market Price": 0.61,
+                "Edge": 0.11,
+                "ROI": 0.18,
+                "Half Kelly": 0.14,
+                "Stake on $500": 70.51,
+                "Bucket": "A",
+                "Volume": 800,
+                "event_ticker": "KXWCR16-26",
+                "market_ticker": "KXWCR16-26-USA",
+            },
+        ]
+    )
+    with pd.ExcelWriter(path, engine="openpyxl") as writer:
+        bet_sheet.to_excel(writer, sheet_name="Bet Sheet", index=False)
 
 
 def write_sample_wager_log(path):

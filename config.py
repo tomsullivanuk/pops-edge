@@ -7,18 +7,24 @@ DOWNLOADS_DIR = os.path.expanduser("~/Downloads")
 SILVER_CURRENT_FILE = "Silver_Current.xlsx"
 KALSHI_CURRENT_FILE = "Kalshi_Current.xlsx"
 VALUE_BOARD_FILE = "WorldCup_ValueBoard.xlsx"
+SILVER_FUTURES_CURRENT_FILE = "Silver_Futures_Current.xlsx"
+FUTURES_VALUE_BOARD_FILE = "WorldCup_Futures_ValueBoard.xlsx"
 BET_LOG_FILE = "World_Cup_Bet_Log.xlsx"
 WEB_BETSHEET_FILE = "WorldCup_BetSheet.html"
+WEB_FUTURES_BETSHEET_FILE = "WorldCup_Futures_BetSheet.html"
 WEB_BETLOG_FILE = "World_Cup_Bet_Log.html"
 
 SILVER_RAW_ARCHIVE_DIR = os.path.join(PROJECT_DIR, "archive", "silver_raw")
 SILVER_PROCESSED_ARCHIVE_DIR = os.path.join(PROJECT_DIR, "archive", "silver_processed")
+SILVER_FUTURES_RAW_ARCHIVE_DIR = os.path.join(PROJECT_DIR, "archive", "silver_futures_raw")
+SILVER_FUTURES_PROCESSED_ARCHIVE_DIR = os.path.join(PROJECT_DIR, "archive", "silver_futures_processed")
 SILVER_RUN_ARCHIVE_DIR = os.path.join("archive", "silver")
 KALSHI_RUN_ARCHIVE_DIR = os.path.join("archive", "kalshi")
 VALUE_BOARDS_RUN_ARCHIVE_DIR = os.path.join("archive", "value_boards")
 WAGER_LOGS_ARCHIVE_DIR = os.path.join(PROJECT_DIR, "archive", "wager_logs")
 
 SHEET_SILVER_FORECASTS = "Silver Forecasts"
+SHEET_SILVER_FUTURES = "Silver Futures"
 SHEET_SILVER_METADATA = "Silver Metadata"
 SHEET_BET_SHEET = "Bet Sheet"
 SHEET_RUN_METADATA = "Run Metadata"
