@@ -1,14 +1,22 @@
+import os
 import re
 from datetime import datetime
 
 import pandas as pd
 
 from config import (
+    BET_LOG_FILE,
     COL_ACTION,
     COL_BUCKET,
+    COL_CONTRACTS,
+    COL_CURRENT_ACTION,
     COL_EDGE,
+    COL_ENTRY_PRICE,
     COL_MARKET_TICKER,
+    COL_MARKET_TICKER_TITLE,
+    COL_POSITION,
     COL_SILVER,
+    COL_STATUS,
     FUTURES_VALUE_BOARD_FILE,
     KALSHI_CURRENT_FILE,
     SHEET_BET_SHEET,
@@ -20,6 +28,7 @@ from config import (
     SHEET_SILVER_METADATA,
     SHEET_SILVER_NORMALIZED,
     SHEET_VALUE_BOARD,
+    SHEET_WAGERS,
     SILVER_FUTURES_CURRENT_FILE,
 )
 
@@ -29,6 +38,7 @@ OUTPUT_FILE = FUTURES_VALUE_BOARD_FILE
 
 BANKROLL = 500
 MIN_EDGE = 0.05
+ACTIVE_STATUSES = ["Open", "Partially Closed"]
 
 CODE_MAP = {
     "ALG": "DZA",
@@ -95,12 +105,18 @@ BET_COLUMNS = [
     COL_EDGE,
     "ROI",
     "EV per $100",
-    "Half Kelly",
+    "Quarter Kelly",
     f"Stake on ${BANKROLL}",
     COL_BUCKET,
     "Volume",
     "event_ticker",
     COL_MARKET_TICKER,
+    COL_POSITION,
+    COL_CURRENT_ACTION,
+    COL_ENTRY_PRICE,
+    "Current Value Change",
+    "Stake",
+    COL_STATUS,
 ]
 
 
@@ -127,6 +143,105 @@ def bucket(edge):
 
 def numeric(value):
     return pd.to_numeric(value, errors="coerce")
+
+
+def read_active_wagers():
+    if not os.path.exists(BET_LOG_FILE):
+        return pd.DataFrame()
+
+    wager_log = pd.read_excel(BET_LOG_FILE, sheet_name=SHEET_WAGERS)
+    required_columns = [
+        COL_MARKET_TICKER_TITLE,
+        COL_ACTION,
+        COL_ENTRY_PRICE,
+        COL_CONTRACTS,
+        COL_STATUS,
+    ]
+    missing_columns = [column for column in required_columns if column not in wager_log.columns]
+    if missing_columns:
+        print(f"WARNING: Could not add futures positions; missing wager columns: {missing_columns}")
+        return pd.DataFrame()
+
+    return wager_log[wager_log[COL_STATUS].isin(ACTIVE_STATUSES)].copy()
+
+
+def add_active_wager_exposure(bet_sheet):
+    for column, default in [
+        (COL_POSITION, "No"),
+        (COL_CURRENT_ACTION, ""),
+        (COL_ENTRY_PRICE, ""),
+        ("Current Value Change", ""),
+        ("Stake", ""),
+        (COL_STATUS, ""),
+    ]:
+        bet_sheet[column] = default
+
+    if bet_sheet.empty:
+        return bet_sheet
+
+    try:
+        active_wagers = read_active_wagers()
+    except Exception as error:
+        print(f"WARNING: Could not add futures position exposure: {error}")
+        return bet_sheet
+
+    if active_wagers.empty:
+        return bet_sheet
+
+    active_wagers = active_wagers[[
+        COL_MARKET_TICKER_TITLE,
+        COL_ACTION,
+        COL_ENTRY_PRICE,
+        COL_CONTRACTS,
+        COL_STATUS,
+    ]].copy()
+    active_wagers["Stake"] = active_wagers.apply(
+        lambda row: (
+            row[COL_CONTRACTS] * row[COL_ENTRY_PRICE]
+            if row[COL_ACTION] == "BUY YES"
+            else row[COL_CONTRACTS] * (1 - row[COL_ENTRY_PRICE])
+        ),
+        axis=1,
+    ).round(2)
+    active_wagers = active_wagers.rename(columns={
+        COL_MARKET_TICKER_TITLE: COL_MARKET_TICKER,
+        COL_ACTION: COL_CURRENT_ACTION,
+    })
+    active_wagers[COL_POSITION] = "Yes"
+
+    bet_sheet = bet_sheet.drop(columns=[
+        COL_POSITION,
+        COL_CURRENT_ACTION,
+        COL_ENTRY_PRICE,
+        "Current Value Change",
+        "Stake",
+        COL_STATUS,
+    ]).merge(
+        active_wagers[[
+            COL_MARKET_TICKER,
+            COL_POSITION,
+            COL_CURRENT_ACTION,
+            COL_ENTRY_PRICE,
+            "Stake",
+            COL_STATUS,
+        ]],
+        on=COL_MARKET_TICKER,
+        how="left",
+    )
+    bet_sheet[COL_POSITION] = bet_sheet[COL_POSITION].fillna("No")
+    bet_sheet["Current Value Change"] = bet_sheet.apply(
+        lambda row: (
+            row["Market Price"] - row[COL_ENTRY_PRICE]
+            if row[COL_POSITION] == "Yes" and row[COL_CURRENT_ACTION] == "BUY YES"
+            else (
+                row[COL_ENTRY_PRICE] - row["Market Price"]
+                if row[COL_POSITION] == "Yes" and row[COL_CURRENT_ACTION] == "SELL YES"
+                else ""
+            )
+        ),
+        axis=1,
+    )
+    return bet_sheet
 
 
 def classify_stage(row):
@@ -267,7 +382,7 @@ bet_rows = []
 for _, row in value_board.iterrows():
     if row["buy_edge"] >= MIN_EDGE:
         kelly = (row["silver_prob"] - row["yes_ask"]) / (1 - row["yes_ask"])
-        half_kelly = max(kelly / 2, 0)
+        quarter_kelly = max(kelly / 4, 0)
         bet_rows.append({
             "Stage": row["Stage"],
             "Team": row["Team"],
@@ -279,8 +394,8 @@ for _, row in value_board.iterrows():
             COL_EDGE: row["buy_edge"],
             "ROI": row["buy_roi"],
             "EV per $100": row["buy_edge"] * 100,
-            "Half Kelly": half_kelly,
-            f"Stake on ${BANKROLL}": half_kelly * BANKROLL,
+            "Quarter Kelly": quarter_kelly,
+            f"Stake on ${BANKROLL}": quarter_kelly * BANKROLL,
             COL_BUCKET: bucket(row["buy_edge"]),
             "Volume": row["volume"],
             "event_ticker": row["event_ticker"],
@@ -289,7 +404,7 @@ for _, row in value_board.iterrows():
 
     if row["sell_edge"] >= MIN_EDGE:
         kelly = (row["yes_bid"] - row["silver_prob"]) / row["yes_bid"]
-        half_kelly = max(kelly / 2, 0)
+        quarter_kelly = max(kelly / 4, 0)
         bet_rows.append({
             "Stage": row["Stage"],
             "Team": row["Team"],
@@ -301,8 +416,8 @@ for _, row in value_board.iterrows():
             COL_EDGE: row["sell_edge"],
             "ROI": row["sell_roi"],
             "EV per $100": row["sell_edge"] * 100,
-            "Half Kelly": half_kelly,
-            f"Stake on ${BANKROLL}": half_kelly * BANKROLL,
+            "Quarter Kelly": quarter_kelly,
+            f"Stake on ${BANKROLL}": quarter_kelly * BANKROLL,
             COL_BUCKET: bucket(row["sell_edge"]),
             "Volume": row["volume"],
             "event_ticker": row["event_ticker"],
@@ -319,8 +434,10 @@ if not bet_sheet.empty:
     ].copy()
     bet_sheet = bet_sheet.sort_values(COL_EDGE, ascending=False)
     bet_sheet["ROI"] = bet_sheet["ROI"].round(2)
-    bet_sheet["Half Kelly"] = bet_sheet["Half Kelly"].round(2)
+    bet_sheet["Quarter Kelly"] = bet_sheet["Quarter Kelly"].round(2)
     bet_sheet[f"Stake on ${BANKROLL}"] = bet_sheet[f"Stake on ${BANKROLL}"].round(2)
+
+bet_sheet = add_active_wager_exposure(bet_sheet)
 
 candidates = bet_sheet.copy()
 
@@ -332,9 +449,15 @@ definitions = pd.DataFrame([
     ["Market Price", "For BUY YES, this is the Yes Ask. For SELL YES, this is the Yes Bid."],
     [COL_EDGE, "Difference between Silver and market price on the selected side."],
     ["ROI", "Expected return relative to capital at risk."],
-    ["Half Kelly", "A conservative bankroll allocation fraction based on Kelly sizing, cut in half."],
-    [f"Stake on ${BANKROLL}", "Half Kelly multiplied by the assumed bankroll."],
+    ["Quarter Kelly", "A conservative bankroll allocation fraction based on Kelly sizing, divided by four."],
+    [f"Stake on ${BANKROLL}", "Quarter Kelly multiplied by the assumed bankroll."],
     [COL_BUCKET, "A/B/C ranking based on edge size: A >= 10%, B >= 7%, C >= 5%."],
+    [COL_POSITION, "Yes if there is an active open or partially closed wager on this contract."],
+    [COL_CURRENT_ACTION, "The action of the existing wager from the unified Bet Log."],
+    [COL_ENTRY_PRICE, "Entry price of the existing wager."],
+    ["Current Value Change", "For BUY YES, current market price minus entry. For SELL YES, entry minus current market price."],
+    ["Stake", "Approximate dollars at risk for the existing wager."],
+    [COL_STATUS, "Open or partially closed status of the existing wager."],
 ], columns=["Field", "Plain-English Definition"])
 
 run_metadata = pd.DataFrame([

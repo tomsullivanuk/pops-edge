@@ -21,18 +21,30 @@ WEB_COLUMNS = [
     "Market Price",
     "Edge",
     "ROI",
-    "Half Kelly",
+    "Quarter Kelly",
     "Stake on $500",
     "Bucket",
     "Volume",
-    "event_ticker",
     "market_ticker",
+    "Position",
+    "Current Action",
+    "Entry Price",
+    "Current Value Change",
+    "Stake",
+    "Status",
 ]
 
 available_columns = [col for col in WEB_COLUMNS if col in df.columns]
 df = df[available_columns]
 
-for col in ["ROI", "Half Kelly", "Stake on $500"]:
+for col in [
+    "ROI",
+    "Quarter Kelly",
+    "Stake on $500",
+    "Entry Price",
+    "Current Value Change",
+    "Stake",
+]:
     if col in df.columns:
         df[col] = pd.to_numeric(df[col], errors="coerce").map(lambda x: f"{x:.2f}")
 

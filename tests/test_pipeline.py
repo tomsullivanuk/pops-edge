@@ -221,6 +221,9 @@ class PipelineTests(unittest.TestCase):
             self.assertEqual(usa["Action"], "BUY YES")
             self.assertEqual(usa["Bucket"], "A")
             self.assertAlmostEqual(usa["Edge"], 0.11)
+            self.assertAlmostEqual(usa["Half Kelly"], 0.11)
+            self.assertAlmostEqual(usa["Stake on $500"], 53.92)
+            self.assertNotIn("Quarter Kelly", bet_sheet.columns)
             self.assertEqual(usa["Position"], "Yes")
             self.assertEqual(usa["Current Action"], "BUY YES")
             self.assertAlmostEqual(usa["Entry"], 0.45)
@@ -270,6 +273,7 @@ class PipelineTests(unittest.TestCase):
             workspace = Path(workspace)
             write_sample_silver_futures_workbook(workspace / "Silver_Futures_Current.xlsx")
             write_sample_kalshi_futures_workbook(workspace / "Kalshi_Current.xlsx")
+            write_sample_futures_wager_log(workspace / "World_Cup_Bet_Log.xlsx")
 
             with changed_dir(workspace):
                 run_pipeline_script(ROOT / "build_futures_value_board.py")
@@ -291,7 +295,15 @@ class PipelineTests(unittest.TestCase):
             self.assertAlmostEqual(argentina["Silver"], 0.241)
             self.assertAlmostEqual(argentina["Market Price"], 0.15)
             self.assertAlmostEqual(argentina["Edge"], 0.091)
+            self.assertAlmostEqual(argentina["Quarter Kelly"], 0.03)
+            self.assertAlmostEqual(argentina["Stake on $500"], 13.38)
             self.assertEqual(argentina["Bucket"], "B")
+            self.assertEqual(argentina["Position"], "Yes")
+            self.assertEqual(argentina["Current Action"], "BUY YES")
+            self.assertAlmostEqual(argentina["Entry Price"], 0.15)
+            self.assertAlmostEqual(argentina["Stake"], 1.80)
+            self.assertAlmostEqual(argentina["Current Value Change"], 0.00)
+            self.assertEqual(argentina["Status"], "Open")
 
             usa = bet_sheet[bet_sheet["market_ticker"] == "KXWCROUND-26RO16-USA"].iloc[0]
             self.assertEqual(usa["Stage"], "Round of 16")
@@ -299,6 +311,23 @@ class PipelineTests(unittest.TestCase):
             self.assertAlmostEqual(usa["Silver"], 0.72)
             self.assertAlmostEqual(usa["Market Price"], 0.61)
             self.assertAlmostEqual(usa["Edge"], 0.11)
+            self.assertAlmostEqual(usa["Quarter Kelly"], 0.07)
+            self.assertAlmostEqual(usa["Stake on $500"], 35.26)
+            self.assertEqual(usa["Position"], "Yes")
+            self.assertEqual(usa["Current Action"], "SELL YES")
+            self.assertAlmostEqual(usa["Entry Price"], 0.65)
+            self.assertAlmostEqual(usa["Stake"], 3.50)
+            self.assertAlmostEqual(usa["Current Value Change"], 0.04)
+            self.assertEqual(usa["Status"], "Partially Closed")
+
+            quarterfinal = bet_sheet[
+                bet_sheet["market_ticker"] == "KXWCROUND-26QUAR-USA"
+            ].iloc[0]
+            self.assertEqual(quarterfinal["Position"], "No")
+            self.assertTrue(pd.isna(quarterfinal["Current Action"]))
+
+            self.assertNotIn("Half Kelly", bet_sheet.columns)
+            self.assertIn("event_ticker", bet_sheet.columns)
 
     def test_build_web_futures_betsheet_creates_sortable_html_with_expected_rows(self):
         with TemporaryDirectory() as workspace:
@@ -317,6 +346,13 @@ class PipelineTests(unittest.TestCase):
             self.assertIn("Champion", html)
             self.assertIn("ARG", html)
             self.assertIn("KXMENWORLDCUP-26-AR", html)
+            self.assertIn("<th>Quarter Kelly</th>", html)
+            self.assertIn("<th>Position</th>", html)
+            self.assertIn("<th>Current Action</th>", html)
+            self.assertIn("<th>Entry Price</th>", html)
+            self.assertIn("<th>Current Value Change</th>", html)
+            self.assertNotIn("<th>event_ticker</th>", html)
+            self.assertNotIn("Half Kelly", html)
             self.assertNotIn("NaN", html)
 
     def test_import_wagers_uses_sample_activity_and_value_board_lookup(self):
@@ -769,12 +805,18 @@ def write_sample_futures_value_board(path):
                 "Market Price": 0.15,
                 "Edge": 0.091,
                 "ROI": 0.61,
-                "Half Kelly": 0.05,
-                "Stake on $500": 26.76,
+                "Quarter Kelly": 0.03,
+                "Stake on $500": 13.38,
                 "Bucket": "B",
                 "Volume": 1000,
                 "event_ticker": "KXMENWORLDCUP-26",
                 "market_ticker": "KXMENWORLDCUP-26-AR",
+                "Position": "Yes",
+                "Current Action": "BUY YES",
+                "Entry Price": 0.15,
+                "Current Value Change": 0.00,
+                "Stake": 1.80,
+                "Status": "Open",
             },
             {
                 "Stage": "Round of 16",
@@ -784,12 +826,18 @@ def write_sample_futures_value_board(path):
                 "Market Price": 0.61,
                 "Edge": 0.11,
                 "ROI": 0.18,
-                "Half Kelly": 0.14,
-                "Stake on $500": 70.51,
+                "Quarter Kelly": 0.07,
+                "Stake on $500": 35.26,
                 "Bucket": "A",
                 "Volume": 800,
                 "event_ticker": "KXWCROUND-26RO16",
                 "market_ticker": "KXWCROUND-26RO16-USA",
+                "Position": "No",
+                "Current Action": None,
+                "Entry Price": None,
+                "Current Value Change": None,
+                "Stake": None,
+                "Status": None,
             },
         ]
     )
@@ -807,6 +855,36 @@ def write_sample_wager_log(path):
                 "Contracts": 20,
                 "Status": "Open",
             }
+        ]
+    )
+    with pd.ExcelWriter(path, engine="openpyxl") as writer:
+        wagers.to_excel(writer, sheet_name="Wagers", index=False)
+
+
+def write_sample_futures_wager_log(path):
+    wagers = pd.DataFrame(
+        [
+            {
+                "Market Ticker": "KXMENWORLDCUP-26-AR",
+                "Action": "BUY YES",
+                "Entry Price": 0.15,
+                "Contracts": 12,
+                "Status": "Open",
+            },
+            {
+                "Market Ticker": "KXWCROUND-26RO16-USA",
+                "Action": "SELL YES",
+                "Entry Price": 0.65,
+                "Contracts": 10,
+                "Status": "Partially Closed",
+            },
+            {
+                "Market Ticker": "KXWCROUND-26QUAR-USA",
+                "Action": "BUY YES",
+                "Entry Price": 0.43,
+                "Contracts": 8,
+                "Status": "Settled",
+            },
         ]
     )
     with pd.ExcelWriter(path, engine="openpyxl") as writer:

@@ -83,7 +83,7 @@ update_worldcup.sh
 After placing a wager:
 
 1. Download Kalshi Activity -> All -> This Month.
-2. Run `./update_all.sh` to refresh the Bet Log, match and futures Value Boards, and dashboards.
+2. Run `./update_all.sh` to refresh the Bet Log, match and futures Value Boards, and dashboards. On success it opens `World_Cup_Bet_Log.html`, `WorldCup_ValueBoard.html`, and `WorldCup_Futures_ValueBoard.html`.
 
 You can still run `./update_wagers.sh` by itself when only the Bet Log needs updating, or `./update_worldcup.sh` by itself when only the Silver/Kalshi/Value Board/dashboard workflow needs updating.
 
@@ -229,7 +229,7 @@ Semifinal qualification
 World Cup champion
 ```
 
-The futures Bet Sheet uses the same BUY YES, SELL YES, edge, ROI, Half Kelly, stake, and bucket logic as the match board.
+The futures Bet Sheet uses the same BUY YES, SELL YES, edge, ROI, and bucket logic as the match board, but sizes new futures opportunities with Quarter Kelly. It also marks active futures wagers from the unified `World_Cup_Bet_Log.xlsx` when their status is `Open` or `Partially Closed`.
 
 Important futures fields:
 
@@ -242,12 +242,14 @@ Important futures fields:
 | Market Price | Relevant Kalshi price |
 | Edge | Model edge |
 | ROI | Expected return on capital |
-| Half Kelly | Suggested Kelly fraction |
+| Quarter Kelly | Suggested Kelly fraction for futures |
 | Stake on $500 | Suggested position size |
 | Bucket | A/B/C ranking |
 | Volume | Market liquidity |
 | event_ticker | Kalshi event ticker |
 | market_ticker | Kalshi market ticker |
+
+The futures HTML view omits `event_ticker` to stay compact, retains `market_ticker` for diagnostics, and displays `Position`, `Current Action`, `Entry Price`, `Current Value Change`, `Stake`, and `Status` for active futures wagers.
 
 ---
 
@@ -324,14 +326,14 @@ appear on the Bet Sheet.
 
 # Kelly Sizing
 
-The system calculates:
+The match Value Board calculates:
 
 ```text
 Full Kelly
 Half Kelly
 ```
 
-and converts Half Kelly into a suggested stake using:
+The futures Value Board uses Quarter Kelly instead. Each board converts its Kelly fraction into a suggested stake using:
 
 ```text
 BANKROLL = $500
@@ -372,6 +374,8 @@ The Bet Sheet also incorporates active positions from:
 ```text
 World_Cup_Bet_Log.xlsx
 ```
+
+This applies to both match and futures Value Boards. Futures positions are matched by `market_ticker`; `Open` and `Partially Closed` wagers are considered active.
 
 Open positions are displayed using:
 

@@ -54,9 +54,11 @@ print("Most recent activity file:")
 print(values.get("Kalshi Activity File", ""))
 PY
 
-echo
-echo "Opening $WEB_BETLOG_FILE..."
-open "$WEB_BETLOG_FILE"
+if [ "${KALSHI_SKIP_OPEN:-0}" != "1" ]; then
+    echo
+    echo "Opening $WEB_BETLOG_FILE..."
+    open "$WEB_BETLOG_FILE"
+fi
 
 echo
 echo "Done."

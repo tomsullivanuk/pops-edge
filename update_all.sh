@@ -14,6 +14,10 @@ else
     PYTHON_BIN=python3
 fi
 
+WEB_BETLOG_FILE=$("$PYTHON_BIN" -c 'from config import WEB_BETLOG_FILE; print(WEB_BETLOG_FILE)')
+WEB_VALUE_BOARD_FILE=$("$PYTHON_BIN" -c 'from config import WEB_VALUE_BOARD_FILE; print(WEB_VALUE_BOARD_FILE)')
+WEB_FUTURES_VALUE_BOARD_FILE=$("$PYTHON_BIN" -c 'from config import WEB_FUTURES_VALUE_BOARD_FILE; print(WEB_FUTURES_VALUE_BOARD_FILE)')
+
 notify() {
     local title="$1"
     local message="$2"
@@ -81,7 +85,7 @@ except Exception:
     futures_candidate_bets = "unavailable"
 
 print(f"Wagers imported: {wagers_imported}")
-print(f"Candidate bets: {candidate_bets}")
+print(f"Match candidate bets: {candidate_bets}")
 print(f"Futures candidate bets: {futures_candidate_bets}")
 PY
 }
@@ -89,14 +93,18 @@ PY
 trap notify_failure ERR
 
 echo "Refreshing wager log..."
-./update_wagers.sh
+KALSHI_SKIP_OPEN=1 ./update_wagers.sh
 
 echo
 echo "Refreshing World Cup value boards..."
-./update_worldcup.sh
+KALSHI_SKIP_OPEN=1 ./update_worldcup.sh
 
 echo
 echo "All updates complete."
 
-SUMMARY=$(success_summary || printf 'Wagers imported: unavailable\nCandidate bets: unavailable\nFutures candidate bets: unavailable')
+echo
+echo "Opening Bet Log and value boards..."
+open "$WEB_BETLOG_FILE" "$WEB_VALUE_BOARD_FILE" "$WEB_FUTURES_VALUE_BOARD_FILE"
+
+SUMMARY=$(success_summary || printf 'Wagers imported: unavailable\nMatch candidate bets: unavailable\nFutures candidate bets: unavailable')
 notify "Kalshi update complete" "$SUMMARY"

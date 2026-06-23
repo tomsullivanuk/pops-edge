@@ -48,7 +48,6 @@ echo "Created $VALUE_BOARD_FILE"
 echo "Created $FUTURES_VALUE_BOARD_FILE"
 echo "Archived copies using timestamp: $STAMP"
 
-open "$VALUE_BOARD_FILE"
 echo
 echo "Building web bet sheet..."
 python3 build_web_betsheet.py || exit 1
@@ -72,9 +71,11 @@ cp "$BET_LOG_FILE" "$ICLOUD_DIR/" 2>/dev/null || true
 
 echo "Copied reports to iCloud Drive."
 
-echo
-echo "Opening web value board..."
-open "$ICLOUD_DIR/$WEB_VALUE_BOARD_FILE"
+if [ "${KALSHI_SKIP_OPEN:-0}" != "1" ]; then
+    echo
+    echo "Opening web value boards..."
+    open "$ICLOUD_DIR/$WEB_VALUE_BOARD_FILE" "$ICLOUD_DIR/$WEB_FUTURES_VALUE_BOARD_FILE"
+fi
 
 echo
 echo "Done."
