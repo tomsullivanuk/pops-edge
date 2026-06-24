@@ -237,6 +237,8 @@ Important futures fields:
 |---------|---------|
 | Stage | Futures stage |
 | Team | Normalized team code |
+| champion_proxy_candidate | `YES` when R16, QF, SF, and Champion BUY edges are positive |
+| strong_champion_proxy | `YES` when Champion BUY edge is at least 35% of average R16/QF/SF BUY edge |
 | Action | BUY YES or SELL YES |
 | Silver | Silver futures probability |
 | Market Price | Relevant Kalshi price |
@@ -250,6 +252,8 @@ Important futures fields:
 | market_ticker | Kalshi market ticker |
 
 The futures HTML view omits `event_ticker` to stay compact, retains `market_ticker` for diagnostics, and displays `Position`, `Current Action`, `Entry Price`, `Current Value Change`, `Stake`, and `Status` for active futures wagers.
+
+`champion_proxy_candidate` identifies teams whose staged advancement and Champion markets all have positive BUY edge. `strong_champion_proxy` applies the additional 35% relative-edge threshold. Final markets are normalized when available but are not part of either gate.
 
 ---
 

@@ -286,7 +286,7 @@ class PipelineTests(unittest.TestCase):
             value_board = pd.read_excel(output, sheet_name="Value Board")
 
             self.assertEqual(metadata.loc[metadata["Field"] == "QC Status", "Value"].iloc[0], "PASS")
-            self.assertEqual(len(value_board), 3)
+            self.assertEqual(len(value_board), 19)
 
             argentina = bet_sheet[bet_sheet["market_ticker"] == "KXMENWORLDCUP-26-AR"].iloc[0]
             self.assertEqual(argentina["Stage"], "Champion")
@@ -304,6 +304,8 @@ class PipelineTests(unittest.TestCase):
             self.assertAlmostEqual(argentina["Stake"], 1.80)
             self.assertAlmostEqual(argentina["Current Value Change"], 0.00)
             self.assertEqual(argentina["Status"], "Open")
+            self.assertEqual(argentina["champion_proxy_candidate"], "YES")
+            self.assertEqual(argentina["strong_champion_proxy"], "YES")
 
             usa = bet_sheet[bet_sheet["market_ticker"] == "KXWCROUND-26RO16-USA"].iloc[0]
             self.assertEqual(usa["Stage"], "Round of 16")
@@ -329,6 +331,54 @@ class PipelineTests(unittest.TestCase):
             self.assertNotIn("Half Kelly", bet_sheet.columns)
             self.assertIn("event_ticker", bet_sheet.columns)
 
+            norway = value_board[value_board["Team"] == "NOR"]
+            self.assertEqual(set(norway["stage_key"]), {"R16", "Qtr", "Semi", "Champ"})
+            self.assertEqual(set(norway["champion_proxy_candidate"]), {"YES"})
+            self.assertTrue(norway["strong_champion_proxy"].fillna("").eq("").all())
+            self.assertEqual(
+                set(bet_sheet.loc[bet_sheet["Team"] == "NOR", "champion_proxy_candidate"]),
+                {"YES"},
+            )
+            self.assertTrue(
+                bet_sheet.loc[bet_sheet["Team"] == "NOR", "strong_champion_proxy"]
+                .fillna("")
+                .eq("")
+                .all()
+            )
+
+            brazil = value_board[value_board["Team"] == "BRA"]
+            self.assertLess(
+                brazil.loc[brazil["stage_key"] == "Champ", "buy_edge"].iloc[0],
+                0,
+            )
+            self.assertTrue(
+                brazil["champion_proxy_candidate"].fillna("").eq("").all()
+            )
+            self.assertTrue(brazil["strong_champion_proxy"].fillna("").eq("").all())
+
+            norway_value = norway.set_index("stage_key")
+            norway_stage_average = norway_value.loc[["R16", "Qtr", "Semi"], "buy_edge"].mean()
+            self.assertGreater(norway_value.loc["Champ", "buy_edge"], 0)
+            self.assertLess(
+                norway_value.loc["Champ", "buy_edge"],
+                0.35 * norway_stage_average,
+            )
+
+            france = value_board[value_board["Team"] == "FRA"]
+            self.assertNotIn("Semi", set(france["stage_key"]))
+            self.assertTrue(france["champion_proxy_candidate"].fillna("").eq("").all())
+            self.assertTrue(france["strong_champion_proxy"].fillna("").eq("").all())
+
+            workbook = load_workbook(output, data_only=False)
+            bet_sheet_ws = workbook["Bet Sheet"]
+            bet_headers = {cell.value: cell.column for cell in bet_sheet_ws[1]}
+            self.assertEqual(bet_sheet_ws.cell(2, bet_headers["Silver"]).number_format, "0.0%")
+            self.assertEqual(
+                bet_sheet_ws.cell(2, bet_headers["Edge"]).number_format,
+                "+0.0%;-0.0%;0.0%",
+            )
+            self.assertIsInstance(bet_sheet_ws.cell(2, bet_headers["Silver"]).value, float)
+
     def test_build_web_futures_betsheet_creates_sortable_html_with_expected_rows(self):
         with TemporaryDirectory() as workspace:
             workspace = Path(workspace)
@@ -351,8 +401,16 @@ class PipelineTests(unittest.TestCase):
             self.assertIn("<th>Current Action</th>", html)
             self.assertIn("<th>Entry Price</th>", html)
             self.assertIn("<th>Current Value Change</th>", html)
+            self.assertIn("<th>champion_proxy_candidate</th>", html)
+            self.assertIn("<th>strong_champion_proxy</th>", html)
+            self.assertIn("Champion Proxy Candidate means R16/QF/SF/Champion", html)
+            self.assertIn('["champion_proxy_candidate", "proxy-badge"]', html)
+            self.assertIn('["strong_champion_proxy", "strong-proxy-badge"]', html)
+            self.assertIn("24.1%", html)
+            self.assertIn("+9.1%", html)
             self.assertNotIn("<th>event_ticker</th>", html)
             self.assertNotIn("Half Kelly", html)
+            self.assertNotIn(">nan<", html)
             self.assertNotIn("NaN", html)
 
     def test_import_wagers_uses_sample_activity_and_value_board_lookup(self):
@@ -715,6 +773,9 @@ def write_sample_silver_futures_workbook(path):
         [
             {"Team": "ARG", "Team Raw": "ARG Argentina", "R16": 0.864, "Qtr": 0.552, "Semi": 0.376, "Final": 0.293, "Champ": 0.241},
             {"Team": "USA", "Team Raw": "USA United States", "R16": 0.72, "Qtr": 0.35, "Semi": 0.18, "Final": 0.08, "Champ": 0.03},
+            {"Team": "NOR", "Team Raw": "NOR Norway", "R16": 0.80, "Qtr": 0.60, "Semi": 0.40, "Final": 0.28, "Champ": 0.20},
+            {"Team": "BRA", "Team Raw": "BRA Brazil", "R16": 0.75, "Qtr": 0.50, "Semi": 0.30, "Final": 0.18, "Champ": 0.10},
+            {"Team": "FRA", "Team Raw": "FRA France", "R16": 0.70, "Qtr": 0.45, "Semi": 0.25, "Final": 0.14, "Champ": 0.08},
         ]
     )
     metadata = pd.DataFrame(
@@ -791,7 +852,44 @@ def write_sample_kalshi_futures_workbook(path):
             },
         ]
     )
+    proxy_rows = [
+        futures_market_row("KXWCROUND-26RO16", "KXWCROUND-26RO16-NOR", "Norway", "Round of 16 Qualifiers", 0.69, 0.70),
+        futures_market_row("KXWCROUND-26QUAR", "KXWCROUND-26QUAR-NOR", "Norway", "Quarterfinals Qualifiers", 0.49, 0.50),
+        futures_market_row("KXWCROUND-26SEMI", "KXWCROUND-26SEMI-NOR", "Norway", "Semifinals Qualifiers", 0.31, 0.32),
+        futures_market_row("KXMENWORLDCUP-26", "KXMENWORLDCUP-26-NO", "Norway", "World Cup winner", 0.16, 0.17),
+        futures_market_row("KXWCROUND-26RO16", "KXWCROUND-26RO16-ARG", "Argentina", "Round of 16 Qualifiers", 0.79, 0.80),
+        futures_market_row("KXWCROUND-26QUAR", "KXWCROUND-26QUAR-ARG", "Argentina", "Quarterfinals Qualifiers", 0.49, 0.50),
+        futures_market_row("KXWCROUND-26SEMI", "KXWCROUND-26SEMI-ARG", "Argentina", "Semifinals Qualifiers", 0.32, 0.33),
+        futures_market_row("KXWCROUND-26RO16", "KXWCROUND-26RO16-BRA", "Brazil", "Round of 16 Qualifiers", 0.64, 0.65),
+        futures_market_row("KXWCROUND-26QUAR", "KXWCROUND-26QUAR-BRA", "Brazil", "Quarterfinals Qualifiers", 0.41, 0.42),
+        futures_market_row("KXWCROUND-26SEMI", "KXWCROUND-26SEMI-BRA", "Brazil", "Semifinals Qualifiers", 0.21, 0.22),
+        futures_market_row("KXMENWORLDCUP-26", "KXMENWORLDCUP-26-BR", "Brazil", "World Cup winner", 0.10, 0.11),
+        futures_market_row("KXWCROUND-26SEMI", "KXWCROUND-26SEMI-USA", "United States", "Semifinals Qualifiers", 0.11, 0.12),
+        futures_market_row("KXMENWORLDCUP-26", "KXMENWORLDCUP-26-US", "United States", "World Cup winner", 0.01, 0.02),
+        futures_market_row("KXWCROUND-26RO16", "KXWCROUND-26RO16-FRA", "France", "Round of 16 Qualifiers", 0.59, 0.60),
+        futures_market_row("KXWCROUND-26QUAR", "KXWCROUND-26QUAR-FRA", "France", "Quarterfinals Qualifiers", 0.37, 0.38),
+        futures_market_row("KXMENWORLDCUP-26", "KXMENWORLDCUP-26-FR", "France", "World Cup winner", 0.04, 0.05),
+    ]
+    rows = pd.concat([rows, pd.DataFrame(proxy_rows)], ignore_index=True)
     rows.to_excel(path, index=False)
+
+
+def futures_market_row(event_ticker, market_ticker, outcome, game, yes_bid, yes_ask):
+    return {
+        "event_ticker": event_ticker,
+        "game": game,
+        "sub_title": "",
+        "category": "Sports",
+        "market_ticker": market_ticker,
+        "outcome": outcome,
+        "market_title": f"Will {outcome} advance or win?",
+        "yes_bid_dollars": yes_bid,
+        "yes_ask_dollars": yes_ask,
+        "last_price_dollars": yes_ask,
+        "volume_fp": 500,
+        "open_interest_fp": 200,
+        "close_time": "2026-07-19T23:59:00Z",
+    }
 
 
 def write_sample_futures_value_board(path):
@@ -800,6 +898,8 @@ def write_sample_futures_value_board(path):
             {
                 "Stage": "Champion",
                 "Team": "ARG",
+                "champion_proxy_candidate": "YES",
+                "strong_champion_proxy": "YES",
                 "Action": "BUY YES",
                 "Silver": 0.241,
                 "Market Price": 0.15,
@@ -821,6 +921,8 @@ def write_sample_futures_value_board(path):
             {
                 "Stage": "Round of 16",
                 "Team": "USA",
+                "champion_proxy_candidate": "YES",
+                "strong_champion_proxy": None,
                 "Action": "BUY YES",
                 "Silver": 0.72,
                 "Market Price": 0.61,

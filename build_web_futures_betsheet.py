@@ -16,6 +16,8 @@ df = pd.read_excel(INPUT_FILE, sheet_name=SHEET_BET_SHEET)
 WEB_COLUMNS = [
     "Stage",
     "Team",
+    "champion_proxy_candidate",
+    "strong_champion_proxy",
     "Action",
     "Silver",
     "Market Price",
@@ -37,6 +39,26 @@ WEB_COLUMNS = [
 available_columns = [col for col in WEB_COLUMNS if col in df.columns]
 df = df[available_columns]
 
+
+def format_percentage(value, signed=False):
+    numeric = pd.to_numeric(value, errors="coerce")
+    if pd.isna(numeric):
+        return ""
+    return f"{numeric:+.1%}" if signed else f"{numeric:.1%}"
+
+
+def format_decimal(value):
+    numeric = pd.to_numeric(value, errors="coerce")
+    if pd.isna(numeric):
+        return ""
+    return f"{numeric:.2f}"
+
+
+if "Silver" in df.columns:
+    df["Silver"] = df["Silver"].map(format_percentage)
+if "Edge" in df.columns:
+    df["Edge"] = df["Edge"].map(lambda value: format_percentage(value, signed=True))
+
 for col in [
     "ROI",
     "Quarter Kelly",
@@ -46,7 +68,7 @@ for col in [
     "Stake",
 ]:
     if col in df.columns:
-        df[col] = pd.to_numeric(df[col], errors="coerce").map(lambda x: f"{x:.2f}")
+        df[col] = df[col].map(format_decimal)
 
 df = df.fillna("")
 html_table = df.to_html(
@@ -72,7 +94,30 @@ html = f"""
         h1 {{ margin-bottom: 4px; }}
         .subtitle {{
             color: #666;
-            margin-bottom: 18px;
+            margin-bottom: 8px;
+        }}
+        .proxy-note {{
+            color: #4b5563;
+            margin: 0 0 18px;
+            max-width: 980px;
+            font-size: 13px;
+            line-height: 1.4;
+        }}
+        .proxy-badge,
+        .strong-proxy-badge {{
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 700;
+        }}
+        .proxy-badge {{
+            background: #f3f4f6;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }}
+        .strong-proxy-badge {{
+            background: #dcfce7;
+            color: #166534;
         }}
         table.betsheet {{
             border-collapse: collapse;
@@ -113,6 +158,7 @@ html = f"""
 <body>
     <h1>World Cup Futures Value Board</h1>
     <div class="subtitle">Generated {datetime.now().strftime("%Y-%m-%d %H:%M")}</div>
+    <p class="proxy-note">Champion Proxy Candidate means R16/QF/SF/Champion all show positive BUY edge. Strong Champion Proxy means the Champion BUY edge is at least 35% of the average R16/QF/SF BUY edge.</p>
     {html_table}
 
 <script>
@@ -151,6 +197,24 @@ function sortTable(table, columnIndex, ascending) {{
 document.addEventListener("DOMContentLoaded", () => {{
     const table = document.getElementById("betsheet");
     const headers = table.querySelectorAll("th");
+    const badgeColumns = [
+        ["champion_proxy_candidate", "proxy-badge"],
+        ["strong_champion_proxy", "strong-proxy-badge"],
+    ];
+
+    badgeColumns.forEach(([columnName, badgeClass]) => {{
+        const columnIndex = Array.from(headers).findIndex(
+            header => header.textContent.trim() === columnName
+        );
+        if (columnIndex < 0) return;
+
+        Array.from(table.tBodies[0].rows).forEach(row => {{
+            const cell = row.cells[columnIndex];
+            if (cell.textContent.trim() === "YES") {{
+                cell.innerHTML = `<span class="${{badgeClass}}">YES</span>`;
+            }}
+        }});
+    }});
 
     headers.forEach((header, index) => {{
         header.dataset.sortDirection = "desc";

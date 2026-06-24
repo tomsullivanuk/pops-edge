@@ -39,6 +39,8 @@ OUTPUT_FILE = FUTURES_VALUE_BOARD_FILE
 BANKROLL = 500
 MIN_EDGE = 0.05
 ACTIVE_STATUSES = ["Open", "Partially Closed"]
+CHAMPION_PROXY_COLUMN = "champion_proxy_candidate"
+STRONG_CHAMPION_PROXY_COLUMN = "strong_champion_proxy"
 
 CODE_MAP = {
     "ALG": "DZA",
@@ -63,6 +65,7 @@ TEAM_NAME_TO_CODE = {
     "MEXICO": "MEX",
     "MOROCCO": "MAR",
     "NETHERLANDS": "NED",
+    "NORWAY": "NOR",
     "PORTUGAL": "POR",
     "SPAIN": "ESP",
     "SWEDEN": "SWE",
@@ -87,6 +90,17 @@ STAGE_DEFINITIONS = {
         "silver_column": "Semi",
         "patterns": ["semifinal", "semi-final", "semi final"],
     },
+    "Final": {
+        "label": "Final",
+        "silver_column": "Final",
+        "patterns": [
+            "reach the final",
+            "reach final",
+            "final qualifier",
+            "final qualification",
+            "make the final",
+        ],
+    },
     "Champ": {
         "label": "Champion",
         "silver_column": "Champ",
@@ -97,6 +111,8 @@ STAGE_DEFINITIONS = {
 BET_COLUMNS = [
     "Stage",
     "Team",
+    CHAMPION_PROXY_COLUMN,
+    STRONG_CHAMPION_PROXY_COLUMN,
     COL_ACTION,
     COL_SILVER,
     "Market Price",
@@ -143,6 +159,70 @@ def bucket(edge):
 
 def numeric(value):
     return pd.to_numeric(value, errors="coerce")
+
+
+def champion_proxy_team_sets(value_board):
+    required_stages = ["R16", "Qtr", "Semi", "Champ"]
+    if value_board.empty:
+        return set(), set()
+
+    edge_by_stage = value_board.pivot(
+        index="Team",
+        columns="stage_key",
+        values="buy_edge",
+    )
+    if any(stage not in edge_by_stage.columns for stage in required_stages):
+        return set(), set()
+
+    stage_edges = edge_by_stage[["R16", "Qtr", "Semi"]]
+    stage_average = stage_edges.mean(axis=1)
+    proxy_candidates = (
+        stage_edges.gt(0).all(axis=1)
+        & edge_by_stage["Champ"].gt(0)
+    )
+    strong_candidates = (
+        proxy_candidates
+        & edge_by_stage["Champ"].ge(0.35 * stage_average)
+    )
+    return (
+        set(edge_by_stage.index[proxy_candidates]),
+        set(edge_by_stage.index[strong_candidates]),
+    )
+
+
+def apply_percentage_formats(writer):
+    formats_by_sheet = {
+        SHEET_BET_SHEET: {
+            COL_SILVER: "0.0%",
+            COL_EDGE: "+0.0%;-0.0%;0.0%",
+        },
+        SHEET_CANDIDATES: {
+            COL_SILVER: "0.0%",
+            COL_EDGE: "+0.0%;-0.0%;0.0%",
+        },
+        SHEET_VALUE_BOARD: {
+            "silver_prob": "0.0%",
+            "buy_edge": "+0.0%;-0.0%;0.0%",
+            "sell_edge": "+0.0%;-0.0%;0.0%",
+        },
+        SHEET_SILVER_NORMALIZED: {
+            "silver_prob": "0.0%",
+        },
+    }
+
+    for sheet_name, column_formats in formats_by_sheet.items():
+        worksheet = writer.book[sheet_name]
+        headers = {
+            cell.value: cell.column
+            for cell in worksheet[1]
+            if cell.value is not None
+        }
+        for column_name, number_format in column_formats.items():
+            column_index = headers.get(column_name)
+            if column_index is None:
+                continue
+            for row_index in range(2, worksheet.max_row + 1):
+                worksheet.cell(row=row_index, column=column_index).number_format = number_format
 
 
 def read_active_wagers():
@@ -378,6 +458,14 @@ if not value_board.empty:
     value_board["sell_edge"] = value_board["yes_bid"] - value_board["silver_prob"]
     value_board["sell_roi"] = value_board["sell_edge"] / (1 - value_board["yes_bid"])
 
+proxy_teams, strong_proxy_teams = champion_proxy_team_sets(value_board)
+value_board[CHAMPION_PROXY_COLUMN] = value_board["Team"].apply(
+    lambda team: "YES" if team in proxy_teams else ""
+)
+value_board[STRONG_CHAMPION_PROXY_COLUMN] = value_board["Team"].apply(
+    lambda team: "YES" if team in strong_proxy_teams else ""
+)
+
 bet_rows = []
 for _, row in value_board.iterrows():
     if row["buy_edge"] >= MIN_EDGE:
@@ -386,6 +474,8 @@ for _, row in value_board.iterrows():
         bet_rows.append({
             "Stage": row["Stage"],
             "Team": row["Team"],
+            CHAMPION_PROXY_COLUMN: row[CHAMPION_PROXY_COLUMN],
+            STRONG_CHAMPION_PROXY_COLUMN: row[STRONG_CHAMPION_PROXY_COLUMN],
             COL_ACTION: "BUY YES",
             COL_SILVER: row["silver_prob"],
             "Market Price": row["yes_ask"],
@@ -408,6 +498,8 @@ for _, row in value_board.iterrows():
         bet_rows.append({
             "Stage": row["Stage"],
             "Team": row["Team"],
+            CHAMPION_PROXY_COLUMN: row[CHAMPION_PROXY_COLUMN],
+            STRONG_CHAMPION_PROXY_COLUMN: row[STRONG_CHAMPION_PROXY_COLUMN],
             COL_ACTION: "SELL YES",
             COL_SILVER: row["silver_prob"],
             "Market Price": row["yes_bid"],
@@ -444,6 +536,8 @@ candidates = bet_sheet.copy()
 definitions = pd.DataFrame([
     ["Stage", "Futures market stage: Round of 16, Quarterfinals, Semifinals, or Champion."],
     ["Team", "Normalized three-letter team code."],
+    [CHAMPION_PROXY_COLUMN, "YES when R16, quarterfinal, semifinal, and champion BUY edges are all positive."],
+    [STRONG_CHAMPION_PROXY_COLUMN, "YES when the team is a champion proxy candidate and champion BUY edge is at least 35% of average R16/QF/SF BUY edge."],
     [COL_ACTION, "BUY YES means Silver is above Kalshi Ask. SELL YES means Kalshi Bid is above Silver."],
     [COL_SILVER, "Silver model probability that the team reaches or wins this stage."],
     ["Market Price", "For BUY YES, this is the Yes Ask. For SELL YES, this is the Yes Bid."],
@@ -483,6 +577,7 @@ with pd.ExcelWriter(OUTPUT_FILE, engine="openpyxl") as writer:
     silver_norm.to_excel(writer, sheet_name=SHEET_SILVER_NORMALIZED, index=False)
     kalshi_norm.to_excel(writer, sheet_name=SHEET_KALSHI_NORMALIZED, index=False)
     definitions.to_excel(writer, sheet_name=SHEET_DEFINITIONS, index=False)
+    apply_percentage_formats(writer)
 
 print()
 print(f"Saved: {OUTPUT_FILE}")
