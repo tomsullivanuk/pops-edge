@@ -245,6 +245,7 @@ Important futures fields:
 | Edge | Model edge |
 | ROI | Expected return on capital |
 | Quarter Kelly | Suggested Kelly fraction for futures |
+| proxy_kelly_dollars | Advisory Champion proxy size in dollars |
 | Stake on $500 | Suggested position size |
 | Bucket | A/B/C ranking |
 | Volume | Market liquidity |
@@ -254,6 +255,8 @@ Important futures fields:
 The futures HTML view omits `event_ticker` to stay compact, retains `market_ticker` for diagnostics, and displays `Position`, `Current Action`, `Entry Price`, `Current Value Change`, `Stake`, and `Status` for active futures wagers.
 
 `champion_proxy_candidate` identifies teams whose staged advancement and Champion markets all have positive BUY edge. `strong_champion_proxy` applies the additional 35% relative-edge threshold. Final markets are normalized when available but are not part of either gate.
+
+Proxy Kelly is shown only for Champion Proxy teams. It keeps the ordinary Champion Quarter Kelly stake and adds 60% of the R16/QF/SF Quarter Kelly stakes, reflecting that Champion is being used as a proxy for several correlated advancement bets.
 
 ---
 

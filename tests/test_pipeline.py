@@ -286,7 +286,7 @@ class PipelineTests(unittest.TestCase):
             value_board = pd.read_excel(output, sheet_name="Value Board")
 
             self.assertEqual(metadata.loc[metadata["Field"] == "QC Status", "Value"].iloc[0], "PASS")
-            self.assertEqual(len(value_board), 19)
+            self.assertEqual(len(value_board), 23)
 
             argentina = bet_sheet[bet_sheet["market_ticker"] == "KXMENWORLDCUP-26-AR"].iloc[0]
             self.assertEqual(argentina["Stage"], "Champion")
@@ -296,6 +296,24 @@ class PipelineTests(unittest.TestCase):
             self.assertAlmostEqual(argentina["Market Price"], 0.15)
             self.assertAlmostEqual(argentina["Edge"], 0.091)
             self.assertAlmostEqual(argentina["Quarter Kelly"], 0.03)
+            expected_argentina_proxy_kelly = (
+                value_board.loc[
+                    (value_board["Team"] == "ARG")
+                    & (value_board["stage_key"] == "Champ"),
+                    "buy_quarter_kelly",
+                ].iloc[0]
+                + 0.60
+                * value_board.loc[
+                    (value_board["Team"] == "ARG")
+                    & value_board["stage_key"].isin(["R16", "Qtr", "Semi"]),
+                    "buy_quarter_kelly",
+                ].sum()
+            ) * 500
+            self.assertAlmostEqual(
+                argentina["proxy_kelly_dollars"],
+                expected_argentina_proxy_kelly,
+                places=2,
+            )
             self.assertAlmostEqual(argentina["Stake on $500"], 13.38)
             self.assertEqual(argentina["Bucket"], "B")
             self.assertEqual(argentina["Position"], "Yes")
@@ -332,9 +350,19 @@ class PipelineTests(unittest.TestCase):
             self.assertIn("event_ticker", bet_sheet.columns)
 
             norway = value_board[value_board["Team"] == "NOR"]
+            norway_value = norway.set_index("stage_key")
             self.assertEqual(set(norway["stage_key"]), {"R16", "Qtr", "Semi", "Champ"})
             self.assertEqual(set(norway["champion_proxy_candidate"]), {"YES"})
             self.assertTrue(norway["strong_champion_proxy"].fillna("").eq("").all())
+            expected_norway_proxy_kelly = (
+                norway_value.loc["Champ", "buy_quarter_kelly"]
+                + 0.60
+                * norway_value.loc[["R16", "Qtr", "Semi"], "buy_quarter_kelly"].sum()
+            ) * 500
+            self.assertEqual(
+                set(bet_sheet.loc[bet_sheet["Team"] == "NOR", "proxy_kelly_dollars"].round(2)),
+                {round(expected_norway_proxy_kelly, 2)},
+            )
             self.assertEqual(
                 set(bet_sheet.loc[bet_sheet["Team"] == "NOR", "champion_proxy_candidate"]),
                 {"YES"},
@@ -355,8 +383,8 @@ class PipelineTests(unittest.TestCase):
                 brazil["champion_proxy_candidate"].fillna("").eq("").all()
             )
             self.assertTrue(brazil["strong_champion_proxy"].fillna("").eq("").all())
+            self.assertTrue(brazil["proxy_kelly_dollars"].fillna("").eq("").all())
 
-            norway_value = norway.set_index("stage_key")
             norway_stage_average = norway_value.loc[["R16", "Qtr", "Semi"], "buy_edge"].mean()
             self.assertGreater(norway_value.loc["Champ", "buy_edge"], 0)
             self.assertLess(
@@ -368,6 +396,11 @@ class PipelineTests(unittest.TestCase):
             self.assertNotIn("Semi", set(france["stage_key"]))
             self.assertTrue(france["champion_proxy_candidate"].fillna("").eq("").all())
             self.assertTrue(france["strong_champion_proxy"].fillna("").eq("").all())
+            self.assertTrue(france["proxy_kelly_dollars"].fillna("").eq("").all())
+
+            mexico = value_board[value_board["Team"] == "MEX"]
+            self.assertTrue(mexico["buy_quarter_kelly"].isna().any())
+            self.assertTrue(mexico["proxy_kelly_dollars"].fillna("").eq("").all())
 
             workbook = load_workbook(output, data_only=False)
             bet_sheet_ws = workbook["Bet Sheet"]
@@ -378,6 +411,10 @@ class PipelineTests(unittest.TestCase):
                 "+0.0%;-0.0%;0.0%",
             )
             self.assertIsInstance(bet_sheet_ws.cell(2, bet_headers["Silver"]).value, float)
+            self.assertEqual(
+                bet_sheet_ws.cell(2, bet_headers["proxy_kelly_dollars"]).number_format,
+                "$0.00",
+            )
 
     def test_build_web_futures_betsheet_creates_sortable_html_with_expected_rows(self):
         with TemporaryDirectory() as workspace:
@@ -397,6 +434,7 @@ class PipelineTests(unittest.TestCase):
             self.assertIn("ARG", html)
             self.assertIn("KXMENWORLDCUP-26-AR", html)
             self.assertIn("<th>Quarter Kelly</th>", html)
+            self.assertIn("<th>proxy_kelly_dollars</th>", html)
             self.assertIn("<th>Position</th>", html)
             self.assertIn("<th>Current Action</th>", html)
             self.assertIn("<th>Entry Price</th>", html)
@@ -404,10 +442,12 @@ class PipelineTests(unittest.TestCase):
             self.assertIn("<th>champion_proxy_candidate</th>", html)
             self.assertIn("<th>strong_champion_proxy</th>", html)
             self.assertIn("Champion Proxy Candidate means R16/QF/SF/Champion", html)
+            self.assertIn("Proxy Kelly is shown only for Champion Proxy teams", html)
             self.assertIn('["champion_proxy_candidate", "proxy-badge"]', html)
             self.assertIn('["strong_champion_proxy", "strong-proxy-badge"]', html)
             self.assertIn("24.1%", html)
             self.assertIn("+9.1%", html)
+            self.assertIn("$50.33", html)
             self.assertNotIn("<th>event_ticker</th>", html)
             self.assertNotIn("Half Kelly", html)
             self.assertNotIn(">nan<", html)
@@ -776,6 +816,7 @@ def write_sample_silver_futures_workbook(path):
             {"Team": "NOR", "Team Raw": "NOR Norway", "R16": 0.80, "Qtr": 0.60, "Semi": 0.40, "Final": 0.28, "Champ": 0.20},
             {"Team": "BRA", "Team Raw": "BRA Brazil", "R16": 0.75, "Qtr": 0.50, "Semi": 0.30, "Final": 0.18, "Champ": 0.10},
             {"Team": "FRA", "Team Raw": "FRA France", "R16": 0.70, "Qtr": 0.45, "Semi": 0.25, "Final": 0.14, "Champ": 0.08},
+            {"Team": "MEX", "Team Raw": "MEX Mexico", "R16": 0.76, "Qtr": 0.48, "Semi": 0.28, "Final": 0.12, "Champ": 0.06},
         ]
     )
     metadata = pd.DataFrame(
@@ -869,6 +910,10 @@ def write_sample_kalshi_futures_workbook(path):
         futures_market_row("KXWCROUND-26RO16", "KXWCROUND-26RO16-FRA", "France", "Round of 16 Qualifiers", 0.59, 0.60),
         futures_market_row("KXWCROUND-26QUAR", "KXWCROUND-26QUAR-FRA", "France", "Quarterfinals Qualifiers", 0.37, 0.38),
         futures_market_row("KXMENWORLDCUP-26", "KXMENWORLDCUP-26-FR", "France", "World Cup winner", 0.04, 0.05),
+        futures_market_row("KXWCROUND-26RO16", "KXWCROUND-26RO16-MEX", "Mexico", "Round of 16 Qualifiers", 0.65, 0.66),
+        futures_market_row("KXWCROUND-26QUAR", "KXWCROUND-26QUAR-MEX", "Mexico", "Quarterfinals Qualifiers", 0.34, 0.35),
+        futures_market_row("KXWCROUND-26SEMI", "KXWCROUND-26SEMI-MEX", "Mexico", "Semifinals Qualifiers", 0.16, None),
+        futures_market_row("KXMENWORLDCUP-26", "KXMENWORLDCUP-26-MX", "Mexico", "World Cup winner", 0.01, 0.02),
     ]
     rows = pd.concat([rows, pd.DataFrame(proxy_rows)], ignore_index=True)
     rows.to_excel(path, index=False)
@@ -906,6 +951,7 @@ def write_sample_futures_value_board(path):
                 "Edge": 0.091,
                 "ROI": 0.61,
                 "Quarter Kelly": 0.03,
+                "proxy_kelly_dollars": 50.33,
                 "Stake on $500": 13.38,
                 "Bucket": "B",
                 "Volume": 1000,
@@ -929,6 +975,7 @@ def write_sample_futures_value_board(path):
                 "Edge": 0.11,
                 "ROI": 0.18,
                 "Quarter Kelly": 0.07,
+                "proxy_kelly_dollars": None,
                 "Stake on $500": 35.26,
                 "Bucket": "A",
                 "Volume": 800,

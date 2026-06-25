@@ -41,6 +41,8 @@ MIN_EDGE = 0.05
 ACTIVE_STATUSES = ["Open", "Partially Closed"]
 CHAMPION_PROXY_COLUMN = "champion_proxy_candidate"
 STRONG_CHAMPION_PROXY_COLUMN = "strong_champion_proxy"
+PROXY_KELLY_COLUMN = "proxy_kelly_dollars"
+PROXY_KELLY_STAGE_WEIGHT = 0.60
 
 CODE_MAP = {
     "ALG": "DZA",
@@ -122,6 +124,7 @@ BET_COLUMNS = [
     "ROI",
     "EV per $100",
     "Quarter Kelly",
+    PROXY_KELLY_COLUMN,
     f"Stake on ${BANKROLL}",
     COL_BUCKET,
     "Volume",
@@ -190,6 +193,43 @@ def champion_proxy_team_sets(value_board):
     )
 
 
+def proxy_kelly_dollars_by_team(value_board):
+    required_stages = ["R16", "Qtr", "Semi", "Champ"]
+    if value_board.empty:
+        return {}
+
+    required_columns = {"Team", "stage_key", CHAMPION_PROXY_COLUMN, "buy_quarter_kelly"}
+    if not required_columns.issubset(value_board.columns):
+        return {}
+
+    quarter_kelly_by_stage = value_board.pivot(
+        index="Team",
+        columns="stage_key",
+        values="buy_quarter_kelly",
+    )
+    if any(stage not in quarter_kelly_by_stage.columns for stage in required_stages):
+        return {}
+
+    proxy_teams = set(
+        value_board.loc[
+            value_board[CHAMPION_PROXY_COLUMN] == "YES",
+            "Team",
+        ]
+    )
+    required_quarter_kelly = quarter_kelly_by_stage[required_stages]
+    valid_proxy_teams = (
+        required_quarter_kelly.notna().all(axis=1)
+        & required_quarter_kelly.index.to_series().isin(proxy_teams)
+    )
+    proxy_kelly_fraction = (
+        quarter_kelly_by_stage["Champ"]
+        + PROXY_KELLY_STAGE_WEIGHT
+        * quarter_kelly_by_stage[["R16", "Qtr", "Semi"]].sum(axis=1)
+    )
+    proxy_kelly_dollars = (proxy_kelly_fraction * BANKROLL).round(2)
+    return proxy_kelly_dollars[valid_proxy_teams].to_dict()
+
+
 def apply_percentage_formats(writer):
     formats_by_sheet = {
         SHEET_BET_SHEET: {
@@ -209,6 +249,11 @@ def apply_percentage_formats(writer):
             "silver_prob": "0.0%",
         },
     }
+    currency_formats_by_sheet = {
+        SHEET_BET_SHEET: [PROXY_KELLY_COLUMN],
+        SHEET_CANDIDATES: [PROXY_KELLY_COLUMN],
+        SHEET_VALUE_BOARD: [PROXY_KELLY_COLUMN],
+    }
 
     for sheet_name, column_formats in formats_by_sheet.items():
         worksheet = writer.book[sheet_name]
@@ -223,6 +268,20 @@ def apply_percentage_formats(writer):
                 continue
             for row_index in range(2, worksheet.max_row + 1):
                 worksheet.cell(row=row_index, column=column_index).number_format = number_format
+
+    for sheet_name, column_names in currency_formats_by_sheet.items():
+        worksheet = writer.book[sheet_name]
+        headers = {
+            cell.value: cell.column
+            for cell in worksheet[1]
+            if cell.value is not None
+        }
+        for column_name in column_names:
+            column_index = headers.get(column_name)
+            if column_index is None:
+                continue
+            for row_index in range(2, worksheet.max_row + 1):
+                worksheet.cell(row=row_index, column=column_index).number_format = "$0.00"
 
 
 def read_active_wagers():
@@ -457,6 +516,9 @@ if not value_board.empty:
     value_board["buy_roi"] = value_board["buy_edge"] / value_board["yes_ask"]
     value_board["sell_edge"] = value_board["yes_bid"] - value_board["silver_prob"]
     value_board["sell_roi"] = value_board["sell_edge"] / (1 - value_board["yes_bid"])
+    value_board["buy_quarter_kelly"] = (
+        value_board["buy_edge"] / (1 - value_board["yes_ask"]) / 4
+    ).clip(lower=0)
 
 proxy_teams, strong_proxy_teams = champion_proxy_team_sets(value_board)
 value_board[CHAMPION_PROXY_COLUMN] = value_board["Team"].apply(
@@ -464,6 +526,11 @@ value_board[CHAMPION_PROXY_COLUMN] = value_board["Team"].apply(
 )
 value_board[STRONG_CHAMPION_PROXY_COLUMN] = value_board["Team"].apply(
     lambda team: "YES" if team in strong_proxy_teams else ""
+)
+proxy_kelly_by_team = proxy_kelly_dollars_by_team(value_board)
+value_board[PROXY_KELLY_COLUMN] = value_board.apply(
+    lambda row: proxy_kelly_by_team.get(row["Team"], ""),
+    axis=1,
 )
 
 bet_rows = []
@@ -485,6 +552,7 @@ for _, row in value_board.iterrows():
             "ROI": row["buy_roi"],
             "EV per $100": row["buy_edge"] * 100,
             "Quarter Kelly": quarter_kelly,
+            PROXY_KELLY_COLUMN: row[PROXY_KELLY_COLUMN],
             f"Stake on ${BANKROLL}": quarter_kelly * BANKROLL,
             COL_BUCKET: bucket(row["buy_edge"]),
             "Volume": row["volume"],
@@ -509,6 +577,7 @@ for _, row in value_board.iterrows():
             "ROI": row["sell_roi"],
             "EV per $100": row["sell_edge"] * 100,
             "Quarter Kelly": quarter_kelly,
+            PROXY_KELLY_COLUMN: row[PROXY_KELLY_COLUMN],
             f"Stake on ${BANKROLL}": quarter_kelly * BANKROLL,
             COL_BUCKET: bucket(row["sell_edge"]),
             "Volume": row["volume"],
@@ -538,6 +607,7 @@ definitions = pd.DataFrame([
     ["Team", "Normalized three-letter team code."],
     [CHAMPION_PROXY_COLUMN, "YES when R16, quarterfinal, semifinal, and champion BUY edges are all positive."],
     [STRONG_CHAMPION_PROXY_COLUMN, "YES when the team is a champion proxy candidate and champion BUY edge is at least 35% of average R16/QF/SF BUY edge."],
+    [PROXY_KELLY_COLUMN, f"Shown only for Champion Proxy teams. Keeps the Champion Quarter Kelly stake and adds {PROXY_KELLY_STAGE_WEIGHT:.0%} of the R16/QF/SF Quarter Kelly stakes."],
     [COL_ACTION, "BUY YES means Silver is above Kalshi Ask. SELL YES means Kalshi Bid is above Silver."],
     [COL_SILVER, "Silver model probability that the team reaches or wins this stage."],
     ["Market Price", "For BUY YES, this is the Yes Ask. For SELL YES, this is the Yes Bid."],

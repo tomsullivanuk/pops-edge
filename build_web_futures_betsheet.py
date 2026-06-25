@@ -24,6 +24,7 @@ WEB_COLUMNS = [
     "Edge",
     "ROI",
     "Quarter Kelly",
+    "proxy_kelly_dollars",
     "Stake on $500",
     "Bucket",
     "Volume",
@@ -54,10 +55,19 @@ def format_decimal(value):
     return f"{numeric:.2f}"
 
 
+def format_dollars(value):
+    numeric = pd.to_numeric(value, errors="coerce")
+    if pd.isna(numeric):
+        return ""
+    return f"${numeric:.2f}"
+
+
 if "Silver" in df.columns:
     df["Silver"] = df["Silver"].map(format_percentage)
 if "Edge" in df.columns:
     df["Edge"] = df["Edge"].map(lambda value: format_percentage(value, signed=True))
+if "proxy_kelly_dollars" in df.columns:
+    df["proxy_kelly_dollars"] = df["proxy_kelly_dollars"].map(format_dollars)
 
 for col in [
     "ROI",
@@ -159,6 +169,7 @@ html = f"""
     <h1>World Cup Futures Value Board</h1>
     <div class="subtitle">Generated {datetime.now().strftime("%Y-%m-%d %H:%M")}</div>
     <p class="proxy-note">Champion Proxy Candidate means R16/QF/SF/Champion all show positive BUY edge. Strong Champion Proxy means the Champion BUY edge is at least 35% of the average R16/QF/SF BUY edge.</p>
+    <p class="proxy-note">Proxy Kelly is shown only for Champion Proxy teams. It keeps the ordinary Champion Quarter Kelly stake and adds 60% of the R16/QF/SF Quarter Kelly stakes, reflecting that Champion is being used as a proxy for several correlated advancement bets.</p>
     {html_table}
 
 <script>
