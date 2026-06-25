@@ -1,5 +1,6 @@
 import os
 import re
+from math import floor
 from datetime import datetime
 
 import pandas as pd
@@ -43,6 +44,21 @@ CHAMPION_PROXY_COLUMN = "champion_proxy_candidate"
 STRONG_CHAMPION_PROXY_COLUMN = "strong_champion_proxy"
 PROXY_KELLY_COLUMN = "proxy_kelly_dollars"
 PROXY_KELLY_STAGE_WEIGHT = 0.60
+LADDER_PRICE_MULTIPLIERS = [1.50, 2.25, 3.25, 4.50]
+LADDER_CONTRACT_WEIGHTS = [0.30, 0.30, 0.20]
+LADDER_COLUMNS = [
+    "proxy_contracts",
+    "ladder_1_price",
+    "ladder_1_contracts",
+    "ladder_2_price",
+    "ladder_2_contracts",
+    "ladder_3_price",
+    "ladder_3_contracts",
+    "ladder_4_price",
+    "ladder_4_contracts",
+    "ladder_expected_return",
+    "ladder_expected_profit",
+]
 
 CODE_MAP = {
     "ALG": "DZA",
@@ -125,6 +141,17 @@ BET_COLUMNS = [
     "EV per $100",
     "Quarter Kelly",
     PROXY_KELLY_COLUMN,
+    "proxy_contracts",
+    "ladder_1_price",
+    "ladder_1_contracts",
+    "ladder_2_price",
+    "ladder_2_contracts",
+    "ladder_3_price",
+    "ladder_3_contracts",
+    "ladder_4_price",
+    "ladder_4_contracts",
+    "ladder_expected_return",
+    "ladder_expected_profit",
     f"Stake on ${BANKROLL}",
     COL_BUCKET,
     "Volume",
@@ -230,29 +257,144 @@ def proxy_kelly_dollars_by_team(value_board):
     return proxy_kelly_dollars[valid_proxy_teams].to_dict()
 
 
+def round_to_cent(price):
+    return min(round(price + 1e-9, 2), 0.99)
+
+
+def champion_proxy_ladders_by_team(value_board):
+    if value_board.empty:
+        return {}
+
+    required_columns = {
+        "Team",
+        "stage_key",
+        CHAMPION_PROXY_COLUMN,
+        PROXY_KELLY_COLUMN,
+        "yes_ask",
+    }
+    if not required_columns.issubset(value_board.columns):
+        return {}
+
+    champion_rows = value_board[value_board["stage_key"] == "Champ"]
+    ladders = {}
+    for _, row in champion_rows.iterrows():
+        if row[CHAMPION_PROXY_COLUMN] != "YES":
+            continue
+
+        proxy_kelly_dollars = numeric(row[PROXY_KELLY_COLUMN])
+        entry_price = numeric(row["yes_ask"])
+        if (
+            pd.isna(proxy_kelly_dollars)
+            or pd.isna(entry_price)
+            or proxy_kelly_dollars <= 0
+            or entry_price <= 0
+        ):
+            continue
+
+        proxy_contracts = floor(proxy_kelly_dollars / entry_price)
+        if proxy_contracts <= 0:
+            continue
+
+        ladder_prices = [
+            round_to_cent(multiplier * entry_price)
+            for multiplier in LADDER_PRICE_MULTIPLIERS
+        ]
+        ladder_contracts = [
+            floor(weight * proxy_contracts)
+            for weight in LADDER_CONTRACT_WEIGHTS
+        ]
+        ladder_contracts.append(proxy_contracts - sum(ladder_contracts))
+
+        expected_return = sum(
+            price * contracts
+            for price, contracts in zip(ladder_prices, ladder_contracts)
+        )
+        expected_profit = expected_return - proxy_kelly_dollars
+
+        ladder = {"proxy_contracts": proxy_contracts}
+        for index, (price, contracts) in enumerate(
+            zip(ladder_prices, ladder_contracts),
+            start=1,
+        ):
+            ladder[f"ladder_{index}_price"] = price
+            ladder[f"ladder_{index}_contracts"] = contracts
+        ladder["ladder_expected_return"] = round(expected_return, 2)
+        ladder["ladder_expected_profit"] = round(expected_profit, 2)
+        ladders[row["Team"]] = ladder
+
+    return ladders
+
+
 def apply_percentage_formats(writer):
     formats_by_sheet = {
         SHEET_BET_SHEET: {
             COL_SILVER: "0.0%",
             COL_EDGE: "+0.0%;-0.0%;0.0%",
+            "ladder_1_price": "0%",
+            "ladder_2_price": "0%",
+            "ladder_3_price": "0%",
+            "ladder_4_price": "0%",
         },
         SHEET_CANDIDATES: {
             COL_SILVER: "0.0%",
             COL_EDGE: "+0.0%;-0.0%;0.0%",
+            "ladder_1_price": "0%",
+            "ladder_2_price": "0%",
+            "ladder_3_price": "0%",
+            "ladder_4_price": "0%",
         },
         SHEET_VALUE_BOARD: {
             "silver_prob": "0.0%",
             "buy_edge": "+0.0%;-0.0%;0.0%",
             "sell_edge": "+0.0%;-0.0%;0.0%",
+            "ladder_1_price": "0%",
+            "ladder_2_price": "0%",
+            "ladder_3_price": "0%",
+            "ladder_4_price": "0%",
         },
         SHEET_SILVER_NORMALIZED: {
             "silver_prob": "0.0%",
         },
     }
     currency_formats_by_sheet = {
-        SHEET_BET_SHEET: [PROXY_KELLY_COLUMN],
-        SHEET_CANDIDATES: [PROXY_KELLY_COLUMN],
-        SHEET_VALUE_BOARD: [PROXY_KELLY_COLUMN],
+        SHEET_BET_SHEET: [
+            PROXY_KELLY_COLUMN,
+            "ladder_expected_return",
+            "ladder_expected_profit",
+        ],
+        SHEET_CANDIDATES: [
+            PROXY_KELLY_COLUMN,
+            "ladder_expected_return",
+            "ladder_expected_profit",
+        ],
+        SHEET_VALUE_BOARD: [
+            PROXY_KELLY_COLUMN,
+            "ladder_expected_return",
+            "ladder_expected_profit",
+        ],
+    }
+    integer_formats_by_sheet = {
+        SHEET_BET_SHEET: [
+            "proxy_contracts",
+            "ladder_1_contracts",
+            "ladder_2_contracts",
+            "ladder_3_contracts",
+            "ladder_4_contracts",
+        ],
+        SHEET_CANDIDATES: [
+            "proxy_contracts",
+            "ladder_1_contracts",
+            "ladder_2_contracts",
+            "ladder_3_contracts",
+            "ladder_4_contracts",
+        ],
+        SHEET_VALUE_BOARD: [
+            "proxy_contracts",
+            "ladder_1_contracts",
+            "ladder_2_contracts",
+            "ladder_3_contracts",
+            "ladder_4_contracts",
+        ],
     }
 
     for sheet_name, column_formats in formats_by_sheet.items():
@@ -282,6 +424,20 @@ def apply_percentage_formats(writer):
                 continue
             for row_index in range(2, worksheet.max_row + 1):
                 worksheet.cell(row=row_index, column=column_index).number_format = "$0.00"
+
+    for sheet_name, column_names in integer_formats_by_sheet.items():
+        worksheet = writer.book[sheet_name]
+        headers = {
+            cell.value: cell.column
+            for cell in worksheet[1]
+            if cell.value is not None
+        }
+        for column_name in column_names:
+            column_index = headers.get(column_name)
+            if column_index is None:
+                continue
+            for row_index in range(2, worksheet.max_row + 1):
+                worksheet.cell(row=row_index, column=column_index).number_format = "0"
 
 
 def read_active_wagers():
@@ -532,6 +688,11 @@ value_board[PROXY_KELLY_COLUMN] = value_board.apply(
     lambda row: proxy_kelly_by_team.get(row["Team"], ""),
     axis=1,
 )
+ladder_by_team = champion_proxy_ladders_by_team(value_board)
+for column in LADDER_COLUMNS:
+    value_board[column] = value_board["Team"].apply(
+        lambda team, column=column: ladder_by_team.get(team, {}).get(column, "")
+    )
 
 bet_rows = []
 for _, row in value_board.iterrows():
@@ -553,6 +714,17 @@ for _, row in value_board.iterrows():
             "EV per $100": row["buy_edge"] * 100,
             "Quarter Kelly": quarter_kelly,
             PROXY_KELLY_COLUMN: row[PROXY_KELLY_COLUMN],
+            "proxy_contracts": row["proxy_contracts"],
+            "ladder_1_price": row["ladder_1_price"],
+            "ladder_1_contracts": row["ladder_1_contracts"],
+            "ladder_2_price": row["ladder_2_price"],
+            "ladder_2_contracts": row["ladder_2_contracts"],
+            "ladder_3_price": row["ladder_3_price"],
+            "ladder_3_contracts": row["ladder_3_contracts"],
+            "ladder_4_price": row["ladder_4_price"],
+            "ladder_4_contracts": row["ladder_4_contracts"],
+            "ladder_expected_return": row["ladder_expected_return"],
+            "ladder_expected_profit": row["ladder_expected_profit"],
             f"Stake on ${BANKROLL}": quarter_kelly * BANKROLL,
             COL_BUCKET: bucket(row["buy_edge"]),
             "Volume": row["volume"],
@@ -578,6 +750,17 @@ for _, row in value_board.iterrows():
             "EV per $100": row["sell_edge"] * 100,
             "Quarter Kelly": quarter_kelly,
             PROXY_KELLY_COLUMN: row[PROXY_KELLY_COLUMN],
+            "proxy_contracts": row["proxy_contracts"],
+            "ladder_1_price": row["ladder_1_price"],
+            "ladder_1_contracts": row["ladder_1_contracts"],
+            "ladder_2_price": row["ladder_2_price"],
+            "ladder_2_contracts": row["ladder_2_contracts"],
+            "ladder_3_price": row["ladder_3_price"],
+            "ladder_3_contracts": row["ladder_3_contracts"],
+            "ladder_4_price": row["ladder_4_price"],
+            "ladder_4_contracts": row["ladder_4_contracts"],
+            "ladder_expected_return": row["ladder_expected_return"],
+            "ladder_expected_profit": row["ladder_expected_profit"],
             f"Stake on ${BANKROLL}": quarter_kelly * BANKROLL,
             COL_BUCKET: bucket(row["sell_edge"]),
             "Volume": row["volume"],
@@ -608,6 +791,17 @@ definitions = pd.DataFrame([
     [CHAMPION_PROXY_COLUMN, "YES when R16, quarterfinal, semifinal, and champion BUY edges are all positive."],
     [STRONG_CHAMPION_PROXY_COLUMN, "YES when the team is a champion proxy candidate and champion BUY edge is at least 35% of average R16/QF/SF BUY edge."],
     [PROXY_KELLY_COLUMN, f"Shown only for Champion Proxy teams. Keeps the Champion Quarter Kelly stake and adds {PROXY_KELLY_STAGE_WEIGHT:.0%} of the R16/QF/SF Quarter Kelly stakes."],
+    ["proxy_contracts", "Number of Champion contracts to buy using Proxy Kelly dollars and the Champion Yes Ask."],
+    ["ladder_1_price", "First resting sell price: 1.5x Champion entry price, capped at 99 cents."],
+    ["ladder_1_contracts", "First resting sell order size: 30% of proxy contracts rounded down."],
+    ["ladder_2_price", "Second resting sell price: 2.25x Champion entry price, capped at 99 cents."],
+    ["ladder_2_contracts", "Second resting sell order size: 30% of proxy contracts rounded down."],
+    ["ladder_3_price", "Third resting sell price: 3.25x Champion entry price, capped at 99 cents."],
+    ["ladder_3_contracts", "Third resting sell order size: 20% of proxy contracts rounded down."],
+    ["ladder_4_price", "Fourth resting sell price: 4.5x Champion entry price, capped at 99 cents."],
+    ["ladder_4_contracts", "Final resting sell order size: all remaining proxy contracts."],
+    ["ladder_expected_return", "Total dollars returned if all four ladder sell orders fill."],
+    ["ladder_expected_profit", "Ladder expected return minus Proxy Kelly dollars."],
     [COL_ACTION, "BUY YES means Silver is above Kalshi Ask. SELL YES means Kalshi Bid is above Silver."],
     [COL_SILVER, "Silver model probability that the team reaches or wins this stage."],
     ["Market Price", "For BUY YES, this is the Yes Ask. For SELL YES, this is the Yes Bid."],

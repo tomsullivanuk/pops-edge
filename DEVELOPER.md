@@ -86,11 +86,13 @@ Kalshi Normalized
 Definitions
 ```
 
-The futures Bet Sheet columns include `Stage`, `Team`, `champion_proxy_candidate`, `strong_champion_proxy`, `Action`, `Silver`, `Market Price`, `Edge`, `ROI`, `Quarter Kelly`, `proxy_kelly_dollars`, `Stake on $500`, `Bucket`, `Volume`, `event_ticker`, `market_ticker`, `Position`, `Current Action`, `Entry Price`, `Current Value Change`, `Stake`, and `Status`. It uses the same `BANKROLL = 500`, `MIN_EDGE = 0.05`, and A/B/C bucket thresholds as `build_value_board.py`, but divides full Kelly by four rather than two.
+The futures Bet Sheet columns include `Stage`, `Team`, `champion_proxy_candidate`, `strong_champion_proxy`, `Action`, `Silver`, `Market Price`, `Edge`, `ROI`, `Quarter Kelly`, `proxy_kelly_dollars`, `proxy_contracts`, the four ladder price/contract pairs, `ladder_expected_return`, `ladder_expected_profit`, `Stake on $500`, `Bucket`, `Volume`, `event_ticker`, `market_ticker`, `Position`, `Current Action`, `Entry Price`, `Current Value Change`, `Stake`, and `Status`. It uses the same `BANKROLL = 500`, `MIN_EDGE = 0.05`, and A/B/C bucket thresholds as `build_value_board.py`, but divides full Kelly by four rather than two.
 
 `champion_proxy_candidate` is `YES` when a team has positive BUY edge in R16, quarterfinal, semifinal, and Champion markets. `strong_champion_proxy` adds the requirement that Champion BUY edge is at least 35% of average R16/QF/SF BUY edge. Final markets are classified when available but are not part of either gate.
 
 `proxy_kelly_dollars` is shown only for Champion Proxy teams. It keeps the ordinary Champion Quarter Kelly stake and adds 60% of the R16/QF/SF Quarter Kelly stakes, reflecting that Champion is being used as a proxy for several correlated advancement bets.
+
+Champion Proxy sell ladders use the Champion BUY price as entry, allocate Proxy Kelly into contracts, then suggest four resting sell orders at 1.5x, 2.25x, 3.25x, and 4.5x entry. Contract allocation is 30% / 30% / 20% / remainder. The individual ladder price/contract columns stay in Excel for auditing, while the futures HTML shows a compact `proxy_sell_ladder` summary plus expected return/profit.
 
 Active futures wagers come from the unified `World_Cup_Bet_Log.xlsx`, match on `market_ticker`, and include `Open` and `Partially Closed` statuses. The futures HTML view omits `event_ticker` to reduce width while retaining `market_ticker` and the active-position fields.
 

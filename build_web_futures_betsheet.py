@@ -13,6 +13,46 @@ OUTPUT_FILE = WEB_FUTURES_VALUE_BOARD_FILE
 
 df = pd.read_excel(INPUT_FILE, sheet_name=SHEET_BET_SHEET)
 
+def format_cents(value):
+    numeric = pd.to_numeric(value, errors="coerce")
+    if pd.isna(numeric):
+        return ""
+    return f"{numeric * 100:.0f}¢"
+
+
+def format_whole_number(value):
+    numeric = pd.to_numeric(value, errors="coerce")
+    if pd.isna(numeric):
+        return ""
+    return f"{int(numeric)}"
+
+
+def format_ladder(row):
+    parts = []
+    for index in range(1, 5):
+        price = pd.to_numeric(row.get(f"ladder_{index}_price"), errors="coerce")
+        contracts = pd.to_numeric(row.get(f"ladder_{index}_contracts"), errors="coerce")
+        if pd.isna(price) or pd.isna(contracts):
+            return ""
+        parts.append(f"{format_cents(price)} × {int(contracts)}")
+    return " | ".join(parts)
+
+
+if all(
+    column in df.columns
+    for column in [
+        "ladder_1_price",
+        "ladder_1_contracts",
+        "ladder_2_price",
+        "ladder_2_contracts",
+        "ladder_3_price",
+        "ladder_3_contracts",
+        "ladder_4_price",
+        "ladder_4_contracts",
+    ]
+):
+    df["proxy_sell_ladder"] = df.apply(format_ladder, axis=1)
+
 WEB_COLUMNS = [
     "Stage",
     "Team",
@@ -25,6 +65,10 @@ WEB_COLUMNS = [
     "ROI",
     "Quarter Kelly",
     "proxy_kelly_dollars",
+    "proxy_contracts",
+    "proxy_sell_ladder",
+    "ladder_expected_return",
+    "ladder_expected_profit",
     "Stake on $500",
     "Bucket",
     "Volume",
@@ -68,6 +112,12 @@ if "Edge" in df.columns:
     df["Edge"] = df["Edge"].map(lambda value: format_percentage(value, signed=True))
 if "proxy_kelly_dollars" in df.columns:
     df["proxy_kelly_dollars"] = df["proxy_kelly_dollars"].map(format_dollars)
+if "proxy_contracts" in df.columns:
+    df["proxy_contracts"] = df["proxy_contracts"].map(format_whole_number)
+if "ladder_expected_return" in df.columns:
+    df["ladder_expected_return"] = df["ladder_expected_return"].map(format_dollars)
+if "ladder_expected_profit" in df.columns:
+    df["ladder_expected_profit"] = df["ladder_expected_profit"].map(format_dollars)
 
 for col in [
     "ROI",
@@ -170,6 +220,7 @@ html = f"""
     <div class="subtitle">Generated {datetime.now().strftime("%Y-%m-%d %H:%M")}</div>
     <p class="proxy-note">Champion Proxy Candidate means R16/QF/SF/Champion all show positive BUY edge. Strong Champion Proxy means the Champion BUY edge is at least 35% of the average R16/QF/SF BUY edge.</p>
     <p class="proxy-note">Proxy Kelly is shown only for Champion Proxy teams. It keeps the ordinary Champion Quarter Kelly stake and adds 60% of the R16/QF/SF Quarter Kelly stakes, reflecting that Champion is being used as a proxy for several correlated advancement bets.</p>
+    <p class="proxy-note">Champion Proxy sell ladders use the Champion BUY price as entry, allocate Proxy Kelly into contracts, then suggest four resting sell orders at 1.5×, 2.25×, 3.25×, and 4.5× entry. Contract allocation is 30% / 30% / 20% / remainder.</p>
     {html_table}
 
 <script>

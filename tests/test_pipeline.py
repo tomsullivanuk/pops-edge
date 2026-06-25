@@ -286,15 +286,15 @@ class PipelineTests(unittest.TestCase):
             value_board = pd.read_excel(output, sheet_name="Value Board")
 
             self.assertEqual(metadata.loc[metadata["Field"] == "QC Status", "Value"].iloc[0], "PASS")
-            self.assertEqual(len(value_board), 23)
+            self.assertEqual(len(value_board), 35)
 
             argentina = bet_sheet[bet_sheet["market_ticker"] == "KXMENWORLDCUP-26-AR"].iloc[0]
             self.assertEqual(argentina["Stage"], "Champion")
             self.assertEqual(argentina["Team"], "ARG")
             self.assertEqual(argentina["Action"], "BUY YES")
             self.assertAlmostEqual(argentina["Silver"], 0.241)
-            self.assertAlmostEqual(argentina["Market Price"], 0.15)
-            self.assertAlmostEqual(argentina["Edge"], 0.091)
+            self.assertAlmostEqual(argentina["Market Price"], 0.151)
+            self.assertAlmostEqual(argentina["Edge"], 0.09)
             self.assertAlmostEqual(argentina["Quarter Kelly"], 0.03)
             expected_argentina_proxy_kelly = (
                 value_board.loc[
@@ -314,13 +314,38 @@ class PipelineTests(unittest.TestCase):
                 expected_argentina_proxy_kelly,
                 places=2,
             )
-            self.assertAlmostEqual(argentina["Stake on $500"], 13.38)
+            self.assertAlmostEqual(argentina["proxy_kelly_dollars"], 97.45, places=2)
+            self.assertEqual(argentina["proxy_contracts"], 645)
+            self.assertEqual(
+                [
+                    argentina["ladder_1_price"],
+                    argentina["ladder_2_price"],
+                    argentina["ladder_3_price"],
+                    argentina["ladder_4_price"],
+                ],
+                [0.23, 0.34, 0.49, 0.68],
+            )
+            argentina_ladder_contracts = [
+                argentina["ladder_1_contracts"],
+                argentina["ladder_2_contracts"],
+                argentina["ladder_3_contracts"],
+                argentina["ladder_4_contracts"],
+            ]
+            self.assertEqual(argentina_ladder_contracts, [193, 193, 129, 130])
+            self.assertEqual(sum(argentina_ladder_contracts), argentina["proxy_contracts"])
+            self.assertAlmostEqual(argentina["ladder_expected_return"], 261.62)
+            self.assertAlmostEqual(
+                argentina["ladder_expected_profit"],
+                argentina["ladder_expected_return"] - argentina["proxy_kelly_dollars"],
+                places=2,
+            )
+            self.assertAlmostEqual(argentina["Stake on $500"], 13.25)
             self.assertEqual(argentina["Bucket"], "B")
             self.assertEqual(argentina["Position"], "Yes")
             self.assertEqual(argentina["Current Action"], "BUY YES")
             self.assertAlmostEqual(argentina["Entry Price"], 0.15)
             self.assertAlmostEqual(argentina["Stake"], 1.80)
-            self.assertAlmostEqual(argentina["Current Value Change"], 0.00)
+            self.assertAlmostEqual(argentina["Current Value Change"], 0.001)
             self.assertEqual(argentina["Status"], "Open")
             self.assertEqual(argentina["champion_proxy_candidate"], "YES")
             self.assertEqual(argentina["strong_champion_proxy"], "YES")
@@ -384,6 +409,8 @@ class PipelineTests(unittest.TestCase):
             )
             self.assertTrue(brazil["strong_champion_proxy"].fillna("").eq("").all())
             self.assertTrue(brazil["proxy_kelly_dollars"].fillna("").eq("").all())
+            self.assertTrue(brazil["proxy_contracts"].fillna("").eq("").all())
+            self.assertTrue(brazil["ladder_expected_profit"].fillna("").eq("").all())
 
             norway_stage_average = norway_value.loc[["R16", "Qtr", "Semi"], "buy_edge"].mean()
             self.assertGreater(norway_value.loc["Champ", "buy_edge"], 0)
@@ -397,10 +424,34 @@ class PipelineTests(unittest.TestCase):
             self.assertTrue(france["champion_proxy_candidate"].fillna("").eq("").all())
             self.assertTrue(france["strong_champion_proxy"].fillna("").eq("").all())
             self.assertTrue(france["proxy_kelly_dollars"].fillna("").eq("").all())
+            self.assertTrue(france["proxy_contracts"].fillna("").eq("").all())
 
             mexico = value_board[value_board["Team"] == "MEX"]
             self.assertTrue(mexico["buy_quarter_kelly"].isna().any())
             self.assertTrue(mexico["proxy_kelly_dollars"].fillna("").eq("").all())
+            self.assertTrue(mexico["proxy_contracts"].fillna("").eq("").all())
+
+            australia = value_board[value_board["Team"] == "AUS"].iloc[0]
+            self.assertEqual(australia["champion_proxy_candidate"], "YES")
+            self.assertEqual(australia["proxy_contracts"], 438)
+            self.assertEqual(
+                [
+                    australia["ladder_1_price"],
+                    australia["ladder_2_price"],
+                    australia["ladder_3_price"],
+                    australia["ladder_4_price"],
+                ],
+                [0.12, 0.18, 0.26, 0.36],
+            )
+
+            england = value_board[value_board["Team"] == "ENG"].iloc[0]
+            self.assertEqual(england["champion_proxy_candidate"], "YES")
+            self.assertEqual(england["ladder_4_price"], 0.99)
+
+            germany = value_board[value_board["Team"] == "GER"]
+            self.assertEqual(set(germany["champion_proxy_candidate"]), {"YES"})
+            self.assertTrue(germany["proxy_kelly_dollars"].fillna("").ne("").all())
+            self.assertTrue(germany["proxy_contracts"].fillna("").eq("").all())
 
             workbook = load_workbook(output, data_only=False)
             bet_sheet_ws = workbook["Bet Sheet"]
@@ -413,6 +464,18 @@ class PipelineTests(unittest.TestCase):
             self.assertIsInstance(bet_sheet_ws.cell(2, bet_headers["Silver"]).value, float)
             self.assertEqual(
                 bet_sheet_ws.cell(2, bet_headers["proxy_kelly_dollars"]).number_format,
+                "$0.00",
+            )
+            self.assertEqual(
+                bet_sheet_ws.cell(2, bet_headers["ladder_1_price"]).number_format,
+                "0%",
+            )
+            self.assertEqual(
+                bet_sheet_ws.cell(2, bet_headers["proxy_contracts"]).number_format,
+                "0",
+            )
+            self.assertEqual(
+                bet_sheet_ws.cell(2, bet_headers["ladder_expected_profit"]).number_format,
                 "$0.00",
             )
 
@@ -435,6 +498,10 @@ class PipelineTests(unittest.TestCase):
             self.assertIn("KXMENWORLDCUP-26-AR", html)
             self.assertIn("<th>Quarter Kelly</th>", html)
             self.assertIn("<th>proxy_kelly_dollars</th>", html)
+            self.assertIn("<th>proxy_contracts</th>", html)
+            self.assertIn("<th>proxy_sell_ladder</th>", html)
+            self.assertIn("<th>ladder_expected_return</th>", html)
+            self.assertIn("<th>ladder_expected_profit</th>", html)
             self.assertIn("<th>Position</th>", html)
             self.assertIn("<th>Current Action</th>", html)
             self.assertIn("<th>Entry Price</th>", html)
@@ -443,11 +510,15 @@ class PipelineTests(unittest.TestCase):
             self.assertIn("<th>strong_champion_proxy</th>", html)
             self.assertIn("Champion Proxy Candidate means R16/QF/SF/Champion", html)
             self.assertIn("Proxy Kelly is shown only for Champion Proxy teams", html)
+            self.assertIn("Champion Proxy sell ladders use the Champion BUY price", html)
             self.assertIn('["champion_proxy_candidate", "proxy-badge"]', html)
             self.assertIn('["strong_champion_proxy", "strong-proxy-badge"]', html)
             self.assertIn("24.1%", html)
             self.assertIn("+9.1%", html)
             self.assertIn("$50.33", html)
+            self.assertIn("23¢ × 193 | 34¢ × 193 | 49¢ × 129 | 68¢ × 130", html)
+            self.assertIn("$261.62", html)
+            self.assertIn("$164.17", html)
             self.assertNotIn("<th>event_ticker</th>", html)
             self.assertNotIn("Half Kelly", html)
             self.assertNotIn(">nan<", html)
@@ -817,6 +888,9 @@ def write_sample_silver_futures_workbook(path):
             {"Team": "BRA", "Team Raw": "BRA Brazil", "R16": 0.75, "Qtr": 0.50, "Semi": 0.30, "Final": 0.18, "Champ": 0.10},
             {"Team": "FRA", "Team Raw": "FRA France", "R16": 0.70, "Qtr": 0.45, "Semi": 0.25, "Final": 0.14, "Champ": 0.08},
             {"Team": "MEX", "Team Raw": "MEX Mexico", "R16": 0.76, "Qtr": 0.48, "Semi": 0.28, "Final": 0.12, "Champ": 0.06},
+            {"Team": "AUS", "Team Raw": "AUS Australia", "R16": 0.55, "Qtr": 0.34, "Semi": 0.20, "Final": 0.12, "Champ": 0.11},
+            {"Team": "ENG", "Team Raw": "ENG England", "R16": 0.82, "Qtr": 0.62, "Semi": 0.48, "Final": 0.40, "Champ": 0.38},
+            {"Team": "GER", "Team Raw": "GER Germany", "R16": 0.78, "Qtr": 0.58, "Semi": 0.44, "Final": 0.32, "Champ": 0.18},
         ]
     )
     metadata = pd.DataFrame(
@@ -840,8 +914,8 @@ def write_sample_kalshi_futures_workbook(path):
                 "outcome": "Argentina",
                 "market_title": "Will Argentina win the World Cup?",
                 "yes_bid_dollars": 0.14,
-                "yes_ask_dollars": 0.15,
-                "last_price_dollars": 0.15,
+                "yes_ask_dollars": 0.151,
+                "last_price_dollars": 0.151,
                 "volume_fp": 1000,
                 "open_interest_fp": 500,
                 "close_time": "2026-07-19T23:59:00Z",
@@ -898,9 +972,9 @@ def write_sample_kalshi_futures_workbook(path):
         futures_market_row("KXWCROUND-26QUAR", "KXWCROUND-26QUAR-NOR", "Norway", "Quarterfinals Qualifiers", 0.49, 0.50),
         futures_market_row("KXWCROUND-26SEMI", "KXWCROUND-26SEMI-NOR", "Norway", "Semifinals Qualifiers", 0.31, 0.32),
         futures_market_row("KXMENWORLDCUP-26", "KXMENWORLDCUP-26-NO", "Norway", "World Cup winner", 0.16, 0.17),
-        futures_market_row("KXWCROUND-26RO16", "KXWCROUND-26RO16-ARG", "Argentina", "Round of 16 Qualifiers", 0.79, 0.80),
-        futures_market_row("KXWCROUND-26QUAR", "KXWCROUND-26QUAR-ARG", "Argentina", "Quarterfinals Qualifiers", 0.49, 0.50),
-        futures_market_row("KXWCROUND-26SEMI", "KXWCROUND-26SEMI-ARG", "Argentina", "Semifinals Qualifiers", 0.32, 0.33),
+        futures_market_row("KXWCROUND-26RO16", "KXWCROUND-26RO16-ARG", "Argentina", "Round of 16 Qualifiers", 0.63, 0.64),
+        futures_market_row("KXWCROUND-26QUAR", "KXWCROUND-26QUAR-ARG", "Argentina", "Quarterfinals Qualifiers", 0.34, 0.35),
+        futures_market_row("KXWCROUND-26SEMI", "KXWCROUND-26SEMI-ARG", "Argentina", "Semifinals Qualifiers", 0.22, 0.23),
         futures_market_row("KXWCROUND-26RO16", "KXWCROUND-26RO16-BRA", "Brazil", "Round of 16 Qualifiers", 0.64, 0.65),
         futures_market_row("KXWCROUND-26QUAR", "KXWCROUND-26QUAR-BRA", "Brazil", "Quarterfinals Qualifiers", 0.41, 0.42),
         futures_market_row("KXWCROUND-26SEMI", "KXWCROUND-26SEMI-BRA", "Brazil", "Semifinals Qualifiers", 0.21, 0.22),
@@ -914,6 +988,18 @@ def write_sample_kalshi_futures_workbook(path):
         futures_market_row("KXWCROUND-26QUAR", "KXWCROUND-26QUAR-MEX", "Mexico", "Quarterfinals Qualifiers", 0.34, 0.35),
         futures_market_row("KXWCROUND-26SEMI", "KXWCROUND-26SEMI-MEX", "Mexico", "Semifinals Qualifiers", 0.16, None),
         futures_market_row("KXMENWORLDCUP-26", "KXMENWORLDCUP-26-MX", "Mexico", "World Cup winner", 0.01, 0.02),
+        futures_market_row("KXWCROUND-26RO16", "KXWCROUND-26RO16-AUS", "Australia", "Round of 16 Qualifiers", 0.44, 0.45),
+        futures_market_row("KXWCROUND-26QUAR", "KXWCROUND-26QUAR-AUS", "Australia", "Quarterfinals Qualifiers", 0.24, 0.25),
+        futures_market_row("KXWCROUND-26SEMI", "KXWCROUND-26SEMI-AUS", "Australia", "Semifinals Qualifiers", 0.09, 0.10),
+        futures_market_row("KXMENWORLDCUP-26", "KXMENWORLDCUP-26-AU", "Australia", "World Cup winner", 0.07, 0.08),
+        futures_market_row("KXWCROUND-26RO16", "KXWCROUND-26RO16-ENG", "England", "Round of 16 Qualifiers", 0.71, 0.72),
+        futures_market_row("KXWCROUND-26QUAR", "KXWCROUND-26QUAR-ENG", "England", "Quarterfinals Qualifiers", 0.49, 0.50),
+        futures_market_row("KXWCROUND-26SEMI", "KXWCROUND-26SEMI-ENG", "England", "Semifinals Qualifiers", 0.35, 0.36),
+        futures_market_row("KXMENWORLDCUP-26", "KXMENWORLDCUP-26-EN", "England", "World Cup winner", 0.29, 0.30),
+        futures_market_row("KXWCROUND-26RO16", "KXWCROUND-26RO16-GER", "Germany", "Round of 16 Qualifiers", 0.69, 0.70),
+        futures_market_row("KXWCROUND-26QUAR", "KXWCROUND-26QUAR-GER", "Germany", "Quarterfinals Qualifiers", 0.47, 0.48),
+        futures_market_row("KXWCROUND-26SEMI", "KXWCROUND-26SEMI-GER", "Germany", "Semifinals Qualifiers", 0.33, 0.34),
+        futures_market_row("KXMENWORLDCUP-26", "KXMENWORLDCUP-26-DE", "Germany", "World Cup winner", 0.00, 0.00),
     ]
     rows = pd.concat([rows, pd.DataFrame(proxy_rows)], ignore_index=True)
     rows.to_excel(path, index=False)
@@ -952,6 +1038,17 @@ def write_sample_futures_value_board(path):
                 "ROI": 0.61,
                 "Quarter Kelly": 0.03,
                 "proxy_kelly_dollars": 50.33,
+                "proxy_contracts": 645,
+                "ladder_1_price": 0.23,
+                "ladder_1_contracts": 193,
+                "ladder_2_price": 0.34,
+                "ladder_2_contracts": 193,
+                "ladder_3_price": 0.49,
+                "ladder_3_contracts": 129,
+                "ladder_4_price": 0.68,
+                "ladder_4_contracts": 130,
+                "ladder_expected_return": 261.62,
+                "ladder_expected_profit": 164.17,
                 "Stake on $500": 13.38,
                 "Bucket": "B",
                 "Volume": 1000,
@@ -976,6 +1073,17 @@ def write_sample_futures_value_board(path):
                 "ROI": 0.18,
                 "Quarter Kelly": 0.07,
                 "proxy_kelly_dollars": None,
+                "proxy_contracts": None,
+                "ladder_1_price": None,
+                "ladder_1_contracts": None,
+                "ladder_2_price": None,
+                "ladder_2_contracts": None,
+                "ladder_3_price": None,
+                "ladder_3_contracts": None,
+                "ladder_4_price": None,
+                "ladder_4_contracts": None,
+                "ladder_expected_return": None,
+                "ladder_expected_profit": None,
                 "Stake on $500": 35.26,
                 "Bucket": "A",
                 "Volume": 800,

@@ -246,6 +246,10 @@ Important futures fields:
 | ROI | Expected return on capital |
 | Quarter Kelly | Suggested Kelly fraction for futures |
 | proxy_kelly_dollars | Advisory Champion proxy size in dollars |
+| proxy_contracts | Champion contracts implied by Proxy Kelly |
+| proxy_sell_ladder | Compact web display of the four resting sell orders |
+| ladder_expected_return | Dollars returned if all proxy ladder orders fill |
+| ladder_expected_profit | Ladder return minus Proxy Kelly dollars |
 | Stake on $500 | Suggested position size |
 | Bucket | A/B/C ranking |
 | Volume | Market liquidity |
@@ -257,6 +261,8 @@ The futures HTML view omits `event_ticker` to stay compact, retains `market_tick
 `champion_proxy_candidate` identifies teams whose staged advancement and Champion markets all have positive BUY edge. `strong_champion_proxy` applies the additional 35% relative-edge threshold. Final markets are normalized when available but are not part of either gate.
 
 Proxy Kelly is shown only for Champion Proxy teams. It keeps the ordinary Champion Quarter Kelly stake and adds 60% of the R16/QF/SF Quarter Kelly stakes, reflecting that Champion is being used as a proxy for several correlated advancement bets.
+
+Champion Proxy sell ladders use the Champion BUY price as entry, allocate Proxy Kelly into contracts, then suggest four resting sell orders at 1.5x, 2.25x, 3.25x, and 4.5x entry. Contract allocation is 30% / 30% / 20% / remainder.
 
 ---
 
