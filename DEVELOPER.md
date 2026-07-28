@@ -90,6 +90,10 @@ by urgent/near status, descending current edge, event, market, ticker, and side.
 `build_web_ladder_board.py` renders the same ordered data and supports both
 empty and populated boards.
 
+`kalshi_pull.py` retries timeouts, connection/incomplete-response failures, and
+HTTP 429/500/502/503/504 responses with bounded backoff. Each retry repeats the
+same cursor page so pagination does not skip events.
+
 ## Value Board Workbook
 
 `build_value_board.py` writes the existing Bet Sheet outputs unchanged, then adds a `Portfolio` worksheet with four stacked sections:

@@ -196,6 +196,105 @@ class PipelineTests(unittest.TestCase):
             self.assertNotIn("KXWCROUND-26FINAL-USA", pulled["market_ticker"].tolist())
             self.assertNotIn("KXWCHOST-2038-GER", pulled["market_ticker"].tolist())
 
+    def test_kalshi_pull_retries_timeout_with_same_cursor_page(self):
+        import requests
+        from kalshi_pull import pull_open_events
+
+        first_page = fake_kalshi_response({
+            "events": [
+                kalshi_event(
+                    "KXWCGAME-26JUN13-USAMEX",
+                    "KXWCGAME",
+                    "USA vs Mexico",
+                    [],
+                ),
+            ],
+            "cursor": "next-page",
+        })
+        second_page = fake_kalshi_response({
+            "events": [
+                kalshi_event(
+                    "KXMENWORLDCUP-26",
+                    "KXMENWORLDCUP",
+                    "2026 World Soccer Cup Winner",
+                    [],
+                ),
+            ],
+            "cursor": None,
+        })
+
+        with patch("kalshi_pull.requests.get") as get, patch("kalshi_pull.time.sleep") as sleep:
+            get.side_effect = [
+                first_page,
+                requests.exceptions.Timeout("slow page"),
+                second_page,
+            ]
+
+            events = pull_open_events()
+
+        self.assertEqual(len(events), 2)
+        self.assertEqual(sleep.call_args_list[0].args[0], 2)
+        self.assertEqual(get.call_args_list[0].kwargs["params"].get("cursor"), None)
+        self.assertEqual(get.call_args_list[1].kwargs["params"].get("cursor"), "next-page")
+        self.assertEqual(get.call_args_list[2].kwargs["params"].get("cursor"), "next-page")
+        self.assertEqual(get.call_args_list[1].kwargs["timeout"], 45)
+
+    def test_kalshi_pull_retries_retryable_http_status(self):
+        from kalshi_pull import get_with_retries
+
+        with patch("kalshi_pull.requests.get") as get, patch("kalshi_pull.time.sleep") as sleep:
+            get.side_effect = [
+                fake_kalshi_response({"events": []}, status_code=503),
+                fake_kalshi_response({"events": []}, status_code=200),
+            ]
+
+            response = get_with_retries("https://example.test/events", params={"cursor": "abc"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(get.call_count, 2)
+        self.assertEqual(sleep.call_args_list[0].args[0], 2)
+
+    def test_kalshi_pull_retries_chunked_encoding_error_with_same_cursor_page(self):
+        import requests
+        from kalshi_pull import pull_open_events
+
+        first_page = fake_kalshi_response({
+            "events": [
+                kalshi_event(
+                    "KXWCGAME-26JUN13-USAMEX",
+                    "KXWCGAME",
+                    "USA vs Mexico",
+                    [],
+                ),
+            ],
+            "cursor": "chunk-retry-page",
+        })
+        second_page = fake_kalshi_response({
+            "events": [
+                kalshi_event(
+                    "KXWCROUND-26RO16",
+                    "KXWCROUND",
+                    "World Soccer Cup Round of 16 Qualifiers",
+                    [],
+                ),
+            ],
+            "cursor": None,
+        })
+
+        with patch("kalshi_pull.requests.get") as get, patch("kalshi_pull.time.sleep") as sleep:
+            get.side_effect = [
+                first_page,
+                requests.exceptions.ChunkedEncodingError("incomplete read"),
+                second_page,
+            ]
+
+            events = pull_open_events()
+
+        self.assertEqual(len(events), 2)
+        self.assertEqual(sleep.call_args_list[0].args[0], 2)
+        self.assertEqual(get.call_args_list[1].kwargs["params"].get("cursor"), "chunk-retry-page")
+        self.assertEqual(get.call_args_list[2].kwargs["params"].get("cursor"), "chunk-retry-page")
+
     def test_build_value_board_uses_sample_silver_kalshi_and_active_wager_files(self):
         with TemporaryDirectory() as workspace:
             workspace = Path(workspace)
@@ -1094,10 +1193,18 @@ def write_sample_kalshi_workbook(path):
 
 
 class fake_kalshi_response:
-    def __init__(self, payload):
+    def __init__(self, payload, status_code=200):
         self.payload = payload
+        self.status_code = status_code
 
     def raise_for_status(self):
+        if self.status_code >= 400:
+            import requests
+
+            raise requests.exceptions.HTTPError(
+                f"HTTP {self.status_code}",
+                response=self,
+            )
         return None
 
     def json(self):

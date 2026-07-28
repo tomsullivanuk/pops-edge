@@ -33,3 +33,5 @@ This designation records the baseline; PR1 does not create or backfill a tag.
   partially closed positions use their remaining exposure.
 - Integrate Ladder Board generation, archiving, iCloud copying, and opening
   into the existing World Cup workflows.
+- Add bounded retry handling for transient Kalshi API failures without
+  advancing the pagination cursor.
