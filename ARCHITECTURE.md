@@ -12,7 +12,7 @@ This document describes the present system; it does not introduce a refactor.
 
 ## Component inventory
 
-### Reusable or potentially reusable platform components
+### Existing reusable or potentially reusable components
 
 - `config.py`: filenames, archive paths, sheet names, and shared column names.
 - `kalshi_pull.py`: paginated/retried market API acquisition, currently filtered
@@ -41,6 +41,80 @@ These are candidates, not declarations of already sport-neutral architecture.
 
 `build_web_betlog.py`, `import_wagers.py`, and the update scripts mix reusable
 patterns with World Cup-specific filenames and operating assumptions.
+
+## Architecture boundaries
+
+### Reusable platform concepts
+
+World Cup and MLB demonstrate common responsibilities that may be represented
+by minimal reusable contracts:
+
+- forecast providers and independently retained forecast observations;
+- market providers and executable market observations;
+- immutable observations, source provenance, and validation;
+- canonical events with explicit source-identity mappings;
+- derived edge analysis and recommendations;
+- positions, portfolio tracking, outcomes, and performance evaluation;
+- configuration, reporting, output isolation, and deterministic testing.
+
+These are shared concepts, not proof that current World Cup modules must be
+rewritten into a universal framework.
+
+### Adapter-level responsibilities
+
+Provider and sport adapters retain the semantics that give source data meaning:
+
+- provider-native schemas, identifiers, authentication, timestamps, and
+  parsing;
+- league or competition schedules and participant identity;
+- MLB starting pitchers, doubleheaders, postponements, suspensions, and
+  resumptions;
+- World Cup groups, knockout rounds, extra time, and penalty shootouts;
+- provider contract discovery, market-side mapping, and settlement
+  interpretation; and
+- source- or sport-specific validation and rejection rules.
+
+A shared abstraction must not erase important sport or provider semantics.
+Shared abstractions must be earned through multiple working implementations.
+World Cup and MLB provide enough evidence to recognize common concepts, but
+future PRs should introduce only the minimum reusable contracts required by
+their approved scope. They do not justify a broad World Cup rewrite.
+
+### Canonical events and source identity
+
+The platform may use a reusable canonical-event concept containing sport,
+league or competition, season, event identifier, scheduled time, participants,
+and status. Each adapter retains its authoritative sport-native identifiers.
+For MLB, `gamePk` is the canonical MLB game identifier preserved by the MLB
+adapter; it is not a universal cross-sport identifier. Provider-native IDs and
+the evidence used to map them to a canonical event remain first-class data.
+
+This document does not prescribe a final schema. PR3 will define only the
+bounded offline contracts needed for MLB identity and provenance.
+
+### Immutable observations and derived state
+
+Event facts, forecast observations, market observations, derived comparisons,
+recommendations, positions, and outcomes are separate. An observation preserves
+the source, source-native identifier, source publication or representation
+time, Pops' Edge collection time, canonical-event mapping, transformations,
+validation result, and rejection reasons.
+
+Later observations do not overwrite earlier observations when doing so would
+lose auditability or the historical information state. “Current” or “latest”
+values are derived views over immutable observations.
+
+### Fail-closed quality behavior
+
+Pops' Edge must not produce an edge or recommendation while material ambiguity
+remains. Hard failures include unresolved event or participant identity,
+doubleheader ambiguity, conflicting times, missing or post-start forecast
+timestamps, stale or changed pitchers, unresolved YES-side mapping, unclear
+settlement rules, stale market observations, missing executable prices,
+conflicting source identifiers, and unsupported status.
+
+Missing an opportunity is preferable to presenting a false edge caused by
+uncertain data.
 
 ## Data flow
 

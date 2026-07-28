@@ -5,19 +5,49 @@ Valuation PR process. The unit of work is one narrowly scoped, reviewable PR.
 
 ## Standard PR prompt
 
-Every PR prompt should define:
+Use this standard copy-ready structure:
 
-1. **Title and version** — release and PR number.
-2. **Context** — baseline state and reason for the work.
-3. **Objective** — one outcome stated plainly.
-4. **In scope** — required inspection, implementation, documentation, and
-   validation.
-5. **Out of scope** — prohibited or deferred work.
-6. **Acceptance criteria** — observable completion conditions.
-7. **Validation** — exact required checks and forbidden side effects.
-8. **Completion report** — required handoff format.
-9. **Authorization boundary** — whether staging, commit, push, tag, release, or
-   external mutations are allowed.
+```markdown
+# PRX — Descriptive Title
+## Context
+## Objective
+## Requirements
+## Constraints
+## Acceptance Criteria
+## Completion Report
+```
+
+Prompts focus on product outcomes, avoid unnecessary implementation
+prescription, state architecture boundaries and unchanged contracts, favor
+focused PRs, and separate research, documentation, architecture, and
+implementation when warranted. Requirements should include inspection,
+validation, documentation, and authorization boundaries where relevant.
+
+## Division of responsibility
+
+### Product manager and architect
+
+ChatGPT clarifies product goals, identifies unresolved architecture questions,
+challenges assumptions, evaluates tradeoffs, works toward explicit decisions,
+recommends PR boundaries, ensures significant decisions are documented before
+implementation, and reviews whether implementation satisfies the product
+objective and architecture.
+
+### Implementation engineer
+
+Codex inspects the repository, implements the bounded approved PR, makes
+ordinary engineering choices consistent with documented architecture, writes
+and runs tests, documents the implementation, reports conflicts and deferred
+work, and avoids silently creating product policy or architecture.
+
+### Architectural conflict rule
+
+If implementation reveals a conflict with the documented product model,
+architecture, data contract, or PR scope, do not invent a local workaround.
+Stop work on the affected portion, describe the conflict and available
+options, and request an explicit product or architecture decision. Codex may
+continue unrelated work only when it is safe and cannot prejudice that
+decision.
 
 ## 1. Confirm the contract
 
@@ -76,6 +106,12 @@ Do not commit until the user reviews the completion report when the task
 requires review-first handoff. After approval, stage only the intended files,
 inspect the staged diff, and commit with a focused message. Push, tag, release,
 and rename operations require explicit authorization.
+
+Review evaluates whether the product objective was met, architecture and
+unchanged contracts were preserved, unapproved policy was avoided, provenance
+and failure behavior are clear, tests validate product semantics, deferred work
+is documented, and scope remained bounded. Passing tests alone is not
+sufficient for approval.
 
 ## Documentation expectations
 

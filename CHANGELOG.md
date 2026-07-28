@@ -23,6 +23,12 @@ and FanGraphs as conditional forecast candidates; documents Kalshi
 `KXMLBGAME`, provenance, backfill, reconciliation, and fail-closed gates; and
 defers sportsbook ingestion without changing production behavior.
 
+PR2A documents Pops' Edge as an external-forecast evaluation platform,
+establishes commercial-data cost and rights review, separates reusable concepts
+from adapter semantics, makes immutable provenance and fail-closed validation
+core principles, and formalizes the product-manager/architect and Codex
+implementation-engineer workflow.
+
 ## [v1.0.0] — World Cup baseline
 
 The existing production World Cup implementation is designated Pops' Edge

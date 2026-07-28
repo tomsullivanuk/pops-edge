@@ -9,6 +9,7 @@ boards, portfolio and ladder views, wager log, CLV, archives, and web reports.
 
 1. Establish product and documentation foundations.
 2. Research and select MLB sources.
+2A. Document approved product-management and architecture decisions.
 3. Define MLB domain contracts and edge cases.
 4. Implement deterministic MLB ingestion.
 5. Implement MLB valuation.

@@ -79,6 +79,20 @@ support the intended MLB use cases. The decision is recorded in
 `docs/MLB_SOURCE_RESEARCH_v1.1.0.md`; production adapters remain blocked on
 source-specific licensing gates.
 
+### PR2A — Document product and architecture decisions
+
+- Define Pops' Edge as an external-forecast evaluation platform rather than a
+  proprietary prediction engine.
+- Record the commercial-data cost and rights philosophy without approving a
+  provider.
+- Clarify reusable platform concepts, adapter responsibilities, canonical
+  event identity, immutable observations, and fail-closed behavior.
+- Formalize the product-manager/architect and Codex implementation-engineer
+  workflow.
+
+**Gate:** durable product, architecture, workflow, and release documentation
+is internally consistent before PR3 begins; no production behavior changes.
+
 ### PR3 — Define the MLB domain and contracts
 
 - Specify canonical MLB game, team, market, price, forecast, and result models.
