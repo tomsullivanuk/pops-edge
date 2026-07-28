@@ -17,6 +17,7 @@ fi
 WEB_BETLOG_FILE=$("$PYTHON_BIN" -c 'from config import WEB_BETLOG_FILE; print(WEB_BETLOG_FILE)')
 WEB_VALUE_BOARD_FILE=$("$PYTHON_BIN" -c 'from config import WEB_VALUE_BOARD_FILE; print(WEB_VALUE_BOARD_FILE)')
 WEB_FUTURES_VALUE_BOARD_FILE=$("$PYTHON_BIN" -c 'from config import WEB_FUTURES_VALUE_BOARD_FILE; print(WEB_FUTURES_VALUE_BOARD_FILE)')
+WEB_LADDER_BOARD_FILE=$("$PYTHON_BIN" -c 'from config import WEB_LADDER_BOARD_FILE; print(WEB_LADDER_BOARD_FILE)')
 
 notify() {
     local title="$1"
@@ -104,7 +105,7 @@ echo "All updates complete."
 
 echo
 echo "Opening Bet Log and value boards..."
-open "$WEB_BETLOG_FILE" "$WEB_VALUE_BOARD_FILE" "$WEB_FUTURES_VALUE_BOARD_FILE"
+open "$WEB_BETLOG_FILE" "$WEB_VALUE_BOARD_FILE" "$WEB_FUTURES_VALUE_BOARD_FILE" "$WEB_LADDER_BOARD_FILE"
 
 SUMMARY=$(success_summary || printf 'Wagers imported: unavailable\nMatch candidate bets: unavailable\nFutures candidate bets: unavailable')
 notify "Kalshi update complete" "$SUMMARY"

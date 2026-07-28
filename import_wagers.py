@@ -326,6 +326,7 @@ for market_ticker, trades in trade_rows.groupby("Market_Ticker"):
     fee_in = entry_trades["Fee_In_Dollars"].apply(money).sum()
 
     exit_price = None
+    exit_contracts = 0.0
     fee_out = 0.0
     status = "Open"
     realized_pl = None
@@ -362,6 +363,7 @@ for market_ticker, trades in trade_rows.groupby("Market_Ticker"):
 
     if not settlement.empty:
         market_result = str(safe_first(settlement["Result"])).strip().lower()
+        exit_contracts = contracts
 
         if kalshi_action == "BUY YES":
             contract_won = "Yes" if market_result == "yes" else "No"
@@ -493,6 +495,8 @@ for market_ticker, trades in trade_rows.groupby("Market_Ticker"):
         "Market Result": market_result,
         "Contract Won": contract_won,
         "Contracts": round(contracts, 2),
+        "Exit Contracts": round(exit_contracts, 2),
+        "Remaining Contracts": round(max(contracts - exit_contracts, 0), 2),
         "Entry Price": round(entry_price, 4) if entry_price is not None else "",
         "Exit Price": round(exit_price, 4) if exit_price is not None else "",
         "Fee In": round(fee_in, 2),

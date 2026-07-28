@@ -25,3 +25,11 @@ markets, match and futures value boards, portfolio and ladder reporting, wager
 import, CLV and position monitoring, archives, and local Excel/HTML workflows.
 
 This designation records the baseline; PR1 does not create or backfill a tag.
+
+### Maintenance
+
+- Add an active-position Ladder Board workbook and sortable web view.
+- Track exited and remaining contracts so closed positions are excluded and
+  partially closed positions use their remaining exposure.
+- Integrate Ladder Board generation, archiving, iCloud copying, and opening
+  into the existing World Cup workflows.

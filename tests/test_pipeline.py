@@ -8,7 +8,7 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 import pandas as pd
-from openpyxl import load_workbook
+from openpyxl import Workbook, load_workbook
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -267,6 +267,245 @@ class PipelineTests(unittest.TestCase):
 
             self.assertAlmostEqual(exposure_by_team.loc["USA", "Stake"], 9.00)
             self.assertAlmostEqual(exposure_by_match_date.loc["2026-06-13", "Current Value"], 9.60)
+
+    def test_ladder_math_yes_position(self):
+        from build_ladder_board import calculate_ladder
+
+        ladder = calculate_ladder(entry_price=0.50, fair_value=0.74, contracts_held=148)
+
+        self.assertAlmostEqual(ladder["current_edge"], 0.24)
+        self.assertEqual(ladder["ladder_1_price"], 0.62)
+        self.assertEqual(ladder["ladder_2_price"], 0.74)
+        self.assertEqual(ladder["ladder_3_price"], 0.89)
+        self.assertEqual(ladder["ladder_1_contracts"], 44)
+        self.assertEqual(ladder["ladder_2_contracts"], 44)
+        self.assertEqual(ladder["ladder_3_contracts"], 60)
+
+    def test_ladder_math_no_position_uses_no_probability_and_price(self):
+        from build_ladder_board import build_ladder_board
+
+        active_wagers = pd.DataFrame([
+            {
+                "Market Ticker": "KXWCGAME-26JUN13-USAMEX-MEX",
+                "Action": "SELL YES",
+                "Entry Price": 0.60,
+                "Contracts": 10,
+                "Status": "Partially Closed",
+            }
+        ])
+        value_rows = pd.DataFrame([
+            {
+                "market_ticker": "KXWCGAME-26JUN13-USAMEX-MEX",
+                "event_title": "USA vs Mexico",
+                "market_title": "Mexico wins",
+                "yes_bid": 0.61,
+                "yes_ask": 0.62,
+                "silver_probability_yes": 0.25,
+                "market_type": "Match",
+            }
+        ])
+
+        board = build_ladder_board(active_wagers, value_rows)
+        row = board.iloc[0]
+
+        self.assertEqual(row["side"], "NO")
+        self.assertAlmostEqual(row["avg_price"], 0.40)
+        self.assertAlmostEqual(row["current_price"], 0.38)
+        self.assertAlmostEqual(row["silver_probability"], 0.75)
+        self.assertAlmostEqual(row["current_edge"], 0.35)
+        self.assertEqual(row["ladder_1_price"], 0.58)
+        self.assertEqual(row["ladder_2_price"], 0.75)
+        self.assertEqual(row["ladder_3_price"], 0.90)
+
+    def test_ladder_contract_allocation_caps_and_no_edge_display(self):
+        from build_ladder_board import allocate_contracts, calculate_ladder
+
+        self.assertEqual(allocate_contracts(2), (0, 0, 2))
+        self.assertEqual(allocate_contracts(10), (3, 3, 4))
+
+        capped = calculate_ladder(entry_price=0.80, fair_value=0.92, contracts_held=5)
+        self.assertEqual(capped["ladder_3_price"], 0.99)
+
+        no_ladder = calculate_ladder(entry_price=0.60, fair_value=0.55, contracts_held=5)
+        self.assertAlmostEqual(no_ladder["current_edge"], -0.05)
+        self.assertEqual(no_ladder["ladder_display"], "")
+        self.assertTrue(pd.isna(no_ladder["ladder_1_price"]))
+
+        display = calculate_ladder(entry_price=0.50, fair_value=0.74, contracts_held=148)
+        self.assertEqual(display["ladder_display"], "62¢ × 44 | 74¢ × 44 | 89¢ × 60")
+
+    def test_build_ladder_board_outputs_active_positions_only_and_web_html(self):
+        with TemporaryDirectory() as workspace:
+            workspace = Path(workspace)
+            write_sample_ladder_value_board(workspace / "WorldCup_ValueBoard.xlsx")
+            write_sample_ladder_wager_log(workspace / "World_Cup_Bet_Log.xlsx")
+
+            with changed_dir(workspace):
+                run_pipeline_script(ROOT / "build_ladder_board.py")
+                run_pipeline_script(ROOT / "build_web_ladder_board.py")
+
+            output = workspace / "WorldCup_Ladder_Board.xlsx"
+            html_output = workspace / "WorldCup_Ladder_Board.html"
+            self.assertTrue(output.exists())
+            self.assertTrue(html_output.exists())
+
+            board = pd.read_excel(output, sheet_name="Ladder Board")
+            self.assertEqual(set(board["market_ticker"]), {
+                "KXWCGAME-26JUN13-USAMEX-USA",
+                "KXWCGAME-26JUN13-USAMEX-MEX",
+            })
+            self.assertNotIn("KXWCGAME-26JUN13-USAMEX-TIE", board["market_ticker"].tolist())
+
+            yes = board[board["market_ticker"] == "KXWCGAME-26JUN13-USAMEX-USA"].iloc[0]
+            self.assertEqual(yes["side"], "YES")
+            self.assertEqual(yes["ladder_display"], "53¢ × 6 | 60¢ × 6 | 75¢ × 8")
+            self.assertEqual(yes["action_flag"], "near")
+
+            no = board[board["market_ticker"] == "KXWCGAME-26JUN13-USAMEX-MEX"].iloc[0]
+            self.assertEqual(no["side"], "NO")
+            self.assertAlmostEqual(no["avg_price"], 0.40)
+            self.assertAlmostEqual(no["silver_probability"], 0.75)
+
+            html = html_output.read_text(encoding="utf-8")
+            self.assertIn("World Cup Ladder Board", html)
+            self.assertIn("53¢ × 6 | 60¢ × 6 | 75¢ × 8", html)
+            self.assertIn('class="near"', html)
+
+    def test_ladder_board_excludes_zero_remaining_contracts_even_if_partially_closed(self):
+        with TemporaryDirectory() as workspace:
+            workspace = Path(workspace)
+            write_sample_ladder_value_board(workspace / "WorldCup_ValueBoard.xlsx")
+            write_zero_remaining_ladder_wager_log(workspace / "World_Cup_Bet_Log.xlsx")
+
+            with changed_dir(workspace):
+                run_pipeline_script(ROOT / "build_ladder_board.py")
+
+            board = pd.read_excel(workspace / "WorldCup_Ladder_Board.xlsx", sheet_name="Ladder Board")
+            self.assertEqual(board["market_ticker"].tolist(), ["KXWCGAME-26JUN13-USAMEX-USA"])
+            usa = board.iloc[0]
+            self.assertEqual(usa["contracts_held"], 5)
+            self.assertEqual(usa["ladder_display"], "53¢ × 1 | 60¢ × 1 | 75¢ × 3")
+
+    def test_ladder_board_excludes_inactive_status_even_with_positive_contracts(self):
+        from build_ladder_board import read_active_wagers
+
+        with TemporaryDirectory() as workspace:
+            path = Path(workspace) / "World_Cup_Bet_Log.xlsx"
+            wagers = pd.DataFrame([
+                {
+                    "Market Ticker": "OPEN",
+                    "Action": "BUY YES",
+                    "Entry Price": 0.40,
+                    "Contracts": 8,
+                    "Status": "Open",
+                },
+                {
+                    "Market Ticker": "SETTLED-LEGACY",
+                    "Action": "BUY YES",
+                    "Entry Price": 0.40,
+                    "Contracts": 8,
+                    "Status": "Settled",
+                },
+                {
+                    "Market Ticker": "CLOSED-LEGACY",
+                    "Action": "SELL YES",
+                    "Entry Price": 0.60,
+                    "Contracts": 8,
+                    "Remaining Contracts": 8,
+                    "Status": "Closed Early",
+                },
+            ])
+            with pd.ExcelWriter(path, engine="openpyxl") as writer:
+                wagers.to_excel(writer, sheet_name="Wagers", index=False)
+
+            active = read_active_wagers(path)
+
+        self.assertEqual(active["Market Ticker"].tolist(), ["OPEN"])
+        self.assertEqual(active["Contracts"].tolist(), [8])
+
+    def test_ladder_board_order_is_deterministic_for_equal_priority_rows(self):
+        from build_ladder_board import build_ladder_board
+
+        active_wagers = pd.DataFrame([
+            {
+                "Market Ticker": ticker,
+                "Action": "BUY YES",
+                "Entry Price": 0.40,
+                "Contracts": 10,
+                "Status": "Open",
+            }
+            for ticker in ["TICKER-B", "TICKER-A"]
+        ])
+        value_rows = pd.DataFrame([
+            {
+                "market_ticker": ticker,
+                "event_title": "Same event",
+                "market_title": "Same market",
+                "yes_bid": 0.40,
+                "yes_ask": 0.41,
+                "silver_probability_yes": 0.60,
+                "market_type": "Match",
+            }
+            for ticker in ["TICKER-B", "TICKER-A"]
+        ])
+
+        board = build_ladder_board(active_wagers, value_rows)
+
+        self.assertEqual(board["market_ticker"].tolist(), ["TICKER-A", "TICKER-B"])
+        for _, row in board.iterrows():
+            allocated = (
+                row["ladder_1_contracts"]
+                + row["ladder_2_contracts"]
+                + row["ladder_3_contracts"]
+            )
+            self.assertEqual(allocated, row["contracts_held"])
+
+    def test_web_ladder_board_renders_empty_results(self):
+        from build_ladder_board import OUTPUT_COLUMNS
+        from build_web_ladder_board import render_html
+
+        html = render_html(
+            pd.DataFrame(columns=OUTPUT_COLUMNS),
+            generated_at=pd.Timestamp("2026-07-28 12:00"),
+        )
+
+        self.assertIn("World Cup Ladder Board", html)
+        self.assertIn("Generated 2026-07-28 12:00", html)
+        self.assertIn("<tbody>", html)
+        self.assertNotIn("<tbody>\\n                <tr", html)
+
+    def test_ladder_value_board_reader_deduplicates_columns_before_concat(self):
+        from build_ladder_board import (
+            VALUE_ROW_COLUMNS,
+            make_unique_columns,
+            read_value_board_rows,
+        )
+
+        self.assertEqual(
+            make_unique_columns(["edge", "edge", "edge"]),
+            ["edge", "edge__2", "edge__3"],
+        )
+
+        with TemporaryDirectory() as workspace:
+            workspace = Path(workspace)
+            write_duplicate_header_ladder_value_board(workspace / "WorldCup_ValueBoard.xlsx")
+            write_duplicate_header_ladder_value_board(workspace / "WorldCup_Futures_ValueBoard.xlsx")
+            write_sample_ladder_wager_log(workspace / "World_Cup_Bet_Log.xlsx")
+
+            with changed_dir(workspace):
+                match_rows = read_value_board_rows("WorldCup_ValueBoard.xlsx", "Match")
+                futures_rows = read_value_board_rows("WorldCup_Futures_ValueBoard.xlsx", "Futures")
+                self.assertTrue(match_rows.columns.is_unique)
+                self.assertTrue(futures_rows.columns.is_unique)
+                self.assertEqual(match_rows.columns.tolist(), VALUE_ROW_COLUMNS)
+                pd.concat([match_rows, futures_rows], ignore_index=True)
+                run_pipeline_script(ROOT / "build_ladder_board.py")
+
+            output = workspace / "WorldCup_Ladder_Board.xlsx"
+            self.assertTrue(output.exists())
+            board = pd.read_excel(output, sheet_name="Ladder Board")
+            self.assertTrue(board.columns.is_unique)
+            self.assertIn("KXWCGAME-26JUN13-USAMEX-USA", board["market_ticker"].tolist())
 
     def test_build_futures_value_board_matches_champion_and_advancement_markets(self):
         with TemporaryDirectory() as workspace:
@@ -557,16 +796,21 @@ class PipelineTests(unittest.TestCase):
             self.assertEqual(usa["Match"], "USA vs Mexico")
             self.assertEqual(usa["Outcome"], "United States")
             self.assertAlmostEqual(usa["Entry Price"], 0.45)
+            self.assertAlmostEqual(usa["Exit Contracts"], 0)
+            self.assertAlmostEqual(usa["Remaining Contracts"], usa["Contracts"])
 
             mex = wagers[wagers["Market Ticker"] == "KXWCGAME-26JUN13-USAMEX-MEX"].iloc[0]
             self.assertEqual(mex["Action"], "SELL YES")
             self.assertEqual(mex["Status"], "Partially Closed")
             self.assertAlmostEqual(mex["Exit Price"], 0.30)
+            self.assertGreater(mex["Remaining Contracts"], 0)
+            self.assertLess(mex["Remaining Contracts"], mex["Contracts"])
 
             bra = wagers[wagers["Market Ticker"] == "KXWCGAME-26JUN14-CANBRA-BRA"].iloc[0]
             self.assertEqual(bra["Status"], "Settled")
             self.assertEqual(bra["Contract Won"], "Yes")
             self.assertAlmostEqual(bra["Realized P/L"], 2.20)
+            self.assertAlmostEqual(bra["Remaining Contracts"], 0)
 
     def test_import_wagers_enriches_round_and_champion_futures_wagers(self):
         with TemporaryDirectory() as home:
@@ -663,6 +907,8 @@ class PipelineTests(unittest.TestCase):
             self.assertAlmostEqual(closed["Entry Price"], 0.40)
             self.assertAlmostEqual(closed["Exit Price"], 0.55)
             self.assertAlmostEqual(closed["Realized P/L"], 1.35)
+            self.assertAlmostEqual(closed["Exit Contracts"], 10)
+            self.assertAlmostEqual(closed["Remaining Contracts"], 0)
 
             losing_buy = row_for(wagers, "KXWCGAME-26JUL02-BBBFFF-BBB")
             self.assertEqual(losing_buy["Match Date"], "2026-07-02")
@@ -671,6 +917,7 @@ class PipelineTests(unittest.TestCase):
             self.assertEqual(losing_buy["Market Result"], "no")
             self.assertEqual(losing_buy["Contract Won"], "No")
             self.assertAlmostEqual(losing_buy["Realized P/L"], -2.88)
+            self.assertAlmostEqual(losing_buy["Remaining Contracts"], 0)
             self.assertAlmostEqual(losing_buy["Closing Price"], 0.45)
             self.assertAlmostEqual(losing_buy["CLV"], 0.10)
             self.assertAlmostEqual(losing_buy["CLV %"], 0.2857)
@@ -681,6 +928,7 @@ class PipelineTests(unittest.TestCase):
             self.assertEqual(winning_sell["Market Result"], "no")
             self.assertEqual(winning_sell["Contract Won"], "Yes")
             self.assertAlmostEqual(winning_sell["Realized P/L"], 7.32)
+            self.assertAlmostEqual(winning_sell["Remaining Contracts"], 0)
             self.assertAlmostEqual(winning_sell["Closing Price"], 0.50)
             self.assertAlmostEqual(winning_sell["CLV"], 0.12)
             self.assertAlmostEqual(winning_sell["CLV %"], 0.1935)
@@ -689,6 +937,8 @@ class PipelineTests(unittest.TestCase):
             self.assertEqual(multiple_fill["Action"], "BUY YES")
             self.assertEqual(multiple_fill["Status"], "Open")
             self.assertAlmostEqual(multiple_fill["Contracts"], 40)
+            self.assertAlmostEqual(multiple_fill["Exit Contracts"], 0)
+            self.assertAlmostEqual(multiple_fill["Remaining Contracts"], 40)
             self.assertAlmostEqual(multiple_fill["Entry Price"], 0.475)
             self.assertAlmostEqual(multiple_fill["Fee In"], 0.40)
             self.assertTrue(pd.isna(multiple_fill["Closing Price"]))
@@ -1112,6 +1362,148 @@ def write_sample_wager_log(path):
                 "Contracts": 20,
                 "Status": "Open",
             }
+        ]
+    )
+    with pd.ExcelWriter(path, engine="openpyxl") as writer:
+        wagers.to_excel(writer, sheet_name="Wagers", index=False)
+
+
+def write_sample_ladder_value_board(path):
+    value_board = pd.DataFrame(
+        [
+            {
+                "game": "USA vs Mexico",
+                "market_title": "United States wins",
+                "market_ticker": "KXWCGAME-26JUN13-USAMEX-USA",
+                "yes_bid": 0.50,
+                "yes_ask": 0.50,
+                "silver_prob": 0.60,
+            },
+            {
+                "game": "USA vs Mexico",
+                "market_title": "Mexico wins",
+                "market_ticker": "KXWCGAME-26JUN13-USAMEX-MEX",
+                "yes_bid": 0.61,
+                "yes_ask": 0.62,
+                "silver_prob": 0.25,
+            },
+            {
+                "game": "USA vs Mexico",
+                "market_title": "Tie",
+                "market_ticker": "KXWCGAME-26JUN13-USAMEX-TIE",
+                "yes_bid": 0.12,
+                "yes_ask": 0.13,
+                "silver_prob": 0.15,
+            },
+        ]
+    )
+    with pd.ExcelWriter(path, engine="openpyxl") as writer:
+        value_board.to_excel(writer, sheet_name="Value Board", index=False)
+
+
+def write_duplicate_header_ladder_value_board(path):
+    workbook = Workbook()
+    worksheet = workbook.active
+    worksheet.title = "Value Board"
+    worksheet.append([
+        "market_ticker",
+        "market_ticker",
+        "game",
+        "event_title",
+        "market_title",
+        "yes_bid",
+        "yes_ask",
+        "silver_prob",
+        "silver_prob",
+        "edge",
+        "edge",
+    ])
+    worksheet.append([
+        "KXWCGAME-26JUN13-USAMEX-USA",
+        "duplicate ignored",
+        "USA vs Mexico",
+        "Duplicate Event",
+        "United States wins",
+        0.50,
+        0.51,
+        0.60,
+        0.61,
+        0.09,
+        0.10,
+    ])
+    worksheet.append([
+        "KXWCGAME-26JUN13-USAMEX-MEX",
+        "duplicate ignored",
+        "USA vs Mexico",
+        "Duplicate Event",
+        "Mexico wins",
+        0.61,
+        0.62,
+        0.25,
+        0.26,
+        0.11,
+        0.12,
+    ])
+    workbook.save(path)
+
+
+def write_sample_ladder_wager_log(path):
+    wagers = pd.DataFrame(
+        [
+            {
+                "Market Ticker": "KXWCGAME-26JUN13-USAMEX-USA",
+                "Action": "BUY YES",
+                "Entry Price": 0.45,
+                "Contracts": 20,
+                "Exit Contracts": 0,
+                "Remaining Contracts": 20,
+                "Status": "Open",
+            },
+            {
+                "Market Ticker": "KXWCGAME-26JUN13-USAMEX-MEX",
+                "Action": "SELL YES",
+                "Entry Price": 0.60,
+                "Contracts": 10,
+                "Exit Contracts": 0,
+                "Remaining Contracts": 10,
+                "Status": "Partially Closed",
+            },
+            {
+                "Market Ticker": "KXWCGAME-26JUN13-USAMEX-TIE",
+                "Action": "BUY YES",
+                "Entry Price": 0.10,
+                "Contracts": 3,
+                "Exit Contracts": 3,
+                "Remaining Contracts": 0,
+                "Status": "Settled",
+            },
+        ]
+    )
+    with pd.ExcelWriter(path, engine="openpyxl") as writer:
+        wagers.to_excel(writer, sheet_name="Wagers", index=False)
+
+
+def write_zero_remaining_ladder_wager_log(path):
+    wagers = pd.DataFrame(
+        [
+            {
+                "Market Ticker": "KXWCGAME-26JUN13-USAMEX-USA",
+                "Action": "BUY YES",
+                "Entry Price": 0.45,
+                "Contracts": 20,
+                "Exit Contracts": 15,
+                "Remaining Contracts": 5,
+                "Status": "Partially Closed",
+            },
+            {
+                "Market Ticker": "KXWCGAME-26JUN13-USAMEX-MEX",
+                "Action": "SELL YES",
+                "Entry Price": 0.60,
+                "Contracts": 10,
+                "Exit Contracts": 10,
+                "Remaining Contracts": 0,
+                "Status": "Partially Closed",
+            },
         ]
     )
     with pd.ExcelWriter(path, engine="openpyxl") as writer:

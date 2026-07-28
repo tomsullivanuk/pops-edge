@@ -70,6 +70,26 @@ Shared filenames, sheet names, archive paths, and common column names live in `c
 
 Enrichment combines `WorldCup_ValueBoard.xlsx` and `WorldCup_Futures_ValueBoard.xlsx` by `market_ticker`. `Kalshi_Current.xlsx` is the fallback source for proposition names, including champion tickers with two-letter suffixes. The importer normalizes match dates after reading prior manual values and current match Value Board values. The selection order remains prior manual value, current Value Board value, then ticker-derived fallback. It also carries forward manually entered Closing Price from the prior wager log, calculates CLV and CLV % for BUY YES and SELL YES positions, and leaves CLV fields blank when Closing Price is blank unless prior CLV values are available as a fallback.
 
+The wager log records `Exit Contracts` and `Remaining Contracts`. Settlements
+set remaining contracts to zero; early exits subtract exited contracts from
+entry contracts. The Ladder Board accepts only `Open` and `Partially Closed`
+rows with positive remaining contracts.
+
+## Ladder Board
+
+`build_ladder_board.py` combines active match and futures wagers with their
+current Value Board rows. BUY YES positions use YES entry/current prices and
+Silver probability. SELL YES positions are represented as NO positions using
+one minus the YES entry, ask, and Silver probability.
+
+For positive remaining edge, the three sell tiers are entry plus half the edge,
+Silver fair value, and fair value plus 15 cents. Prices use half-up cent
+rounding and are capped at 99 cents. Contracts are allocated 30% / 30% /
+remainder, so the tiers sum to the open whole-contract count. Rows are ordered
+by urgent/near status, descending current edge, event, market, ticker, and side.
+`build_web_ladder_board.py` renders the same ordered data and supports both
+empty and populated boards.
+
 ## Value Board Workbook
 
 `build_value_board.py` writes the existing Bet Sheet outputs unchanged, then adds a `Portfolio` worksheet with four stacked sections:
