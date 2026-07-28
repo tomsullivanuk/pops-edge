@@ -1,0 +1,35 @@
+# Pops' Edge Roadmap
+
+## v1.0.0 — World Cup
+
+First production release: forecast and market ingestion, match/futures value
+boards, portfolio and ladder views, wager log, CLV, archives, and web reports.
+
+## v1.1.0 — MLB Research and Multi-Sport Foundation
+
+1. Establish product and documentation foundations.
+2. Research and select MLB sources.
+3. Define MLB domain contracts and edge cases.
+4. Implement deterministic MLB ingestion.
+5. Implement MLB valuation.
+6. Add MLB reports and operating workflow.
+7. Extract proven multi-sport boundaries.
+8. Harden, document, and release.
+
+The authoritative PR scope and gates are in
+`docs/RELEASE_PLAN_v1.1.0.md`.
+
+## Later releases
+
+Potential directions, subject to research and explicit planning:
+
+- calibration and source-comparison reporting;
+- cross-sport portfolio and exposure analytics;
+- additional market providers;
+- additional sports through isolated adapters;
+- stronger provenance, observability, and operator recovery;
+- configurable bankroll and policy profiles; and
+- packaging or deployment beyond the current local workflow.
+
+Items here are directional, not commitments. `BACKLOG.md` records deferred
+ideas without assigning them to a release.

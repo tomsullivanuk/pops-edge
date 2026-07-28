@@ -1,4 +1,13 @@
-# Developer Guide
+# Pops' Edge Developer Guide
+
+Pops' Edge is the durable product name. The workflows documented below are the
+World Cup implementation shipped as v1.0.0. World Cup-prefixed artifacts and
+the current `kalshi` repository/directory name remain unchanged for baseline
+compatibility.
+
+The planned v1.1.0 work and the repository rename procedure are documented in
+`docs/RELEASE_PLAN_v1.1.0.md` and `docs/REPOSITORY_RENAME.md`. The standard PR
+workflow and completion-report format are in `docs/CODEX_WORKFLOW.md`.
 
 ## Workflows
 
@@ -16,10 +25,12 @@ Keep this script thin. The wager and World Cup scripts remain usable on their ow
 3. `process_silver_futures.py` normalizes the latest Silver futures CSV into `Silver_Futures_Current.xlsx`.
 4. `build_value_board.py` combines Silver probabilities, Kalshi prices, active wager exposure, and portfolio summaries into `WorldCup_ValueBoard.xlsx`.
 5. `build_futures_value_board.py` creates `WorldCup_Futures_ValueBoard.xlsx`.
-6. `build_web_betsheet.py` creates `WorldCup_ValueBoard.html`.
-7. `build_web_futures_betsheet.py` creates `WorldCup_Futures_ValueBoard.html`.
+6. `build_ladder_board.py` creates `WorldCup_Ladder_Board.xlsx` from positions with positive remaining contracts.
+7. `build_web_betsheet.py` creates `WorldCup_ValueBoard.html`.
+8. `build_web_futures_betsheet.py` creates `WorldCup_Futures_ValueBoard.html`.
+9. `build_web_ladder_board.py` creates `WorldCup_Ladder_Board.html`.
 
-`update_worldcup.sh` refreshes both match and futures outputs. It archives both Silver workbooks and both Value Board workbooks, copies both Excel boards and both HTML Value Boards to the existing iCloud World Cup folder, and opens both HTML boards when run standalone. `update_all.sh` suppresses the child-script open steps, then opens `World_Cup_Bet_Log.html`, `WorldCup_ValueBoard.html`, and `WorldCup_Futures_ValueBoard.html` exactly once. Its success notification reports wagers imported, match candidate bets, and futures candidate bets; unavailable workbook counts do not fail an otherwise successful run.
+`update_worldcup.sh` refreshes both match and futures outputs plus the active-position Ladder Board. It archives both Silver workbooks and all board workbooks, copies Excel boards and HTML dashboards to the existing iCloud World Cup folder, and opens the three HTML boards when run standalone. `update_all.sh` suppresses the child-script open steps, then opens `World_Cup_Bet_Log.html`, `WorldCup_ValueBoard.html`, `WorldCup_Futures_ValueBoard.html`, and `WorldCup_Ladder_Board.html` exactly once. Its success notification reports wagers imported, match candidate bets, and futures candidate bets; unavailable workbook counts do not fail an otherwise successful run.
 
 `build_futures_value_board.py` filters out `KXWCGAME-` match markets and classifies futures markets from the event ticker, market ticker, game, subtitle, and market title. `kalshi_pull.py` includes these World Cup event patterns:
 
@@ -134,6 +145,8 @@ WorldCup_ValueBoard.html
 Silver_Futures_Current.xlsx
 WorldCup_Futures_ValueBoard.xlsx
 WorldCup_Futures_ValueBoard.html
+WorldCup_Ladder_Board.xlsx
+WorldCup_Ladder_Board.html
 World_Cup_Bet_Log.xlsx
 World_Cup_Bet_Log.html
 archive/
