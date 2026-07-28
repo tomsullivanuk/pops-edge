@@ -70,11 +70,14 @@ syntax suite passes.
   sources.
 - Record licensing, authentication, freshness, coverage, identifiers, rate
   limits, failure modes, and reproducibility constraints.
-- Select primary and fallback sources without implementing production
-  ingestion.
+- Select primary and fallback candidates without implementing production
+  ingestion. Technical accessibility does not constitute approval until
+  automated access and evidence-retention rights are documented.
 
 **Gate:** a source decision record and representative, non-production samples
-support the intended MLB use cases.
+support the intended MLB use cases. The decision is recorded in
+`docs/MLB_SOURCE_RESEARCH_v1.1.0.md`; production adapters remain blocked on
+source-specific licensing gates.
 
 ### PR3 — Define the MLB domain and contracts
 
@@ -82,6 +85,8 @@ support the intended MLB use cases.
 - Define source-to-canonical mappings, time zones, game identity, doubleheader
   handling, postponements, cancellations, and market settlement assumptions.
 - Add contract/schema tests using approved fixtures.
+- Use MLB `gamePk` as canonical while preserving licensed-vendor identifiers
+  and mapping evidence. Do not add network collection in PR3.
 
 **Gate:** contracts cover documented edge cases without changing World Cup
 contracts.

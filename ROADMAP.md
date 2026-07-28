@@ -19,6 +19,11 @@ boards, portfolio and ladder views, wager log, CLV, archives, and web reports.
 The authoritative PR scope and gates are in
 `docs/RELEASE_PLAN_v1.1.0.md`.
 
+PR2 selected a licensed official MLB feed as the production identity/pitcher
+strategy, with MLB `gamePk` canonical, and made forecast-provider licensing a
+prerequisite rather than assuming public pages may be scraped. See
+`docs/MLB_SOURCE_RESEARCH_v1.1.0.md`.
+
 ## Later releases
 
 Potential directions, subject to research and explicit planning:

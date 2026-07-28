@@ -17,6 +17,12 @@ Planned:
 PR1 establishes documentation and planning only; it does not change production
 behavior.
 
+PR2 research selects MLB `gamePk` as canonical identity and a licensed
+official-data feed for production schedule/pitcher facts; identifies DRatings
+and FanGraphs as conditional forecast candidates; documents Kalshi
+`KXMLBGAME`, provenance, backfill, reconciliation, and fail-closed gates; and
+defers sportsbook ingestion without changing production behavior.
+
 ## [v1.0.0] — World Cup baseline
 
 The existing production World Cup implementation is designated Pops' Edge

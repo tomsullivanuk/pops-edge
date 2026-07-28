@@ -81,3 +81,10 @@ MLB will first be implemented behind explicit sport-specific contracts and
 isolated artifacts. PR7 may extract platform interfaces demonstrated by both
 sports. No current World Cup calculation or report is changed merely to make
 the repository appear multi-sport.
+
+PR2 establishes MLB `gamePk` as canonical identity while requiring a licensed
+official-data adapter for production. Source event, forecast, market, and
+sportsbook observations stay immutable and separate through normalization;
+forecasts are not averaged, and unresolved identity, schedule, pitcher,
+timestamp, or side mappings fail closed. See
+`docs/MLB_SOURCE_RESEARCH_v1.1.0.md`.

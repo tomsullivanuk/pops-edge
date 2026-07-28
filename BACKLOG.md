@@ -19,6 +19,11 @@ implementation or assign a release.
 - Add structured logging and clearer recovery diagnostics.
 - Separate deterministic validation from authorized live smoke tests.
 - Inventory and test scheduled/local automation.
+- Obtain and record licensed official MLB access, including price, limits,
+  history, retention, and `gamePk` mapping guarantees.
+- Obtain written machine-access and evidence-retention terms from an
+  independent MLB forecast provider; evaluate DRatings then FanGraphs.
+- Define restricted raw-evidence storage and retention outside Git.
 
 ## Architecture
 
@@ -34,3 +39,5 @@ implementation or assign a release.
 - Additional sports beyond MLB.
 - Hosted multi-user service.
 - Repository/local-directory rename without separate authorization.
+- Sportsbook consensus ingestion until canonical identity and one licensed
+  forecast adapter operate; evaluate The Odds API first.
