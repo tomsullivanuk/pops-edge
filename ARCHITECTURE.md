@@ -61,7 +61,7 @@ Detailed schemas and operating behavior are documented in `DEVELOPER.md`.
 ## Boundaries and dependencies
 
 - Local state is workbook/CSV based; generated artifacts are not canonical.
-- `config.py` hard-codes `PROJECT_DIR` as `~/kalshi`.
+- `config.py` currently sets `PROJECT_DIR` to `~/pops-edge`.
 - Manual inputs are discovered in the project directory or `~/Downloads`.
 - Current market ingestion depends on the public Kalshi trade API.
 - Forecast ingestion depends on manually downloaded Silver exports.
@@ -69,7 +69,8 @@ Detailed schemas and operating behavior are documented in `DEVELOPER.md`.
   iCloud Drive directory.
 - A local Python virtual environment and its third-party packages are assumed.
 - External aliases, schedulers, IDE/Codex paths, GitHub integrations, and other
-  clones may depend on the current repository name and location.
+  clones may depend on the repository name and location and must be audited
+  when either changes.
 
 The complete rename dependency inventory is in
 `docs/REPOSITORY_RENAME.md`.

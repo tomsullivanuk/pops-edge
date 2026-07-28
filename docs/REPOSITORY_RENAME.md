@@ -1,90 +1,96 @@
-# Repository Rename Plan: `kalshi` to `pops-edge`
+# Repository Rename Record: `kalshi` to `pops-edge`
 
 ## Status
 
-The durable product name is Pops' Edge. The GitHub repository and local
-directory are still named `kalshi`. Renaming them is deliberately deferred and
-must not be performed as part of PR1.
+The approved migration was completed on July 28, 2026.
 
-## Dependency inventory
+- Product: Pops' Edge
+- Prior GitHub repository: `tomsullivanuk/World-Cup-Value-Board`
+- Current GitHub repository: `tomsullivanuk/pops-edge`
+- Prior local directory: `/Users/tom/kalshi`
+- Current local directory: `/Users/tom/pops-edge`
 
-### Confirmed in this repository
+The old names are retained in this document as historical migration facts.
+Kalshi-specific source, variable, fixture, and artifact names remain where they
+identify the market provider rather than the product or repository.
 
-- `config.py` sets `PROJECT_DIR` to `~/kalshi`. This is the executable
-  hard-coded local repository path.
-- Existing documentation has used `~/kalshi`, `kalshi/`, and an alias that
-  changes into `~/kalshi`.
-- Processors and wager import use `PROJECT_DIR` when discovering local inputs
-  and creating archive paths.
-- The repository contains Kalshi-specific module, variable, fixture, and
-  artifact names. These identify a market provider and are not automatically
-  candidates for the product/repository rename.
-- Shell workflows rely on relative paths after resolving their script
-  directory, but `update_worldcup.sh` assumes it is launched from a directory
-  where its relative Python/script paths resolve. This should be verified
-  during migration.
+## Repository-controlled changes
 
-### External and operator dependencies to verify
+- `origin` was updated to
+  `https://github.com/tomsullivanuk/pops-edge.git`.
+- `config.py` now sets `PROJECT_DIR` to `~/pops-edge`.
+- Current operating instructions use `~/pops-edge`.
+- Architecture and backlog documentation describe the post-migration state.
+- World Cup scripts, reports, workbooks, commands, and the iCloud World Cup
+  destination were intentionally not renamed.
 
-- GitHub repository URL, default branch protection, actions, secrets,
-  environments, webhooks, deploy keys, badges, and issue/PR links.
-- Local clone path, additional worktrees, IDE workspaces, terminal profiles,
-  shell aliases/functions (including `wcup` and any `cd ~/kalshi` alias), and
-  scripts outside this repository.
-- Cron, `launchd`, Shortcuts, Automator, or other scheduled workflows.
-- Codex workspace/task configuration and any tools that identify the repo by
-  absolute path.
-- Documentation, bookmarks, shared links, and downstream clones.
-- macOS `open` and `osascript` availability.
-- The iCloud destination
-  `~/Library/Mobile Documents/com~apple~CloudDocs/WorldCup`.
+## Preserved GitHub state
+
+The hosted rename preserved:
+
+- private visibility;
+- `main` as the default branch;
+- the `main` and `feature/wager-log-archiving` branches;
+- commit history; and
+- issue support.
+
+At the migration baseline there were no tags, releases, open pull requests, or
+open issues. Authenticated requests using the prior repository identifier
+resolved to `tomsullivanuk/pops-edge`.
+
+## External dependency inventory
+
+The migration audit covers:
+
+- shell aliases, functions, and startup files;
+- local scripts and scheduled `launchd`, cron, Shortcut, or Automator tasks;
+- IDE workspaces and project settings;
+- Codex workspace and task configuration;
+- Git worktrees and downstream clones;
+- GitHub Actions, secrets, webhooks, deploy keys, badges, and links;
+- the macOS `open` and `osascript` commands;
+- the iCloud destination
+  `~/Library/Mobile Documents/com~apple~CloudDocs/WorldCup`;
 - `~/Downloads` as the manual landing area for Silver forecasts and Kalshi
-  activity exports.
-- Network access to the public Kalshi trade API and its current endpoint,
-  schema, availability, and rate behavior.
-- Python virtual environment location and installed dependencies.
+  activity exports;
+- the public Kalshi trade API; and
+- the local Python virtual environment.
 
-## Proposed procedure
+External files are changed only when clearly owned by Pops' Edge and safe to
+modify. Anything ambiguous or unavailable is reported for manual follow-up.
 
-Execute only in a separately authorized maintenance window:
+## Validation
 
-1. Ensure the worktree is clean and all intended work is committed and backed
-   up. Record the current remote URL and clone/worktree locations.
-2. Search the repository and relevant operator configuration for `kalshi`,
-   `~/kalshi`, absolute clone paths, and the old GitHub URL. Classify product
-   references separately from legitimate provider-specific Kalshi references.
-3. Make `PROJECT_DIR` derive from the repository/configuration rather than a
-   fixed directory, with focused tests. Update documented aliases and any
-   verified external automation.
-4. Rename the GitHub repository from `kalshi` to `pops-edge`; preserve redirects
-   if the host supports them and verify branch protection, actions, secrets,
-   webhooks, and links.
-5. Update the local remote URL and verify fetch access.
-6. Rename the local directory to `pops-edge`, then recreate or repair virtual
-   environments, IDE workspaces, worktrees, Codex configuration, aliases, and
-   scheduled jobs that contain the old absolute path.
-7. Run the complete deterministic test, Python compilation, and shell syntax
-   suite from the new path.
-8. Run separately authorized smoke tests for live Kalshi access, Downloads
-   discovery, archive creation, iCloud copies, notifications, and report
-   opening.
-9. Repeat path and old-URL searches. Document any intentional remaining
-   provider-specific `kalshi` references.
+The migration validation requires:
+
+1. The complete deterministic test suite.
+2. Python compilation and shell syntax checks.
+3. Clean Git diff and status checks.
+4. Successful fetch from the renamed origin.
+5. Searches for executable `~/kalshi` paths and current references to the old
+   repository URL.
+6. Local documentation-link checks.
+7. Verification from `/Users/tom/pops-edge` that the branch, history, virtual
+   environment, and project commands remain available.
+
+Live Kalshi updates, trading, iCloud copies, browser launches, and notifications
+are excluded from deterministic migration validation.
 
 ## Rollback
 
-If local validation fails, restore the prior directory name and remote URL,
-then revert only the migration-specific configuration changes. If the hosted
-rename fails, restore the old repository name when possible and re-verify
-external integrations. Do not delete either clone or generated data as part of
-rollback.
+If a local-path failure is discovered, restore the prior directory name,
+temporarily restore the prior `PROJECT_DIR`, and re-run deterministic
+validation. If the hosted rename must be reversed, rename the repository back
+only during an authorized maintenance window, restore `origin`, and re-verify
+all integrations. Do not delete the clone or generated data during rollback.
 
-## Rename acceptance criteria
+## Post-migration acceptance criteria
 
-- The canonical hosted repository and local directory are named `pops-edge`.
-- No executable code assumes `~/kalshi` or another machine-specific clone path.
-- Intentional Kalshi provider names remain clear and functional.
-- GitHub integrations and external automation are verified.
-- World Cup regression validation passes from the renamed path.
-- Live/manual smoke checks are recorded without overwriting or losing local
-  artifacts.
+- The canonical hosted repository is `tomsullivanuk/pops-edge`.
+- The local directory is `/Users/tom/pops-edge`.
+- No executable code assumes `~/kalshi`.
+- Current repository URLs use `tomsullivanuk/pops-edge`.
+- Intentional Kalshi provider names remain functional.
+- External dependencies are updated or documented.
+- World Cup regression validation passes from the new directory.
+- The rename-related commit is pushed and the worktree is clean.

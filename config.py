@@ -1,7 +1,7 @@
 import os
 
 
-PROJECT_DIR = os.path.expanduser("~/kalshi")
+PROJECT_DIR = os.path.expanduser("~/pops-edge")
 DOWNLOADS_DIR = os.path.expanduser("~/Downloads")
 
 SILVER_CURRENT_FILE = "Silver_Current.xlsx"

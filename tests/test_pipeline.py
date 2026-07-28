@@ -18,7 +18,7 @@ FIXTURES = ROOT / "tests" / "fixtures"
 class PipelineTests(unittest.TestCase):
     def test_process_silver_builds_clean_workbook_from_sample_csv(self):
         with TemporaryDirectory() as home:
-            project_dir = Path(home) / "kalshi"
+            project_dir = Path(home) / "pops-edge"
             downloads_dir = Path(home) / "Downloads"
             project_dir.mkdir()
             downloads_dir.mkdir()
@@ -51,7 +51,7 @@ class PipelineTests(unittest.TestCase):
 
     def test_process_silver_futures_builds_clean_workbook_from_sample_csv(self):
         with TemporaryDirectory() as home:
-            project_dir = Path(home) / "kalshi"
+            project_dir = Path(home) / "pops-edge"
             downloads_dir = Path(home) / "Downloads"
             project_dir.mkdir()
             downloads_dir.mkdir()
@@ -864,7 +864,7 @@ class PipelineTests(unittest.TestCase):
 
     def test_import_wagers_uses_sample_activity_and_value_board_lookup(self):
         with TemporaryDirectory() as home:
-            project_dir = Path(home) / "kalshi"
+            project_dir = Path(home) / "pops-edge"
             project_dir.mkdir()
             shutil.copy2(
                 FIXTURES / "sample_kalshi_activity.csv",
@@ -913,7 +913,7 @@ class PipelineTests(unittest.TestCase):
 
     def test_import_wagers_enriches_round_and_champion_futures_wagers(self):
         with TemporaryDirectory() as home:
-            project_dir = Path(home) / "kalshi"
+            project_dir = Path(home) / "pops-edge"
             project_dir.mkdir()
 
             activity = pd.DataFrame(
@@ -961,7 +961,7 @@ class PipelineTests(unittest.TestCase):
 
     def test_import_wagers_covers_exits_settlements_multiple_fills_and_fallbacks(self):
         with TemporaryDirectory() as home:
-            project_dir = Path(home) / "kalshi"
+            project_dir = Path(home) / "pops-edge"
             project_dir.mkdir()
 
             activity = pd.DataFrame(
@@ -1067,7 +1067,7 @@ class PipelineTests(unittest.TestCase):
 
     def test_import_wagers_normalizes_match_dates_from_strings_timestamps_and_tickers(self):
         with TemporaryDirectory() as home:
-            project_dir = Path(home) / "kalshi"
+            project_dir = Path(home) / "pops-edge"
             project_dir.mkdir()
 
             activity = pd.DataFrame(

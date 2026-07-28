@@ -1,9 +1,8 @@
 # Pops' Edge Developer Guide
 
 Pops' Edge is the durable product name. The workflows documented below are the
-World Cup implementation shipped as v1.0.0. World Cup-prefixed artifacts and
-the current `kalshi` repository/directory name remain unchanged for baseline
-compatibility.
+World Cup implementation shipped as v1.0.0. World Cup-prefixed artifacts remain
+unchanged for baseline compatibility.
 
 The planned v1.1.0 work and the repository rename procedure are documented in
 `docs/RELEASE_PLAN_v1.1.0.md` and `docs/REPOSITORY_RENAME.md`. The standard PR
@@ -138,25 +137,25 @@ Silver futures CSV detection requires the columns `Team`, `R16`, `Qtr`, `Semi`, 
 The project expects to live at:
 
 ```text
-~/kalshi
+~/pops-edge
 ```
 
 Silver forecast downloads may be in either:
 
 ```text
 ~/Downloads/data-*.csv
-~/kalshi/data-*.csv
+~/pops-edge/data-*.csv
 ```
 
 `process_silver.py` requires the match columns `Date`, `Team`, `Win`, `GF`, `Opponent`, `Win.1`, `GF.1`, and `Draw`. It selects the newest CSV with that schema and only archives other match-schema CSVs, so futures exports remain available to the futures processor.
 
-Silver futures downloads may be named `data-*.csv` or include `futures` in the filename, but must have the futures columns listed above. They may be in either `~/Downloads` or `~/kalshi`. `process_silver_futures.py` selects the newest CSV with the futures schema and skips newer match-schema files.
+Silver futures downloads may be named `data-*.csv` or include `futures` in the filename, but must have the futures columns listed above. They may be in either `~/Downloads` or `~/pops-edge`. `process_silver_futures.py` selects the newest CSV with the futures schema and skips newer match-schema files.
 
 Kalshi activity exports may be in either:
 
 ```text
 ~/Downloads/Kalshi-Recent-Activity-*.csv
-~/kalshi/Kalshi-Recent-Activity-*.csv
+~/pops-edge/Kalshi-Recent-Activity-*.csv
 ```
 
 Generated files are local outputs and should not be committed:

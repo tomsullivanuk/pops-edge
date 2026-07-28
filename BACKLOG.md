@@ -14,7 +14,7 @@ implementation or assign a release.
 
 ## Operations
 
-- Remove the fixed `~/kalshi` runtime assumption.
+- Derive the project path dynamically instead of assuming `~/pops-edge`.
 - Define dependency management and supported Python versions explicitly.
 - Add structured logging and clearer recovery diagnostics.
 - Separate deterministic validation from authorized live smoke tests.
