@@ -29,6 +29,15 @@ from adapter semantics, makes immutable provenance and fail-closed validation
 core principles, and formalizes the product-manager/architect and Codex
 implementation-engineer workflow.
 
+PR3 adds deterministic offline Canonical Event and MLB identity contracts,
+immutable schedule/pitcher/status observations, explicit provenance and
+schedule lineage, structured matched/ambiguous/rejected reconciliation, and
+fixture-backed semantic validation. It adds no provider client, persistence,
+market comparison, report, wagering behavior, or World Cup integration.
+Canonical identity is restricted to authoritative sport-native identifiers;
+later provider mappings remain separate, and rejected reconciliation preserves
+candidate-evaluation evidence without exposing an eligible candidate.
+
 ## [v1.0.0] — World Cup baseline
 
 The existing production World Cup implementation is designated Pops' Edge

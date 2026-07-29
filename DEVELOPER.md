@@ -8,6 +8,53 @@ The planned v1.1.0 work and the repository rename procedure are documented in
 `docs/RELEASE_PLAN_v1.1.0.md` and `docs/REPOSITORY_RENAME.md`. The standard PR
 workflow and completion-report format are in `docs/CODEX_WORKFLOW.md`.
 
+## Offline event contracts
+
+PR3 adds an offline contract layer without connecting it to the v1.0.0 World
+Cup workflow:
+
+- `event_contracts.py` defines reusable canonical event identity, native
+  identifiers, independently discovered source mappings, participants,
+  provenance, structured validation reasons, candidate evaluations, and
+  matched/ambiguous/rejected reconciliation results.
+- `mlb_contracts.py` defines MLB teams and games, preserves `gamePk`, and keeps
+  schedule, pitcher, status, and explicit lineage evidence outside immutable
+  event identity.
+- `tests/fixtures/mlb_contract_cases.json` and
+  `tests/test_event_contracts.py` exercise the contracts entirely offline.
+
+`gamePk` is authoritative for MLB identity. A retained `gamePk` remains the
+same event through schedule changes; a new `gamePk` creates a distinct event
+that may be linked by explicit lineage. Similar teams, dates, or times never
+override conflicting `gamePk` evidence.
+
+`CanonicalEvent.native_identifiers` and participant native identifiers accept
+only authoritative `SportNativeIdentifier` values. Forecast, market, and other
+provider mappings use separate frozen `SourceMapping` records linked by
+canonical entity ID. Discovering such a mapping therefore does not reconstruct
+or mutate event identity. `MLBGame` repeats season, teams, and `gamePk` only as
+MLB-specific convenience fields; construction rejects any disagreement with
+the nested canonical event.
+
+Observations are frozen, timezone-aware records. Missing pitchers create a
+valid incomplete pitcher observation rather than invalidating the game.
+Changed pitchers, schedule changes, and status changes create new observations
+instead of replacing prior evidence. Same-identity postponements and
+suspensions are represented by successive observations; lineage relates
+distinct events only when a source explicitly supplies that relationship.
+Suspension/resumption lineage is therefore valid only if the source explicitly
+relates distinct event identities; self-lineage is rejected.
+
+Rejected reconciliation retains no selected or eligible candidate.
+`CandidateEvaluation` records may nevertheless preserve each considered
+canonical event ID, mappings evaluated, evidence, and structured conflict
+reasons. This audit information survives deterministic serialization without
+making a candidate operationally available.
+
+Deterministic tagged JSON is the adapter/fixture boundary. No database,
+provider client, market contract, forecast ingestion, persistence, or World Cup
+integration is part of PR3.
+
 ## Workflows
 
 `update_all.sh` is the combined update workflow. It changes into the project directory, activates `venv/` when needed, then runs the standalone workflows in order:
@@ -188,6 +235,11 @@ bash -n update_worldcup.sh
 ```
 
 Tests use temporary directories and sample fixtures under `tests/fixtures/` so they do not overwrite live workbooks. Silver processor tests include mixed match/futures downloads and verify that each processor selects the newest valid file for its own schema.
+
+`tests/test_event_contracts.py` validates canonical MLB identity, team mappings,
+doubleheaders, postponement and replacement semantics, suspension/resumption,
+missing and changed pitchers, conflicting source observations, fail-closed
+reconciliation, immutability, and deterministic serialization round trips.
 
 The Value Board pipeline test checks the Portfolio worksheet section layout, open-position enrichment, summary totals, and team/date exposure rollups while preserving the existing Bet Sheet assertions. Futures tests cover Silver futures processing, a champion edge example, an advancement edge example, and the generated sortable futures web Bet Sheet. Wager tests cover Match Date normalization, Round-of-16 settlement, two-letter champion ticker enrichment, and the generated sortable unified web Bet Log.
 

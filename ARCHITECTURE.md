@@ -82,15 +82,24 @@ their approved scope. They do not justify a broad World Cup rewrite.
 
 ### Canonical events and source identity
 
-The platform may use a reusable canonical-event concept containing sport,
-league or competition, season, event identifier, scheduled time, participants,
-and status. Each adapter retains its authoritative sport-native identifiers.
-For MLB, `gamePk` is the canonical MLB game identifier preserved by the MLB
-adapter; it is not a universal cross-sport identifier. Provider-native IDs and
-the evidence used to map them to a canonical event remain first-class data.
+The platform uses a reusable canonical-event concept containing only immutable
+contest identity: sport, league or competition, season, event identifier,
+participants, and authoritative sport-native identifiers. Scheduled time and
+status are observations rather than identity. For MLB, `gamePk` is the
+authoritative MLB-native game identifier preserved by the MLB adapter; it is
+not a universal cross-sport identifier. Forecast-provider, market-provider,
+and other non-sport-native mappings remain separate immutable records so
+discovering a mapping never replaces canonical identity.
 
-This document does not prescribe a final schema. PR3 will define only the
-bounded offline contracts needed for MLB identity and provenance.
+PR3 implements this boundary in `event_contracts.py` and `mlb_contracts.py`.
+`CanonicalEvent` contains only immutable contest identity. Its participant and
+event identifier mappings accept only `SportNativeIdentifier` values.
+`MLBGame` carries MLB-specific home/away roles, game type, and doubleheader
+designation. Construction validates its duplicated convenience fields against
+the canonical participants, season, and `gamePk`, making disagreement invalid.
+Schedules, pitchers, statuses, and lineage evidence are separate immutable
+observations or relationships. The contracts are an offline boundary, not a
+persistence schema or a retrofit of the World Cup pipeline.
 
 ### Immutable observations and derived state
 
@@ -115,6 +124,22 @@ conflicting source identifiers, and unsupported status.
 
 Missing an opportunity is preferable to presenting a false edge caused by
 uncertain data.
+
+### Reconciliation and serialization
+
+Offline source reconciliation returns exactly one structured outcome:
+`matched`, `ambiguous`, or `rejected`. A matched result identifies one
+canonical event and its evidence. An ambiguous result retains every eligible
+candidate and selects none. A rejected result selects and retains no eligible
+candidate, while candidate-evaluation audit records may preserve the event
+identifiers, mappings, evidence, and structured reasons considered during
+rejection. Contract construction errors, valid-but-incomplete observations,
+ambiguous reconciliation, and rejected reconciliation remain distinguishable.
+
+Contracts serialize to deterministic tagged JSON with timezone-aware ISO 8601
+timestamps, enum values, source mappings, provenance, validation reasons, and
+schedule lineage. This format supports fixtures and future adapter boundaries;
+PR3 does not select a database or persistence framework.
 
 ## Data flow
 

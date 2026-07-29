@@ -53,8 +53,10 @@ bounded and reviewable.
   **forecast observation** is one provider's timestamped report for an event.
 - A **market provider** lists tradable contracts; a **market observation** is a
   timestamped price, depth, volume, rules, and side mapping from that provider.
-- A **canonical event** is Pops' Edge's normalized event identity, mapped to
-  sport-native and provider-native identifiers.
+- A **canonical event** is Pops' Edge's normalized immutable event identity,
+  including authoritative sport-native identifiers. Provider-native mappings
+  are separate immutable records linked to that identity so later discovery
+  does not mutate the event.
 - An **edge** is a derived comparison between an eligible forecast observation
   and an executable market price.
 - A **recommendation** is a policy-governed proposed action based on an edge;

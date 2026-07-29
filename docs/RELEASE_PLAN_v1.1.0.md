@@ -105,6 +105,13 @@ is internally consistent before PR3 begins; no production behavior changes.
 **Gate:** contracts cover documented edge cases without changing World Cup
 contracts.
 
+**Implemented boundary:** reusable Canonical Event identity, MLB `gamePk` and
+team/game references, immutable schedule/pitcher/status observations,
+source provenance, explicit lineage between distinct events, deterministic
+serialization, and matched/ambiguous/rejected reconciliation. Provider
+adapters, persistence, forecast and market contracts, and World Cup integration
+remain deferred to their approved PRs.
+
 ### PR4 — Implement MLB source ingestion
 
 - Implement fixture-backed adapters for the selected MLB forecast, schedule,

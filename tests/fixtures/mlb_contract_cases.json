@@ -1,0 +1,72 @@
+{
+  "teams": {
+    "cleveland": {
+      "canonical_team_id": "mlb-team:114",
+      "mlb_team_id": 114,
+      "display_name": "Cleveland Guardians",
+      "abbreviation": "CLE",
+      "provider_name": "Cleveland"
+    },
+    "cincinnati": {
+      "canonical_team_id": "mlb-team:113",
+      "mlb_team_id": 113,
+      "display_name": "Cincinnati Reds",
+      "abbreviation": "CIN",
+      "provider_name": "Cincinnati"
+    },
+    "atlanta": {
+      "canonical_team_id": "mlb-team:144",
+      "mlb_team_id": 144,
+      "display_name": "Atlanta Braves",
+      "abbreviation": "ATL",
+      "provider_name": "Atlanta"
+    },
+    "new_york_mets": {
+      "canonical_team_id": "mlb-team:121",
+      "mlb_team_id": 121,
+      "display_name": "New York Mets",
+      "abbreviation": "NYM",
+      "provider_name": "New York M"
+    }
+  },
+  "games": {
+    "ordinary": {
+      "game_pk": 823350,
+      "season": "2026",
+      "game_type": "regular"
+    },
+    "doubleheader_game_1": {
+      "game_pk": 824490,
+      "season": "2026",
+      "game_type": "regular",
+      "game_number": 1,
+      "doubleheader_designation": "split"
+    },
+    "doubleheader_game_2": {
+      "game_pk": 824489,
+      "season": "2026",
+      "game_type": "regular",
+      "game_number": 2,
+      "doubleheader_designation": "split"
+    },
+    "postponed_same_identity": {
+      "game_pk": 823598,
+      "season": "2026",
+      "game_type": "regular"
+    },
+    "replacement_identity": {
+      "game_pk": 923598,
+      "season": "2026",
+      "game_type": "regular"
+    }
+  },
+  "timestamps": {
+    "published": "2026-07-28T12:00:00+00:00",
+    "collected": "2026-07-28T12:00:05+00:00",
+    "doubleheader_game_1": "2026-07-28T17:40:00+00:00",
+    "doubleheader_game_2": "2026-07-28T23:10:00+00:00",
+    "conflicting_game_1": "2026-07-28T18:40:00+00:00",
+    "suspended": "2026-07-29T01:00:00+00:00",
+    "resumed": "2026-07-30T18:00:00+00:00"
+  }
+}
