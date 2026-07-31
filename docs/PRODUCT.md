@@ -111,6 +111,15 @@ FanGraphs, The Odds API, and all other providers remain candidates until their
 access method, permitted use, retention rights, reliability, and actual cost
 are understood and explicitly approved.
 
+For v1.1.0, the MLB Stats API is approved as the first read-only MLB facts
+source for this personal, noncommercial project. This approves a bounded facts
+adapter, not a permanent architecture dependency and not any forecast, market,
+or commercial provider. Canonical Event and downstream observation contracts
+remain provider-neutral so a licensed facts source can replace it later.
+Adapter evidence distinguishes exact response-byte identity from canonical
+JSON equivalence, and every game reports an explicit complete, partial, or
+rejected outcome. Provider timestamps are never invented from collection time.
+
 ## Supported sports
 
 | Sport | Status | Product version |

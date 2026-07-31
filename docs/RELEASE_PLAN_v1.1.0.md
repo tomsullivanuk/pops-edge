@@ -153,15 +153,27 @@ event reconciliation. Provider access, adapters, persistence, weighting,
 eligibility, freshness, markets, valuation, reports, wagers, and World Cup
 integration remain deferred.
 
-### PR5 — Implement MLB source ingestion
+### PR5 — MLB Stats API Facts Adapter
 
-- Implement fixture-backed adapters for the selected MLB forecast, schedule,
-  result, and market inputs.
-- Add caching/provenance metadata and actionable validation failures.
-- Keep network-dependent checks separate from the deterministic test suite.
+- Implement one read-only, fixture-backed MLB Stats API adapter for Canonical
+  Event, schedule, status, pitcher, and explicit lineage evidence.
+- Preserve raw-source traceability and return deterministic partial success
+  while failing closed on unsafe identity.
+- Provide a separately invoked smoke path; keep all automated tests offline.
+- Defer persistence, scheduled collection, forecast-provider and market
+  adapters, valuation, reports, and wagering.
 
-**Gate:** canonical MLB inputs are reproducible from fixtures and source
-failures are explicit.
+**Gate:** MLB facts are reproducible from fixtures, missing optional evidence
+and source failures are explicit, and World Cup behavior remains unchanged.
+
+**Implemented boundary:** `mlb_stats_api.py` provides the injectable client,
+separate raw-byte and canonical-JSON evidence digests, structured issues,
+explicit complete/partial/rejected results, honest source chronology,
+deterministic serialization, and translation into PR3 contracts. Lineage
+requires a direct source relation to another `gamePk`. `smoke_mlb_stats_api.py`
+is explicit, concise, read-only, non-persisting, and fail-closed. Durable
+retention and remaining forecast/market source work require later approved
+scope before valuation.
 
 ### PR6 — Implement MLB valuation
 

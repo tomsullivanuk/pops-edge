@@ -340,3 +340,37 @@ sportsbook observations stay immutable and separate through normalization;
 forecasts are not averaged, and unresolved identity, schedule, pitcher,
 timestamp, or side mappings fail closed. See
 `docs/MLB_SOURCE_RESEARCH_v1.1.0.md`.
+
+### MLB Stats API facts adapter
+
+PR5 implements the first MLB facts adapter in `mlb_stats_api.py` for the
+personal, noncommercial project. The MLB Stats API is a replaceable source
+behind the existing Canonical Event and MLB observation contracts, not a
+permanent downstream dependency:
+
+```text
+MLB Stats API -> raw source evidence -> MLB facts adapter
+              -> Canonical Event + schedule/pitcher/status observations
+```
+
+The read-only client has an injectable transport, bounded transient retries,
+explicit request parameters and timeout, and no import-time network activity.
+The client hashes the exact response bytes captured before JSON parsing, while
+the adapter separately hashes canonicalized JSON for deterministic semantic
+comparison. It retains request and response metadata, uses `gamePk` and MLB
+team IDs for identity, and exposes explicit `complete`, `partial`, or
+`rejected` event outcomes. Missing venue, pitcher, source timestamp, or complete
+doubleheader evidence is reported without best-guess repair; unsafe identity
+or required timestamp evidence fails closed while retaining raw evidence.
+Collection time records when Pops' Edge received evidence and is never copied
+into an unknown provider timestamp. Same-`gamePk` changes create later
+observations of one event. Distinct games can be linked only when a direct
+source relation field identifies the related `gamePk`; similarity never
+creates lineage.
+
+`smoke_mlb_stats_api.py` is an explicit small, read-only schedule check. It
+requires a date, prints only concise identifiers, outcomes, and issues, writes
+nothing, and exits nonzero for transport failure or rejected evidence. It is
+not part of automated tests or workflows. PR5 adds no durable raw-payload
+retention, persistence, scheduled collection, forecast adapter, market
+adapter, valuation, reports, or wagering behavior.

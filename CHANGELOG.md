@@ -56,6 +56,16 @@ remain preserved without normalization; and PR3 provenance and reconciliation
 semantics are reused. It adds fixtures and semantic tests but no provider
 adapter, persistence, weighting, market, valuation, report, or wagering work.
 
+PR5 adds a bounded read-only MLB Stats API facts adapter for the personal,
+noncommercial project. It separately preserves exact-response and canonical-
+JSON digests, uses authoritative `gamePk` and MLB team IDs, constructs canonical
+games and schedule/status/pitcher observations, returns explicit deterministic
+complete/partial/rejected results, and fails closed on unsafe identity without
+inventing source timestamps or lineage. Fixture-backed tests remain offline;
+an explicit concise smoke path is not run automatically. Persistence,
+scheduled collection, forecasts, markets, valuation, reports, and wagering
+remain deferred.
+
 ## [v1.0.0] — World Cup baseline
 
 The existing production World Cup implementation is designated Pops' Edge

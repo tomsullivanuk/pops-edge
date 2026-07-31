@@ -1,0 +1,201 @@
+{
+  "copyright": "Fixture shaped from MLB Stats API schedule responses; values are synthetic.",
+  "cases": {
+    "ordinary": {
+      "gamePk": 900001,
+      "season": "2026",
+      "gameType": "R",
+      "gameDate": "2026-07-31T18:10:00Z",
+      "officialDate": "2026-07-31",
+      "lastUpdated": "2026-07-31T14:00:00Z",
+      "doubleHeader": "N",
+      "gameNumber": 1,
+      "status": {"abstractGameState": "Preview", "detailedState": "Scheduled"},
+      "venue": {"id": 1, "name": "Fixture Park"},
+      "teams": {
+        "away": {"team": {"id": 113, "name": "Away Club", "abbreviation": "AWY"}, "probablePitcher": {"id": 5001, "fullName": "Away Pitcher"}},
+        "home": {"team": {"id": 114, "name": "Home Club", "abbreviation": "HME"}, "probablePitcher": {"id": 5002, "fullName": "Home Pitcher"}}
+      }
+    },
+    "missing_one_pitcher": {
+      "gamePk": 900002,
+      "season": "2026",
+      "gameType": "R",
+      "gameDate": "2026-07-31T19:10:00+00:00",
+      "status": {"detailedState": "Scheduled"},
+      "venue": {"name": "Fixture Park"},
+      "teams": {
+        "away": {"team": {"id": 115, "name": "Second Away", "abbreviation": "SAW"}},
+        "home": {"team": {"id": 116, "name": "Second Home", "abbreviation": "SHM"}, "probablePitcher": {"id": 5003, "fullName": "Home Two"}}
+      }
+    },
+    "missing_both_pitchers": {
+      "gamePk": 900003,
+      "season": "2026",
+      "gameType": "R",
+      "gameDate": "2026-07-31T20:10:00Z",
+      "status": {"detailedState": "Scheduled"},
+      "teams": {
+        "away": {"team": {"id": 117, "name": "Third Away", "abbreviation": "TAW"}},
+        "home": {"team": {"id": 118, "name": "Third Home", "abbreviation": "THM"}}
+      }
+    },
+    "doubleheader_1": {
+      "gamePk": 900004,
+      "season": "2026",
+      "gameType": "R",
+      "gameDate": "2026-08-01T17:10:00Z",
+      "doubleHeader": "S",
+      "gameNumber": 1,
+      "status": {"detailedState": "Scheduled"},
+      "venue": {"name": "Twin Park"},
+      "teams": {
+        "away": {"team": {"id": 119, "name": "Twin Away", "abbreviation": "TWA"}},
+        "home": {"team": {"id": 120, "name": "Twin Home", "abbreviation": "TWH"}}
+      }
+    },
+    "doubleheader_2": {
+      "gamePk": 900005,
+      "season": "2026",
+      "gameType": "R",
+      "gameDate": "2026-08-01T23:10:00Z",
+      "doubleHeader": "S",
+      "gameNumber": 2,
+      "status": {"detailedState": "Scheduled"},
+      "venue": {"name": "Twin Park"},
+      "teams": {
+        "away": {"team": {"id": 119, "name": "Twin Away", "abbreviation": "TWA"}},
+        "home": {"team": {"id": 120, "name": "Twin Home", "abbreviation": "TWH"}}
+      }
+    },
+    "postponed_before": {
+      "gamePk": 900006,
+      "season": "2026",
+      "gameType": "R",
+      "gameDate": "2026-08-02T18:10:00Z",
+      "status": {"detailedState": "Scheduled"},
+      "venue": {"name": "Rain Park"},
+      "teams": {
+        "away": {"team": {"id": 121, "name": "Rain Away", "abbreviation": "RAW"}},
+        "home": {"team": {"id": 122, "name": "Rain Home", "abbreviation": "RHM"}}
+      }
+    },
+    "postponed_after": {
+      "gamePk": 900006,
+      "season": "2026",
+      "gameType": "R",
+      "gameDate": "2026-08-03T18:10:00Z",
+      "rescheduledFromDate": "2026-08-02",
+      "status": {"detailedState": "Postponed"},
+      "venue": {"name": "Rain Park"},
+      "teams": {
+        "away": {"team": {"id": 121, "name": "Rain Away", "abbreviation": "RAW"}},
+        "home": {"team": {"id": 122, "name": "Rain Home", "abbreviation": "RHM"}}
+      }
+    },
+    "suspended": {
+      "gamePk": 900007,
+      "season": "2026",
+      "gameType": "R",
+      "gameDate": "2026-08-04T18:10:00Z",
+      "status": {"detailedState": "Suspended"},
+      "venue": {"name": "Pause Park"},
+      "teams": {
+        "away": {"team": {"id": 123, "name": "Pause Away", "abbreviation": "PAW"}},
+        "home": {"team": {"id": 124, "name": "Pause Home", "abbreviation": "PHM"}}
+      }
+    },
+    "resumed": {
+      "gamePk": 900007,
+      "season": "2026",
+      "gameType": "R",
+      "gameDate": "2026-08-04T18:10:00Z",
+      "status": {"detailedState": "Resumed"},
+      "venue": {"name": "Pause Park"},
+      "teams": {
+        "away": {"team": {"id": 123, "name": "Pause Away", "abbreviation": "PAW"}},
+        "home": {"team": {"id": 124, "name": "Pause Home", "abbreviation": "PHM"}}
+      }
+    },
+    "final": {
+      "gamePk": 900008,
+      "season": "2026",
+      "gameType": "R",
+      "gameDate": "2026-08-05T18:10:00Z",
+      "status": {"detailedState": "Final"},
+      "venue": {"name": "Final Park"},
+      "teams": {
+        "away": {"team": {"id": 125, "name": "Final Away", "abbreviation": "FAW"}, "score": 3},
+        "home": {"team": {"id": 126, "name": "Final Home", "abbreviation": "FHM"}, "score": 5}
+      }
+    },
+    "unknown_status": {
+      "gamePk": 900009,
+      "season": "2026",
+      "gameType": "R",
+      "gameDate": "2026-08-06T18:10:00Z",
+      "status": {"detailedState": "Provider Mystery"},
+      "venue": {"name": "Mystery Park"},
+      "teams": {
+        "away": {"team": {"id": 127, "name": "Mystery Away", "abbreviation": "MAW"}},
+        "home": {"team": {"id": 128, "name": "Mystery Home", "abbreviation": "MHM"}}
+      }
+    },
+    "missing_game_pk": {
+      "season": "2026",
+      "gameType": "R",
+      "gameDate": "2026-08-07T18:10:00Z",
+      "status": {"detailedState": "Scheduled"},
+      "teams": {
+        "away": {"team": {"id": 129, "name": "No Id Away", "abbreviation": "NAW"}},
+        "home": {"team": {"id": 130, "name": "No Id Home", "abbreviation": "NHM"}}
+      }
+    },
+    "missing_team_identity": {
+      "gamePk": 900010,
+      "season": "2026",
+      "gameType": "R",
+      "gameDate": "2026-08-08T18:10:00Z",
+      "status": {"detailedState": "Scheduled"},
+      "teams": {
+        "away": {"team": {"name": "Missing Id", "abbreviation": "MIS"}},
+        "home": {"team": {"id": 132, "name": "Known Home", "abbreviation": "KNH"}}
+      }
+    },
+    "conflicting_game_pk": {
+      "gamePk": 900011,
+      "officialGamePk": 999999,
+      "season": "2026",
+      "gameType": "R",
+      "gameDate": "2026-08-09T18:10:00Z",
+      "status": {"detailedState": "Scheduled"},
+      "teams": {
+        "away": {"team": {"id": 133, "name": "Conflict Away", "abbreviation": "CAW"}},
+        "home": {"team": {"id": 134, "name": "Conflict Home", "abbreviation": "CHM"}}
+      }
+    },
+    "timezone_edge": {
+      "gamePk": 900012,
+      "season": "2026",
+      "gameType": "R",
+      "gameDate": "2026-08-10T13:10:00-05:00",
+      "status": {"detailedState": "In Progress"},
+      "venue": {"name": "Zone Park"},
+      "teams": {
+        "away": {"team": {"id": 135, "name": "Zone Away", "abbreviation": "ZAW"}},
+        "home": {"team": {"id": 136, "name": "Zone Home", "abbreviation": "ZHM"}}
+      }
+    },
+    "malformed_timestamp": {
+      "gamePk": 900013,
+      "season": "2026",
+      "gameType": "R",
+      "gameDate": "not-a-timestamp",
+      "status": {"detailedState": "Scheduled"},
+      "teams": {
+        "away": {"team": {"id": 137, "name": "Bad Time Away", "abbreviation": "BAW"}},
+        "home": {"team": {"id": 138, "name": "Bad Time Home", "abbreviation": "BHM"}}
+      }
+    }
+  }
+}

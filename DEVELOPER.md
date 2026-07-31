@@ -92,6 +92,57 @@ the original published evidence. PR4 adds no network collection, provider
 approval, persistence, weights, freshness rules, markets, edges, reports, or
 wagering behavior.
 
+## MLB Stats API facts adapter
+
+`mlb_stats_api.py` contains the bounded read-only schedule client and facts
+adapter. `MLBStatsAPIClient.schedule_request()` constructs the supported
+`/api/v1/schedule` route and stable parameters. `fetch_schedule()` accepts an
+injectable transport, uses an explicit timeout, retries only transient transport
+failures and HTTP 429/500/502/503/504 responses, and treats other client errors
+as permanent. Importing the module or constructing the adapter performs no
+network request.
+
+The client captures exact response bytes before JSON parsing. Raw evidence
+stores `raw_response_sha256` for those bytes and `canonical_json_sha256` for
+the parsed JSON serialized with sorted keys and compact separators. The raw
+digest proves byte identity; the canonical digest supports deterministic
+semantic comparison. Evidence also retains the endpoint, parameters, status,
+collection time, record IDs, source URL, and adapter version.
+
+The adapter uses source `gamePk` and MLB team IDs to construct the existing
+`MLBGame`, then emits independent immutable `ScheduleObservation`,
+`GameStatusObservation`, and `PitcherObservation` values. Each game result has
+an explicit `complete`, `partial`, or `rejected` outcome. Rejected results
+cannot expose a Canonical Event or normalized observations. Results and issues
+are sorted deterministically and round-trip through tagged JSON.
+
+Parsing is deliberately partial-success. Missing optional venue, probable
+pitchers, source update time, or paired doubleheader metadata creates stable
+issues and incomplete component provenance without invalidating trustworthy
+event identity. Missing or malformed `gamePk`, team identity, or required
+timezone-aware start time withholds the event and all dependent observations
+while retaining raw evidence. Same-`gamePk` schedule and pitcher changes create
+new observations. Collection time is always preserved, but source timestamps
+remain `None` unless `lastUpdated` is explicitly present and valid; collection
+time is never substituted. Unsupported status affects only status evidence.
+`explicit_lineage()` requires a named direct relation field and the related
+`gamePk`; it never infers lineage from similarity.
+
+The offline fixture is `tests/fixtures/mlb_stats_api_schedule.json`, and
+`tests/test_mlb_stats_api.py` covers client failures, identity, schedules,
+status, pitchers, lineage, partial success, raw hashing, serialization, and
+ordering. The separately invoked read-only smoke path is:
+
+```bash
+./venv/bin/python smoke_mlb_stats_api.py YYYY-MM-DD [--game-pk GAME_PK]
+```
+
+It is intentionally excluded from automated validation and must not be run
+without explicit authorization. It requires a date, prints concise identifiers,
+outcomes, and issue codes rather than payloads, writes nothing, and exits
+nonzero on transport failure or unsafe rejection. PR5 does not persist raw
+payloads or normalized contracts and does not schedule collection.
+
 ## Workflows
 
 `update_all.sh` is the combined update workflow. It changes into the project directory, activates `venv/` when needed, then runs the standalone workflows in order:
