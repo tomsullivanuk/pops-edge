@@ -13,11 +13,13 @@ boards, portfolio and ladder views, wager log, CLV, archives, and web reports.
 3. Define MLB domain contracts and edge cases.
 3A. Document external forecast architecture.
 4. Define provider-neutral Forecast Observation contracts.
-5. Implement deterministic MLB ingestion.
-6. Implement MLB valuation.
-7. Add MLB reports and operating workflow.
-8. Extract proven multi-sport boundaries.
-9. Harden, document, and release.
+5. Implement the MLB Stats API facts adapter.
+5A. Document the Series / Observation architecture.
+6. Implement Forecast Series and the first external forecast-provider adapter.
+7. Implement MLB valuation.
+8. Add MLB reports and operating workflow.
+9. Extract proven multi-sport boundaries.
+10. Harden, document, and release.
 
 The authoritative PR scope and gates are in
 `docs/RELEASE_PLAN_v1.1.0.md`.

@@ -113,15 +113,100 @@ Later observations do not overwrite earlier observations when doing so would
 lose auditability or the historical information state. “Current” or “latest”
 values are derived views over immutable observations.
 
+### Series and observations
+
+Time-varying evidence follows one durable pattern:
+
+```text
+Durable Identity
+        │
+        ▼
+Immutable Observations
+        │
+        ▼
+Derived Views
+```
+
+The durable identity changes rarely and answers which thing is being observed.
+Its observations are append-only evidence of what was known or published at a
+point in time. Operational answers such as “current” and “latest” are computed
+views; they are not stored evidence. Observations are never updated in place.
+
+The existing game-facts architecture already follows this pattern:
+
+```text
+Canonical Event
+        │
+        ▼
+Schedule Observations
+Pitcher Observations
+Status Observations
+        │
+        ▼
+Current Game State
+```
+
+The Canonical Event remains durable while schedule, pitcher, and status
+evidence accumulates. Current Game State is derived from those observations
+without rewriting their history.
+
+The approved forecast architecture applies the same language:
+
+```text
+Forecast Series
+        │
+        ▼
+Forecast Observations
+        │
+        ▼
+Current Forecast
+Latest Pregame Forecast
+Forecast History
+Forecast Movement
+```
+
+A Forecast Series is the durable identity for one provider/model/version and
+Canonical Event combination. It answers, “Which forecast are we discussing?”
+Conceptually it owns references to the Forecast Provider, Forecast Model,
+Forecast Version, and Canonical Event. It contains no probabilities,
+timestamps, assumptions, validation, or disposition; those belong to its
+observations.
+
+A Forecast Observation answers, “What did this forecast look like at this
+point in time?” Each provider update appends a new immutable snapshot containing
+the outcome distribution, timestamps, assumptions, provenance, validation,
+disposition, and relationships. Observations never replace one another. This
+preserves the intuitive concept of one forecast changing over time without
+sacrificing its complete historical evidence.
+
+Latest forecast, latest pregame forecast, forecast before a pitcher change,
+forecast evolution, and forecast movement are derived views. They may be
+recomputed for an operational question and are not themselves immutable source
+evidence.
+
+The pattern is reusable where evidence naturally varies over time. Canonical
+Event and Forecast Series are current examples; future Market Series, Weather
+Series, or Injury Series may use it if concrete requirements justify them.
+The presence of a durable object alone does not require a Series.
+
+> Series identify the thing being observed. Observations preserve what was
+> known at a point in time. Derived views answer operational questions without
+> rewriting history.
+
+> Reference durable objects; do not duplicate durable metadata.
+
 ### External forecast domain
 
-External forecasts use four separate first-class concepts:
+The implemented PR4 contracts separate four first-class concepts. The approved
+next boundary adds Forecast Series between durable forecast identity and its
+observations:
 
 ```text
 Forecast Provider
     └── Forecast Model
             └── Forecast Version
-                    └── Forecast Observation
+                    └── Forecast Series + Canonical Event
+                            └── Forecast Observations
 ```
 
 A provider is the durable publishing organization or source. Its referenced
@@ -230,8 +315,8 @@ timestamp is independently trustworthy.
 
 Pops' Edge separates three layers:
 
-- **Identity** defines what exists, including Canonical Events, teams,
-  providers, models, and versions.
+- **Identity** defines what exists, including Canonical Events, Forecast
+  Series, teams, providers, models, and versions.
 - **Evidence** records what an external source reported at a point in time,
   including schedule, pitcher, forecast, and later market and outcome
   observations. Evidence is immutable and timestamped.
@@ -245,6 +330,13 @@ weighting may consider provider, model, version, methodology, market
 independence, sport or competition, horizon, completeness, historical
 calibration, and cross-source correlation, but no weight is part of an
 immutable model or observation.
+
+Series identify the thing being observed, while observations preserve its
+time-varying evidence. Derived views select or compare observations without
+becoming evidence and without mutating identity. Policy—including provider
+approval, weighting, freshness, wager eligibility, Kelly sizing, and edge
+thresholds—may select among derived views but must never mutate a Series or an
+Observation.
 
 > Identity is immutable. Evidence is immutable. Policy is mutable.
 
@@ -265,6 +357,10 @@ latest/disposition state is derived. A neutral timing helper compares
 collection time with supplied schedule evidence but expresses no eligibility
 policy. Provider adapters, persistence, weighting, markets, valuation, reports,
 and wagering remain outside this boundary.
+
+PR4 predates the approved Forecast Series contract. PR5A documents that durable
+identity layer; PR6 will implement it and connect existing immutable Forecast
+Observations to Series while preserving PR4 evidence semantics.
 
 ### Fail-closed quality behavior
 
@@ -330,7 +426,7 @@ The complete rename dependency inventory is in
 ## v1.1.0 direction
 
 MLB will first be implemented behind explicit sport-specific contracts and
-isolated artifacts. PR8 may extract platform interfaces demonstrated by both
+isolated artifacts. PR9 may extract platform interfaces demonstrated by both
 sports. No current World Cup calculation or report is changed merely to make
 the repository appear multi-sport.
 

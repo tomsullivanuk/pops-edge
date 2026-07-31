@@ -175,7 +175,38 @@ is explicit, concise, read-only, non-persisting, and fail-closed. Durable
 retention and remaining forecast/market source work require later approved
 scope before valuation.
 
-### PR6 — Implement MLB valuation
+### PR5A — Document Series / Observation architecture
+
+- Establish Durable Identity → Immutable Observations → Derived Views as the
+  shared language for time-varying evidence.
+- Document Canonical Event as the owner of schedule, pitcher, and status
+  observations and Forecast Series as the durable owner of Forecast
+  Observations.
+- Separate Series identity from observation evidence and derived current-state
+  views while strengthening the Identity / Evidence / Policy boundary.
+- Make no contract, adapter, persistence, market, valuation, report, wagering,
+  or World Cup behavior changes.
+
+**Gate:** durable product and architecture guidance fully bounds Forecast
+Series implementation before PR6 begins.
+
+### PR6 — Implement Forecast Series and first provider adapter
+
+- Implement provider-neutral Forecast Series contracts that reference Forecast
+  Provider, Forecast Model, Forecast Version, and Canonical Event.
+- Connect immutable Forecast Observations and their relationships to a Series
+  without mutating prior evidence.
+- Implement the first approved external forecast-provider adapter behind the
+  existing provider-neutral boundary.
+- Keep current/latest/pregame/history/movement state derived, and defer
+  persistence, weighting, freshness policy, markets, valuation, reports, and
+  wagering.
+
+**Gate:** Series identity, observation history, derived-view semantics, and the
+first provider translation are deterministic and fixture-tested without
+redesigning PR5A architecture or changing World Cup behavior.
+
+### PR7 — Implement MLB valuation
 
 - Match canonical MLB forecasts to markets.
 - Implement and document MLB edge, action, ROI, sizing, and quality gates.
@@ -185,7 +216,7 @@ scope before valuation.
 **Gate:** calculations are independently testable and World Cup regression
 tests remain unchanged and passing.
 
-### PR7 — Build MLB reports and operating workflow
+### PR8 — Build MLB reports and operating workflow
 
 - Produce the approved MLB research board(s), metadata, and web view.
 - Add an MLB update workflow with archive/output behavior.
@@ -194,7 +225,7 @@ tests remain unchanged and passing.
 **Gate:** an end-to-end fixture run produces validated MLB artifacts without
 overwriting World Cup artifacts.
 
-### PR8 — Introduce proven multi-sport boundaries
+### PR9 — Introduce proven multi-sport boundaries
 
 - Extract only interfaces and shared utilities demonstrated by both World Cup
   and MLB implementations.
@@ -205,7 +236,7 @@ overwriting World Cup artifacts.
 **Gate:** both sports run independently, shared boundaries have contract tests,
 and World Cup outputs remain regression-compatible.
 
-### PR9 — Release hardening and v1.1.0 handoff
+### PR10 — Release hardening and v1.1.0 handoff
 
 - Run complete regression, compilation, shell, fixture, and documentation
   validation.

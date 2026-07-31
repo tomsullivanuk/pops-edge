@@ -92,6 +92,29 @@ the original published evidence. PR4 adds no network collection, provider
 approval, persistence, weights, freshness rules, markets, edges, reports, or
 wagering behavior.
 
+## Series / Observation implementation guidance
+
+PR5A establishes a general rule for time-varying evidence:
+
+```text
+Durable Identity -> Immutable Observations -> Derived Views
+```
+
+Canonical Event already owns successive schedule, pitcher, and status
+observations; Current Game State is computed. PR6 will introduce Forecast
+Series as the durable identity for one Provider, Model, Version, and Canonical
+Event combination. Each provider update must append a Forecast Observation.
+Current Forecast, Latest Pregame Forecast, Forecast History, and Forecast
+Movement must be derived without mutating or replacing observations.
+
+Keep probabilities, timestamps, assumptions, provenance, validation,
+disposition, and observation relationships on Forecast Observation rather than
+Forecast Series. Reference Provider, Model, Version, Canonical Event, and Series
+instead of duplicating their durable metadata. Policy such as approval,
+weighting, freshness, eligibility, edge thresholds, and sizing must remain
+outside identity and evidence. PR5A changes no contracts; implementation begins
+only in PR6.
+
 ## MLB Stats API facts adapter
 
 `mlb_stats_api.py` contains the bounded read-only schedule client and facts

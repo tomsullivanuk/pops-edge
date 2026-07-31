@@ -66,6 +66,16 @@ an explicit concise smoke path is not run automatically. Persistence,
 scheduled collection, forecasts, markets, valuation, reports, and wagering
 remain deferred.
 
+PR5A documents Durable Identity → Immutable Observations → Derived Views as the
+shared architecture for time-varying evidence. It defines Forecast Series as
+the durable identity for one Provider, Model, Version, and Canonical Event;
+keeps probabilities, timestamps, assumptions, provenance, validation,
+disposition, and relationships on immutable Forecast Observations; and makes
+latest, pregame, history, evolution, and movement computed views. It strengthens
+the Identity / Evidence / Policy boundary and scopes PR6 to implement Forecast
+Series plus the first external provider adapter without changing contracts or
+runtime behavior in PR5A.
+
 ## [v1.0.0] — World Cup baseline
 
 The existing production World Cup implementation is designated Pops' Edge

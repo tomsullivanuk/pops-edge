@@ -51,8 +51,10 @@ bounded and reviewable.
 
 - A **forecast provider** is the durable source that owns one or more
   **forecast models**; each model may have separately identified **forecast
-  versions**. A **forecast observation** is immutable evidence of the complete
-  structured outcome distribution one exact version published for an event.
+  versions**. A **forecast series** identifies one provider/model/version
+  forecast for one Canonical Event. A **forecast observation** is immutable
+  evidence of what that Series published at one point in time, including its
+  complete structured outcome distribution.
 - A **market provider** lists tradable contracts; a **market observation** is a
   timestamped price, depth, volume, rules, and side mapping from that provider.
 - A **canonical event** is Pops' Edge's normalized immutable event identity,
@@ -73,6 +75,13 @@ Event facts, observations, comparisons, recommendations, positions, and
 outcomes are distinct records. A later value must not silently overwrite an
 earlier observation needed for audit or historical evaluation.
 
+Pops' Edge uses a consistent Series / Observation pattern where evidence
+naturally changes over time: durable identity owns append-only observations,
+and current state is derived rather than stored. A Forecast Series represents
+the conceptual “one forecast”; every provider update is a new immutable
+Forecast Observation. Latest forecast, latest pregame forecast, forecast
+history, and forecast movement are computed views, not source evidence.
+
 Provider, model, and version metadata is referenced rather than duplicated in
 each observation. Provider assumptions are preserved as reported and remain
 separate from authoritative event facts. Published values and precision are
@@ -80,12 +89,18 @@ preserved; inconsistent distributions are flagged, never silently normalized.
 Unknown provider timestamps and versions remain explicitly unknown rather
 than being inferred from collection time.
 
-Pops' Edge distinguishes identity, evidence, and policy. Identity defines what
+Pops' Edge distinguishes identity, evidence, and policy. Identity—including
+Canonical Event, Forecast Series, Provider, Model, and Version—defines what
 exists; evidence records what a source reported at a point in time; policy
 decides how Pops' Edge evaluates and acts on that evidence. Approval, weights,
 freshness, eligibility, edge requirements, Kelly settings, and portfolio
 limits are policy. They may change without rewriting immutable identity or
 historical evidence.
+
+Series identify the thing being observed. Observations preserve what was known
+at a point in time. Derived views answer operational questions without
+rewriting history. Durable objects are referenced rather than duplicated, and
+observations are never updated in place.
 
 > Identity is immutable. Evidence is immutable. Policy is mutable.
 

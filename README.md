@@ -33,9 +33,15 @@ coverage, or operating workflows. Detailed baseline behavior remains in
 ### v1.1.0 — MLB Research and Multi-Sport Foundation
 
 v1.1.0 adds MLB research and the first reusable multi-sport boundaries while
-preserving the World Cup baseline. Work is divided into eight reviewable pull
-requests. The scope, sequencing, gates, and release criteria are defined in
+preserving the World Cup baseline. The release uses bounded, reviewable pull
+requests, including documentation checkpoints when durable architecture must
+be settled before implementation. The scope, sequencing, gates, and release
+criteria are defined in
 [docs/RELEASE_PLAN_v1.1.0.md](docs/RELEASE_PLAN_v1.1.0.md).
+
+Across event facts and forecasts, Pops' Edge treats durable identity as the
+owner of append-only observations. “Current” state is a derived view;
+historical evidence is never updated in place.
 
 ## Documentation
 
@@ -45,7 +51,7 @@ requests. The scope, sequencing, gates, and release criteria are defined in
 - [Roadmap](ROADMAP.md) — ordered product direction
 - [Backlog](BACKLOG.md) — deferred and uncommitted work
 - [Changelog](CHANGELOG.md) — version history
-- [v1.1.0 release plan](docs/RELEASE_PLAN_v1.1.0.md) — PR1–PR9 sequence
+- [v1.1.0 release plan](docs/RELEASE_PLAN_v1.1.0.md) — PR1–PR10 sequence
 - [Codex workflow](docs/CODEX_WORKFLOW.md) — pull-request and completion-report
   standard
 - [Release checklist](RELEASE_CHECKLIST.md) — release readiness and handoff
