@@ -251,6 +251,21 @@ immutable model or observation.
 > Forecast Observations report what a provider published; they do not decide
 > whether Pops' Edge should wager.
 
+PR4 implements this boundary in `forecast_contracts.py`. The offline contracts
+use one stable identifier chain: Model references Provider, Version references
+Model, and Observation references only Version. They also provide exact
+`Decimal` probabilities; canonical outcome ordering;
+explicit assumptions, validation, disposition, and lineage; and composition
+with PR3 reconciliation and provenance. Precision tolerance is the sum of each
+published value's half-rounding interval after conversion to probability
+scale. Materially inconsistent totals remain serialized evidence and are
+classified invalid without normalization. Revision relationships are separate
+immutable evidence, so later discovery does not rewrite an observation and
+latest/disposition state is derived. A neutral timing helper compares
+collection time with supplied schedule evidence but expresses no eligibility
+policy. Provider adapters, persistence, weighting, markets, valuation, reports,
+and wagering remain outside this boundary.
+
 ### Fail-closed quality behavior
 
 Pops' Edge must not produce an edge or recommendation while material ambiguity

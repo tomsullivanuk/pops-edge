@@ -55,6 +55,43 @@ Deterministic tagged JSON is the adapter/fixture boundary. No database,
 provider client, market contract, forecast ingestion, persistence, or World Cup
 integration is part of PR3.
 
+## Offline forecast contracts
+
+PR4 adds `forecast_contracts.py` without connecting it to a provider or the
+World Cup workflow. It defines immutable Forecast Provider, Model, Version,
+Outcome, Published Probability, Distribution, provider-assumption, validation,
+disposition, relationship, Observation, and collection-timing contracts.
+Durable objects use one stable chain: Model references Provider, Version
+references Model, and Observation references only Version. Observations do not
+copy provider, model, or version metadata. A bundle validator checks the full
+assembled hierarchy, including the provenance provider.
+
+Published probabilities use exact `Decimal` values and separately preserve the
+source representation, source scale, and declared decimal precision. A
+distribution canonicalizes its non-semantic outcome order by outcome ID,
+retains the exact observed total, and calculates its tolerance as the sum of
+the half-rounding intervals implied by every published value. Percent values
+convert their interval to probability scale. Totals outside that tolerance are
+preserved and classified invalid; values are never rounded or normalized.
+
+Forecast validation (`valid`, `incomplete`, `invalid`) remains separate from
+provider disposition (`active`, `corrected`, `withdrawn`) and from PR3 event
+reconciliation (`matched`, `ambiguous`, `rejected`). Unresolved observations
+retain source evidence and candidate evaluations without claiming a Canonical
+Event. Provider assumptions explicitly represent reported, undisclosed, or
+unknown states. Revision relationships are separate immutable records rather
+than fields on an observation; a helper validates appended evidence and derives
+latest-known and effective disposition without rewriting history. Collection timing reports before-start,
+at-or-after-start, or unknown-start facts from supplied schedule evidence; it
+does not decide actionability.
+
+The shared tagged serializer now supports exact decimals and dates in addition
+to its existing timezone-aware datetimes and enums. Tuple-like collections are
+canonicalized by their contracts before serialization, and round trips retain
+the original published evidence. PR4 adds no network collection, provider
+approval, persistence, weights, freshness rules, markets, edges, reports, or
+wagering behavior.
+
 ## Workflows
 
 `update_all.sh` is the combined update workflow. It changes into the project directory, activates `venv/` when needed, then runs the standalone workflows in order:
@@ -240,6 +277,13 @@ Tests use temporary directories and sample fixtures under `tests/fixtures/` so t
 doubleheaders, postponement and replacement semantics, suspension/resumption,
 missing and changed pitchers, conflicting source observations, fail-closed
 reconciliation, immutability, and deterministic serialization round trips.
+
+`tests/test_forecast_contracts.py` and
+`tests/fixtures/forecast_contract_cases.json` validate the provider/model/version
+hierarchy, exact published probabilities, precision-aware distributions,
+assumptions, timestamps, validation and disposition, immutable revision
+relationships, matched/ambiguous/rejected reconciliation, neutral collection
+timing, canonical serialization, and round trips entirely offline.
 
 The Value Board pipeline test checks the Portfolio worksheet section layout, open-position enrichment, summary totals, and team/date exposure rollups while preserving the existing Bet Sheet assertions. Futures tests cover Silver futures processing, a champion edge example, an advancement edge example, and the generated sortable futures web Bet Sheet. Wager tests cover Match Date normalization, Round-of-16 settlement, two-letter champion ticker enrichment, and the generated sortable unified web Bet Log.
 

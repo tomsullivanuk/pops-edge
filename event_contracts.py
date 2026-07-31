@@ -8,7 +8,8 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, fields, is_dataclass
-from datetime import datetime
+from datetime import date, datetime
+from decimal import Decimal
 from enum import Enum
 from typing import Any, ClassVar, TypeVar
 
@@ -161,18 +162,21 @@ class Evidence:
 class Provenance:
     provider: str
     source_record_id: str
-    canonical_event_id: str
+    canonical_event_id: str | None
     collected_at: datetime
     source_timestamp: datetime | None = None
     transformations: tuple[str, ...] = ()
     validation_status: ValidationStatus = ValidationStatus.VALID
     validation_reasons: tuple[ValidationReason, ...] = ()
     raw_evidence_ref: str | None = None
+    source_url: str | None = None
+    collector_version: str | None = None
 
     def __post_init__(self) -> None:
         _require_identifier(self.provider, "provider")
         _require_identifier(self.source_record_id, "source_record_id")
-        _require_identifier(self.canonical_event_id, "canonical_event_id")
+        if self.canonical_event_id is not None:
+            _require_identifier(self.canonical_event_id, "canonical_event_id")
         _require_aware(self.collected_at, "collected_at")
         if self.source_timestamp is not None:
             _require_aware(self.source_timestamp, "source_timestamp")
@@ -197,6 +201,12 @@ class Provenance:
             )
         if self.raw_evidence_ref is not None:
             _require_identifier(self.raw_evidence_ref, "raw_evidence_ref")
+        if self.source_url is not None:
+            _require_text(
+                self.source_url, ReasonCode.VALIDATION_FAILURE, "source_url"
+            )
+        if self.collector_version is not None:
+            _require_identifier(self.collector_version, "collector_version")
 
 
 @dataclass(frozen=True, slots=True)
@@ -403,6 +413,10 @@ def _encode(value: Any) -> Any:
     if isinstance(value, datetime):
         _require_aware(value, "serialized timestamp")
         return {"__datetime__": value.isoformat()}
+    if isinstance(value, date):
+        return {"__date__": value.isoformat()}
+    if isinstance(value, Decimal):
+        return {"__decimal__": str(value)}
     if isinstance(value, Enum):
         return {"__enum__": f"{value.__class__.__name__}:{value.value}"}
     if is_dataclass(value) and not isinstance(value, type):
@@ -421,6 +435,10 @@ def _decode(value: Any) -> Any:
     if isinstance(value, list):
         return tuple(_decode(item) for item in value)
     if isinstance(value, dict):
+        if set(value) == {"__date__"}:
+            return date.fromisoformat(value["__date__"])
+        if set(value) == {"__decimal__"}:
+            return Decimal(value["__decimal__"])
         if set(value) == {"__datetime__"}:
             timestamp = datetime.fromisoformat(value["__datetime__"])
             _require_aware(timestamp, "serialized timestamp")

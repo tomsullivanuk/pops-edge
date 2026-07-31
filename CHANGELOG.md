@@ -47,6 +47,15 @@ fail-closed event reconciliation; and separates immutable identity and evidence
 from mutable weighting, eligibility, and wagering policy. No provider is
 approved or privileged.
 
+PR4 implements deterministic offline Forecast Provider, Model, Version,
+Outcome, Published Probability, Distribution, provider-assumption, Observation,
+validation, disposition, relationship, and timing contracts. Exact decimal
+values and published precision drive aggregate rounding-tolerance validation;
+outcomes serialize in canonical non-semantic order; inconsistent distributions
+remain preserved without normalization; and PR3 provenance and reconciliation
+semantics are reused. It adds fixtures and semantic tests but no provider
+adapter, persistence, weighting, market, valuation, report, or wagering work.
+
 ## [v1.0.0] — World Cup baseline
 
 The existing production World Cup implementation is designated Pops' Edge

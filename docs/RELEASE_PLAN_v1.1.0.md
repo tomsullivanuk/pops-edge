@@ -144,6 +144,15 @@ included.
 offline fixtures and tests without changing World Cup behavior or beginning
 provider integration.
 
+**Implemented boundary:** immutable Provider, Model, Version, structured
+Outcome, Published Probability, Distribution, provider-assumption, Forecast
+Observation, validation, disposition, relationship, and timing contracts;
+exact decimal and date serialization; precision-aware total validation;
+deterministic canonical ordering; and composition with PR3 provenance and
+event reconciliation. Provider access, adapters, persistence, weighting,
+eligibility, freshness, markets, valuation, reports, wagers, and World Cup
+integration remain deferred.
+
 ### PR5 — Implement MLB source ingestion
 
 - Implement fixture-backed adapters for the selected MLB forecast, schedule,

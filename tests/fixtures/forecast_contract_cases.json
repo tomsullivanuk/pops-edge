@@ -1,0 +1,40 @@
+{
+  "distributions": [
+    {
+      "name": "mlb-exact",
+      "event_id": "mlb:777",
+      "values": [
+        {"outcome": "home-win", "value": "0.55", "source": "55%", "precision": 0, "scale": "percent"},
+        {"outcome": "away-win", "value": "0.45", "source": "45%", "precision": 0, "scale": "percent"}
+      ],
+      "status": "valid"
+    },
+    {
+      "name": "whole-percent-99",
+      "event_id": "mlb:777",
+      "values": [
+        {"outcome": "home-win", "value": "0.50", "source": "50%", "precision": 0, "scale": "percent"},
+        {"outcome": "away-win", "value": "0.49", "source": "49%", "precision": 0, "scale": "percent"}
+      ],
+      "status": "valid"
+    },
+    {
+      "name": "whole-percent-101",
+      "event_id": "mlb:777",
+      "values": [
+        {"outcome": "home-win", "value": "0.51", "source": "51%", "precision": 0, "scale": "percent"},
+        {"outcome": "away-win", "value": "0.50", "source": "50%", "precision": 0, "scale": "percent"}
+      ],
+      "status": "valid"
+    },
+    {
+      "name": "fine-precision-invalid",
+      "event_id": "mlb:777",
+      "values": [
+        {"outcome": "home-win", "value": "0.505", "source": "50.5%", "precision": 1, "scale": "percent"},
+        {"outcome": "away-win", "value": "0.490", "source": "49.0%", "precision": 1, "scale": "percent"}
+      ],
+      "status": "invalid"
+    }
+  ]
+}
