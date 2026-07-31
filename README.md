@@ -45,7 +45,7 @@ requests. The scope, sequencing, gates, and release criteria are defined in
 - [Roadmap](ROADMAP.md) — ordered product direction
 - [Backlog](BACKLOG.md) — deferred and uncommitted work
 - [Changelog](CHANGELOG.md) — version history
-- [v1.1.0 release plan](docs/RELEASE_PLAN_v1.1.0.md) — PR1–PR8 sequence
+- [v1.1.0 release plan](docs/RELEASE_PLAN_v1.1.0.md) — PR1–PR9 sequence
 - [Codex workflow](docs/CODEX_WORKFLOW.md) — pull-request and completion-report
   standard
 - [Release checklist](RELEASE_CHECKLIST.md) — release readiness and handoff

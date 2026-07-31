@@ -112,7 +112,39 @@ serialization, and matched/ambiguous/rejected reconciliation. Provider
 adapters, persistence, forecast and market contracts, and World Cup integration
 remain deferred to their approved PRs.
 
-### PR4 — Implement MLB source ingestion
+### PR3A — Document external forecast architecture
+
+- Establish Forecast Provider, Forecast Model, Forecast Version, and Forecast
+  Observation as separate domain concepts.
+- Document complete structured outcome distributions, precision-aware
+  validation, timestamps, assumptions, revisions, corrections, withdrawals,
+  and fail-closed event reconciliation.
+- Separate immutable identity and evidence from mutable weighting and wagering
+  policy without approving a provider or implementing contracts.
+
+**Gate:** durable product and architecture documentation fully bounds the
+provider-neutral PR4 contract work; no implementation or provider decision is
+included.
+
+### PR4 — Forecast Observation Contracts
+
+- Implement offline, provider-neutral contracts for Forecast Provider,
+  Forecast Model, Forecast Version, structured Forecast Outcomes, published
+  probability values and precision, Forecast Observation, and
+  provider-reported assumptions.
+- Represent revisions, corrections, withdrawals, validation states, provider
+  dispositions, and reconciliation references without mutating prior evidence.
+- Add deterministic serialization, fixtures, and semantic tests.
+- Defer provider adapters, DRatings or FanGraphs access, commercial-provider
+  approval, network collection, persistence, weighting, eligibility and
+  freshness policy, market observations, edge calculations, reports, and
+  wagers.
+
+**Gate:** provider-neutral contracts preserve the documented semantics in
+offline fixtures and tests without changing World Cup behavior or beginning
+provider integration.
+
+### PR5 — Implement MLB source ingestion
 
 - Implement fixture-backed adapters for the selected MLB forecast, schedule,
   result, and market inputs.
@@ -122,7 +154,7 @@ remain deferred to their approved PRs.
 **Gate:** canonical MLB inputs are reproducible from fixtures and source
 failures are explicit.
 
-### PR5 — Implement MLB valuation
+### PR6 — Implement MLB valuation
 
 - Match canonical MLB forecasts to markets.
 - Implement and document MLB edge, action, ROI, sizing, and quality gates.
@@ -132,7 +164,7 @@ failures are explicit.
 **Gate:** calculations are independently testable and World Cup regression
 tests remain unchanged and passing.
 
-### PR6 — Build MLB reports and operating workflow
+### PR7 — Build MLB reports and operating workflow
 
 - Produce the approved MLB research board(s), metadata, and web view.
 - Add an MLB update workflow with archive/output behavior.
@@ -141,7 +173,7 @@ tests remain unchanged and passing.
 **Gate:** an end-to-end fixture run produces validated MLB artifacts without
 overwriting World Cup artifacts.
 
-### PR7 — Introduce proven multi-sport boundaries
+### PR8 — Introduce proven multi-sport boundaries
 
 - Extract only interfaces and shared utilities demonstrated by both World Cup
   and MLB implementations.
@@ -152,7 +184,7 @@ overwriting World Cup artifacts.
 **Gate:** both sports run independently, shared boundaries have contract tests,
 and World Cup outputs remain regression-compatible.
 
-### PR8 — Release hardening and v1.1.0 handoff
+### PR9 — Release hardening and v1.1.0 handoff
 
 - Run complete regression, compilation, shell, fixture, and documentation
   validation.

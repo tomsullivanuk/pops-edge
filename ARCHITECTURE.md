@@ -113,6 +113,144 @@ Later observations do not overwrite earlier observations when doing so would
 lose auditability or the historical information state. “Current” or “latest”
 values are derived views over immutable observations.
 
+### External forecast domain
+
+External forecasts use four separate first-class concepts:
+
+```text
+Forecast Provider
+    └── Forecast Model
+            └── Forecast Version
+                    └── Forecast Observation
+```
+
+A provider is the durable publishing organization or source. Its referenced
+metadata may include a stable identifier, name, organization, website,
+documentation, supported sports or competitions, collection method, permitted
+use or licensing status, typical update cadence, and active/inactive lifecycle
+state. Provider approval, weights, freshness thresholds, trust decisions, and
+wagering eligibility are policy and do not belong to the provider object.
+
+A model is a durable forecast method owned by one provider. Its referenced
+metadata may include a stable identifier, provider reference, name,
+description, supported sports or competitions, documentation, methodology
+classification, and market-independence classification. Approved methodology
+classes are `statistical`, `market-derived`, `hybrid`, `expert judgment`,
+`composite external forecasts`, and `unknown`. Approved market-independence
+classes are `independent`, `partially market-informed`, `market-derived`, and
+`unknown`. These classifications remain distinct: methodology describes how a
+forecast is produced, while market independence describes how much market
+information it uses. Neither model weights nor recommendation eligibility
+belongs to the model.
+
+A version is a durable revision of one model. Its referenced metadata may
+include a stable identifier, model reference, provider-published version name,
+effective and retirement dates, methodology and release notes, calibration
+notes, and documentation. This boundary permits performance analysis across
+methodology, calibration, or weighting changes. Every observation references
+the exact known version that produced it. When a provider publishes no version,
+the model has an explicit unknown version; Pops' Edge never invents one from a
+collection date.
+
+Provider, model, and version are separate because one provider may publish
+multiple models, a model may have multiple versions, and methodology,
+calibration, or weighting may change over time. A forecast observation is lean
+and does not copy their durable metadata:
+
+> Reference durable objects; do not duplicate durable metadata in observations.
+
+#### Forecast observations and outcome distributions
+
+A Forecast Observation is immutable external evidence linking a Canonical
+Event and Forecast Version to the complete outcome distribution published by
+the provider. It also references provider-reported assumptions, provenance,
+timestamps, validation state, provider disposition, correction or withdrawal
+relationships, and the event-reconciliation result. Observations from
+different providers remain independently preserved and evaluable; none is the
+single official Pops' Edge forecast.
+
+The reusable distribution supports any set of mutually exclusive structured
+outcomes tied to the Canonical Event, such as home/away win in MLB or
+home/draw/away win in soccer. Every probability references a structured
+outcome identifier. Participant identity alone does not define an outcome, and
+outcome order has no semantic meaning. Pops' Edge preserves a complete
+provider-published distribution rather than silently deriving replacement
+values.
+
+Each probability preserves the exact published numeric value, its published
+precision, and, where practical, its source representation. Validation retains
+the observed distribution total and applies a tolerance appropriate to that
+precision: whole percentages may reasonably sum to 99–101%, tenths require a
+correspondingly tighter tolerance, and greater precision requires tighter
+validation. A materially inconsistent distribution is preserved and flagged,
+not repaired. Probabilities are never silently normalized; normalization, if
+later authorized, is a separate derived transformation with provenance.
+
+#### Forecast time, assumptions, and revision history
+
+Collection time is required and records when Pops' Edge obtained the forecast.
+Provider publication, effective, and update times are separate and retained
+when available. Unknown provider times remain unknown and are never inferred
+from collection time. Scheduled event start remains Schedule Observation
+evidence rather than copied forecast truth; a forecast may reference the
+schedule evidence used for timing evaluation. Timestamp-based wagering
+eligibility is later policy.
+
+Provider-reported assumptions are preserved exactly as published, including
+their absence. They may describe starting pitchers, expected lineups,
+home-field assumptions, provider-specific event definitions, or other model
+inputs. They remain separate from authoritative event observations. Conflicts
+preserve both pieces of evidence, and missing assumptions do not alone
+invalidate a forecast. If an assumption later changes, the old observation
+remains historically valid evidence even if later policy considers it stale.
+
+Every provider revision creates a new immutable observation; earlier evidence
+is never overwritten. Corrections and withdrawals append records and preserve
+the corrected or withdrawn history. Observation validation (`valid`,
+`incomplete`, or `invalid`) is separate from provider disposition (`active`,
+`corrected`, or `withdrawn`). Relationships and derived state—`superseded by`,
+`corrected by`, `withdrawn by`, and `latest known observation`—are not
+intrinsic mutations of an observation.
+
+#### Forecast reconciliation and timing safety
+
+A valid source forecast and a valid Canonical Event mapping are independent
+concerns. A forecast must reconcile to one Canonical Event before edge
+analysis. For an ambiguous record, including an unidentified doubleheader
+game, Pops' Edge preserves the source evidence and candidate evaluations,
+records an ambiguous reconciliation, selects no event, and fails closed for
+edge or wagering analysis.
+
+Post-start collection remains audit evidence but is not represented as
+contemporaneously actionable, even if the provider reports a pregame
+publication time. Retrospective evaluation may use it only when that provider
+timestamp is independently trustworthy.
+
+### Identity, evidence, and policy
+
+Pops' Edge separates three layers:
+
+- **Identity** defines what exists, including Canonical Events, teams,
+  providers, models, and versions.
+- **Evidence** records what an external source reported at a point in time,
+  including schedule, pitcher, forecast, and later market and outcome
+  observations. Evidence is immutable and timestamped.
+- **Policy** defines how Pops' Edge behaves, including approved providers,
+  model weights, freshness and market-quality thresholds, pitcher-confirmation
+  rules, edge requirements, Kelly configuration, portfolio limits, and wager
+  eligibility.
+
+Policy may change without rewriting identity or evidence. Future forecast
+weighting may consider provider, model, version, methodology, market
+independence, sport or competition, horizon, completeness, historical
+calibration, and cross-source correlation, but no weight is part of an
+immutable model or observation.
+
+> Identity is immutable. Evidence is immutable. Policy is mutable.
+
+> Forecast Observations report what a provider published; they do not decide
+> whether Pops' Edge should wager.
+
 ### Fail-closed quality behavior
 
 Pops' Edge must not produce an edge or recommendation while material ambiguity
@@ -177,7 +315,7 @@ The complete rename dependency inventory is in
 ## v1.1.0 direction
 
 MLB will first be implemented behind explicit sport-specific contracts and
-isolated artifacts. PR7 may extract platform interfaces demonstrated by both
+isolated artifacts. PR8 may extract platform interfaces demonstrated by both
 sports. No current World Cup calculation or report is changed merely to make
 the repository appear multi-sport.
 

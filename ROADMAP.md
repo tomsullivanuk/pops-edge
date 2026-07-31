@@ -11,11 +11,13 @@ boards, portfolio and ladder views, wager log, CLV, archives, and web reports.
 2. Research and select MLB sources.
 2A. Document approved product-management and architecture decisions.
 3. Define MLB domain contracts and edge cases.
-4. Implement deterministic MLB ingestion.
-5. Implement MLB valuation.
-6. Add MLB reports and operating workflow.
-7. Extract proven multi-sport boundaries.
-8. Harden, document, and release.
+3A. Document external forecast architecture.
+4. Define provider-neutral Forecast Observation contracts.
+5. Implement deterministic MLB ingestion.
+6. Implement MLB valuation.
+7. Add MLB reports and operating workflow.
+8. Extract proven multi-sport boundaries.
+9. Harden, document, and release.
 
 The authoritative PR scope and gates are in
 `docs/RELEASE_PLAN_v1.1.0.md`.

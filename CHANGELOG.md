@@ -38,6 +38,15 @@ Canonical identity is restricted to authoritative sport-native identifiers;
 later provider mappings remain separate, and rejected reconciliation preserves
 candidate-evaluation evidence without exposing an eligible candidate.
 
+PR3A documents the external-forecast architecture without implementing it. It
+establishes Provider → Model → Version → Observation as distinct domain
+concepts; requires complete structured outcome distributions, preserved
+published precision, precision-aware validation, distinct timestamps,
+immutable revision and correction history, provider-reported assumptions, and
+fail-closed event reconciliation; and separates immutable identity and evidence
+from mutable weighting, eligibility, and wagering policy. No provider is
+approved or privileged.
+
 ## [v1.0.0] — World Cup baseline
 
 The existing production World Cup implementation is designated Pops' Edge

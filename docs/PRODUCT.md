@@ -49,8 +49,10 @@ bounded and reviewable.
 
 ## Product language
 
-- A **forecast provider** publishes independent probability estimates; a
-  **forecast observation** is one provider's timestamped report for an event.
+- A **forecast provider** is the durable source that owns one or more
+  **forecast models**; each model may have separately identified **forecast
+  versions**. A **forecast observation** is immutable evidence of the complete
+  structured outcome distribution one exact version published for an event.
 - A **market provider** lists tradable contracts; a **market observation** is a
   timestamped price, depth, volume, rules, and side mapping from that provider.
 - A **canonical event** is Pops' Edge's normalized immutable event identity,
@@ -70,6 +72,25 @@ bounded and reviewable.
 Event facts, observations, comparisons, recommendations, positions, and
 outcomes are distinct records. A later value must not silently overwrite an
 earlier observation needed for audit or historical evaluation.
+
+Provider, model, and version metadata is referenced rather than duplicated in
+each observation. Provider assumptions are preserved as reported and remain
+separate from authoritative event facts. Published values and precision are
+preserved; inconsistent distributions are flagged, never silently normalized.
+Unknown provider timestamps and versions remain explicitly unknown rather
+than being inferred from collection time.
+
+Pops' Edge distinguishes identity, evidence, and policy. Identity defines what
+exists; evidence records what a source reported at a point in time; policy
+decides how Pops' Edge evaluates and acts on that evidence. Approval, weights,
+freshness, eligibility, edge requirements, Kelly settings, and portfolio
+limits are policy. They may change without rewriting immutable identity or
+historical evidence.
+
+> Identity is immutable. Evidence is immutable. Policy is mutable.
+
+> Forecast Observations report what a provider published; they do not decide
+> whether Pops' Edge should wager.
 
 ## Commercial data philosophy
 
