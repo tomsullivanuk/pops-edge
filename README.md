@@ -52,6 +52,8 @@ historical evidence is never updated in place.
 - [Backlog](BACKLOG.md) — deferred and uncommitted work
 - [Changelog](CHANGELOG.md) — version history
 - [v1.1.0 release plan](docs/RELEASE_PLAN_v1.1.0.md) — PR1–PR10 sequence
+- [v1.1.0 checkpoint through PR6](docs/V1.1.0_CHECKPOINT_THROUGH_PR6.md) —
+  implemented platform baseline before MLB market valuation
 - [Codex workflow](docs/CODEX_WORKFLOW.md) — pull-request and completion-report
   standard
 - [Release checklist](RELEASE_CHECKLIST.md) — release readiness and handoff

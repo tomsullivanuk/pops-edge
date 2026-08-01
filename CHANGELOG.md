@@ -89,6 +89,10 @@ stable record ID, or disclosed model version is invented. The local inspection
 command performs no provider network access, and automation, persistence,
 freshness, weighting, markets, valuation, reports, and wagering remain deferred.
 
+The documentation checkpoint in `docs/V1.1.0_CHECKPOINT_THROUGH_PR6.md`
+records the implemented platform baseline before PR7. It changes no runtime
+behavior, does not release v1.1.0, and preserves the planned PR7–PR10 sequence.
+
 ## [v1.0.0] — World Cup baseline
 
 The existing production World Cup implementation is designated Pops' Edge

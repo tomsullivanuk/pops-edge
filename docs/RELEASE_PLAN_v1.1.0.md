@@ -209,6 +209,10 @@ Series implementation before PR6 begins.
 first provider translation are deterministic and fixture-tested without
 redesigning PR5A architecture or changing World Cup behavior.
 
+**Checkpoint:** the implemented baseline through PR6 is summarized in
+`docs/V1.1.0_CHECKPOINT_THROUGH_PR6.md`. PR7 remains the next planned product
+and architecture review; this checkpoint is not a release or tag.
+
 ### PR7 — Implement MLB valuation
 
 - Match canonical MLB forecasts to markets.
