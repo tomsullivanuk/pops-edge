@@ -76,6 +76,19 @@ the Identity / Evidence / Policy boundary and scopes PR6 to implement Forecast
 Series plus the first external provider adapter without changing contracts or
 runtime behavior in PR5A.
 
+PR6 implements immutable Forecast Series, append-only Forecast History, and a
+provider-neutral offline adapter-result boundary with explicit complete,
+partial, ambiguous, and rejected states. Its first provider implementation
+parses a faithful manually captured DRatings Upcoming table, preserving exact
+published probabilities and precision, pitcher assumptions, scheduled UTC
+times, page-level update evidence, source URLs, row locators, and raw/canonical
+digests. Separately captured MLB schedule evidence supplies `gamePk`, team
+identity, home/away roles, and exact-time reconciliation; the controlled
+`Oakland Athletics` → `Athletics` alias is explicit. No provider row timestamp,
+stable record ID, or disclosed model version is invented. The local inspection
+command performs no provider network access, and automation, persistence,
+freshness, weighting, markets, valuation, reports, and wagering remain deferred.
+
 ## [v1.0.0] — World Cup baseline
 
 The existing production World Cup implementation is designated Pops' Edge

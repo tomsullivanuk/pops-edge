@@ -192,12 +192,15 @@ Series implementation before PR6 begins.
 
 ### PR6 — Implement Forecast Series and first provider adapter
 
-- Implement provider-neutral Forecast Series contracts that reference Forecast
+- Implemented provider-neutral Forecast Series contracts that reference Forecast
   Provider, Forecast Model, Forecast Version, and Canonical Event.
-- Connect immutable Forecast Observations and their relationships to a Series
+- Connected immutable Forecast Observations and their relationships to a Series
   without mutating prior evidence.
-- Implement the first approved external forecast-provider adapter behind the
-  existing provider-neutral boundary.
+- Implemented the first external forecast adapter as an offline parser of a
+  faithful, manually captured DRatings HTML snapshot. No automated DRatings
+  access is approved.
+- Reconcile against a separate MLB schedule fixture using controlled aliases,
+  ordered participants, and exact UTC times; ambiguity fails closed.
 - Keep current/latest/pregame/history/movement state derived, and defer
   persistence, weighting, freshness policy, markets, valuation, reports, and
   wagering.

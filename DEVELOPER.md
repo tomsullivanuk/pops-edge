@@ -101,9 +101,9 @@ Durable Identity -> Immutable Observations -> Derived Views
 ```
 
 Canonical Event already owns successive schedule, pitcher, and status
-observations; Current Game State is computed. PR6 will introduce Forecast
-Series as the durable identity for one Provider, Model, Version, and Canonical
-Event combination. Each provider update must append a Forecast Observation.
+observations; Current Game State is computed. PR6 introduces Forecast Series
+as the durable identity for one Provider, Model, Version, and Canonical Event
+combination. Each provider update appends a Forecast Observation.
 Current Forecast, Latest Pregame Forecast, Forecast History, and Forecast
 Movement must be derived without mutating or replacing observations.
 
@@ -112,8 +112,36 @@ disposition, and observation relationships on Forecast Observation rather than
 Forecast Series. Reference Provider, Model, Version, Canonical Event, and Series
 instead of duplicating their durable metadata. Policy such as approval,
 weighting, freshness, eligibility, edge thresholds, and sizing must remain
-outside identity and evidence. PR5A changes no contracts; implementation begins
-only in PR6.
+outside identity and evidence.
+
+## Offline DRatings snapshot adapter
+
+`dratings_adapter.py` parses manually captured DRatings HTML and never retrieves
+the provider page. It selects only the Upcoming table, preserves both displayed
+probabilities and their precision, ordered pitcher assumptions, exact UTC game
+time, page-level update time, detail-path locator, raw digest, canonical parsed-
+evidence digest, canonical source URL, and separate Product Owner access URL.
+The local command is:
+
+```bash
+./venv/bin/python inspect_dratings_snapshot.py SNAPSHOT --mlb-fixture MLB_JSON
+```
+
+MLB `gamePk`, team IDs, home/away roles, and schedule observations come only
+from the separately captured MLB fixture. The controlled source alias currently
+needed is `Oakland Athletics` → `Athletics`. Row publication/update timestamps,
+provider version, and stable provider record identifiers remain unknown.
+Provider table order is preserved as source position, not treated as away/home;
+participant reconciliation assigns roles and rejects an unsafe orientation.
+Missing row-specific timestamps do not make an otherwise complete row partial
+because DRatings does not publish them. `complete` means the source row has its
+published matchup, schedule time, complete valid distribution, displayed
+pitcher assumptions, required snapshot metadata, and one MLB match. Missing
+metadata the source structure is expected to publish, or missing displayed
+assumptions, produces `partial` after a unique match.
+Ambiguous and unmatched rows emit no Series or Observation. This boundary adds
+no automated collection, persistence, freshness, weighting, valuation, market,
+report, or wagering behavior.
 
 ## MLB Stats API facts adapter
 

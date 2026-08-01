@@ -135,6 +135,17 @@ Adapter evidence distinguishes exact response-byte identity from canonical
 JSON equivalence, and every game reports an explicit complete, partial, or
 rejected outcome. Provider timestamps are never invented from collection time.
 
+PR6 approves DRatings only as a manually captured local forecast-evidence
+source; it does not approve automated access. The adapter preserves the
+Upcoming table's ordered matchup names, exact UTC time, displayed pitcher
+assumptions, and two published win probabilities. A page-level update time is
+not a row timestamp. DRatings supplies neither MLB `gamePk` nor authoritative
+team/pitcher identity, a disclosed model version, or a proven stable forecast
+record ID. Separately captured MLB evidence establishes event identity and
+home/away roles. Complete, partial, ambiguous, and rejected outcomes keep
+uncertainty visible and create a Forecast Series only with a valid first
+observation.
+
 ## Supported sports
 
 | Sport | Status | Product version |

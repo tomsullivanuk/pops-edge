@@ -18,6 +18,7 @@ env/
 *.xls
 *.xlsm
 *.html
+!tests/fixtures/dratings_mlb_snapshot_2026-07-31.html
 ~$*
 
 # Downloaded/raw data

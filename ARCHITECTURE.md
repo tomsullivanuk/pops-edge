@@ -358,9 +358,19 @@ collection time with supplied schedule evidence but expresses no eligibility
 policy. Provider adapters, persistence, weighting, markets, valuation, reports,
 and wagering remain outside this boundary.
 
-PR4 predates the approved Forecast Series contract. PR5A documents that durable
-identity layer; PR6 will implement it and connect existing immutable Forecast
-Observations to Series while preserving PR4 evidence semantics.
+PR6 implements that durable identity in `forecast_adapter.py`. A Series is
+created only with its first valid observation after exact event reconciliation;
+`ForecastHistory` appends immutable observations and derives the latest view.
+`dratings_adapter.py` is the first provider implementation. It parses only a
+manually captured local HTML Upcoming table, performs no provider network
+access, and reconciles ordered teams plus exact UTC time against separately
+captured MLB schedule evidence. Source positions retain their paired team,
+probability, and pitcher evidence; only MLB participant identity assigns those
+positions away/home semantics, so a provider-order reversal cannot invert the
+forecast silently. DRatings page-update evidence stays page-level;
+row timestamps, model version, authoritative identifiers, and stable record
+identity remain unknown. Complete, partial, ambiguous, and rejected results
+fail closed without introducing policy.
 
 ### Fail-closed quality behavior
 
