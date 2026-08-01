@@ -179,6 +179,35 @@ time is never substituted. Unsupported status affects only status evidence.
 `explicit_lineage()` requires a named direct relation field and the related
 `gamePk`; it never infers lineage from similarity.
 
+## Kalshi MLB market evidence and valuation
+
+PR7 adds `market_contracts.py`, `kalshi_mlb_adapter.py`, and
+`market_valuation.py`. Explicit participant/date evidence and controlled
+aliases—not ticker alone—reconcile Kalshi MLB markets. Ambiguous doubleheaders
+and side labels fail closed. Metadata and book calls retain separate times and
+digests inside one capture session.
+
+Executable acquisition consumes side asks (or explicitly transformed
+complementary resting bids) without extrapolating beyond depth. Exact-Decimal
+valuation requires a named fee model and reports economics, partial fill, and
+timing evidence. It has no recommendations, thresholds, Kelly, bankroll,
+position, or wagering behavior. Production fees remain unresolved explicit
+configuration; zero fee is a fixture model only.
+
+The current Kalshi `orderbook_fp` response supplies `yes_dollars` and
+`no_dollars` bid levels, not asks. Each derived offer preserves its provider
+bid side, price, and quantity alongside the exact complement and labels the
+transformation. Top-level quote fields remain direct metadata evidence.
+Contradictory top-of-book components fail closed. Component timestamps and
+digests remain separate; timing spread is reported without a freshness limit.
+Valuation assumes USD and a $1 winning payout only after settlement evidence
+establishes that economics. Non-open or depthless evidence cannot produce an
+executable valuation.
+
+The explicit read-only smoke command is `./venv/bin/python
+smoke_kalshi_mlb.py MLB_FIXTURE.json --limit 10`. Tests and imports do not run it; it persists
+nothing and accesses no portfolio or order endpoint.
+
 The offline fixture is `tests/fixtures/mlb_stats_api_schedule.json`, and
 `tests/test_mlb_stats_api.py` covers client failures, identity, schedules,
 status, pitchers, lineage, partial success, raw hashing, serialization, and

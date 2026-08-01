@@ -44,6 +44,16 @@ patterns with World Cup-specific filenames and operating assumptions.
 
 ## Architecture boundaries
 
+### Identity, Evidence, Analysis, and Policy
+
+The durable boundary is `Identity -> Evidence -> Analysis -> Policy`.
+Identity defines canonical events, typed propositions, and durable provider
+series. Forecast and market Evidence remain separate immutable observations.
+Analysis is deterministic, reproducible mathematics: expected value and
+explicit transaction costs belong here, never mutate inputs, and never
+recommend action. Mutable Policy owns minimum edge, Kelly sizing, bankroll and
+position limits, liquidity/freshness thresholds, and bet/no-bet decisions.
+
 ### Reusable platform concepts
 
 World Cup and MLB demonstrate common responsibilities that may be represented
@@ -188,6 +198,22 @@ The pattern is reusable where evidence naturally varies over time. Canonical
 Event and Forecast Series are current examples; future Market Series, Weather
 Series, or Injury Series may use it if concrete requirements justify them.
 The presence of a durable object alone does not require a Series.
+
+PR7 applies the pattern to markets. A provider-neutral Winner Proposition is
+one participant's win claim for one Canonical Event. A Kalshi Market Series is
+a distinct provider contract mapped to exactly one proposition. Its immutable
+Market Observations preserve bounded capture sessions, quotes, depth,
+statistics, status, component timestamps, and provenance. YES/NO labels remain
+adapter semantics. Series are created only with a first valid observation;
+ambiguous event or side mapping exposes neither series nor valuation.
+
+Kalshi order books preserve the provider's direct fixed-point YES and NO bids.
+Executable offers derived as `1 - opposite-side bid` retain the source side,
+source price, quantity, exact transformation, and derived acquisition side;
+they are never represented as provider-supplied asks. Operational status is
+evidence, not Series identity. Closed, suspended, settled, cancelled, unknown,
+or depthless observations remain evidence but are factually non-executable;
+that constraint is distinct from mutable wagering policy.
 
 > Series identify the thing being observed. Observations preserve what was
 > known at a point in time. Derived views answer operational questions without

@@ -93,6 +93,15 @@ The documentation checkpoint in `docs/V1.1.0_CHECKPOINT_THROUGH_PR6.md`
 records the implemented platform baseline before PR7. It changes no runtime
 behavior, does not release v1.1.0, and preserves the planned PR7–PR10 sequence.
 
+PR7 implements provider-neutral Winner Propositions, provider-specific Market
+Series, immutable capture-session Market Observations, and the first bounded
+read-only Kalshi MLB market adapter. Explicit participant/date and YES/NO
+evidence is required; ambiguous doubleheaders and unsafe mappings expose no
+series or valuation. Exact-Decimal executable-depth analysis and explicit fee
+models produce reproducible expected value without recommendation, sizing,
+bankroll, freshness, liquidity, portfolio, or wagering policy. A separate
+non-persisting smoke command is provided but was not run.
+
 ## [v1.0.0] — World Cup baseline
 
 The existing production World Cup implementation is designated Pops' Edge

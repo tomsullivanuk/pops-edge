@@ -1,5 +1,17 @@
 # Pops' Edge Product
 
+Pops' Edge separates durable Identity, immutable Evidence, deterministic
+Analysis, and mutable Policy. Expected value explains reproducible economics
+from compatible forecast and executable market evidence; it is not a
+recommendation. Thresholds, liquidity/freshness requirements, bankroll,
+sizing, and bet/no-bet decisions remain Policy.
+
+Executable market analysis is side- and quantity-aware and uses visible depth.
+Provider bids and complement-derived offers remain distinguishable, fees are
+explicit Analysis inputs, and valuation is derived rather than source
+evidence. Closed or illiquid markets may still be preserved as evidence but
+are operationally non-executable independent of recommendation policy.
+
 ## Vision
 
 Pops' Edge is a durable, reproducible external-forecast evaluation platform.

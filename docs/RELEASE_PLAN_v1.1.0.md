@@ -213,15 +213,24 @@ redesigning PR5A architecture or changing World Cup behavior.
 `docs/V1.1.0_CHECKPOINT_THROUGH_PR6.md`. PR7 remains the next planned product
 and architecture review; this checkpoint is not a release or tag.
 
-### PR7 — Implement MLB valuation
+### PR7 — Kalshi MLB market evidence and deterministic valuation
 
-- Match canonical MLB forecasts to markets.
-- Implement and document MLB edge, action, ROI, sizing, and quality gates.
-- Add deterministic calculation and matching tests, including no-vig or
-  normalization behavior if approved by the research decision.
+- Implement provider-neutral Winner Propositions, Provider Market Series, and
+  immutable Market Observations.
+- Add bounded, injectable, read-only Kalshi MLB acquisition with explicit
+  event and side reconciliation and partial-success results.
+- Calculate side-aware executable acquisition and exact-Decimal expected value
+  using an explicit fee model.
+- Preserve component timing and provenance while deferring recommendation,
+  sizing, bankroll, liquidity, freshness, and wagering policy.
 
-**Gate:** calculations are independently testable and World Cup regression
-tests remain unchanged and passing.
+**Implemented boundary:** market identity remains distinct from provider
+identity; YES/NO semantics require explicit evidence; series creation is lazy;
+ambiguous mappings fail closed; valuation is deterministic derived analysis.
+The live smoke path is explicit and was not run during implementation.
+
+**Gate:** fixture-backed calculations and matching are independently testable,
+and World Cup regression tests remain unchanged and passing.
 
 ### PR8 — Build MLB reports and operating workflow
 
