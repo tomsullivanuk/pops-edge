@@ -215,6 +215,44 @@ evidence, not Series identity. Closed, suspended, settled, cancelled, unknown,
 or depthless observations remain evidence but are factually non-executable;
 that constraint is distinct from mutable wagering policy.
 
+### Opportunity presentation
+
+PR8 adds a presentation layer after deterministic Analysis. An `Opportunity`
+references exactly one Forecast Observation, Market Observation, Market
+Valuation, and Position and stores only derived display fields. It is rebuilt
+for each board run and is not persisted. A separate `BoardEntry` displays
+partial, ambiguous, rejected, or non-executable cases where PR7 correctly
+withholds one of those authoritative inputs; presentation never fabricates the
+missing evidence.
+
+The Opportunity Board is the primary MLB product surface. Its explicit
+presentation policy orders: (1) existing exposure with unpriced quantity or
+negative executable-quantity P/L, with constrained exits first, most adverse
+P/L next, and larger cost basis as a tie-breaker; (2) unresolved diagnostic
+states in ambiguous, rejected, partial, non-executable order; (3) other
+existing exposure by descending cost basis; (4) positive-EV unheld analyses by
+descending EV then visible liquidity; and (5) remaining complete rows. Stable
+entry identity breaks all remaining ties. This ordering is neither evidence,
+valuation, nor a recommendation threshold. Inline diagnostics expose forecast,
+market, valuation, reconciliation, and provenance without parallel reports.
+Downloaded Kalshi activity is immutable source evidence; a deterministic
+adapter reconstructs only current open quantity and weighted entry cost after
+exact Market Series reconciliation. Entry and exit fees remain separate from
+cost basis. Order-book captures use bounded public market endpoints, preserve
+per-response timestamps and digests, and feed neutral one-contract analysis;
+they never imply a wager size.
+Forecast comparison selects the latest Market Observation whose capture is
+strictly before event start; capture at or after start is not pregame. A
+separate derived selection uses the latest observation for position
+liquidation, so in-play evidence can monitor exposure without contaminating a
+pregame comparison. Presentation labels zero-fee analysis as gross before
+fees, applies lifecycle status before missing-depth status, and orders paired
+teams away then home while immutable provider evidence retains source order.
+The August 2 operational validation demonstrates the normal pregame,
+authoritative-zero-position path using one application-owned MLB schedule
+capture. Retained August 1 evidence remains the regression path for in-play
+liquidation, settlement, rejected-side completeness, and positions.
+
 > Series identify the thing being observed. Observations preserve what was
 > known at a point in time. Derived views answer operational questions without
 > rewriting history.

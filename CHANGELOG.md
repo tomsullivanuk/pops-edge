@@ -102,6 +102,36 @@ models produce reproducible expected value without recommendation, sizing,
 bankroll, freshness, liquidity, portfolio, or wagering policy. A separate
 non-persisting smoke command is provided but was not run.
 
+PR8 adds the position-aware Opportunity Board as the primary MLB product
+surface. Derived Opportunities reference forecast evidence, market evidence,
+valuation, and one aggregated position; unresolved Board Entries retain
+partial, ambiguous, rejected, and non-executable diagnostics without inventing
+missing evidence. A local manual runner builds one sortable HTML board and
+prints factual workflow counts. Attention ordering remains deterministic
+presentation, while recommendations, Kelly sizing, bankroll, portfolio
+optimization, provider automation, persistence, and wagering remain deferred.
+Position inputs are authoritative provider-market/proposition/event/side open
+summaries rather than transaction history; offsetting sides remain separate.
+Liquidation proceeds and unrealized P/L use visible held-side bid depth, expose
+unpriced quantity, and never extrapolate a top bid across the full position.
+Downloaded Kalshi activity can now be normalized into reconciled current
+positions without treating orders as exposure or folding fees into entry cost.
+Bounded public order-book captures preserve per-response timestamps and
+digests; the Board reports their capture range and uses explicit one-contract
+analysis quantities. DRatings winner outcomes now carry canonical participant
+IDs so compatible real MLB forecast and market evidence values end to end.
+The final PR8 correction separates latest strictly pregame comparison evidence
+from latest liquidation evidence. In-play-only rows retain current position
+monitoring but suppress forecast comparison, and capture exactly at start is
+treated as in-play. Opportunity output is labeled Gross Edge before Kalshi
+fees, lifecycle status precedes missing depth, and paired display fields use
+canonical away-first/home-second order without mutating provider evidence.
+August 2 real evidence now validates 15 fully reconciled pregame games and an
+authoritative activity-derived zero-position state through the existing MLB
+schedule client. August 1 remains a separate regression artifact, including
+in-play liquidation, settlement precedence, and a rejected proposition that
+keeps its game incomplete and both canonical participant lines visible.
+
 ## [v1.0.0] — World Cup baseline
 
 The existing production World Cup implementation is designated Pops' Edge

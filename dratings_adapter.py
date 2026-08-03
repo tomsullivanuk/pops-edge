@@ -332,7 +332,8 @@ class DRatingsAdapter(ForecastAdapter):
         values = []
         for source_position, (role, (probability, source, precision)) in enumerate(zip(roles, probabilities)):
             semantic = f"{role}-win"
-            outcome = ForecastOutcome(f"{game.event.canonical_event_id}:{semantic}", semantic, game.event.canonical_event_id, row.team_names[source_position])
+            participant = game.away_team if role == "away" else game.home_team
+            outcome = ForecastOutcome(participant.canonical_team_id, semantic, game.event.canonical_event_id, row.team_names[source_position])
             values.append(PublishedProbability(outcome, probability, source, precision, ProbabilityScale.PERCENT))
         return ForecastDistribution(tuple(values))
 

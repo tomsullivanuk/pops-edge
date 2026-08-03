@@ -12,6 +12,43 @@ explicit Analysis inputs, and valuation is derived rather than source
 evidence. Closed or illiquid markets may still be preserved as evidence but
 are operationally non-executable independent of recommendation policy.
 
+The Opportunity Board is the primary product interface. It combines forecast
+and market evidence, deterministic valuation, and current position awareness
+to answer what has value, what is already owned, and what needs attention.
+Attention ordering is deterministic presentation. Constrained or adverse
+existing exposure comes first, followed by unresolved diagnostics, other
+existing exposure, positive-EV unheld analyses, and remaining complete rows.
+Cost basis, executable-quantity P/L, EV, liquidity, and stable identity provide
+documented tie-breakers. “Positive” means only mathematically positive expected
+value; it neither recommends nor sizes a wager.
+
+Expandable diagnostics keep evidence, reconciliation, valuation, and
+provenance available within the same board. The manual workflow rebuilds this
+derived surface from local inputs and emits a concise factual summary; no
+Opportunity is persisted.
+
+Positions are authoritative open-position summaries identified by provider
+market, proposition, event, and semantic side. Offsetting YES and NO exposure
+remains separate. Position value consumes visible executable exit depth, and
+P/L is shown only for the executable quantity; any remainder is explicitly
+unpriced.
+Downloaded activity may be normalized into that summary only after exact
+market/event/side reconciliation. Trades establish or reduce exposure;
+unfilled orders do not. Fees remain visible evidence separate from average
+entry cost. The board labels its bounded public order-book capture range and
+uses a one-contract comparison quantity solely for analysis, not sizing.
+Pregame forecast comparison requires market capture strictly before first
+pitch. In-play books may still value current liquidation exposure, but they do
+not produce forecast-comparison edge. Until production Kalshi fees are
+approved, displayed comparison values are Gross Edge before fees, never net
+EV. Lifecycle states such as Settled and Suspended take precedence over absent
+depth. Paired team lines always display away first and home second while the
+underlying evidence preserves provider order.
+Operational validation deliberately retains two information states: August 2
+shows the normal pregame board with an activity-derived zero-position state,
+while August 1 proves that position monitoring and fail-closed game status
+remain correct after games begin or propositions reject.
+
 ## Vision
 
 Pops' Edge is a durable, reproducible external-forecast evaluation platform.

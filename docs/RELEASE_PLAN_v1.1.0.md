@@ -232,14 +232,36 @@ The live smoke path is explicit and was not run during implementation.
 **Gate:** fixture-backed calculations and matching are independently testable,
 and World Cup regression tests remain unchanged and passing.
 
-### PR8 — Build MLB reports and operating workflow
+### PR8 — Opportunity Board and manual operating workflow
 
-- Produce the approved MLB research board(s), metadata, and web view.
-- Add an MLB update workflow with archive/output behavior.
-- Document operator inputs, commands, recovery steps, and generated artifacts.
+- Build the Opportunity Board as the primary MLB product surface over forecast
+  evidence, market evidence, valuation, and current positions.
+- Rank attention deterministically while displaying complete, partial,
+  ambiguous, rejected, and non-executable cases with inline diagnostics.
+- Add an explicitly invoked local workflow that validates prepared evidence,
+  rebuilds the HTML board, and prints concise factual notifications.
+- Use versioned temporary integration bundles and authoritative current
+  open-position summaries; value held exposure only through visible
+  quantity-aware liquidation depth.
+- Normalize downloaded Kalshi trade activity deterministically with separate
+  fees and source digest, and preserve bounded public order-book response
+  timestamps/digests for executable-depth validation.
+- Select strictly pregame observations for gross forecast comparison and the
+  latest observation independently for liquidation; suppress comparison for
+  in-play-only evidence, prioritize lifecycle states, and render canonical
+  away/home ordering without changing provider evidence order.
+- Validate both the August 2 pregame, no-position operating path and the
+  retained August 1 in-play, settlement, position, and rejected-proposition
+  regression path using the existing MLB schedule client.
+- Defer recommendation policy, sizing, portfolio optimization, provider
+  automation, durable persistence, and wagering.
 
-**Gate:** an end-to-end fixture run produces validated MLB artifacts without
-overwriting World Cup artifacts.
+**Implemented boundary:** Opportunity is derived presentation, never evidence
+or policy. The workflow creates one primary HTML output without overwriting or
+integrating with World Cup production artifacts.
+
+**Gate:** an end-to-end fixture run produces a deterministic position-aware
+Opportunity Board, and all World Cup regression tests remain passing.
 
 ### PR9 — Introduce proven multi-sport boundaries
 

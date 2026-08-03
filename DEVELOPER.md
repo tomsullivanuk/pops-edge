@@ -208,6 +208,81 @@ The explicit read-only smoke command is `./venv/bin/python
 smoke_kalshi_mlb.py MLB_FIXTURE.json --limit 10`. Tests and imports do not run it; it persists
 nothing and accesses no portfolio or order endpoint.
 
+## Opportunity Board manual workflow
+
+`opportunity_board.py` defines derived Position, Opportunity, and BoardEntry
+presentation values and renders the sortable HTML board. The required position
+CSV is an authoritative current open-position summary, not transaction
+history. Each active row requires `Provider` (`kalshi`), `Provider Market ID`,
+`Proposition ID`, `Canonical Event ID`, `Side` (`yes` or `no`), `Open
+Quantity`, `Average Entry Cost`, and optional `Captured At`; a headers-only
+file authoritatively means no positions. Duplicate summaries for one
+Series/side are contradictory. Separate YES and NO summaries are preserved as
+offsetting components and must map to their corresponding valued rows. Missing
+position input, unknown references, malformed sides, and incompatible event or
+proposition mappings fail closed. Transaction reconstruction, realized P/L,
+and lot accounting are outside this boundary.
+
+`kalshi_activity_positions.py` accepts the downloaded mixed Activity CSV but
+derives positions only from `Trade` rows. Opposite-side trades reduce the
+opening side, settlements remove the market, and `Order` rows never create
+exposure. It requires an exact reconciled provider market, preserves entry and
+exit fees separately, records the source digest, and writes the normalized
+summary consumed by the board. `collect_kalshi_mlb_orderbooks.py` performs only
+an explicitly invoked bounded public metadata/order-book collection and
+retains an actual timestamp and digest for every response.
+
+Liquidation value consumes PR7's preserved direct provider bids for the held
+side in price order. The board reports held, executable, and unpriced quantity;
+gross proceeds; average and marginal exit price; original total cost basis;
+and P/L and return only for the executable quantity. It never extends the top
+bid beyond its visible quantity. Closed, suspended, or depthless positions
+retain cost and identity while liquidation value and P/L remain unavailable.
+
+`run_opportunity_board.py` consumes a temporary local integration bundle with
+schema `pops-edge-opportunity-bundle-v1`, a fixed `generated_at` timestamp, and
+`cases`. Unknown top-level/case fields, unsupported versions, credentials,
+duplicate entry identities or forecast/market/side records, and malformed or
+incompatible contracts fail closed. Each case supplies display game and
+schedule metadata plus tagged Forecast Observation and Market Adapter Result
+dictionaries, requested acquisition side and quantity, and an explicit
+fixture fee input. The runner validates compatibility, invokes PR7 valuation,
+creates `Opportunity_Board.html`, and prints concise counts. It performs no
+provider collection or domain persistence. Run it explicitly:
+
+```bash
+./venv/bin/python run_opportunity_board.py evidence_bundle.json \
+  --positions kalshi_open_positions.csv --output Opportunity_Board.html
+```
+
+Update forecast snapshots, MLB facts, and Kalshi market evidence separately
+before preparing this non-persistent PR8 integration bundle. The board displays
+event start, forecast capture, market-book capture range, optional position capture, and
+market component timing spread without calling any observation "current" or
+applying freshness thresholds. Ambiguous, rejected, partial, missing, and
+non-executable inputs remain visible with inline diagnostics. Recommendation
+policy, portfolio optimization, bankroll, Kelly sizing, provider automation,
+durable persistence, and wagering remain deferred.
+
+Prepared operational validation bundles request one contract per row as a
+neutral analysis quantity. That value is neither inferred from activity nor a
+position-sizing instruction.
+`select_market_results` derives two views from immutable history: latest
+strictly pregame (`captured_at < scheduled_start`) for forecast comparison and
+latest overall for liquidation. Equality is in-play. Without pregame evidence,
+gross edge and return are suppressed while latest-book liquidation remains
+available. The zero-fee model is displayed only as gross-before-fees analysis;
+production net EV is unavailable. Board status precedence is rejected,
+ambiguous, settled, cancelled, suspended, in-play, partial, missing depth,
+non-executable, then complete. Canonical Event participant order supplies the
+away-first/home-second presentation; provider source order is not rewritten.
+Dual-date validation keeps August 2 as the complete pregame/no-position case
+and August 1 as the in-play/position/settlement/rejection case. August 2 MLB
+facts come from one bounded `MLBStatsAPIClient.fetch_schedule` request, not a
+second schedule implementation. A normalized headers-only output is
+authoritative only after the full mixed activity export reconstructs to zero
+open positions.
+
 The offline fixture is `tests/fixtures/mlb_stats_api_schedule.json`, and
 `tests/test_mlb_stats_api.py` covers client failures, identity, schedules,
 status, pitchers, lineage, partial success, raw hashing, serialization, and

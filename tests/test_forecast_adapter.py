@@ -241,6 +241,8 @@ class ReconciliationTests(AdapterTestCase):
         result = self.adapter.transform(snapshot, canonical_events=self.candidates)[0]
         self.assertIs(result.outcome, ForecastAdapterOutcome.COMPLETE)
         probabilities = {item.outcome.semantic: item for item in result.observation.distribution.probabilities}
+        self.assertEqual(probabilities["away-win"].outcome.outcome_id, "mlb-team:143")
+        self.assertEqual(probabilities["home-win"].outcome.outcome_id, "mlb-team:110")
         self.assertEqual(probabilities["away-win"].outcome.provider_label, "Philadelphia Phillies")
         self.assertEqual(probabilities["away-win"].source_representation, "46.1%")
         self.assertEqual(probabilities["home-win"].outcome.provider_label, "Baltimore Orioles")
