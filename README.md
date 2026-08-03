@@ -3,9 +3,12 @@
 **Current release:** v1.0.0<br>
 **Next release:** v1.1.0
 
-Pops' Edge is a reproducible sports-market research system. It combines
-independent forecasts, market prices, wager history, and portfolio context to
-identify and monitor potential edges.
+Pops' Edge is a quantitative decision platform whose Mission is to identify
+opportunities with demonstrable statistical advantage. Sports wagering is its
+current proving ground, not its defining purpose. The current system combines
+forecast and market Evidence with position context; approved future
+Measurement, Forecast Intelligence, and Forecast Policy capabilities will make
+the empirical basis of Opportunity Analysis reproducible.
 
 The durable product name is **Pops' Edge**. Names such as “World Cup Betting
 System,” `kalshi`, and World Cup-prefixed output filenames describe the
@@ -42,6 +45,15 @@ criteria are defined in
 Across event facts and forecasts, Pops' Edge treats durable identity as the
 owner of append-only observations. “Current” state is a derived view;
 historical evidence is never updated in place.
+
+The approved PR9 direction adds authoritative Outcome Evidence and immutable
+Forecast Evaluation, then derives provider-neutral Forecast Intelligence from
+many evaluations. That intelligence will justify Forecast Policy selection and
+configuration; Policy execution will consume eligible current Forecast
+Observations to produce an immutable derived Policy Forecast. Opportunity
+Analysis will consume that Policy Forecast with current Market Evidence. These
+are architectural decisions, not claims of implemented PR9 functionality.
+Derived objects never become Evidence.
 
 ## Documentation
 

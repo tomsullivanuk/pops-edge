@@ -263,16 +263,49 @@ integrating with World Cup production artifacts.
 **Gate:** an end-to-end fixture run produces a deterministic position-aware
 Opportunity Board, and all World Cup regression tests remain passing.
 
-### PR9 — Introduce proven multi-sport boundaries
+### PR9 — Outcome Measurement and Forecast Intelligence boundaries
 
-- Extract only interfaces and shared utilities demonstrated by both World Cup
-  and MLB implementations.
-- Centralize sport registration, shared configuration, and output isolation
-  where evidence supports it.
-- Preserve sport-specific logic where forced reuse would obscure behavior.
+- Introduce immutable Outcome Evidence and authoritative MLB Outcome
+  Observations sourced from the MLB Stats API; treat settlement and other
+  provider results only as corroboration.
+- Keep Evaluation Eligibility in Policy rather than embedding it in Outcome
+  Evidence.
+- Introduce immutable, reproducible Forecast Evaluations that compare one
+  Forecast Observation's complete probability distribution with one Outcome
+  Observation for exactly one Canonical Event.
+- Derive provider-neutral Forecast Intelligence from immutable Forecast
+  Evaluations without storing mutable accumulated state; use it to justify
+  Forecast Policy selection, configuration, and replacement rather than to
+  supply current-event probabilities.
+- Define Forecast Policy as a versioned, measurable, replaceable rule set whose
+  execution consumes eligible current Forecast Observations and preserves their
+  identities without mutating provider Evidence.
+- Introduce Policy Forecast as immutable derived Analysis that preserves its
+  Policy identity, input Observation identities, eligibility decisions,
+  transformations, resulting distribution, limitations, and derivation
+  identity.
+- Require Opportunity Analysis to consume Policy Forecast with compatible
+  current Market Evidence while keeping
+  Kelly sizing, bankroll management, wagering Policy, and Execution separate.
+- Extract only the minimum shared interfaces supported by the World Cup and MLB
+  implementations; preserve sport-specific behavior where reuse would obscure
+  semantics.
+- Defer market-relative evaluation, wagering evaluation, additional Forecast
+  Providers, adaptive Forecast Policies, and automated Execution.
 
-**Gate:** both sports run independently, shared boundaries have contract tests,
-and World Cup outputs remain regression-compatible.
+**Approved architectural boundary:** Evidence remains immutable. Forecast
+Evaluation, Forecast Intelligence, Policy Forecast, and Opportunity Analysis
+are derived and never become Evidence. Forecast Intelligence informs Policy
+governance but does not replace current Forecast Observations. Forecast
+Providers publish Forecast Observations but do not evaluate, combine, weight,
+or approve themselves. This direction is documented before implementation and
+does not claim that PR9 capabilities already exist.
+
+**Gate:** Outcome and Forecast Evaluation contracts preserve authoritative
+Evidence and reproduce distribution-aware Measurement; derived Forecast
+Intelligence has no mutable accumulated state; Policy Forecast derivation is
+identity-preserving and deterministic; current MLB and World Cup outputs remain
+regression-compatible.
 
 ### PR10 — Release hardening and v1.1.0 handoff
 

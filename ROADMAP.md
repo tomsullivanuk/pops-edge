@@ -18,15 +18,18 @@ boards, portfolio and ladder views, wager log, CLV, archives, and web reports.
 6. Implement Forecast Series and the first external forecast-provider adapter.
 7. Implement MLB valuation.
 8. Add MLB reports and operating workflow.
-9. Extract proven multi-sport boundaries.
+9. Introduce Outcome Measurement and Forecast Intelligence boundaries, while
+   extracting only proven multi-sport interfaces.
 10. Harden, document, and release.
 
 The authoritative PR scope and gates are in
 `docs/RELEASE_PLAN_v1.1.0.md`.
 
 The implemented and validated baseline through PR6 is recorded in
-`docs/V1.1.0_CHECKPOINT_THROUGH_PR6.md`. PR7 product and architecture review is
-the next step; v1.1.0 remains unreleased.
+`docs/V1.1.0_CHECKPOINT_THROUGH_PR6.md`. PR8 is complete. PR9's approved
+architecture adds Outcome Evidence, Forecast Evaluation, derived Forecast
+Intelligence, Forecast Policy execution, and Policy Forecast boundaries; those
+capabilities are not yet implemented. v1.1.0 remains unreleased.
 
 PR2 selected a licensed official MLB feed as the production identity/pitcher
 strategy, with MLB `gamePk` canonical, and made forecast-provider licensing a
@@ -37,7 +40,7 @@ prerequisite rather than assuming public pages may be scraped. See
 
 Potential directions, subject to research and explicit planning:
 
-- calibration and source-comparison reporting;
+- additional calibration and source-comparison reporting;
 - cross-sport portfolio and exposure analytics;
 - additional market providers;
 - additional sports through isolated adapters;

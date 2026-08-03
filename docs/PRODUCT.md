@@ -27,12 +27,20 @@ Mission: identify opportunities with demonstrable statistical advantage
 Identity
     ↓
 Evidence
+    ├── Forecast Observation
+    ├── Outcome Observation
+    ├── Market Observation
+    └── Position Observation
     ↓
 Measurement
+    ↓
+Forecast Evaluation
     ↓
 Forecast Intelligence
     ↓
 Forecast Policy
+    ↓
+Policy Forecast
     ↓
 Opportunity Analysis
     ↓
@@ -45,14 +53,18 @@ Execution
   when they reported it, when it was collected, and how it was transformed.
 - **Measurement** evaluates forecasts, Forecast Policies, opportunities,
   decisions, and outcomes using reproducible historical information states.
+- **Forecast Evaluation** reproducibly compares one Forecast Observation with
+  one Outcome Observation for the same Canonical Event.
 - **Forecast Intelligence** transforms Evidence into objective knowledge about
   forecast quality and the comparative performance of forecasting providers
   and models.
 - **Forecast Policy** defines a versioned, testable method for converting
-  Forecast Intelligence into the probability view used for a decision.
-- **Opportunity Analysis** applies a validated Forecast Policy to compatible
-  current market Evidence to identify statistically advantageous
-  opportunities.
+  eligible current Forecast Observations into a derived Policy Forecast. Its
+  selection and configuration are justified by Forecast Intelligence.
+- **Policy Forecast** is the immutable derived probability distribution
+  produced by executing one Forecast Policy for one Canonical Event.
+- **Opportunity Analysis** applies a Policy Forecast to compatible current
+  Market Evidence to identify statistically advantageous opportunities.
 - **Execution** consumes the preceding capabilities when an approved action is
   warranted. It is one consumer of the platform, not its purpose.
 
@@ -62,6 +74,29 @@ Policy. The hierarchy above states the intended product capabilities without
 claiming that each has already been fully implemented. In particular,
 Opportunity Analysis remains deterministic analysis rather than a
 recommendation, and current Execution remains manual.
+
+## Outcome Evidence
+
+Outcome Evidence establishes what actually happened. It consists of immutable
+provider facts represented as Outcome Observations. For MLB, the MLB Stats API
+is authoritative. Kalshi settlement, DRatings completed tables, sportsbook
+results, and other sources may corroborate those facts but are not
+authoritative Outcome Evidence.
+
+Outcome Evidence does not decide whether a forecast should be evaluated.
+Evaluation Eligibility is Policy. It can select eligible Forecast Observations
+and Outcome Observations without changing either source record.
+
+## Forecast Evaluation
+
+A Forecast Evaluation is immutable, reproducible derived Analysis for exactly
+one Canonical Event. It compares one Forecast Observation with one Outcome
+Observation and measures the complete probability distribution that the
+provider published, not merely whether its highest-probability side won.
+
+Forecast Evaluation is distinct from future market-relative evaluation and
+wagering evaluation. It never becomes Evidence, even though a particular
+evaluation remains immutable once its inputs and method are fixed.
 
 ## Guiding principle
 
@@ -146,6 +181,18 @@ the World Cup workflow remains the production baseline. Multiple forecast
 providers, additional sports, and non-wagering domains are planned evolution,
 not present capabilities.
 
+## Forecast Providers
+
+Forecast Providers publish original probabilistic forecasts and create
+Forecast Observations. DRatings is the current MLB Forecast Provider; future
+providers and internal models may participate through the same architectural
+boundary.
+
+A Forecast Provider does not evaluate itself, combine itself with another
+provider, assign its own weight, or determine whether it should be trusted.
+Those responsibilities belong to Measurement, Forecast Intelligence, and
+Forecast Policy. No additional MLB Forecast Provider is currently implemented.
+
 ## Forecast Intelligence
 
 Forecast Intelligence is the provider-neutral capability that transforms
@@ -155,41 +202,92 @@ computes objective performance metrics, supports the development of Forecast
 Policies, and preserves reproducible historical evaluation.
 
 Forecast Intelligence does not merely average models, and it does not
-permanently privilege a provider. Its conclusions must be traceable to the
-Evidence and Measurement that produced them. The current platform has one MLB
-forecast provider, DRatings; comparative multi-provider intelligence and
-calibration tooling remain planned.
+permanently privilege a provider or create forecasts. It is always derived
+from immutable Forecast Evaluations, never stored as mutable accumulated state,
+and never becomes Evidence. Its conclusions must be reproducible from their
+referenced evaluations. It supports Forecast Policy comparison, selection,
+configuration, replacement, and empirical justification, but does not provide
+today's event probabilities. The current platform has one MLB Forecast
+Provider, DRatings; Forecast Intelligence, comparative provider analysis, and
+calibration tooling remain approved direction rather than implemented
+capabilities.
 
 ## Forecast Policy
 
-A Forecast Policy is a versioned, measurable, and replaceable hypothesis for
-turning Forecast Intelligence into the probability view used by Opportunity
-Analysis. Forecast Policies are derived from empirical Evidence and evolve as
-new Evidence and Measurement become available.
+A Forecast Policy is a versioned, measurable, and replaceable rule set. Its
+adoption and configuration must be justified by Forecast Intelligence. When
+executed for a current Canonical Event, it consumes eligible current Forecast
+Observations according to explicit rules. It preserves all input Forecast
+Observation identities and never mutates or replaces provider Evidence.
 
 Candidate Forecast Policies may include a single-provider Forecast Policy,
-equal-weight consensus, weighted consensus, and future adaptive Forecast
-Policies. These are competing Forecast Policies, not declarations of “the
-correct model.” Each must demonstrate value through reproducible Measurement
-before adoption and must remain subject to replacement when later Measurement
-no longer supports it.
+equal-weight combination, fixed weighted combination, exclusion of stale or
+incomplete observations, and future adaptive Forecast Policies. These are
+competing rule sets, not declarations of “the correct model.” Each must
+demonstrate value through reproducible Measurement before adoption and remain
+subject to replacement when later Measurement no longer supports it.
+
+## Policy Forecast
+
+A Policy Forecast is the immutable derived Analysis produced by executing one
+Forecast Policy against eligible current Forecast Observations for exactly one
+Canonical Event. It preserves the Forecast Policy identifier and version;
+input Forecast Observation identifiers; provider, model, and version identity;
+eligibility and exclusion decisions; weights or transformation parameters; the
+resulting probability distribution; deterministic derivation identity;
+limitations; and an appropriate derivation or Analysis timestamp.
+
+A Policy Forecast is not provider Evidence, never becomes Evidence, and never
+claims that a provider published the derived distribution.
 
 ## Opportunity Analysis
 
-Opportunity Analysis consumes a validated Forecast Policy rather than treating
-raw provider forecasts as an action instruction. It applies the probability
-view defined by that Forecast Policy to compatible current market Evidence to
-identify statistically advantageous opportunities. It remains separate from
-wagering Policy, recommendation thresholds, bankroll decisions, sizing, and
-Execution.
+Opportunity Analysis consumes a Policy Forecast together with compatible
+current Market Evidence. Once the Forecast Policy capability is implemented,
+it does not consume provider Forecast Observations directly. It remains
+separate from wagering Policy, Kelly sizing, bankroll management,
+recommendation thresholds, and Execution.
 
 The current MLB workflow compares DRatings Forecast Observations directly with
 Kalshi market Evidence under deterministic PR7 valuation. That is the present
 single-provider precursor to the fuller Forecast Policy capability, not a
-claim that selection among multiple Forecast Policies has already been
-implemented.
+claim that Forecast Intelligence, Forecast Policy execution, or Policy
+Forecast has already been implemented.
+
+Historical learning and Policy governance follow this conceptual flow:
+
+```text
+Forecast Observations + Outcome Observations
+                    ↓
+          Forecast Evaluations
+                    ↓
+         Forecast Intelligence
+                    ↓
+Forecast Policy selection and configuration
+```
+
+Current-event execution follows a separate flow:
+
+```text
+Eligible current Forecast Observations
+                    ↓
+       Forecast Policy execution
+                    ↓
+             Policy Forecast
+                    ↓
+          Opportunity Analysis
+                    ↓
+                Execution
+```
+
+Forecast Intelligence does not replace current Forecast Observations, and
+Forecast Policy execution does not turn its derived output into Evidence.
 
 ## Product philosophy
+
+Research is not an end in itself. Measurement exists to improve future
+decisions, and every adopted Forecast Policy remains subject to continuous
+validation against empirical Evidence.
 
 1. **Every Forecast Policy must earn the right to exist.** Require empirical,
    reproducible Measurement rather than intuition alone.
@@ -229,6 +327,12 @@ bounded and reviewable.
   complete structured outcome distribution.
 - A **market provider** lists tradable contracts; a **market observation** is a
   timestamped price, depth, volume, rules, and side mapping from that provider.
+- An **outcome observation** is immutable Outcome Evidence from the
+  authoritative facts provider for one Canonical Event. Corroborating provider
+  results remain separate Evidence.
+- A **Forecast Evaluation** is immutable derived Analysis comparing one
+  Forecast Observation's complete distribution with one Outcome Observation;
+  Evaluation Eligibility remains Policy.
 - A **canonical event** is Pops' Edge's normalized immutable event Identity,
   including authoritative sport-native identifiers. Provider-native mappings
   are separate immutable records linked to that Identity so later discovery
