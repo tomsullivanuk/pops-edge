@@ -91,7 +91,8 @@ freshness, weighting, markets, valuation, reports, and wagering remain deferred.
 
 The documentation checkpoint in `docs/V1.1.0_CHECKPOINT_THROUGH_PR6.md`
 records the implemented platform baseline before PR7. It changes no runtime
-behavior, does not release v1.1.0, and preserves the planned PR7–PR10 sequence.
+behavior, does not release v1.1.0, and preserves the sequence approved at that
+checkpoint; later architecture review expanded the release sequence.
 
 PR7 implements provider-neutral Winner Propositions, provider-specific Market
 Series, immutable capture-session Market Observations, and the first bounded
@@ -131,6 +132,25 @@ authoritative activity-derived zero-position state through the existing MLB
 schedule client. August 1 remains a separate regression artifact, including
 in-play liquidation, settlement precedence, and a rejected proposition that
 keeps its game incomplete and both canonical participant lines visible.
+
+PR9 adds authoritative MLB Outcome Evidence and deterministic forecast-quality
+Measurement. Immutable MLB Stats API Outcome Observations retain lifecycle,
+scores, participants, timestamps, source digests, validation, and append-only
+history through Canonical Event `gamePk` identity. A versioned eligibility
+Policy emits an explicit decision for every candidate pair and requires Pops'
+Edge forecast collection strictly before scheduled start. Eligibility is
+state-independent; immutable Outcome History makes pre-postponement forecasts
+ineligible, permits later pregame forecasts after a documented reschedule, and
+fails indeterminate when chronology is incomplete. Duplicate pairs are rejected
+by Forecast Evaluation History rather than by eligibility Policy. Immutable Forecast
+Evaluations preserve the complete distribution and compute versioned binary
+Brier score, Decimal log loss, directional correctness, and calibration bucket.
+Exact-zero realized probability remains unclipped positive-infinite log loss,
+uses portable tagged JSON, and is counted separately from finite log loss in
+the validation summary.
+The offline inspection and minimal replay summary introduce no Forecast
+Intelligence, market-relative evaluation, wagering evaluation, Policy Forecast,
+or Opportunity Board change. Forecast Intelligence remains PR10 scope.
 
 ## [v1.0.0] — World Cup baseline
 

@@ -416,6 +416,8 @@ def _encode(value: Any) -> Any:
     if isinstance(value, date):
         return {"__date__": value.isoformat()}
     if isinstance(value, Decimal):
+        if value == Decimal("Infinity"):
+            return {"__non_finite_decimal__": "positive-infinity"}
         return {"__decimal__": str(value)}
     if isinstance(value, Enum):
         return {"__enum__": f"{value.__class__.__name__}:{value.value}"}
@@ -439,6 +441,13 @@ def _decode(value: Any) -> Any:
             return date.fromisoformat(value["__date__"])
         if set(value) == {"__decimal__"}:
             return Decimal(value["__decimal__"])
+        if set(value) == {"__non_finite_decimal__"}:
+            if value["__non_finite_decimal__"] != "positive-infinity":
+                raise ContractError(
+                    ReasonCode.VALIDATION_FAILURE,
+                    "unknown non-finite Decimal representation",
+                )
+            return Decimal("Infinity")
         if set(value) == {"__datetime__"}:
             timestamp = datetime.fromisoformat(value["__datetime__"])
             _require_aware(timestamp, "serialized timestamp")

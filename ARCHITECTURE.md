@@ -559,6 +559,52 @@ Eligible current Forecast Observations
 Forecast Intelligence does not replace current Forecast Observations. Forecast
 Policy execution does not convert its derived output into Evidence.
 
+PR9 implements only the Evidence-to-Measurement foundation in
+`outcome_contracts.py`, `mlb_outcome_adapter.py`, and
+`forecast_evaluation.py`. MLB Stats API Outcome Observations are authoritative,
+immutable, and retained in append-only Outcome History. The derived latest and
+latest-authoritative-final views never mutate prior observations. Evaluation
+Eligibility uses versioned Policy
+`mlb-winner-evaluation-eligibility-v1`; a forecast is pregame only when its
+Pops' Edge collection timestamp is strictly before the scheduled start.
+Provider publication time is not invented, and collection time remains labeled
+as provenance. Eligibility is a pure function of the immutable Forecast
+Observation, evaluated Outcome Observation, supplied immutable Outcome History,
+and versioned Policy. Existing evaluations never affect the decision. Replaying
+the same pair therefore produces the same decision and evaluation identities;
+Forecast Evaluation History, rather than eligibility Policy, rejects duplicate
+pairs. A chronology-sensitive decision serializes the exact material Outcome
+Observation IDs it consumed. Its deterministic identity includes that canonical
+material set, while unrelated history observations have no effect.
+
+Outcome History supplies postponement and material-reschedule chronology. A
+forecast collected before authoritative postponement evidence is ineligible; a
+new forecast collected after that evidence and strictly before the revised
+start can be eligible. Missing earlier schedule chronology is indeterminate.
+Suspension remains distinct: an unresolved suspension is ineligible, while an
+official later-completed suspended game can be evaluated without invoking the
+postponement rule.
+
+Eligible evaluations use the complete two-participant distribution. PR9 stores
+the conventional binary Brier score `(p_realized - 1)^2`, 50-digit Decimal log
+loss `-ln(p_realized)`, positive infinity for a realized outcome assigned exact
+zero probability, unique-favorite directional correctness, and fixed-width
+realized-probability buckets `[0.0,0.1)`, ..., `[0.8,0.9)`, `[0.9,1.0]`.
+Positive infinity uses an explicit tagged JSON representation rather than a
+non-standard bare JSON number. Summaries disclose finite and infinite log-loss
+counts separately and calculate a mean only over finite log losses.
+Forecast Evaluation History is append-only; its minimal replayable summary is
+validation tooling, not Forecast Intelligence or mutable provider state.
+When an authoritative final is corrected, the earlier evaluation remains
+immutable and a new evaluation references the later Outcome Observation. A
+derived view selects the evaluation tied to Outcome History's latest
+authoritative final and classifies the others as superseded. Current summaries
+use only that derived selection, so corrected games are not double-counted;
+stored-history summaries remain available for replay.
+Market-relative evaluation, wagering evaluation, Forecast Intelligence,
+Forecast Policy, Policy Forecast, and changes to Opportunity Analysis remain
+deferred.
+
 PR4 implements this boundary in `forecast_contracts.py`. The offline contracts
 use one stable identifier chain: Model references Provider, Version references
 Model, and Observation references only Version. They also provide exact
@@ -651,10 +697,10 @@ The complete rename dependency inventory is in
 
 ## v1.1.0 direction
 
-MLB will first be implemented behind explicit sport-specific contracts and
-isolated artifacts. PR9 may extract platform interfaces demonstrated by both
-sports. No current World Cup calculation or report is changed merely to make
-the repository appear multi-sport.
+MLB is implemented behind explicit sport-specific contracts and isolated
+artifacts. PR9 adds the first Outcome Evidence and Forecast Evaluation
+Measurement boundary without changing current World Cup calculations or
+reports merely to make the repository appear multi-sport.
 
 PR2 establishes MLB `gamePk` as canonical identity while requiring a licensed
 official-data adapter for production. Source event, forecast, market, and

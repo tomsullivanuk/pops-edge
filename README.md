@@ -55,6 +55,11 @@ Analysis will consume that Policy Forecast with current Market Evidence. These
 are architectural decisions, not claims of implemented PR9 functionality.
 Derived objects never become Evidence.
 
+PR9 now implements the first half of that direction: immutable MLB Outcome
+Observations, explicit eligibility decisions, deterministic forecast-quality
+scoring, and append-only evaluation history. Forecast Intelligence remains the
+next planned step; no Forecast Policy or Policy Forecast engine is implemented.
+
 ## Documentation
 
 - [Developer guide](DEVELOPER.md) — current World Cup workflows and behavior
@@ -63,7 +68,7 @@ Derived objects never become Evidence.
 - [Roadmap](ROADMAP.md) — ordered product direction
 - [Backlog](BACKLOG.md) — deferred and uncommitted work
 - [Changelog](CHANGELOG.md) — version history
-- [v1.1.0 release plan](docs/RELEASE_PLAN_v1.1.0.md) — PR1–PR10 sequence
+- [v1.1.0 release plan](docs/RELEASE_PLAN_v1.1.0.md) — PR1–PR14 sequence
 - [v1.1.0 checkpoint through PR6](docs/V1.1.0_CHECKPOINT_THROUGH_PR6.md) —
   implemented platform baseline before MLB market valuation
 - [Codex workflow](docs/CODEX_WORKFLOW.md) — pull-request and completion-report

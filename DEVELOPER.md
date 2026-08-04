@@ -208,6 +208,73 @@ The explicit read-only smoke command is `./venv/bin/python
 smoke_kalshi_mlb.py MLB_FIXTURE.json --limit 10`. Tests and imports do not run it; it persists
 nothing and accesses no portfolio or order endpoint.
 
+## Outcome Evidence and Forecast Evaluation
+
+`outcome_contracts.py` defines immutable provider-neutral Outcome Observations
+and append-only Outcome History. `mlb_outcome_adapter.py` translates the
+existing bounded `MLBStatsAPIResponse` and Canonical Event path; it creates no
+second HTTP client. MLB Stats API is authoritative for MLB results. Other
+provider results are not accepted as official Outcome Evidence.
+
+The adapter preserves scheduled, in-progress, delayed, postponed, suspended,
+final, cancelled, no-contest, forfeit, and unknown provider states. Finality is
+accepted only from MLB status Evidence, never inferred from score, settlement,
+market data, or a forecast provider. Ordinary, extra-inning, shortened, and
+later-completed suspended finals can be authoritative; tied or contradictory
+finals fail closed. Corrections append later observations, and
+`latest_authoritative_final` remains a derived view.
+
+`forecast_evaluation.py` implements versioned Policy
+`mlb-winner-evaluation-eligibility-v1`. Every candidate Forecast/Outcome pair
+produces an immutable eligibility decision. The forecast collection timestamp
+must be strictly before scheduled start; equality is ineligible. Collection
+time is Pops' Edge provenance, not provider publication time. Forfeits and
+administrative rulings remain preserved but Policy-deferred. Eligibility is
+state-independent: it consumes only the immutable Forecast Observation,
+Outcome Observation, optional immutable Outcome History, and Policy version.
+It does not inspect existing evaluations. Repeated inputs produce the same
+decision and evaluation identities, while `ForecastEvaluationHistory` rejects
+a duplicate pair on append. Chronology-sensitive decisions serialize the exact
+material Outcome Observation IDs used by Policy; irrelevant observations do not
+change identity, and the same canonical observation set is order-independent.
+
+When Outcome History records a postponement or material reschedule, a forecast
+that predates the postponement evidence is ineligible. A newly collected
+forecast after that evidence and strictly before the revised start can be
+eligible. If the earlier schedule chronology is absent, the decision is
+indeterminate. Suspension is separate: unresolved suspension is ineligible,
+but an authoritative later-completed suspended final remains eligible under
+the ordinary strict-pregame rule.
+
+An eligible pair produces one immutable Forecast Evaluation of the complete
+two-participant distribution. The stored binary Brier definition is
+`(p_realized - 1)^2`. Log loss is `-ln(p_realized)` at 50-digit Decimal context;
+an exact zero probability for the winner is positive infinity, never silently
+clipped. Positive infinity serializes as a tagged JSON object, never as a bare
+non-standard JSON numeric token. Directional correctness requires a unique favorite. Calibration
+buckets are `[0.0,0.1)` through `[0.8,0.9)`, with `[0.9,1.0]` closed at one.
+The history summary reports count, mean Brier, mean finite log loss, explicit
+finite and infinite log-loss counts, and directional counts for deterministic
+PR9 validation; it is not Forecast Intelligence.
+`summary` describes all stored evaluations for replay. Given immutable Outcome
+Histories, `current_evaluations` selects evaluations tied to each latest
+authoritative final, `superseded_evaluations` preserves older corrected-result
+evaluations, and `current_summary` counts only the selected current set.
+Ambiguous corrected-final chronology fails closed.
+
+Run the offline inspection explicitly:
+
+```bash
+./venv/bin/python inspect_forecast_evaluation.py \
+  tests/fixtures/mlb_outcome_cases.json \
+  tests/fixtures/forecast_evaluation_inspection.json
+```
+
+The command performs no network or Kalshi access. PR9 does not change the
+Opportunity Board. Forecast Intelligence begins in PR10; Forecast Policy,
+Policy Forecast, market-relative evaluation, and wagering evaluation remain
+deferred.
+
 ## Opportunity Board manual workflow
 
 `opportunity_board.py` defines derived Position, Opportunity, and BoardEntry

@@ -34,6 +34,8 @@ show which abstractions are durable.
 - Research and select reproducible MLB data and market sources.
 - Define canonical MLB contracts and sport-specific edge cases.
 - Add deterministic MLB ingestion, valuation, reports, and operating workflow.
+- Add authoritative MLB Outcome Evidence and deterministic forecast-quality
+  Measurement before deriving Forecast Intelligence.
 - Introduce only multi-sport boundaries proven by both World Cup and MLB.
 - Preserve the World Cup v1.0.0 behavioral baseline.
 - Complete documentation, migration notes, and release validation.
@@ -263,7 +265,7 @@ integrating with World Cup production artifacts.
 **Gate:** an end-to-end fixture run produces a deterministic position-aware
 Opportunity Board, and all World Cup regression tests remain passing.
 
-### PR9 — Outcome Measurement and Forecast Intelligence boundaries
+### PR9 — Outcome Evidence and Forecast Evaluation
 
 - Introduce immutable Outcome Evidence and authoritative MLB Outcome
   Observations sourced from the MLB Stats API; treat settlement and other
@@ -273,41 +275,73 @@ Opportunity Board, and all World Cup regression tests remain passing.
 - Introduce immutable, reproducible Forecast Evaluations that compare one
   Forecast Observation's complete probability distribution with one Outcome
   Observation for exactly one Canonical Event.
-- Derive provider-neutral Forecast Intelligence from immutable Forecast
-  Evaluations without storing mutable accumulated state; use it to justify
-  Forecast Policy selection, configuration, and replacement rather than to
-  supply current-event probabilities.
-- Define Forecast Policy as a versioned, measurable, replaceable rule set whose
-  execution consumes eligible current Forecast Observations and preserves their
-  identities without mutating provider Evidence.
-- Introduce Policy Forecast as immutable derived Analysis that preserves its
-  Policy identity, input Observation identities, eligibility decisions,
-  transformations, resulting distribution, limitations, and derivation
-  identity.
-- Require Opportunity Analysis to consume Policy Forecast with compatible
-  current Market Evidence while keeping
-  Kelly sizing, bankroll management, wagering Policy, and Execution separate.
-- Extract only the minimum shared interfaces supported by the World Cup and MLB
-  implementations; preserve sport-specific behavior where reuse would obscure
-  semantics.
-- Defer market-relative evaluation, wagering evaluation, additional Forecast
-  Providers, adaptive Forecast Policies, and automated Execution.
+- Score the complete two-participant distribution with versioned binary Brier,
+  log-loss, directional, and calibration-bucket definitions.
+- Preserve append-only Outcome and Forecast Evaluation histories with only a
+  minimal replayable validation summary.
+- Provide a bounded offline inspection command and compact, explicitly labeled
+  fixture cases for lifecycle, exceptional-result, and chronology behavior.
+- Defer Forecast Intelligence, Forecast Policy, Policy Forecast,
+  market-relative evaluation, wagering evaluation, and automated Execution.
 
-**Approved architectural boundary:** Evidence remains immutable. Forecast
-Evaluation, Forecast Intelligence, Policy Forecast, and Opportunity Analysis
-are derived and never become Evidence. Forecast Intelligence informs Policy
-governance but does not replace current Forecast Observations. Forecast
-Providers publish Forecast Observations but do not evaluate, combine, weight,
-or approve themselves. This direction is documented before implementation and
-does not claim that PR9 capabilities already exist.
+**Implemented boundary:** Outcome Evidence remains immutable and authoritative
+through MLB `gamePk` and Canonical Event identity. Evaluation Eligibility is
+versioned Policy. Eligibility Decisions and Forecast Evaluations are immutable
+derived Analysis and never Evidence. Strict pregame eligibility uses Pops'
+Edge collection provenance when row-specific provider publication time is
+unknown. Eligibility is state-independent: duplicate evaluation pairs are
+rejected by Forecast Evaluation History, not Policy. Immutable Outcome History
+makes pre-postponement forecasts ineligible, permits later pregame forecasts
+after documented rescheduling, keeps suspension distinct, and returns
+indeterminate when chronology is incomplete. Positive-infinite log loss is
+unclipped, portably tagged in JSON, and counted separately from finite log loss
+in summaries. No provider-performance accumulation or Forecast Intelligence is
+implemented.
 
 **Gate:** Outcome and Forecast Evaluation contracts preserve authoritative
-Evidence and reproduce distribution-aware Measurement; derived Forecast
-Intelligence has no mutable accumulated state; Policy Forecast derivation is
-identity-preserving and deterministic; current MLB and World Cup outputs remain
+Evidence and reproduce distribution-aware Measurement; histories replay
+deterministically; current MLB Opportunity Board and World Cup outputs remain
 regression-compatible.
 
-### PR10 — Release hardening and v1.1.0 handoff
+### PR10 — Forecast Intelligence
+
+- Derive provider-neutral calibration, Brier, log-loss, historical-performance,
+  and longitudinal views from immutable Forecast Evaluations.
+- Keep every result reproducible; do not introduce mutable accumulated provider
+  totals.
+- Support later Policy comparison and configuration without supplying current
+  event probabilities.
+
+**Gate:** Forecast Intelligence is replayable from immutable PR9 evaluations
+and remains separate from Forecast Policy and current-event execution.
+
+### PR11 — Forecast Policy and Policy Forecast
+
+- Implement versioned Forecast Policy execution over eligible current Forecast
+  Observations.
+- Produce immutable Policy Forecast derived Analysis with complete input and
+  derivation identity.
+
+**Gate:** Policy execution is empirically configured, identity-preserving, and
+does not mutate or impersonate provider Evidence.
+
+### PR12 — Policy Proposal and Governance
+
+- Add explicit proposal, review, adoption, replacement, and retirement
+  boundaries for Forecast Policies.
+
+**Gate:** Policy lifecycle decisions remain reviewable and empirically linked
+without silently changing historical decisions.
+
+### PR13 — Forecast Research Workspace
+
+- Add a bounded research surface over Evidence, Forecast Evaluation, Forecast
+  Intelligence, and Policy comparisons.
+
+**Gate:** research outputs remain derived, reproducible, and separate from
+production Opportunity Analysis and Execution.
+
+### PR14 — Release hardening and v1.1.0 handoff
 
 - Run complete regression, compilation, shell, fixture, and documentation
   validation.

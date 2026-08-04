@@ -254,6 +254,37 @@ single-provider precursor to the fuller Forecast Policy capability, not a
 claim that Forecast Intelligence, Forecast Policy execution, or Policy
 Forecast has already been implemented.
 
+PR9 implements authoritative MLB Outcome Evidence, explicit Evaluation
+Eligibility Decisions, and immutable Forecast Evaluations. It uses the
+Forecast Observation's Pops' Edge collection timestamp for strict pregame
+eligibility when no row-specific provider timestamp exists, without relabeling
+collection provenance as provider publication time. Official ordinary,
+extra-inning, shortened, and later-completed suspended finals are eligible;
+non-final, postponed, cancelled, no-contest, unresolved suspended, tied, and
+at-or-after-start cases are ineligible. Forfeits and administrative rulings are
+preserved as Outcome Evidence but deferred by Policy. Eligibility depends only
+on immutable Forecast, Outcome, and supplied Outcome History evidence plus the
+versioned Policy—not on whether an evaluation already exists. Outcome History
+makes a forecast collected before authoritative postponement evidence
+ineligible, permits a later post-reschedule pregame forecast, and makes missing
+schedule chronology indeterminate. Duplicate pairs are rejected by immutable
+Forecast Evaluation History. Decisions preserve exactly the material Outcome
+Observation IDs used for chronology, so unrelated history does not become a
+hidden Policy input.
+
+An exact zero probability for the realized winner remains positive-infinite log
+loss without clipping. It is stored through portable tagged JSON, and summaries
+separately disclose finite and infinite log-loss counts.
+
+Correcting an authoritative final appends a new Outcome Observation and creates
+a new immutable Forecast Evaluation; it never rewrites the earlier evaluation.
+A derived current view selects the evaluation for the latest authoritative
+final, retains prior evaluations as superseded history, and excludes them from
+current summaries to avoid counting one game twice.
+
+The minimal PR9 history summary exists only to verify deterministic replay. It
+is not Forecast Intelligence. Forecast Intelligence remains PR10 work.
+
 Historical learning and Policy governance follow this conceptual flow:
 
 ```text

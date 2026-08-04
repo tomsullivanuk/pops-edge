@@ -1,0 +1,11 @@
+{
+  "fixture_note": "Intentional offline evaluation scenarios using named records from mlb_outcome_cases.json; not production provider claims.",
+  "evaluated_at": "2026-08-04T12:00:00+00:00",
+  "candidates": [
+    {"outcome_case": "normal_final", "away_probability": "0.40", "home_probability": "0.60", "collection_offset_seconds": -7200},
+    {"outcome_case": "extra_inning_final", "away_probability": "0.55", "home_probability": "0.45", "collection_offset_seconds": -3600},
+    {"outcome_case": "scheduled", "away_probability": "0.50", "home_probability": "0.50", "collection_offset_seconds": -3600},
+    {"outcome_case": "cancelled", "away_probability": "0.35", "home_probability": "0.65", "collection_offset_seconds": -3600},
+    {"outcome_case": "shortened_final", "away_probability": "0.45", "home_probability": "0.55", "collection_offset_seconds": 0}
+  ]
+}
