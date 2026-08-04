@@ -222,6 +222,20 @@ labels reason-code totals as overlapping occurrences. Multiple Policy Forecasts
 may coexist for an event; PR12 alone will govern production authority and PR14
 will migrate the downstream consumer.
 
+The approved PR12 architecture defines immutable append-only Governance Records
+as Product Owner decisions governing exactly one Forecast Policy, plus immutable
+Governance History and deterministic replay-derived lifecycle. The bounded
+decisions are Research, Shadow, Production, Retire, and terminal Reject;
+lifecycle is never stored or mutated. Production resolution yields at most one
+authorized policy per immutable sport/competition/proposition scope. Material
+`decision_effective_at` orders current and historical replay; incidental order
+never breaks simultaneous conflicts, which fail closed. Policy-level lifecycle
+and scope-level authority remain separate derived views, while Shadow resolution
+is measurement-only. Supporting Forecast Intelligence, Policy Hypotheses, and
+Policy Proposals remain referenced non-executable Analysis. PR12 implementation,
+Forecast Policy execution changes, Opportunity Analysis migration, wagering,
+and PR13/PR14 work are not included in this documentation pass.
+
 ## [v1.0.0] — World Cup baseline
 
 The existing production World Cup implementation is designated Pops' Edge

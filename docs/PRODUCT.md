@@ -243,7 +243,7 @@ rules. It may rerun analyses, compare hypotheses, identify strengths and
 weaknesses, and emit Forecast Intelligence Reports and analytical Policy
 Proposals. It cannot change production behavior.
 
-Production Mode applies an approved active Forecast Policy to eligible current
+Production Mode applies a production-authorized Forecast Policy to eligible current
 Forecast Observations, produces a Policy Forecast, and combines it with current
 Market Evidence through Opportunity Analysis. It does not autonomously learn,
 replace, or promote its own policy.
@@ -324,13 +324,13 @@ segments; and limitations such as missing coverage, model change, in-sample
 optimization, selection bias, or absent prospective Shadow history.
 
 It may suggest rejection, continued Research, Shadow consideration or
-continuation, incumbent retention, activation consideration, or retirement or
-replacement consideration. It cannot perform any transition. It is not
-Evidence, an active Forecast Policy, a Policy Forecast, a wagering
+continuation, incumbent retention, or consideration of Production, Retire, or
+replacement. It cannot perform any transition. It is not
+Evidence, a production-authorized Forecast Policy, a Policy Forecast, a wagering
 recommendation, or executable production configuration, and it cannot create a
-Forecast Policy. Only the Product Owner may approve creation or lifecycle
-advancement of a distinct Forecast Policy based on a Policy Hypothesis, move it
-to Shadow, activate, replace, retire, or reject it.
+Forecast Policy. Only the Product Owner may define a distinct Forecast Policy
+based on a Policy Hypothesis and record Research, Shadow, Production, Retire,
+or Reject governance decisions for it.
 Reports and proposals distinguish measured fact, derived interpretation,
 limitation, and suggested governance action. Neither declares a model
 “correct” or claims production authority.
@@ -369,7 +369,86 @@ Policy Proposal is advisory. Neither automatically becomes a Forecast Policy.
 Future Product Owner governance may authorize a distinct complete Forecast
 Policy based on those Research artifacts, while their contracts remain separate.
 
-### Forecast Policy Execution
+## Product Owner Governance
+
+PR12 defines the architecture for Product Owner governance without implementing
+it. `GovernanceRecord` is one immutable append-only Product Owner decision about
+exactly one immutable Forecast Policy. It never governs a provider, policy
+family, multiple policies, or Policy Hypothesis, and it is Governance rather
+than Evidence, Forecast Intelligence, Forecast Policy, or Policy Forecast.
+
+Each action creates a new record; nothing is updated in place. Records preserve
+the governed policy, immutable Governance Scope, decision and material
+`decision_effective_at`, Product Owner identity, governance algorithm/schema
+version, rationale, notes, limitations, and references to supporting Policy
+Proposals, Forecast Intelligence Reports, and a Policy Hypothesis. Supporting
+Analysis is referenced rather than duplicated.
+Material governance inputs determine identity; wall-clock generation metadata,
+repository location, filesystem timestamps, and derived lifecycle do not.
+Changing scope or effective time changes identity. `generated_at`, `recorded_at`,
+`imported_at`, input order, and file order never establish governance chronology.
+
+The initial Governance Scope is deterministically defined by the governed
+Forecast Policy's sport, competition, and proposition type, such as
+`baseball / MLB / winner`. A record must agree with its policy's scope. Policies
+in different scopes resolve independently; no policy lineage is introduced.
+
+The five decisions are:
+
+- `Research`: research-only use, with no production authority;
+- `Shadow`: parallel production measurement that may execute and produce Policy
+  Forecasts but cannot influence Opportunity Analysis or wagering;
+- `Production`: production authority for the governed Forecast Policy;
+- `Retire`: withdrawal of production authority without invalidating historical
+  Analysis; and
+- `Reject`: permanent rejection of that immutable policy. Reconsideration
+  requires a new Forecast Policy.
+
+Lifecycle is always replay-derived from append-only Governance Records and is
+never stored on a policy or record. The latest decision for a policy derives
+`Research`, `Shadow`, `Production`, `Retired`, or `Rejected`; Reject is terminal.
+`GovernanceHistory` preserves deterministic chronology, rejects duplicate
+record IDs, and reconstructs lifecycle at any historical boundary.
+
+At an explicit historical `as_of` boundary, policy-level replay includes only
+records effective by that boundary and derives each policy's lifecycle.
+Scope-level replay separately resolves at most one production-authorized policy
+across every policy in that scope. A later Production decision displaces prior
+authority; a later non-Production decision removes authority only when it
+governs the currently authorized policy. Earlier policies never resume
+implicitly, while non-Production decisions for other policies do not disturb
+current authority. With no current authority or with materially conflicting
+same-time decisions, resolution returns none and fails closed. Shadow policies
+are resolved separately and exist solely for measurement.
+
+Replay never breaks a material tie with record ID, input order, serialization
+order, filenames, or filesystem time. It also fails closed on a decision after
+terminal Reject, same-time policy conflicts, simultaneous Production decisions
+within one scope, unknown policy identity, policy/scope mismatch, or missing
+effective time or Product Owner identity.
+
+Research never creates authority. A Policy Hypothesis and Policy Proposal may
+support the Product Owner's decision about a separate Forecast Policy, but only
+a Governance Record can grant production authority. PR12 does not modify
+Forecast Policy execution or Opportunity Analysis. PR14 remains responsible for
+consuming a production-authorized Policy Forecast with Market Evidence.
+Specifically, PR14 must eventually select a Policy Forecast produced by the
+governance-authorized Forecast Policy; PR14 timing and execution-selection rules
+remain deliberately undesigned here.
+
+```text
+Policy Hypothesis
+        ↓
+Policy Proposal
+        ↓
+Product Owner defines a separate immutable Forecast Policy
+        ↓
+Governance Record governing exactly that Forecast Policy
+        ↓
+Derived production authority, if the decision is Production
+```
+
+## Forecast Policy Execution
 
 A Forecast Policy Execution is an immutable batch context recording one
 deterministic application of one supplied Forecast Policy to one explicit input

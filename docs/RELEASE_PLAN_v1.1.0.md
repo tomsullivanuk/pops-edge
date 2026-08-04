@@ -332,14 +332,14 @@ regression-compatible.
   broad hyperparameter search, active Policy execution, Policy Forecast,
   governance transition, Shadow production, Opportunity Board change,
   market-relative or wagering evaluation, sizing, bankroll, automatic
-  activation, or production configuration mutation.
+  production authority, or production configuration mutation.
 
 **Gate:** Reports, hypotheses, and proposals replay deterministically from
 immutable PR9 evaluations and explicit windows; identical material inputs and
 algorithm versions produce identical identities regardless of rerun time;
 limitations and sample sizes remain visible; no analytical artifact can create
-or activate a Forecast Policy. Research never changes production; Governance
-changes production.
+a Forecast Policy or grant it production authority. Research never changes
+production; Governance changes production.
 
 **Implemented boundary:** provider-neutral immutable current-evaluation
 selection, explicit date-range/as-of windows, coverage, aggregate Brier and
@@ -401,14 +401,42 @@ behavior is added.
 
 ### PR12 — Product Owner Governance and Policy Lifecycle
 
-- Add explicit Product Owner governance records and lifecycle transitions for
-  Research, Shadow, Active, Retired, and Rejected policies.
-- Consume PR10 Policy Proposals as advisory inputs without allowing a proposal
-  or report to activate itself; governance may approve creation or advancement
-  of a distinct Forecast Policy based on a Policy Hypothesis.
+- Implement immutable append-only `GovernanceRecord` decisions governing
+  exactly one immutable Forecast Policy. Preserve governance schema/algorithm
+  version, immutable production-scope identity, material
+  `decision_effective_at`, Product Owner identity, rationale, notes, limitations,
+  and references—not copies—of supporting Policy Proposal,
+  Forecast Intelligence Report, and Policy Hypothesis objects.
+- Support the bounded decision vocabulary `Research`, `Shadow`, `Production`,
+  `Retire`, and terminal `Reject`. Decisions are events, never mutable policy or
+  record fields; lifecycle values `Research`, `Shadow`, `Production`, `Retired`,
+  and `Rejected` are replay-derived.
+- Implement immutable `GovernanceHistory`, duplicate rejection, chronological
+  deterministic replay at an explicit `as_of` boundary, policy-level historical
+  lifecycle views, scope-level fail-closed production-policy resolution, and
+  separate Shadow-policy resolution.
+- Resolve at most one production-authorized Forecast Policy per immutable
+  sport/competition/proposition scope. A later Production decision replaces the
+  selection in that scope; a later non-Production decision for the selected
+  policy removes authority; no earlier policy resumes implicitly. A
+  non-Production decision for another policy does not disturb current authority.
+  Policies in different scopes resolve independently.
+- Fail closed on decisions after terminal Reject, same-time policy conflicts,
+  simultaneous same-scope Production decisions, scope/policy mismatch, unknown
+  policy, or missing effective time or Product Owner. Never order material ties
+  by input, serialization, filename, record ID, operational timestamp, or
+  filesystem metadata.
+- Add bounded inspection tooling, deterministic fixtures, focused tests, and
+  documentation. Do not change Forecast Policy execution, add providers,
+  implement Opportunity Analysis or Opportunity Board migration, value markets,
+  wager, or begin PR13/PR14.
 
-**Gate:** Policy lifecycle decisions remain reviewable and empirically linked
-without silently changing historical decisions.
+**Gate:** identical material Product Owner decisions reproduce identical
+Governance Record identities; append-only replay reproduces current and
+historical lifecycle and authority without mutable state; Reject is terminal;
+missing or conflicting production authority fails closed; Research artifacts
+remain non-executable; changing effective time or scope changes record identity;
+PR14 consumer migration remains deferred.
 
 ### PR13 — Forecast Research Workspace
 
@@ -427,6 +455,9 @@ production Opportunity Analysis and Execution.
   add no wagering recommendation, sizing, bankroll, or automated Execution.
 - Retain explicit traceability from Opportunity Analysis to the exact Policy
   Forecast, Forecast Policy Execution, policy, and source observations.
+- Consume only Policy Forecasts produced by the Governance-authorized Forecast
+  Policy under PR14's explicit timing and execution-selection rules; do not
+  treat every otherwise-valid Policy Forecast as production-authorized.
 
 **Gate:** the consumer transition is bounded, regression-tested, and does not
 silently redesign PR8 or claim governance authority. Until PR14 is implemented,

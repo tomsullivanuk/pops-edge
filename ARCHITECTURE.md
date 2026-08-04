@@ -529,7 +529,7 @@ architecture neither requires nor claims a second provider.
   evaluation-window definition, and versioned intelligence rules. It may rerun
   analyses and compare hypotheses. Its outputs are immutable Forecast
   Intelligence Reports and analytical Policy Proposals.
-- **Production Mode** consumes an approved active Forecast Policy, eligible
+- **Production Mode** consumes a production-authorized Forecast Policy, eligible
   current Forecast Observations, and current Market Evidence. It deterministically
   produces Policy Forecast, Opportunity Analysis, Opportunity Board, and later
   governed Execution. It does not autonomously learn, promote, replace, or
@@ -623,7 +623,7 @@ executable Forecast Policy definition.
 
 PR10 Forecast Intelligence may produce an immutable, deterministic,
 evidence-backed Policy Proposal. The proposal is advisory derived Analysis: it
-is never Evidence, an active Forecast Policy, a Policy Forecast, a wagering
+is never Evidence, a production-authorized Forecast Policy, a Policy Forecast, a wagering
 recommendation, or an executable lifecycle transition. It links one Forecast
 Intelligence Report to one versioned Policy Hypothesis and,
 where applicable, an incumbent or benchmark.
@@ -652,13 +652,13 @@ provenance metadata. It never depends on wall-clock run time, filesystem state,
 irrelevant input order, or unstated mutable repository contents.
 
 A proposal may suggest rejection, continued Research, advancement to Shadow,
-continued Shadow evaluation, incumbent retention, consideration of activation,
-or consideration of retirement or replacement. A recommendation is not a
+continued Shadow evaluation, incumbent retention, or consideration of
+Production, Retire, or replacement. A recommendation is not a
 lifecycle transition and cannot create a Forecast Policy. Only the Product
-Owner may approve creation or lifecycle advancement of a distinct Forecast
-Policy based on a Policy Hypothesis, move it to Shadow, activate, replace,
-retire, or reject it; those governance records and transitions remain PR12
-work. Forecast Intelligence analyzes hypotheses and proposes, Product Owner
+Owner may define a distinct Forecast Policy based on a Policy Hypothesis and
+record Research, Shadow, Production, Retire, or Reject decisions for it; those
+governance records and derived transitions remain PR12 work. Forecast
+Intelligence analyzes hypotheses and proposes, Product Owner
 governance decides, the Forecast Policy engine executes a separately approved
 policy, and Opportunity Analysis consumes its Policy Forecast with Market
 Evidence.
@@ -698,6 +698,160 @@ production execution authority. A Forecast Policy is a distinct complete PR11
 executable contract. A hypothesis or proposal never automatically becomes a
 Forecast Policy; future PR12 Product Owner governance may authorize creation of
 a separate policy based on them.
+
+#### Governance Record and event-sourced governance
+
+PR12 will define `GovernanceRecord` as one immutable, append-only Product Owner
+decision governing exactly one already-defined immutable Forecast Policy. A
+record never governs multiple policies, a policy family, a Forecast Provider,
+or a Policy Hypothesis. It is a governance-domain object derived from an
+explicit Product Owner decision: it is not Evidence, Forecast Intelligence, a
+Forecast Policy, a Forecast Policy Execution, or a Policy Forecast.
+
+Every governed policy belongs to one immutable deterministic Governance Scope.
+The initial scope reuses the Forecast Policy domain fields—sport, competition,
+and proposition type—so the initial MLB winner scope is
+`baseball / MLB / winner`. The Governance Record preserves the scope identity
+or a deterministic reference to it and must agree with the governed policy.
+Policies in different scopes resolve independently; no policy-lineage
+abstraction is introduced.
+
+Every governance action appends one record. No record or policy is updated in
+place, governance history is never rewritten, and no mutable lifecycle field or
+authoritative lifecycle cache exists. Each record preserves record ID;
+governance schema and algorithm IDs/versions; Forecast Policy ID/version;
+Governance Scope identity; one decision; material `decision_effective_at`;
+Product Owner identity; supporting Policy Proposal, Forecast Intelligence
+Report, and Policy Hypothesis identities;
+rationale; notes; limitations; and deterministic identity. Supporting Analysis
+is referenced, not copied into the record. A record stores no `previous state`,
+`next state`, or `current state`.
+
+The bounded decision vocabulary is:
+
+- `Research`: authorizes research-only execution and Analysis without
+  production authority;
+- `Shadow`: authorizes parallel production measurement, including execution
+  and Policy Forecast creation, but cannot affect Opportunity Analysis or
+  wagering;
+- `Production`: grants production authority to the governed Forecast Policy;
+- `Retire`: withdraws that policy's production authority while preserving all
+  historical executions and Analysis; and
+- `Reject`: permanently rejects that immutable Forecast Policy. The policy and
+  its research history remain preserved, but no later decision may reverse the
+  rejection. Reconsideration requires a new immutable Forecast Policy.
+
+These are decisions, not fields stored on Forecast Policy or Policy Forecast.
+For each policy, records effective at or before the requested boundary replay
+chronologically and the latest valid decision derives lifecycle `Research`,
+`Shadow`, `Production`, `Retired`, or `Rejected`; `Retire` maps to `Retired` and
+`Reject` maps to `Rejected`. Reject is terminal. Other transitions remain
+explicit later records rather than mutations.
+
+Governance Record identity depends on every material governance input,
+including policy identity, governance schema/algorithm versions, decision and
+`decision_effective_at`, Product Owner identity, Governance Scope identity,
+canonically ordered supporting analytical references, rationale, notes, and
+limitations. Changing effective time or scope changes record identity. Identity
+excludes repository paths, filesystem timestamps, wall-clock generation
+metadata, and derived lifecycle. Identical material decisions and references
+reproduce the same identity.
+
+`decision_effective_at` is the authoritative time at which the Product Owner
+decision takes effect. It is material to record identity, policy lifecycle,
+scope-level resolution, and historical replay. It is distinct from operational
+`generated_at`, `recorded_at`, `imported_at`, filesystem timestamps, and input
+or serialization order; none of those may determine governance chronology.
+
+#### Governance History and production-policy resolution
+
+`GovernanceHistory` will be an immutable append-only ordered collection of
+Governance Records. It preserves chronology and replay order, rejects duplicate
+record IDs, and derives policy-level and scope-level views; it never persists an
+authoritative mutable cache. Records replay chronologically by
+`decision_effective_at`. Record ID, filename, input order, serialization order,
+and filesystem time never break a material tie. Duplicate identical record IDs
+are rejected without creating a chronology event. Materially conflicting
+same-time records fail closed when no explicit authoritative ordering exists.
+
+Historical replay accepts an explicit material query boundary such as `as_of`
+and includes only records with `decision_effective_at <= as_of`. The query
+boundary affects the derived result but is not stored in, and need not identify,
+the Governance Records. At that boundary replay separately derives each
+policy's lifecycle; production authority and Shadow policies per scope;
+Research, Retired, and Rejected policies; and ambiguity/conflict diagnostics.
+
+Scope-level production resolution considers every policy in one Governance
+Scope and maintains at most one current authority. A `Production` decision
+grants authority to its policy and displaces any previously authorized policy
+in that scope. A later Research, Shadow, Retire, or Reject decision removes
+authority only if it governs the currently authorized policy. Such removal does
+not restore an earlier policy. A non-Production decision for any other policy
+does not disturb current authority. If replay yields no current Production
+authority, or chronology is ambiguous or conflicting, resolution returns none
+and fails closed. Policies in another scope never conflict.
+
+Thus `A Production → B Production → B Retire` resolves to none, not A;
+`A Production → B Shadow` resolves to A; and simultaneous Production decisions
+for A and B in the same scope without authoritative ordering are ambiguous and
+resolve to none.
+
+Shadow resolution is separate and may yield multiple policies whose latest
+decision is `Shadow`. They may execute and produce Policy Forecasts solely for
+measurement, and never drive Opportunity Analysis or authorize wagering.
+
+Minimal transition validation also fails closed when a decision follows Reject
+for the same immutable policy; same-time decisions conflict for one policy;
+same-time Production decisions conflict within one scope; record and policy
+scope disagree; policy identity is unknown; or effective time or Product Owner
+identity is missing. PR12 does not require a broader transition framework.
+
+The intended authority chain is:
+
+```text
+Forecast Policy
+        ↓
+Governance Record(s)
+        ↓
+Derived Policy Lifecycle
+        ↓
+Production-authorized Forecast Policy
+        ↓
+Forecast Policy Execution
+        ↓
+Policy Forecast
+```
+
+For example, immutable `Research`, later `Shadow`, and later `Production`
+records for one Forecast Policy derive those lifecycles in sequence. No status
+is edited. Research objects remain non-executable: a Policy Hypothesis and
+Policy Proposal may support the Product Owner's definition and governance of a
+separate Forecast Policy, but neither Analysis object grants authority.
+Governance—not Forecast Intelligence or a Policy Proposal—is the only bridge to
+production.
+
+```text
+Forecast Policy P
+  ↓ Governance Record R1: Research
+Derived lifecycle at R1: Research
+  ↓ Governance Record R2: Shadow
+Derived lifecycle at R2: Shadow
+  ↓ Governance Record R3: Production
+Derived lifecycle at R3: Production
+```
+
+The three records and all Policy Forecasts produced under their historical
+contexts remain immutable after R3.
+
+PR12 will document and eventually implement only Governance Record, Governance
+History, deterministic replay, lifecycle derivation, production and Shadow
+resolution, bounded inspection, fixtures, and focused tests. It will not change
+Forecast Policy execution, add providers, implement Opportunity Analysis or
+Opportunity Board migration, value markets, wager, or begin PR13/PR14. PR14
+remains the consumer migration. PR14 must eventually select only Policy
+Forecasts produced by the governance-authorized Forecast Policy under PR14's
+own timing and execution-selection rules; PR12 neither designs nor implements
+those consumer rules.
 
 #### Forecast Policy Execution
 

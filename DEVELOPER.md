@@ -389,6 +389,52 @@ market, governance, Opportunity Board, wagering, or network action.
 
 > **Research never changes production. Governance changes production.**
 
+## Planned PR12 governance boundary
+
+PR12 is architecture-approved but not implemented. It will introduce two
+immutable contracts and derived resolvers:
+
+- `GovernanceRecord`: one append-only Product Owner decision governing exactly
+  one immutable Forecast Policy, with deterministic Governance Scope, material
+  `decision_effective_at`, Product Owner, rationale, limitations,
+  schema/algorithm identity, and references to supporting Analysis;
+- `GovernanceHistory`: an ordered immutable collection that rejects duplicate
+  record IDs and supports deterministic current and historical replay; and
+- derived lifecycle, production-policy, and Shadow-policy resolution. No
+  lifecycle value is stored or mutated.
+
+The supported decisions are `Research`, `Shadow`, `Production`, `Retire`, and
+terminal `Reject`. Their derived lifecycle values are respectively `Research`,
+`Shadow`, `Production`, `Retired`, and `Rejected`. Research and Shadow do not
+grant production authority. Shadow execution and Policy Forecasts exist only
+for measurement and cannot feed Opportunity Analysis or wagering. Retire
+withdraws authority while preserving historical Analysis. Reject permanently
+closes that immutable policy; reconsideration requires a new Forecast Policy.
+
+Production resolution chronologically replays Governance Records and returns at
+most one Forecast Policy per Governance Scope. The initial scope is the policy's
+sport/competition/proposition tuple. A later Production decision selects a
+policy and displaces prior authority in that scope; a later non-Production
+decision removes authority only for the selected policy; earlier policies do not
+resume implicitly. Non-Production decisions for other policies do not disturb
+the selected policy. Missing or conflicting authority fails closed. Supporting
+Policy Proposals, Forecast Intelligence Reports, and Policy Hypotheses remain
+referenced non-executable Analysis rather than copied content or authority
+sources.
+
+Replay includes records effective at or before an explicit historical `as_of`
+boundary and orders only by `decision_effective_at`. Operational timestamps,
+record IDs, filenames, serialization order, and input order never resolve a
+material tie. Same-time policy conflicts, simultaneous Production decisions in
+one scope, policy/scope mismatch, unknown policy, missing effective time or
+Product Owner, and any decision after terminal Reject fail closed.
+
+PR12 will add governance contracts, replay, resolvers, bounded fixtures,
+inspection, and focused tests only. It will not change Forecast Policy
+execution, Opportunity Analysis, Opportunity Board, providers, market
+valuation, wagering, or World Cup workflows. PR13 remains the Research
+Workspace and PR14 remains Policy Forecast consumer migration.
+
 ## Opportunity Board manual workflow
 
 `opportunity_board.py` defines derived Position, Opportunity, and BoardEntry

@@ -26,8 +26,10 @@ boards, portfolio and ladder views, wager log, CLV, archives, and web reports.
 11. Implement provider-neutral immutable Forecast Policy definitions,
     versioned rule stages, deterministic batch execution, and independently
     replayable policy-relative Policy Forecasts.
-12. Add Product Owner governance records and Research, Shadow, Active, Retired,
-    and Rejected lifecycle transitions.
+12. Add immutable Product Owner Governance Records, append-only history,
+    replay-derived Research, Shadow, Production, Retired, and Rejected
+    lifecycles, and effective-time production-policy resolution per immutable
+    production scope.
 13. Add the Forecast Research Workspace.
 14. Migrate Opportunity Analysis and the Opportunity Board from direct provider
     forecasts to Policy Forecast identities without changing wagering policy.
@@ -43,7 +45,8 @@ capabilities are implemented. PR10's provider-neutral Forecast Intelligence
 Report, Policy Hypothesis, and advisory Policy Proposal foundation is also
 implemented. PR11's executable Policy definitions, deterministic batch
 execution, and Policy Forecast foundation are implemented pending review.
-Governance lifecycle remains PR12, the Research Workspace remains PR13, and
+PR12 governance architecture is documented; implementation remains PR12. The
+Research Workspace remains PR13, and
 Policy Forecast consumer integration remains PR14. v1.1.0 remains unreleased.
 
 PR2 selected a licensed official MLB feed as the production identity/pitcher
