@@ -30,7 +30,16 @@ boards, portfolio and ladder views, wager log, CLV, archives, and web reports.
     replay-derived Research, Shadow, Production, Retired, and Rejected
     lifecycles, and effective-time production-policy resolution per immutable
     production scope.
-13. Add the Forecast Research Workspace.
+13. Add the Forecast Research Workspace as one deterministic, read-only,
+    self-contained HTML projection over immutable PR9–PR12 inputs and one
+    explicit `ResearchWorkspaceContext`. Organize it around Product Owner
+    decisions, including provider performance, policy candidate comparison,
+    proposal and governance review, a non-authoritative Governance Decision Draft, and
+    diagnostics; add no persistence, governance write, production execution, or
+    Opportunity Analysis behavior. Compare candidates only through available
+    Forecast Intelligence, Policy Proposal, benchmark, rule, and governance
+    evidence; expose absent Shadow or policy-evaluation history and add no
+    historical Policy Forecast evaluation or backtesting framework.
 14. Migrate Opportunity Analysis and the Opportunity Board from direct provider
     forecasts to Policy Forecast identities without changing wagering policy.
 15. Harden, document, and release.

@@ -97,9 +97,10 @@ and Opportunity Analysis are reproducible objects or derived Analysis; they
 never become Evidence.
 Execution consumes derived results but does not define the Mission. PR9
 Forecast Evaluation, the PR10 Forecast Intelligence Report, Policy Hypothesis
-and Policy Proposal foundation, and the PR11 Forecast Policy, batch execution,
-and Policy Forecast foundation are implemented. Governance and Policy Forecast
-consumer integration remain planned capabilities.
+and Policy Proposal foundation, the PR11 Forecast Policy, batch execution, and
+Policy Forecast foundation, and PR12 Governance are implemented. The Forecast
+Research Workspace remains PR13 and Policy Forecast consumer integration
+remains PR14.
 
 Research supports this flow but is not its endpoint. Measurement exists to
 improve future decisions, and Forecast Policies remain valid only while
@@ -536,6 +537,170 @@ architecture neither requires nor claims a second provider.
   reconfigure its policy.
 
 > **Research never changes production. Governance changes production.**
+
+#### Forecast Research Workspace
+
+PR13 will implement the Forecast Research Workspace as the Product Owner's
+primary quantitative research environment. It is a deterministic, read-only
+projection over immutable PR9–PR12 inputs and derivations—not a new domain
+model, persistence layer, governance engine, wagering interface, or execution
+workflow. It owns orchestration, organization, and presentation only. Evidence,
+Measurement, Forecast Intelligence, Forecast Policies, Governance, and
+Opportunity Analysis retain their existing ownership boundaries.
+
+Within the evidence actually supplied, the workspace answers: how providers are
+performing; what Forecast Intelligence establishes; which Policy Hypotheses and
+Policy Proposals are best supported; which executable Forecast Policies
+correspond to those candidates; what governance state applies; whether
+historical Shadow or policy-performance evidence exists; and what governance
+decision, if any, the Product Owner should consider. It does not promise to
+identify the historically best-performing Forecast Policy unless compatible
+immutable policy-evaluation artifacts are supplied.
+
+The workspace contains no authoritative business state, mutable state,
+database, browser persistence, or write action. Given identical immutable
+material inputs and an identical context, regeneration produces a substantively
+identical workspace projection. If a projection ID or digest is introduced,
+its material identity includes the `ResearchWorkspaceContext`, supplied
+immutable object identities, projection algorithm/version, output-affecting
+renderer version, and section-selection parameters. Ordinary wall-clock
+generation time is non-identifying presentation provenance: it may change HTML
+bytes but cannot change projection identity or substance.
+
+`ResearchWorkspaceContext` will be an immutable, explicitly supplied input
+contract rather than persisted configuration. It includes at minimum sport,
+competition, proposition, evaluation window, `analysis_as_of`,
+`governance_as_of`, provider scope, Forecast Policy scope, and Policy
+Hypothesis scope. Every section consumes the same context; no section may
+silently widen, replace, or infer a different window, scope, or historical
+boundary. Supplied Reports, Proposals, Policies, Governance Records, and Policy
+Forecasts are validated fail-closed against sport, competition, proposition,
+evaluation window, analysis and governance boundaries, provider/model scope,
+Policy Hypothesis scope, Forecast Policy scope, and Governance Scope.
+Incompatible objects are excluded with explicit diagnostics, never blended
+into a wider workspace.
+
+The workspace may orchestrate existing PR9–PR12 domain services, including
+current-evaluation selection, Forecast Intelligence derivation, Policy Proposal
+projection, and Governance replay. It must not reimplement or fork their
+analytical, execution, or governance rules:
+
+```text
+Immutable Inputs + ResearchWorkspaceContext
+                    ↓
+          Workspace Orchestration
+                    ↓
+          Existing Domain Services
+                    ↓
+           Workspace Projection
+                    ↓
+          Self-contained HTML
+```
+
+The v1.1 workspace is one deterministic, static, self-contained, locally
+generated HTML document. It is read-only, printable, and archiveable, with no
+server or database. Its navy/white design language remains visually consistent
+with the Opportunity Board and may use sortable tables, collapsible detail
+sections, concise executive summaries, and expandable provenance. Multiple
+views, tabbed navigation, or richer interaction remain deferred until Product
+Owner usage demonstrates a need.
+
+Top-level organization follows the Product Owner's decision workflow rather
+than exposing domain object types as the primary navigation:
+
+```text
+Research Context
+        ↓
+Executive Overview
+        ↓
+Provider Performance
+        ↓
+Policy Candidate Comparison
+        ↓
+Policy Proposal Review
+        ↓
+Governance Review
+        ↓
+Governance Decision Draft
+        ↓
+Diagnostics
+```
+
+The initial sections have bounded responsibilities:
+
+- **Research Context** shows scope, evaluation window, analysis and governance
+  boundaries, included providers, and included policies.
+- **Executive Overview** keeps descriptive analytical facts, proposal
+  interpretations, replay-derived governance state, Product Owner decisions,
+  and limitations distinct. A “best-supported policy candidate” is the
+  candidate most strongly supported by supplied Forecast Intelligence, Policy
+  Proposal, benchmark evidence, and governance context—not necessarily a
+  Forecast Policy with measured historical predictive superiority.
+- **Provider Performance** projects Brier score, log loss, calibration,
+  directional accuracy, coverage, and trends from existing Forecast
+  Intelligence outputs.
+- **Policy Candidate Comparison** compares Hypothesis and Proposal identities,
+  supporting Reports, constraints, selection and weighting rules, preserved
+  benchmarks, adequacy, supporting and adverse evidence, limitations,
+  corresponding Forecast Policy identities, lifecycle, and Shadow-history
+  gaps. Provider Forecast Evaluation metrics are never presented as policy
+  metrics. Policy Brier score, log loss, calibration, head-to-head performance,
+  or production superiority appears only when compatible immutable
+  policy-evaluation artifacts are supplied; otherwise it is explicitly
+  unavailable with a reason.
+- **Policy Proposal Review** presents the proposal recommendation, supporting
+  and adverse evidence, uncertainty, and limitations.
+- **Governance Review** replays Research, Shadow, Production, Retired, and
+  Rejected views at the context's explicit `governance_as_of` boundary.
+- **Governance Decision Draft** presents a non-authoritative draft for Product
+  Owner consideration.
+- **Diagnostics** exposes provenance, immutable identities, exclusions,
+  superseded evaluations, conflict diagnostics, and expandable serialized
+  objects where useful.
+
+A Governance Decision Draft derives only from an existing immutable Policy
+Proposal and its suggested action or an explicit Product Owner-selected
+decision supplied in the workspace context. The workspace implements no
+independent recommendation algorithm. The draft preserves Forecast Policy
+ID/version, Governance Scope, source Policy Proposal ID when applicable, source
+Forecast Intelligence Report IDs, source Policy Hypothesis ID, suggested or
+selected decision, rationale, and limitations. Its `decision_effective_at`
+remains blank and it explicitly has no authority. With neither proposal nor
+Product Owner selection it states `No governance decision drafted.` The draft
+cannot construct a Governance Record or activate, Shadow, Retire, or Reject a
+policy:
+
+```text
+Forecast Research Workspace
+            ↓
+Governance Decision Draft
+            ↓
+ Explicit Product Owner action
+            ↓
+     Governance Record
+```
+
+The workspace observes, compares, presents existing proposal interpretations,
+and drafts. Production executes separately approved Forecast Policies.
+Opportunity Analysis and all execution
+remain outside PR13. PR14 alone will migrate the downstream consumer from a
+direct provider Forecast Observation to a governance-compatible Policy
+Forecast. PR13 does not modify Opportunity Analysis, Opportunity Board, or
+wagering workflows.
+
+PR9 Forecast Evaluations score provider Forecast Observations against Outcome
+Observations. PR10 Forecast Intelligence analyzes those provider evaluations,
+and Policy Proposals assess Policy Hypotheses using that intelligence and
+available benchmark evidence. PR11 produces current event-level Policy
+Forecasts but defines no historical Policy Forecast evaluation or policy
+backtesting family. PR12 governs Forecast Policies without measuring predictive
+performance. The workspace therefore surfaces whether each policy has no
+Policy Forecast history, current-only outputs, prospective Shadow outputs,
+compatible historical policy-evaluation artifacts, or insufficient evidence
+for policy-performance claims. It does not implement Shadow execution or a new
+policy-evaluation framework. Policy-level historical evaluation remains a
+possible future analytical capability with no implicit assignment to PR13,
+PR14, or PR15.
 
 #### Forecast Intelligence Report
 

@@ -101,6 +101,26 @@ ambiguity. Production-material conflicts fail scope resolution closed, while
 unrelated research-only conflicts remain visible diagnostics without erasing
 an otherwise unambiguous authorization.
 
+The approved PR13 architecture defines a Forecast Research Workspace as the
+Product Owner's deterministic, read-only projection over immutable PR9–PR12
+inputs. One explicit `ResearchWorkspaceContext` keeps provider, policy,
+hypothesis, evaluation-window, analysis, and governance scope consistent across
+an executive overview, provider performance, policy candidate comparison,
+proposal and governance review, a non-authoritative Governance Decision Draft, and
+diagnostics. The planned v1.1 output is one self-contained local HTML document
+with no server, persistence, write action, production execution, Opportunity
+Analysis migration, or wagering behavior. Implementation remains PR13; PR14
+retains Policy Forecast consumer integration.
+
+The workspace does not mistake PR9 provider Forecast Evaluations for historical
+Forecast Policy evaluations. Candidate support comes from supplied PR10
+Forecast Intelligence, Policy Proposals, benchmark evidence, and governance
+context; missing Policy Forecast, Shadow, or policy-evaluation history is shown
+explicitly. Decision drafts come only from a Proposal or explicit Product Owner
+selection and carry no authority. Context compatibility fails closed, while
+wall-clock generation metadata remains outside deterministic projection
+identity. Policy backtesting is not a PR13 capability.
+
 ## Documentation
 
 - [Developer guide](DEVELOPER.md) — current World Cup workflows and behavior

@@ -450,6 +450,69 @@ execution, Opportunity Analysis, Opportunity Board, providers, market
 valuation, wagering, or World Cup workflows. PR13 remains the Research
 Workspace and PR14 remains Policy Forecast consumer migration.
 
+## Planned PR13 Forecast Research Workspace boundary
+
+PR13 will compose existing PR9–PR12 services into a deterministic read-only
+projection for Product Owner research. `ResearchWorkspaceContext` is an
+immutable caller-supplied input containing sport, competition, proposition,
+evaluation window, `analysis_as_of`, `governance_as_of`, provider scope,
+Forecast Policy scope, and Policy Hypothesis scope. It is not persisted. Every
+workspace projection must consume the same context without widening or
+substituting scope or chronology.
+
+Validate supplied Reports, Proposals, Policies, Governance Records, and Policy
+Forecasts fail-closed against domain, evaluation window, analysis and
+governance boundaries, provider/model, Hypothesis, Policy, and Governance
+Scope. Exclude incompatibilities with explicit diagnostics rather than blending
+them.
+
+Workspace orchestration may invoke existing evaluation selection, Forecast
+Intelligence, Policy Proposal, and Governance replay functions. It must not
+copy their calculation or transition rules. The workspace layer owns only
+orchestration, workflow organization, and rendering; it introduces no
+authoritative state, mutable cache, database, network service, or browser
+storage.
+
+The bounded v1.1 renderer will emit one self-contained static HTML document,
+using the Opportunity Board's navy/white visual family with printable summaries,
+sortable tables where appropriate, collapsible details, and expandable
+provenance. Its top-level sections are Research Context, Executive Overview,
+Provider Performance, Policy Candidate Comparison, Policy Proposal Review,
+Governance Review, Governance Decision Draft, and Diagnostics. Domain contracts
+remain available through drill-down rather than defining the primary navigation.
+
+PR9 metrics evaluate provider observations, not Policy Forecasts. PR11 supplies
+current Policy Forecasts but no historical policy-evaluation or backtesting
+service, and PR12 adds governance rather than performance measurement. Policy
+Candidate Comparison uses existing Hypotheses, Proposals, Reports, benchmarks,
+constraints, rules, adequacy, evidence, and governance state. It reports policy
+Brier score, log loss, calibration, head-to-head performance, and production
+superiority as unavailable unless compatible immutable policy-evaluation
+artifacts are supplied, and exposes no-history, current-only, prospective
+Shadow, compatible-evaluation, and insufficient-evidence states.
+
+The Governance Decision Draft may be projected only from an immutable Policy
+Proposal's suggested action or an explicit Product Owner-selected decision in
+context. It preserves policy ID/version, scope, Proposal/Report/Hypothesis
+provenance, decision, rationale, and limitations; otherwise it states `No
+governance decision drafted.` It keeps `decision_effective_at` blank, declares
+no authority, adds no recommendation algorithm, and cannot call the Governance
+Record constructor.
+
+Projection identity, if added, includes context, immutable input identities,
+projection algorithm/version, output-affecting renderer version, and section
+selection. Generated-at time is non-identifying presentation provenance. PR13
+does not add Shadow execution or historical policy evaluation; such evaluation
+is a possible future capability without assignment to PR13–PR15.
+
+Expected PR13 implementation scope is the context contract, orchestration, HTML
+renderer, provider-performance, policy-candidate-comparison, proposal,
+governance-review, decision-draft, and diagnostic projections, plus offline
+inspection, fixtures, and focused tests. It must not change governance, Forecast Policy execution,
+Opportunity Analysis, Opportunity Board, wagering, providers, or World Cup
+behavior. PR14 retains Policy Forecast consumer migration; PR15 retains release
+hardening.
+
 ## Opportunity Board manual workflow
 
 `opportunity_board.py` defines derived Position, Opportunity, and BoardEntry

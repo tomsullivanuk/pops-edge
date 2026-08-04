@@ -250,6 +250,117 @@ replace, or promote its own policy.
 
 > **Research never changes production. Governance changes production.**
 
+## Forecast Research Workspace
+
+PR13 is planned to add the Product Owner's primary quantitative research
+environment as one deterministic, read-only projection over immutable PR9–PR12
+inputs. The workspace owns orchestration, decision-oriented organization, and
+presentation. It owns no Evidence, Measurement, Forecast Intelligence,
+Forecast Policy, Governance, Opportunity Analysis, persistence, or mutable
+business state.
+
+It helps the Product Owner understand provider performance, Forecast
+Intelligence conclusions, support for Policy Hypotheses and Policy Proposals,
+their corresponding executable Forecast Policies, governance state, available
+Shadow or policy-performance evidence, and any governance decision worth
+considering. It cannot always answer which Forecast Policy historically
+performed best; that requires compatible immutable policy-evaluation artifacts.
+
+An immutable, explicitly supplied `ResearchWorkspaceContext` holds sport,
+competition, proposition, evaluation window, `analysis_as_of`,
+`governance_as_of`, provider scope, Forecast Policy scope, and Policy
+Hypothesis scope. Every section derives from that same context without silently
+widening or replacing it. Identical immutable inputs and identical context must
+produce a substantively identical workspace projection. Any projection identity
+uses context, supplied immutable identities, projection algorithm/version,
+output-affecting renderer version, and section selection. Wall-clock generation
+time is non-identifying provenance and may change presentation bytes without
+changing projection substance.
+
+The v1.1 product is one locally generated, self-contained, static HTML document:
+read-only, printable, archiveable, and visually consistent with the Opportunity
+Board's navy/white product language. It requires no server, database, browser
+persistence, or write action. Sortable tables, concise summaries, collapsible
+details, and expandable provenance support investigation without turning the
+workspace into a separate application. Multiple views, tabs, and richer
+interaction are deferred until actual usage supports them.
+
+The workspace follows the Product Owner's research and governance decision
+journey:
+
+```text
+Research Context
+        ↓
+Executive Overview
+        ↓
+Provider Performance
+        ↓
+Policy Candidate Comparison
+        ↓
+Policy Proposal Review
+        ↓
+Governance Review
+        ↓
+Governance Decision Draft
+        ↓
+Diagnostics
+```
+
+Research Context discloses scope and boundaries. Executive Overview presents
+major conclusions, the best-supported policy candidate, adequacy, governance
+state, and limitations while keeping descriptive facts, proposal
+interpretations, governance state, and Product Owner decisions distinct.
+“Best-supported” means strongest support from supplied Forecast Intelligence,
+Policy Proposal, benchmark evidence, and governance context; it does not imply
+measured historical predictive superiority. Provider Performance presents
+Brier score, log loss, calibration, directional accuracy, coverage, and trends.
+Policy Candidate Comparison presents Hypotheses, Proposals, Reports,
+constraints, rules, benchmarks, adequacy, evidence, limitations, corresponding
+policies, governance lifecycle, and history gaps. Provider evaluation metrics
+are never relabeled as policy metrics; unavailable historical policy metrics
+are identified explicitly with reasons. Policy Proposal Review presents
+recommendation, favorable and adverse evidence,
+uncertainty, and limitations. Governance Review derives Research, Shadow,
+Production, Retired, and Rejected views at `governance_as_of`. Diagnostics
+preserves provenance, identities, exclusions, superseded evaluations,
+conflicts, and relevant serialized objects.
+
+The Governance Decision Draft is explicitly non-authoritative and derives only
+from an immutable Policy Proposal's suggested action or an explicit Product
+Owner-selected decision supplied in context. It preserves Forecast Policy
+ID/version, Governance Scope, source Proposal ID when applicable, source Report
+IDs, source Hypothesis ID, the suggested or selected decision, rationale, and
+limitations. It leaves `decision_effective_at` blank, states that it has no
+authority, and cannot create a Governance Record or change any policy lifecycle.
+Without a supporting proposal or Product Owner selection it states `No
+governance decision drafted.` The workspace adds no recommendation algorithm:
+
+```text
+Workspace → Governance Decision Draft → Explicit Product Owner action
+          → Governance Record
+```
+
+The workspace observes, compares, presents existing proposal interpretations,
+and drafts. It never performs governance or production execution. PR13 does not modify Opportunity Analysis,
+Opportunity Board, or wagering. PR14 remains responsible for consuming a
+governance-compatible Policy Forecast in Opportunity Analysis.
+
+PR9 evaluates provider Forecast Observations, and PR10 Forecast Intelligence
+and Policy Proposals analyze and interpret that provider-level evidence. PR11
+produces current Policy Forecasts; it does not evaluate their historical
+predictive performance. PR12 governs policies without measuring them. The
+workspace visibly distinguishes no Policy Forecast history, current-only
+outputs, prospective Shadow outputs, compatible supplied policy-evaluation
+artifacts, and insufficient evidence for policy-performance claims. It neither
+implements Shadow execution nor creates policy backtesting. Historical policy
+evaluation remains a possible future capability, not an implicit PR13–PR15
+deliverable.
+
+All supplied analytical and governance objects are checked fail-closed against
+the full `ResearchWorkspaceContext`, including domain, time boundaries,
+provider/model, Hypothesis, Policy, and Governance Scope. Incompatible objects
+are excluded with diagnostics; no section silently widens context.
+
 ### Forecast Intelligence Report
 
 One Forecast Intelligence Report measures one Forecast Provider within one

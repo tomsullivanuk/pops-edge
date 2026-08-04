@@ -247,6 +247,33 @@ record provenance, and fails scope authority closed only for conflicts material
 to current or candidate Production authority. Unrelated research-only conflict
 diagnostics remain visible without mutating valid production resolution.
 
+The approved PR13 architecture defines the Forecast Research Workspace as the
+Product Owner's deterministic, read-only projection over immutable PR9–PR12
+inputs. One non-persisted `ResearchWorkspaceContext` fixes sport, competition,
+proposition, evaluation window, analysis and governance boundaries, provider,
+Forecast Policy, and Policy Hypothesis scope for every section. Existing domain
+services retain all Measurement, Forecast Intelligence, Forecast Policy, and
+Governance logic; the workspace owns only orchestration, decision-oriented
+organization, and presentation.
+
+The planned v1.1 output is one self-contained static local HTML document with
+Research Context, Executive Overview, Provider Performance, Policy Candidate
+Comparison, Policy Proposal Review, Governance Review, a non-authoritative
+Governance Decision Draft, and Diagnostics. The draft leaves effective decision
+time blank and cannot create a Governance Record. No PR13 implementation, persistence,
+server, governance write, production execution, Opportunity Analysis or Board
+migration, wagering behavior, PR14, or PR15 work is included in this
+documentation pass.
+
+The clarified boundary distinguishes PR9 provider Forecast Evaluation from
+historical Forecast Policy evaluation, which PR11–PR12 do not implement.
+Candidate comparison uses supplied Forecast Intelligence, Policy Proposals,
+benchmarks, rules, and governance context; unavailable Shadow or policy-level
+performance history is explicit. Decision drafts derive only from a Proposal or
+Product Owner selection, compatibility fails closed, and generated-at metadata
+does not identify the deterministic substantive projection. PR13 adds neither
+policy backtesting nor an independent governance recommendation algorithm.
+
 ## [v1.0.0] — World Cup baseline
 
 The existing production World Cup implementation is designated Pops' Edge

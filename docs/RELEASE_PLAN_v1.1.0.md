@@ -451,12 +451,55 @@ candidate Production authority invalidate an otherwise resolved scope.
 
 ### PR13 — Forecast Research Workspace
 
-- Add a polished bounded research presentation over Evidence, Forecast
-  Evaluation, Forecast Intelligence Reports, Policy Hypotheses, Policy
-  Proposals, and comparisons.
+- Implement immutable, non-persisted `ResearchWorkspaceContext` with sport,
+  competition, proposition, evaluation window, explicit `analysis_as_of` and
+  `governance_as_of`, provider scope, Forecast Policy scope, and Policy
+  Hypothesis scope. Require every section to use the same context and exclude
+  incompatible objects with explicit fail-closed diagnostics.
+- Add read-only orchestration over existing PR9–PR12 services without
+  duplicating Measurement, Forecast Intelligence, Forecast Policy execution,
+  or Governance logic.
+- Render one deterministic, self-contained, static local HTML workspace in the
+  Opportunity Board's navy/white product family. Keep it printable and
+  archiveable, with no server, database, browser persistence, or write action.
+- Organize the workspace around Research Context, Executive Overview, Provider
+  Performance, Policy Candidate Comparison, Policy Proposal Review, Governance
+  Review, Governance Decision Draft, and Diagnostics rather than domain object
+  types.
+- Project provider Brier score, log loss, calibration, directional accuracy,
+  coverage and trends; candidate Hypotheses, Proposals, Reports, constraints,
+  rules, preserved benchmarks, adequacy, evidence, limitations, corresponding
+  policies, governance lifecycle, and Shadow/history gaps; proposal support,
+  adverse evidence and uncertainty; and replay-derived lifecycle views at the
+  explicit governance boundary.
+- Never present provider Forecast Evaluation metrics as historical Forecast
+  Policy metrics. Mark policy Brier score, log loss, calibration, head-to-head
+  performance, and production superiority unavailable unless compatible
+  immutable policy-evaluation artifacts are supplied. PR13 adds no Shadow
+  execution, historical Policy Forecast evaluation, or backtesting framework.
+- Add a non-authoritative Governance Decision Draft containing policy/scope and
+  a decision derived only from an existing Proposal's suggested action or an
+  explicit Product Owner selection. Preserve policy/version,
+  Proposal/Report/Hypothesis provenance, rationale, and limitations; otherwise
+  state `No governance decision drafted.` Leave `decision_effective_at` blank,
+  declare no authority, add no independent recommendation algorithm, and never
+  create a Governance Record.
+- Add bounded inspection tooling, deterministic fixtures, focused tests, and
+  documentation. Defer multiple views, tabs, richer interaction, governance
+  writes, production execution changes, Opportunity Analysis, providers, PR14,
+  and PR15.
 
-**Gate:** research outputs remain derived, reproducible, and separate from
-production Opportunity Analysis and Execution.
+**Gate:** identical immutable inputs and identical `ResearchWorkspaceContext`
+produce substantively identical projections; all sections preserve their shared
+scope and chronology; research outputs remain non-authoritative, read-only,
+reproducible, and separate from Governance writes, production Opportunity
+Analysis, wagering, and Execution.
+
+If a workspace ID or digest is introduced, material identity includes context,
+supplied immutable identities, projection algorithm/version, output-affecting
+renderer version, and section selection. Wall-clock generation time is
+non-identifying presentation provenance. Historical policy evaluation remains
+a possible future analytical capability and is not assigned to PR13–PR15.
 
 ### PR14 — Policy Forecast Opportunity Analysis Integration
 
