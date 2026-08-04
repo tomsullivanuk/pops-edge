@@ -36,10 +36,11 @@ The authoritative PR scope and gates are in
 The implemented and validated baseline through PR6 is recorded in
 `docs/V1.1.0_CHECKPOINT_THROUGH_PR6.md`. PR8 is complete. PR9's approved
 architecture adds Outcome Evidence and Forecast Evaluation; those PR9
-capabilities are implemented. Forecast Intelligence Reports, Policy Hypotheses,
-and analytical Policy Proposals remain PR10 work; separate executable Policy
-definitions and execution remain PR11, governance lifecycle remains PR12, and
-the Research Workspace remains PR13. v1.1.0 remains unreleased.
+capabilities are implemented. PR10's provider-neutral Forecast Intelligence
+Report, Policy Hypothesis, and advisory Policy Proposal foundation is also
+implemented pending review. Separate executable Policy definitions and
+execution remain PR11, governance lifecycle remains PR12, and the Research
+Workspace remains PR13. v1.1.0 remains unreleased.
 
 PR2 selected a licensed official MLB feed as the production identity/pitcher
 strategy, with MLB `gamePk` canonical, and made forecast-provider licensing a

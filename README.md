@@ -57,17 +57,21 @@ Derived objects never become Evidence.
 
 PR9 now implements the first half of that direction: immutable MLB Outcome
 Observations, explicit eligibility decisions, deterministic forecast-quality
-scoring, and append-only evaluation history. Forecast Intelligence remains the
-next planned step; no Forecast Policy or Policy Forecast engine is implemented.
+scoring, and append-only evaluation history.
 
-The approved PR10 direction separates Research Mode from Production Mode.
-Provider-neutral Forecast Intelligence will derive immutable reports and
-non-executable Policy Hypotheses and Policy Proposals from explicit current
-Forecast Evaluations, demonstrated with DRatings as the sole implemented MLB
-Forecast Provider. PR11 Forecast Policies remain separate executable production
-definitions. Only later Product Owner governance may bridge a hypothesis to
-production authority: research itself cannot create or activate a policy or
-alter current decisions.
+PR10 implements the bounded Research foundation while preserving the separation
+from Production Mode. Provider-neutral Forecast Intelligence derives immutable
+reports and non-executable Policy Hypotheses and Policy Proposals from explicit
+current Forecast Evaluations, demonstrated with DRatings as the sole implemented
+MLB Forecast Provider. PR11 Forecast Policies remain separate executable
+production definitions. Only later Product Owner governance may bridge a
+hypothesis to production authority: research itself cannot create or activate a
+policy or alter current decisions.
+
+The MLB intelligence demonstration calibrates one fixed home-win target per
+game, reconciles evaluation-level result/favorite/probability segments, excludes
+forecast ties from directional-accuracy denominators, and derives advisory
+proposal actions from a versioned rule with factual benchmark-absence reasons.
 
 ## Documentation
 

@@ -93,9 +93,9 @@ Evidence remains immutable. Forecast Evaluation, Forecast Intelligence Report,
 Policy Hypothesis, Policy Proposal, Policy Forecast, and Opportunity Analysis
 are reproducible objects or derived Analysis; they never become Evidence.
 Execution consumes derived results but does not define the Mission. PR9
-Forecast Evaluation is implemented; Forecast Intelligence Report, Policy
-Hypothesis, Policy Proposal, governance, Forecast Policy, and Policy Forecast
-remain planned capabilities.
+Forecast Evaluation and the PR10 Forecast Intelligence Report, Policy
+Hypothesis, and Policy Proposal foundation are implemented. Governance,
+Forecast Policy, and Policy Forecast remain planned capabilities.
 
 Research supports this flow but is not its endpoint. Measurement exists to
 improve future decisions, and Forecast Policies remain valid only while
@@ -514,7 +514,7 @@ the probabilities for today's Canonical Event.
 Forecast Intelligence is an analysis engine over Forecast Evaluations, not a
 feature of a Forecast Provider. Its contracts must work with one provider,
 multiple providers, internal models, and future Policy Forecast evaluations.
-PR10 will demonstrate that provider-neutral boundary with DRatings because
+PR10 demonstrates that provider-neutral boundary with DRatings because
 DRatings is the sole currently implemented MLB Forecast Provider; the
 architecture neither requires nor claims a second provider.
 
@@ -576,12 +576,18 @@ Report sections preserve:
 - coverage: candidate, current, superseded, included, and excluded counts;
   exclusion reasons; observed period; provider/model coverage; and gaps;
 - forecast quality: sample size, mean Brier, mean finite log loss, infinite
-  log-loss count, directional accuracy, and evaluated probability distribution;
-- calibration: versioned buckets with count, mean forecast probability,
-  observed frequency, calibration difference or error, and small-sample warning;
-- deterministic segments such as probability band, home/away,
-  favorite/underdog, or historical period, each with sample size and unsupported
-  sections shown as limited or unavailable; and
+  log-loss count, and directional accuracy whose denominator is games with a
+  unique strict forecast favorite; tied forecasts remain explicit and excluded;
+- primary calibration: exactly one observation per included MLB game, targeting
+  `home participant wins`, with published home-win probability compared with a
+  realized zero-or-one home-win indicator;
+- versioned calibration buckets with explicit boundaries, inclusion rules,
+  contributing evaluation IDs, forecast count, predicted sum/mean, home-win
+  count, observed frequency, calibration difference, and warning;
+- deterministic evaluation-level segment families for actual home/away result,
+  strict-favorite result including `no-unique-favorite`, and published home-win
+  probability band. Each states grouping, numerator, denominator, contributing
+  evaluation IDs, sample size, and limitations; and
 - versioned non-overlapping or rolling historical trends without persisted
   mutable cumulative totals.
 
@@ -628,6 +634,11 @@ evidence; and all adverse evidence and limitations. Limitations include
 inadequate sample, coverage gaps, model changes, in-sample optimization,
 selection bias, missing prospective Shadow history, and underperforming
 segments.
+
+Its versioned suggestion rule deterministically preserves the adequacy result,
+factual benchmark availability, material metric inputs, triggered reason codes,
+and contributing evaluation IDs. An absent benchmark remains absent and yields
+an explicit reason rather than a synthetic comparison.
 
 The deterministic proposal ID includes the Forecast Intelligence Report ID,
 Policy Hypothesis ID/version, benchmark identities, proposal and
@@ -723,6 +734,18 @@ Eligible current Forecast Observations
 
 Forecast Intelligence does not replace current Forecast Observations. Forecast
 Policy execution does not convert its derived output into Evidence.
+
+PR10 implements this Research boundary in `forecast_intelligence.py`. An
+explicit immutable current-evaluation selection accounts for every stored PR9
+Forecast Evaluation as current or superseded using authoritative Outcome
+History. A report then applies explicit provider/model/domain scope, evaluation
+window, participant-role context, calibration/segmentation versions, and a
+versioned adequacy rule. It preserves every included, excluded, superseded, and
+selected Outcome identity. `inspect_forecast_intelligence.py` demonstrates the
+pipeline from fixture evaluations through report, hypothesis, and advisory
+proposal without provider access or production mutation. No Forecast Policy,
+Policy Forecast, governance transition, Shadow mode, market-relative or
+wagering evaluation, or Opportunity Board behavior is implemented.
 
 PR9 implements only the Evidence-to-Measurement foundation in
 `outcome_contracts.py`, `mlb_outcome_adapter.py`, and

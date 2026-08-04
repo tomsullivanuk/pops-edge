@@ -275,23 +275,32 @@ Opportunity Board. Forecast Intelligence begins in PR10; Forecast Policy,
 Policy Forecast, market-relative evaluation, and wagering evaluation remain
 deferred.
 
-## Planned PR10 research boundary
+## Forecast Intelligence research boundary
 
-PR10 is documentation-approved but not implemented. Its provider-neutral
-Research Mode will consume an explicit set of PR9 current Forecast Evaluations,
+`forecast_intelligence.py` implements provider-neutral Research Mode over an
+explicit immutable selection of PR9 current Forecast Evaluations,
 authoritative Outcome History when needed for that selection, an immutable
 evaluation-window definition, and versioned intelligence rules. DRatings is the
-sole currently implemented MLB Forecast Provider and will demonstrate the
+sole currently implemented MLB Forecast Provider and demonstrates the
 architecture without introducing provider-specific intelligence contracts or a
 second provider.
 
-The planned immutable Forecast Intelligence Report preserves provider/domain,
+The immutable Forecast Intelligence Report preserves provider/domain,
 window, eligibility, evaluation and intelligence algorithm identities;
 included, excluded, and superseded evaluation IDs; deterministic input digest;
 coverage; Brier and finite/infinite log-loss results; calibration; bounded
 segments and trends; sample-adequacy assessment; gaps; adverse evidence; and
 limitations. It uses current corrected-final selection by default and never
 silently uses all repository history or stores mutable cumulative totals.
+
+Primary MLB calibration is an evaluation-level home-win view: every included
+game contributes its published home-win probability once and a realized
+home-win indicator of zero or one. Segment contracts separately identify
+actual home/away results, strict-favorite wins/losses/ties, and home-win
+probability bands. Directional accuracy divides correct calls only by games
+having a unique strict favorite; an all-tie sample reports it as unavailable.
+Aggregates, buckets, segments, adequacy, and proposal suggestions retain their
+canonically ordered contributing Forecast Evaluation IDs.
 
 Evaluation windows and explicit analysis-as-of boundaries are material
 identity inputs because they select the analytical evidence set. Wall-clock
@@ -302,8 +311,8 @@ unstated repository state are never identity inputs. Identical immutable
 material inputs and algorithm versions reproduce identical analytical identity
 and content regardless of rerun time.
 
-The planned Policy Proposal is immutable advisory Analysis tied to one report
-and one immutable, versioned Policy Hypothesis. That PR10 hypothesis describes
+The Policy Proposal is immutable advisory Analysis tied to one report and one
+immutable, versioned Policy Hypothesis. That PR10 hypothesis describes
 the non-executable provider/model, eligibility, selection, weighting,
 normalization, missing-provider, fallback, assumption, and domain rules being
 evaluated. It is Research input or derived Analysis—not Evidence, a Forecast
@@ -313,7 +322,22 @@ replace, retire, or reject a Forecast Policy. PR11 owns the separate executable
 Forecast Policy definition and Policy Forecast; PR12 owns governance records
 and lifecycle transitions; PR13 remains the polished Research Workspace.
 
+Proposal actions are derived by an explicit versioned suggestion rule from
+adequacy, factual benchmark availability, comparisons, metrics, and
+limitations. Missing benchmarks remain absent; deterministic reason codes
+explain the advisory action without modifying production configuration.
+
 > **Research never changes production. Governance changes production.**
+
+Run the bounded inspection explicitly:
+
+```bash
+./venv/bin/python inspect_forecast_intelligence.py \
+  tests/fixtures/forecast_intelligence_cases.json
+```
+
+The command consumes fixtures only. It performs no network, Kalshi, Opportunity
+Board, governance, Forecast Policy, Policy Forecast, or Execution action.
 
 ## Opportunity Board manual workflow
 

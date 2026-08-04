@@ -341,6 +341,19 @@ limitations and sample sizes remain visible; no analytical artifact can create
 or activate a Forecast Policy. Research never changes production; Governance
 changes production.
 
+**Implemented boundary:** provider-neutral immutable current-evaluation
+selection, explicit date-range/as-of windows, coverage, aggregate Brier and
+finite/infinite log-loss analysis, one-home-win-observation-per-game decile
+calibration, reconciled actual-result, strict-favorite-result (including ties),
+and home-win-probability-band segments, historical trend,
+versioned sample adequacy, immutable Policy Hypothesis, advisory Policy
+Proposal with deterministic rule provenance and factual benchmark absence,
+fixture-only inspection, and focused tests. DRatings MLB winner
+evaluations demonstrate the contracts without embedding DRatings semantics.
+PR10 adds no Forecast Policy, Policy Forecast, governance record or transition,
+Shadow mode, additional provider, Opportunity Board change, market-relative or
+wagering evaluation, sizing, bankroll, or Execution behavior.
+
 ### PR11 — Forecast Policy and Policy Forecast
 
 - Implement approved versioned Forecast Policy definitions and deterministic

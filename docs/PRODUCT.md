@@ -220,14 +220,14 @@ and never becomes Evidence. Its conclusions must be reproducible from their
 referenced evaluations. It supports Forecast Policy comparison, selection,
 configuration, replacement, and empirical justification, but does not provide
 today's event probabilities. The current platform has one MLB Forecast
-Provider, DRatings; Forecast Intelligence, comparative provider analysis, and
-calibration tooling remain approved direction rather than implemented
-capabilities.
+Provider, DRatings. PR10 implements the provider-neutral single-provider
+Forecast Intelligence foundation; comparative provider analysis and direct
+cross-provider comparison remain future capabilities.
 
 Forecast Intelligence is an analysis engine over Forecast Evaluations, not a
 provider feature. Its provider-neutral contract must work with one provider,
 multiple providers, internal models, and future Policy Forecast evaluations.
-PR10 will prove it with DRatings—the sole currently implemented MLB Forecast
+PR10 proves it with DRatings—the sole currently implemented MLB Forecast
 Provider—for MLB winner forecasts. Additional providers and direct
 cross-provider comparison remain future work.
 
@@ -275,6 +275,15 @@ label or threshold is versioned analytical Policy, not universal truth or
 Evidence. The requested window, covered period, event count, completeness, and
 missing periods are explicit; PR10 does not silently analyze “all available
 data.”
+
+For the initial MLB winner domain, primary calibration has one stable target:
+`home participant wins`. Each included game contributes its published home-win
+probability once and a realized zero-or-one home-win indicator. Actual-result,
+strict-favorite-result (including no unique favorite), and home-win-probability
+segments are separate evaluation-level views with explicit grouping, numerator,
+denominator, contributing identities, sample size, and limitations. Directional
+accuracy excludes tied forecasts and uses unique-favorite games as its
+denominator.
 
 The report's deterministic identity includes its provider/domain scope,
 evaluation window and explicit analysis-as-of boundary, canonically ordered
@@ -328,6 +337,12 @@ output-affecting analytical identities. Its generation timestamp is metadata,
 not identity. Identical immutable material inputs and algorithm versions
 produce identical report, hypothesis, and proposal identities and analytical
 contents regardless of rerun time.
+
+The suggestion rule is explicit and versioned. It preserves the adequacy result,
+factual benchmark availability, material metrics, deterministic reason codes,
+and contributing evaluation identities. An absent benchmark remains absent and
+cannot be replaced with a synthetic comparison. The resulting action remains
+advisory Analysis and cannot alter lifecycle or production configuration.
 
 ## Forecast Policy
 
@@ -406,7 +421,8 @@ final, retains prior evaluations as superseded history, and excludes them from
 current summaries to avoid counting one game twice.
 
 The minimal PR9 history summary exists only to verify deterministic replay. It
-is not Forecast Intelligence. Forecast Intelligence remains PR10 work.
+is not Forecast Intelligence. PR10 Forecast Intelligence consumes that
+immutable Measurement without changing it.
 
 Historical learning and Policy governance follow this conceptual flow:
 

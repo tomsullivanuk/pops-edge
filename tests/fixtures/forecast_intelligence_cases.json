@@ -1,0 +1,65 @@
+{
+  "generated_at": "2026-08-04T15:00:00+00:00",
+  "scope": {
+    "provider_id": "dratings",
+    "model_ids": ["dratings-mlb"],
+    "model_version_ids": ["dratings-mlb-undisclosed"],
+    "sport": "baseball",
+    "competition": "MLB",
+    "proposition_type": "winner",
+    "eligibility_policy_id": "mlb-winner-evaluation-eligibility",
+    "eligibility_policy_version": "1"
+  },
+  "window": {
+    "window_id": "fixture-date-range",
+    "version": "1",
+    "start_at": "2026-08-01T00:00:00+00:00",
+    "end_at": "2026-08-04T00:00:00+00:00",
+    "analysis_as_of": "2026-08-04T00:00:00+00:00"
+  },
+  "adequacy_rule": {
+    "rule_id": "fixture-descriptive-adequacy",
+    "version": "1",
+    "minimum_report_sample": 4,
+    "minimum_segment_sample": 2
+  },
+  "selection": {
+    "current_evaluation_ids": ["evaluation:corrected", "evaluation:two", "evaluation:infinite", "evaluation:outside"],
+    "superseded_evaluation_ids": ["evaluation:original"],
+    "selected_outcome_observation_ids": ["outcome:corrected", "outcome:two", "outcome:infinite", "outcome:outside"]
+  },
+  "contexts": [
+    {"evaluation_id": "evaluation:corrected", "away_participant_id": "team:a1", "home_participant_id": "team:h1"},
+    {"evaluation_id": "evaluation:two", "away_participant_id": "team:a2", "home_participant_id": "team:h2"},
+    {"evaluation_id": "evaluation:infinite", "away_participant_id": "team:a3", "home_participant_id": "team:h3"},
+    {"evaluation_id": "evaluation:outside", "away_participant_id": "team:a4", "home_participant_id": "team:h4"}
+  ],
+  "evaluations": [
+    {"evaluation_id":"evaluation:original","eligibility_decision_id":"eligibility:original","forecast_observation_id":"forecast:one","outcome_observation_id":"outcome:original","canonical_event_id":"mlb:1","provider_id":"dratings","model_id":"dratings-mlb","model_version_id":"dratings-mlb-undisclosed","forecast_collected_at":"2026-08-01T12:00:00+00:00","away_participant_id":"team:a1","home_participant_id":"team:h1","away_probability":"0.40","home_probability":"0.60","winner_participant_id":"team:a1"},
+    {"evaluation_id":"evaluation:corrected","eligibility_decision_id":"eligibility:corrected","forecast_observation_id":"forecast:one","outcome_observation_id":"outcome:corrected","canonical_event_id":"mlb:1","provider_id":"dratings","model_id":"dratings-mlb","model_version_id":"dratings-mlb-undisclosed","forecast_collected_at":"2026-08-01T12:00:00+00:00","away_participant_id":"team:a1","home_participant_id":"team:h1","away_probability":"0.40","home_probability":"0.60","winner_participant_id":"team:h1"},
+    {"evaluation_id":"evaluation:two","eligibility_decision_id":"eligibility:two","forecast_observation_id":"forecast:two","outcome_observation_id":"outcome:two","canonical_event_id":"mlb:2","provider_id":"dratings","model_id":"dratings-mlb","model_version_id":"dratings-mlb-undisclosed","forecast_collected_at":"2026-08-02T12:00:00+00:00","away_participant_id":"team:a2","home_participant_id":"team:h2","away_probability":"0.70","home_probability":"0.30","winner_participant_id":"team:a2"},
+    {"evaluation_id":"evaluation:infinite","eligibility_decision_id":"eligibility:infinite","forecast_observation_id":"forecast:three","outcome_observation_id":"outcome:infinite","canonical_event_id":"mlb:3","provider_id":"dratings","model_id":"dratings-mlb","model_version_id":"dratings-mlb-undisclosed","forecast_collected_at":"2026-08-03T12:00:00+00:00","away_participant_id":"team:a3","home_participant_id":"team:h3","away_probability":"1.00","home_probability":"0.00","winner_participant_id":"team:h3"},
+    {"evaluation_id":"evaluation:outside","eligibility_decision_id":"eligibility:outside","forecast_observation_id":"forecast:four","outcome_observation_id":"outcome:outside","canonical_event_id":"mlb:4","provider_id":"dratings","model_id":"dratings-mlb","model_version_id":"dratings-mlb-undisclosed","forecast_collected_at":"2026-08-05T12:00:00+00:00","away_participant_id":"team:a4","home_participant_id":"team:h4","away_probability":"0.50","home_probability":"0.50","winner_participant_id":"team:a4"}
+  ],
+  "hypothesis": {
+    "version": "1",
+    "provider_constraints": [{"provider_id":"dratings","model_ids":["dratings-mlb"],"model_version_ids":["dratings-mlb-undisclosed"]}],
+    "eligibility_rules": ["strictly-pregame", "authoritative-final"],
+    "provider_selection_rules": ["select-dratings"],
+    "weights": [{"provider_id":"dratings","weight":"1.0"}],
+    "transformations": ["none"],
+    "normalization_rule": "identity",
+    "missing_provider_behavior": "unavailable",
+    "fallback_behavior": "none",
+    "assumptions": ["fixture-only demonstration"],
+    "algorithm_assumptions": ["fixed provider selection"]
+  },
+  "proposal": {
+    "version": "1",
+    "rule_id": "initial-research-governance-suggestion",
+    "rule_version": "1",
+    "benchmark_ids": [],
+    "benchmark_comparisons": [],
+    "uncertainty": ["small fixture sample"]
+  }
+}

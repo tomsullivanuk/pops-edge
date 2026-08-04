@@ -163,8 +163,29 @@ reports, hypotheses, or proposals from changing production. Explicit
 analysis-as-of boundaries affect deterministic identity; wall-clock generation
 timestamps remain non-identifying provenance.
 Product Owner governance records and lifecycle transitions remain PR12;
-Forecast Policy execution remains PR11. This documentation introduces no PR10
-implementation or production behavior.
+Forecast Policy execution remains PR11. Those decisions define the boundary
+implemented by PR10 without changing production behavior.
+
+PR10 implements the provider-neutral Forecast Intelligence foundation over PR9
+current Forecast Evaluations. Immutable reports preserve explicit window,
+scope, included/excluded/superseded identities, coverage, Brier and log-loss,
+calibration, deterministic segments, trends, and versioned adequacy limitations.
+Immutable Policy Hypotheses describe non-executable Research candidates, and
+immutable Policy Proposals retain report linkage, metrics, benchmarks,
+uncertainty, limitations, and advisory governance suggestions. A fixture-only
+inspection demonstrates DRatings MLB winner evaluations. Generation time does
+not affect deterministic identity. No production Policy, governance transition,
+Shadow mode, provider access, Opportunity Board, market-relative, wagering, or
+Execution behavior is added.
+
+The PR10 statistical-semantics audit fixes primary MLB calibration to one
+home-win observation per included game, makes bucket boundaries and contributing
+identities explicit, and replaces ambiguous participant segments with
+reconciled actual-result, strict-favorite-result, and home-win-probability
+families. Directional accuracy excludes tied forecasts from its denominator.
+Policy Proposal suggestions now use a versioned deterministic rule preserving
+adequacy, benchmark absence, metrics, reason codes, and evaluation identities;
+no synthetic benchmark is introduced.
 
 ## [v1.0.0] — World Cup baseline
 
