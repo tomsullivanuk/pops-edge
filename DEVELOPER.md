@@ -275,6 +275,46 @@ Opportunity Board. Forecast Intelligence begins in PR10; Forecast Policy,
 Policy Forecast, market-relative evaluation, and wagering evaluation remain
 deferred.
 
+## Planned PR10 research boundary
+
+PR10 is documentation-approved but not implemented. Its provider-neutral
+Research Mode will consume an explicit set of PR9 current Forecast Evaluations,
+authoritative Outcome History when needed for that selection, an immutable
+evaluation-window definition, and versioned intelligence rules. DRatings is the
+sole currently implemented MLB Forecast Provider and will demonstrate the
+architecture without introducing provider-specific intelligence contracts or a
+second provider.
+
+The planned immutable Forecast Intelligence Report preserves provider/domain,
+window, eligibility, evaluation and intelligence algorithm identities;
+included, excluded, and superseded evaluation IDs; deterministic input digest;
+coverage; Brier and finite/infinite log-loss results; calibration; bounded
+segments and trends; sample-adequacy assessment; gaps; adverse evidence; and
+limitations. It uses current corrected-final selection by default and never
+silently uses all repository history or stores mutable cumulative totals.
+
+Evaluation windows and explicit analysis-as-of boundaries are material
+identity inputs because they select the analytical evidence set. Wall-clock
+`generated_at` or `derived_at` records operational provenance only and does not
+change report or proposal identity unless it is explicitly declared as the
+analysis-as-of boundary. Filesystem time, irrelevant input ordering, and
+unstated repository state are never identity inputs. Identical immutable
+material inputs and algorithm versions reproduce identical analytical identity
+and content regardless of rerun time.
+
+The planned Policy Proposal is immutable advisory Analysis tied to one report
+and one immutable, versioned Policy Hypothesis. That PR10 hypothesis describes
+the non-executable provider/model, eligibility, selection, weighting,
+normalization, missing-provider, fallback, assumption, and domain rules being
+evaluated. It is Research input or derived Analysis—not Evidence, a Forecast
+Policy, or a Policy Forecast—and has no lifecycle authority. A proposal may
+suggest a Product Owner action but cannot create, enter Shadow, activate,
+replace, retire, or reject a Forecast Policy. PR11 owns the separate executable
+Forecast Policy definition and Policy Forecast; PR12 owns governance records
+and lifecycle transitions; PR13 remains the polished Research Workspace.
+
+> **Research never changes production. Governance changes production.**
+
 ## Opportunity Board manual workflow
 
 `opportunity_board.py` defines derived Position, Opportunity, and BoardEntry

@@ -36,7 +36,13 @@ Measurement
     ↓
 Forecast Evaluation
     ↓
-Forecast Intelligence
+Forecast Intelligence Report
+    ↓
+Policy Proposal
+    ↓
+Policy Hypothesis
+    ↓
+Product Owner Governance
     ↓
 Forecast Policy
     ↓
@@ -55,9 +61,14 @@ Execution
   decisions, and outcomes using reproducible historical information states.
 - **Forecast Evaluation** reproducibly compares one Forecast Observation with
   one Outcome Observation for the same Canonical Event.
-- **Forecast Intelligence** transforms Evidence into objective knowledge about
-  forecast quality and the comparative performance of forecasting providers
-  and models.
+- **Forecast Intelligence Report** transforms Forecast Evaluations into
+  objective, scoped knowledge about demonstrated forecast quality.
+- **Policy Proposal** connects that analysis to a non-executable governance
+  suggestion while preserving adverse evidence and limitations.
+- **Policy Hypothesis** is the immutable, versioned, non-executable forecasting
+  approach evaluated or proposed for further Research.
+- **Product Owner Governance** alone may change policy lifecycle or production
+  authority.
 - **Forecast Policy** defines a versioned, testable method for converting
   eligible current Forecast Observations into a derived Policy Forecast. Its
   selection and configuration are justified by Forecast Intelligence.
@@ -103,10 +114,11 @@ evaluation remains immutable once its inputs and method are fixed.
 > **Every Forecast Policy must earn the right to exist through empirical
 > Measurement.**
 
-A Forecast Policy is a hypothesis, not received truth. Reproducible historical
-Measurement determines whether it enters or remains part of the platform.
-Intuition may motivate a candidate Forecast Policy, but intuition alone never
-justifies using it. Competing Forecast Policies must be evaluated against
+A proposed forecasting approach begins as a Policy Hypothesis, not received
+truth. Reproducible historical Measurement informs whether Product Owner
+governance should consider creating or advancing a separate Forecast Policy.
+Intuition may motivate a Policy Hypothesis, but intuition alone never justifies
+production use. Competing hypotheses and policies must be evaluated against
 preserved Evidence and outcomes using explicit, repeatable methods.
 
 ## Current analytical boundary
@@ -196,10 +208,10 @@ Forecast Policy. No additional MLB Forecast Provider is currently implemented.
 ## Forecast Intelligence
 
 Forecast Intelligence is the provider-neutral capability that transforms
-Evidence into actionable knowledge. It evaluates forecasting providers,
-measures forecast quality, compares competing models, evaluates calibration,
-computes objective performance metrics, supports the development of Forecast
-Policies, and preserves reproducible historical evaluation.
+Forecast Evaluations into objective knowledge. It evaluates forecasting
+providers, measures forecast quality, compares competing models, evaluates
+calibration, computes objective performance metrics, supports the development
+of Forecast Policies, and preserves reproducible historical evaluation.
 
 Forecast Intelligence does not merely average models, and it does not
 permanently privilege a provider or create forecasts. It is always derived
@@ -212,6 +224,111 @@ Provider, DRatings; Forecast Intelligence, comparative provider analysis, and
 calibration tooling remain approved direction rather than implemented
 capabilities.
 
+Forecast Intelligence is an analysis engine over Forecast Evaluations, not a
+provider feature. Its provider-neutral contract must work with one provider,
+multiple providers, internal models, and future Policy Forecast evaluations.
+PR10 will prove it with DRatings—the sole currently implemented MLB Forecast
+Provider—for MLB winner forecasts. Additional providers and direct
+cross-provider comparison remain future work.
+
+### Research Mode and Production Mode
+
+Research Mode learns from historical Evidence through immutable current
+Forecast Evaluations, explicit evaluation windows, and versioned intelligence
+rules. It may rerun analyses, compare hypotheses, identify strengths and
+weaknesses, and emit Forecast Intelligence Reports and analytical Policy
+Proposals. It cannot change production behavior.
+
+Production Mode applies an approved active Forecast Policy to eligible current
+Forecast Observations, produces a Policy Forecast, and combines it with current
+Market Evidence through Opportunity Analysis. It does not autonomously learn,
+replace, or promote its own policy.
+
+> **Research never changes production. Governance changes production.**
+
+### Forecast Intelligence Report
+
+One Forecast Intelligence Report measures one Forecast Provider within one
+domain and one explicit immutable evaluation window. Its scope includes
+provider and model/version scope, sport, competition, proposition type,
+Evaluation Eligibility Policy version, Forecast Evaluation algorithm version,
+and Forecast Intelligence algorithm version. Calibration buckets, probability
+bands, home/away and favorite/underdog splits, historical periods, and other
+supported segments remain sections within that report rather than fragmented
+first-class intelligence identities.
+
+The report is immutable, deterministic, reproducible derived Analysis—never
+Evidence or mutable accumulated state. It preserves included current Forecast
+Evaluation IDs, excluded and superseded IDs, window definition, actual coverage,
+derivation identity, generation timestamp, deterministic input digest, and
+limitations.
+It normally uses evaluations selected against the latest authoritative final,
+so superseded corrected-result evaluations are not double-counted. Earlier
+evaluation states may be replayed only under an explicit historical scope.
+
+Coverage, quality, calibration, segmentation, and trend sections disclose their
+sample sizes and gaps. At minimum the report supports Brier score, finite and
+infinite log-loss treatment, directional accuracy, probability distribution,
+bucket-level predicted and observed rates, and calibration difference. Small
+or unsupported samples remain visible as limited or unavailable. Any adequacy
+label or threshold is versioned analytical Policy, not universal truth or
+Evidence. The requested window, covered period, event count, completeness, and
+missing periods are explicit; PR10 does not silently analyze “all available
+data.”
+
+The report's deterministic identity includes its provider/domain scope,
+evaluation window and explicit analysis-as-of boundary, canonically ordered
+material evaluation identities, algorithm and rule versions, and every other
+output-affecting parameter. Wall-clock `generated_at` or `derived_at` remains
+non-identifying provenance unless explicitly declared as the analysis-as-of
+boundary. Filesystem timestamps, irrelevant input ordering, and unstated
+mutable repository state never affect identity.
+
+### Policy Hypothesis
+
+A Policy Hypothesis is PR10's immutable, versioned, measurable analytical
+candidate specification. It describes a forecasting approach evaluated or
+proposed for further Research and may preserve provider and model/version
+constraints, evaluation eligibility, selection and weighting, normalization or
+transformation, missing-provider and fallback behavior, implementation
+assumptions, and sport, competition, and proposition scope.
+
+It may be explicitly supplied Research input or derived Analysis. It is
+non-executable, has no lifecycle authority, never becomes Evidence, and is not
+a Forecast Policy or Policy Forecast. Historical replay or later prospective
+Shadow evaluation does not automatically convert it into production
+configuration.
+
+### Policy Proposal
+
+A Policy Proposal is the immutable advisory bridge from a Forecast Intelligence
+Report to Product Owner governance. It preserves report, proposal algorithm,
+Policy Hypothesis, benchmark, domain, and derivation identities; the
+hypothesis's provider/model constraints, eligibility, selection or weighting,
+normalization, missing-provider, fallback, and implementation rules; evaluation
+window and design; quantitative evidence; benchmarks; sample sizes; adverse
+segments; and limitations such as missing coverage, model change, in-sample
+optimization, selection bias, or absent prospective Shadow history.
+
+It may suggest rejection, continued Research, Shadow consideration or
+continuation, incumbent retention, activation consideration, or retirement or
+replacement consideration. It cannot perform any transition. It is not
+Evidence, an active Forecast Policy, a Policy Forecast, a wagering
+recommendation, or executable production configuration, and it cannot create a
+Forecast Policy. Only the Product Owner may approve creation or lifecycle
+advancement of a distinct Forecast Policy based on a Policy Hypothesis, move it
+to Shadow, activate, replace, retire, or reject it.
+Reports and proposals distinguish measured fact, derived interpretation,
+limitation, and suggested governance action. Neither declares a model
+“correct” or claims production authority.
+
+The proposal ID depends on report, Policy Hypothesis, benchmark, proposal
+algorithm, suggested-action rule, material limitation, and other
+output-affecting analytical identities. Its generation timestamp is metadata,
+not identity. Identical immutable material inputs and algorithm versions
+produce identical report, hypothesis, and proposal identities and analytical
+contents regardless of rerun time.
+
 ## Forecast Policy
 
 A Forecast Policy is a versioned, measurable, and replaceable rule set. Its
@@ -219,6 +336,12 @@ adoption and configuration must be justified by Forecast Intelligence. When
 executed for a current Canonical Event, it consumes eligible current Forecast
 Observations according to explicit rules. It preserves all input Forecast
 Observation identities and never mutates or replaces provider Evidence.
+
+Forecast Policy is a separate PR11 production concept: an immutable executable
+definition used to create Policy Forecasts. Product Owner governance may use a
+Policy Proposal concerning a Policy Hypothesis when approving creation or
+lifecycle advancement, but the hypothesis never automatically becomes the
+Forecast Policy.
 
 Candidate Forecast Policies may include a single-provider Forecast Policy,
 equal-weight combination, fixed weighted combination, exclusion of stale or

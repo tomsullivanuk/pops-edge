@@ -303,40 +303,71 @@ Evidence and reproduce distribution-aware Measurement; histories replay
 deterministically; current MLB Opportunity Board and World Cup outputs remain
 regression-compatible.
 
-### PR10 — Forecast Intelligence
+### PR10 — Forecast Intelligence Reports, Policy Hypotheses, and Proposals
 
-- Derive provider-neutral calibration, Brier, log-loss, historical-performance,
-  and longitudinal views from immutable Forecast Evaluations.
-- Keep every result reproducible; do not introduce mutable accumulated provider
-  totals.
-- Support later Policy comparison and configuration without supplying current
-  event probabilities.
+- Add provider-neutral Forecast Intelligence contracts demonstrated with the
+  sole currently implemented MLB Forecast Provider, DRatings, without requiring
+  or claiming a second provider.
+- Consume an explicit set of current Forecast Evaluations selected against
+  authoritative Outcome History; preserve included, excluded, and superseded
+  evaluation identities without double-counting corrected games.
+- Define immutable evaluation windows and deterministic coverage, aggregate
+  Brier/log-loss, calibration, bounded segment, trend, limitation, and
+  sample-adequacy analysis.
+- Produce an immutable Forecast Intelligence Report for one provider, domain,
+  and evaluation window, with complete algorithm and input provenance.
+- Define immutable, versioned, non-executable Policy Hypotheses as PR10
+  analytical candidate specifications without depending on the PR11 Forecast
+  Policy contract.
+- Produce an immutable analytical Policy Proposal that connects measured
+  findings and adverse evidence about one Policy Hypothesis to a suggested
+  Product Owner governance action.
+- Keep deterministic identities independent of wall-clock generation time;
+  explicit evaluation windows or analysis-as-of boundaries are material, while
+  `generated_at` or `derived_at` is provenance unless explicitly used as that
+  boundary.
+- Provide bounded offline fixtures, inspection tooling, focused tests, and
+  documentation; do not persist mutable cumulative totals.
+- Keep Research Mode non-executing: no second provider, weight optimization,
+  broad hyperparameter search, active Policy execution, Policy Forecast,
+  governance transition, Shadow production, Opportunity Board change,
+  market-relative or wagering evaluation, sizing, bankroll, automatic
+  activation, or production configuration mutation.
 
-**Gate:** Forecast Intelligence is replayable from immutable PR9 evaluations
-and remains separate from Forecast Policy and current-event execution.
+**Gate:** Reports, hypotheses, and proposals replay deterministically from
+immutable PR9 evaluations and explicit windows; identical material inputs and
+algorithm versions produce identical identities regardless of rerun time;
+limitations and sample sizes remain visible; no analytical artifact can create
+or activate a Forecast Policy. Research never changes production; Governance
+changes production.
 
 ### PR11 — Forecast Policy and Policy Forecast
 
-- Implement versioned Forecast Policy execution over eligible current Forecast
-  Observations.
+- Implement approved versioned Forecast Policy definitions and deterministic
+  current-event execution over eligible current Forecast Observations.
 - Produce immutable Policy Forecast derived Analysis with complete input and
   derivation identity.
 
 **Gate:** Policy execution is empirically configured, identity-preserving, and
-does not mutate or impersonate provider Evidence.
+does not mutate or impersonate provider Evidence. A PR10 Policy Hypothesis does
+not automatically become this separate executable production definition.
 
-### PR12 — Policy Proposal and Governance
+### PR12 — Product Owner Governance and Policy Lifecycle
 
-- Add explicit proposal, review, adoption, replacement, and retirement
-  boundaries for Forecast Policies.
+- Add explicit Product Owner governance records and lifecycle transitions for
+  Research, Shadow, Active, Retired, and Rejected policies.
+- Consume PR10 Policy Proposals as advisory inputs without allowing a proposal
+  or report to activate itself; governance may approve creation or advancement
+  of a distinct Forecast Policy based on a Policy Hypothesis.
 
 **Gate:** Policy lifecycle decisions remain reviewable and empirically linked
 without silently changing historical decisions.
 
 ### PR13 — Forecast Research Workspace
 
-- Add a bounded research surface over Evidence, Forecast Evaluation, Forecast
-  Intelligence, and Policy comparisons.
+- Add a polished bounded research presentation over Evidence, Forecast
+  Evaluation, Forecast Intelligence Reports, Policy Hypotheses, Policy
+  Proposals, and comparisons.
 
 **Gate:** research outputs remain derived, reproducible, and separate from
 production Opportunity Analysis and Execution.

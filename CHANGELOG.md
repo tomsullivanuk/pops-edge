@@ -152,6 +152,20 @@ The offline inspection and minimal replay summary introduce no Forecast
 Intelligence, market-relative evaluation, wagering evaluation, Policy Forecast,
 or Opportunity Board change. Forecast Intelligence remains PR10 scope.
 
+The approved PR10 documentation direction defines provider-neutral Forecast
+Intelligence Reports over explicit current Forecast Evaluations and immutable
+Policy Hypotheses plus analytical Policy Proposals demonstrated with DRatings
+alone. A Policy Hypothesis is a non-executable PR10 Research specification, not
+the PR11 Forecast Policy contract. The direction separates Research Mode from
+Production Mode, requires explicit evaluation windows, coverage, calibration,
+sample adequacy, included/excluded identities, and limitations, and prevents
+reports, hypotheses, or proposals from changing production. Explicit
+analysis-as-of boundaries affect deterministic identity; wall-clock generation
+timestamps remain non-identifying provenance.
+Product Owner governance records and lifecycle transitions remain PR12;
+Forecast Policy execution remains PR11. This documentation introduces no PR10
+implementation or production behavior.
+
 ## [v1.0.0] — World Cup baseline
 
 The existing production World Cup implementation is designated Pops' Edge

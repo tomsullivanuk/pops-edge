@@ -60,6 +60,15 @@ Observations, explicit eligibility decisions, deterministic forecast-quality
 scoring, and append-only evaluation history. Forecast Intelligence remains the
 next planned step; no Forecast Policy or Policy Forecast engine is implemented.
 
+The approved PR10 direction separates Research Mode from Production Mode.
+Provider-neutral Forecast Intelligence will derive immutable reports and
+non-executable Policy Hypotheses and Policy Proposals from explicit current
+Forecast Evaluations, demonstrated with DRatings as the sole implemented MLB
+Forecast Provider. PR11 Forecast Policies remain separate executable production
+definitions. Only later Product Owner governance may bridge a hypothesis to
+production authority: research itself cannot create or activate a policy or
+alter current decisions.
+
 ## Documentation
 
 - [Developer guide](DEVELOPER.md) — current World Cup workflows and behavior

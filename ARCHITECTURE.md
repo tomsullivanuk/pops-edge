@@ -72,7 +72,13 @@ Measurement
     ↓
 Forecast Evaluation
     ↓
-Forecast Intelligence
+Forecast Intelligence Report
+    ↓
+Policy Proposal
+    ↓
+Policy Hypothesis
+    ↓
+Product Owner Governance
     ↓
 Forecast Policy
     ↓
@@ -83,11 +89,13 @@ Opportunity Analysis
 Execution
 ```
 
-Evidence remains immutable. Forecast Evaluation, Forecast Intelligence, Policy
-Forecast, and Opportunity Analysis are derived and reproducible; they never
-become Evidence. Execution consumes derived results but does not define the
-Mission. This is approved architectural direction for PR9, not a statement
-that the associated contracts or engines are already implemented.
+Evidence remains immutable. Forecast Evaluation, Forecast Intelligence Report,
+Policy Hypothesis, Policy Proposal, Policy Forecast, and Opportunity Analysis
+are reproducible objects or derived Analysis; they never become Evidence.
+Execution consumes derived results but does not define the Mission. PR9
+Forecast Evaluation is implemented; Forecast Intelligence Report, Policy
+Hypothesis, Policy Proposal, governance, Forecast Policy, and Policy Forecast
+remain planned capabilities.
 
 Research supports this flow but is not its endpoint. Measurement exists to
 improve future decisions, and Forecast Policies remain valid only while
@@ -503,6 +511,151 @@ mutable total. It supports Forecast Policy comparison, selection,
 configuration, replacement, and empirical justification; it does not provide
 the probabilities for today's Canonical Event.
 
+Forecast Intelligence is an analysis engine over Forecast Evaluations, not a
+feature of a Forecast Provider. Its contracts must work with one provider,
+multiple providers, internal models, and future Policy Forecast evaluations.
+PR10 will demonstrate that provider-neutral boundary with DRatings because
+DRatings is the sole currently implemented MLB Forecast Provider; the
+architecture neither requires nor claims a second provider.
+
+#### Research Mode and Production Mode
+
+- **Research Mode** consumes immutable Forecast Evaluations, authoritative
+  Outcome History when needed to select current evaluations, an explicit
+  evaluation-window definition, and versioned intelligence rules. It may rerun
+  analyses and compare hypotheses. Its outputs are immutable Forecast
+  Intelligence Reports and analytical Policy Proposals.
+- **Production Mode** consumes an approved active Forecast Policy, eligible
+  current Forecast Observations, and current Market Evidence. It deterministically
+  produces Policy Forecast, Opportunity Analysis, Opportunity Board, and later
+  governed Execution. It does not autonomously learn, promote, replace, or
+  reconfigure its policy.
+
+> **Research never changes production. Governance changes production.**
+
+#### Forecast Intelligence Report
+
+The primary PR10 artifact is one immutable, deterministic, provider-neutral
+Forecast Intelligence Report measuring one Forecast Provider within one
+forecasting domain and one explicit evaluation window. Its identity and
+provenance include report and intelligence-algorithm IDs and versions;
+provider, model, and version scope; sport; competition; proposition type;
+requested window; Evaluation Eligibility Policy and Forecast Evaluation
+algorithm versions; included current evaluation IDs; excluded or superseded
+evaluation IDs; generation timestamp; deterministic input digest; and
+limitations. Situational segments are report sections, not separate
+first-class intelligence identities.
+
+The deterministic report ID includes every material, output-affecting input:
+provider/model scope; sport, competition, and proposition; evaluation-window
+definition and any explicit analysis-as-of boundary; canonically ordered
+included evaluation IDs; materially consumed excluded or superseded IDs;
+eligibility, evaluation, intelligence, segmentation, and adequacy algorithm
+versions; and other explicit parameters. It excludes wall-clock run time,
+filesystem timestamps, semantically irrelevant input ordering, and unstated
+mutable repository state. `generated_at` or `derived_at` is provenance metadata
+only unless that value is explicitly declared as the material analysis-as-of
+boundary.
+
+A report derives only from an explicit set of current Forecast Evaluations
+selected against each latest authoritative final Outcome Observation. It never
+queries unstated mutable repository state and never counts superseded
+evaluations as additional games. Explicitly scoped historical replay may select
+an earlier evaluation state, but must label that scope and preserve every
+included and excluded evaluation identity.
+
+Every report uses an immutable evaluation-window definition—initially the
+simplest explicit historical date range or fixture-defined window sufficient
+to prove PR10. It discloses the requested window, actual covered period, event
+count, gaps, and complete or partial coverage; “all available data” is not an
+implicit window. Future season, rolling-count, competition-period, or other
+window rules must be versioned and deterministic.
+
+Report sections preserve:
+
+- coverage: candidate, current, superseded, included, and excluded counts;
+  exclusion reasons; observed period; provider/model coverage; and gaps;
+- forecast quality: sample size, mean Brier, mean finite log loss, infinite
+  log-loss count, directional accuracy, and evaluated probability distribution;
+- calibration: versioned buckets with count, mean forecast probability,
+  observed frequency, calibration difference or error, and small-sample warning;
+- deterministic segments such as probability band, home/away,
+  favorite/underdog, or historical period, each with sample size and unsupported
+  sections shown as limited or unavailable; and
+- versioned non-overlapping or rolling historical trends without persisted
+  mutable cumulative totals.
+
+Sample adequacy is a structured analytical assessment, not Evidence or a
+universal truth. It discloses total and per-section sample sizes, coverage
+duration, model continuity, missing periods, and whether findings are merely
+descriptive or plausibly sufficient for policy consideration. Any adequacy
+threshold is explicit, versioned, reproducible, and retained as an analytical
+rule. One bucket or one observation never establishes calibration quality.
+
+#### Policy Hypothesis
+
+A Policy Hypothesis is PR10's immutable, versioned, measurable analytical
+candidate specification. It describes a forecasting approach that Forecast
+Intelligence has evaluated or proposes for further Research. It may be derived
+Analysis or explicitly supplied Research input and preserves hypothesis ID and
+version; provider and model/version constraints; evaluation eligibility and
+provider-selection rules; weights; normalization or transformation rules;
+missing-provider and fallback behavior; algorithm or implementation
+assumptions; and intended sport, competition, and proposition scope.
+
+A Policy Hypothesis is non-executable, has no lifecycle authority, is never
+Evidence, and is not a Forecast Policy or Policy Forecast. It may be replayed
+historically and may later be evaluated prospectively in Shadow. It does not
+automatically become production configuration. PR11 owns the separate
+executable Forecast Policy definition.
+
+#### Policy Proposal and Product Owner governance
+
+PR10 Forecast Intelligence may produce an immutable, deterministic,
+evidence-backed Policy Proposal. The proposal is advisory derived Analysis: it
+is never Evidence, an active Forecast Policy, a Policy Forecast, a wagering
+recommendation, or an executable lifecycle transition. It links one Forecast
+Intelligence Report to one versioned Policy Hypothesis and,
+where applicable, an incumbent or benchmark.
+
+The proposal preserves its own and derivation identity; report identity;
+Policy Hypothesis and benchmark identities; sport and proposition scope;
+provider/model constraints; selection or fixed-weight rules; normalization,
+missing-provider, and fallback behavior; implementation version; evaluation
+window and design classification; included sample; benchmark and later Shadow
+results; Brier, log loss, calibration, directional, segment, and sample-size
+evidence; and all adverse evidence and limitations. Limitations include
+inadequate sample, coverage gaps, model changes, in-sample optimization,
+selection bias, missing prospective Shadow history, and underperforming
+segments.
+
+The deterministic proposal ID includes the Forecast Intelligence Report ID,
+Policy Hypothesis ID/version, benchmark identities, proposal and
+suggested-action rule versions, material limitations, and every other
+output-affecting analytical input. Its generation timestamp is non-identifying
+provenance metadata. It never depends on wall-clock run time, filesystem state,
+irrelevant input order, or unstated mutable repository contents.
+
+A proposal may suggest rejection, continued Research, advancement to Shadow,
+continued Shadow evaluation, incumbent retention, consideration of activation,
+or consideration of retirement or replacement. A recommendation is not a
+lifecycle transition and cannot create a Forecast Policy. Only the Product
+Owner may approve creation or lifecycle advancement of a distinct Forecast
+Policy based on a Policy Hypothesis, move it to Shadow, activate, replace,
+retire, or reject it; those governance records and transitions remain PR12
+work. Forecast Intelligence analyzes hypotheses and proposes, Product Owner
+governance decides, the Forecast Policy engine executes a separately approved
+policy, and Opportunity Analysis consumes its Policy Forecast with Market
+Evidence.
+
+Reports and proposals distinguish measured fact, derived interpretation,
+limitation, and suggested governance action. Neither artifact declares a model
+“correct” or claims production authority.
+
+Identical immutable material inputs and identical algorithm versions produce
+identical Forecast Intelligence Report, Policy Hypothesis, and Policy Proposal
+identities and analytical contents, regardless of when the derivation is rerun.
+
 A Forecast Policy is a versioned, measurable, replaceable rule set. Forecast
 Intelligence justifies and informs its adoption and configuration. When the
 Policy is executed for a current Canonical Event, it consumes eligible current
@@ -530,30 +683,42 @@ workflow directly compares DRatings Evidence with Kalshi Evidence; it is the
 implemented single-provider precursor, not an implemented Forecast
 Intelligence, Forecast Policy, or Policy Forecast engine.
 
-Historical learning and Policy governance follow this flow:
+Research Mode follows this flow:
 
 ```text
 Forecast Observations + Outcome Observations
                     ↓
           Forecast Evaluations
                     ↓
-         Forecast Intelligence
+      Current Evaluation Selection
                     ↓
-Forecast Policy selection and configuration
+    Forecast Intelligence Report
+                    ↓
+           Policy Proposal
+                    ↓
+          Policy Hypothesis
+                    ↓
+         Product Owner Review
 ```
 
 Current-event execution follows a separate flow:
 
 ```text
+       Approved Forecast Policy
+                    +
 Eligible current Forecast Observations
                     ↓
        Forecast Policy execution
                     ↓
              Policy Forecast
+                    +
+        Current Market Evidence
                     ↓
           Opportunity Analysis
                     ↓
-                Execution
+          Opportunity Board
+                    ↓
+         Governed Execution
 ```
 
 Forecast Intelligence does not replace current Forecast Observations. Forecast
