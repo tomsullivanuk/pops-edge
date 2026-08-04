@@ -80,10 +80,11 @@ observation eligibility/selection are explicit, versioned, deterministic, and
 fail closed. Each Policy Forecast is canonical only to its specific policy
 execution; multiple outputs may coexist for an event. Policies and forecasts
 contain no approval or lifecycle state; PR12 governance alone determines which
-output, if any, has production authority. The current Opportunity Board continues
-to consume DRatings directly until a bounded PR14 consumer migration.
+policy, if any, has production authority. PR14 remains responsible for selecting
+a compatible Policy Forecast execution for consumption. The current Opportunity
+Board continues to consume DRatings directly until that bounded migration.
 
-The approved PR12 architecture treats governance as immutable Product Owner
+PR12 implements governance as immutable Product Owner
 decisions over exactly one Forecast Policy. Append-only Governance History
 derives Research, Shadow, Production, Retired, and terminal Rejected lifecycle
 views and resolves at most one production-authorized policy per immutable
@@ -91,8 +92,14 @@ sport/competition/proposition scope at an explicit historical boundary.
 Material effective decision time—not input or file order—governs replay, and
 simultaneous same-scope conflicts fail closed. Shadow remains
 measurement-only, Research artifacts cannot grant authority, and PR12 does not
-change Forecast Policy execution or the Opportunity Board. PR12 implementation
-has not begun.
+change Forecast Policy execution or the Opportunity Board. The fixture-only
+inspection command is `inspect_forecast_governance.py`.
+
+The stable Product Owner ID is identifying; its optional display label is not.
+Equivalent same-time decisions preserve all supporting records without false
+ambiguity. Production-material conflicts fail scope resolution closed, while
+unrelated research-only conflicts remain visible diagnostics without erasing
+an otherwise unambiguous authorization.
 
 ## Documentation
 

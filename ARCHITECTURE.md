@@ -701,7 +701,7 @@ a separate policy based on them.
 
 #### Governance Record and event-sourced governance
 
-PR12 will define `GovernanceRecord` as one immutable, append-only Product Owner
+PR12 defines `GovernanceRecord` as one immutable, append-only Product Owner
 decision governing exactly one already-defined immutable Forecast Policy. A
 record never governs multiple policies, a policy family, a Forecast Provider,
 or a Policy Hypothesis. It is a governance-domain object derived from an
@@ -750,12 +750,14 @@ explicit later records rather than mutations.
 
 Governance Record identity depends on every material governance input,
 including policy identity, governance schema/algorithm versions, decision and
-`decision_effective_at`, Product Owner identity, Governance Scope identity,
+`decision_effective_at`, stable Product Owner ID, Governance Scope identity,
 canonically ordered supporting analytical references, rationale, notes, and
 limitations. Changing effective time or scope changes record identity. Identity
 excludes repository paths, filesystem timestamps, wall-clock generation
-metadata, and derived lifecycle. Identical material decisions and references
-reproduce the same identity.
+metadata, Product Owner display name, and derived lifecycle. Display name is
+optional descriptive metadata; changing it without changing the stable Product
+Owner ID does not change governance identity. Identical material decisions and
+references reproduce the same identity.
 
 `decision_effective_at` is the authoritative time at which the Product Owner
 decision takes effect. It is material to record identity, policy lifecycle,
@@ -765,7 +767,7 @@ or serialization order; none of those may determine governance chronology.
 
 #### Governance History and production-policy resolution
 
-`GovernanceHistory` will be an immutable append-only ordered collection of
+`GovernanceHistory` is an immutable append-only ordered collection of
 Governance Records. It preserves chronology and replay order, rejects duplicate
 record IDs, and derives policy-level and scope-level views; it never persists an
 authoritative mutable cache. Records replay chronologically by
@@ -773,6 +775,11 @@ authoritative mutable cache. Records replay chronologically by
 and filesystem time never break a material tie. Duplicate identical record IDs
 are rejected without creating a chronology event. Materially conflicting
 same-time records fail closed when no explicit authoritative ordering exists.
+Multiple same-policy records with the same decision, scope, effective time, and
+stable Product Owner ID have an equivalent lifecycle effect even when their
+rationale, notes, or supporting Analysis differ. Replay preserves every such
+supporting record ID and does not invent an authoritative record among them.
+Different same-time decisions for one policy remain materially conflicting.
 
 Historical replay accepts an explicit material query boundary such as `as_of`
 and includes only records with `decision_effective_at <= as_of`. The query
@@ -791,6 +798,12 @@ does not disturb current authority. If replay yields no current Production
 authority, or chronology is ambiguous or conflicting, resolution returns none
 and fails closed. Policies in another scope never conflict.
 
+Policy conflicts material to current or candidate Production authority fail
+the scope resolution closed and preserve all conflict record IDs. A conflict
+confined to a policy with only Research or Shadow decisions remains visible in
+scope diagnostics but does not erase an otherwise unambiguous production
+authorization.
+
 Thus `A Production → B Production → B Retire` resolves to none, not A;
 `A Production → B Shadow` resolves to A; and simultaneous Production decisions
 for A and B in the same scope without authoritative ordering are ambiguous and
@@ -801,8 +814,8 @@ decision is `Shadow`. They may execute and produce Policy Forecasts solely for
 measurement, and never drive Opportunity Analysis or authorize wagering.
 
 Minimal transition validation also fails closed when a decision follows Reject
-for the same immutable policy; same-time decisions conflict for one policy;
-same-time Production decisions conflict within one scope; record and policy
+for the same immutable policy; different same-time decisions conflict for one
+policy; same-time Production decisions conflict within one scope; record and policy
 scope disagree; policy identity is unknown; or effective time or Product Owner
 identity is missing. PR12 does not require a broader transition framework.
 
@@ -843,7 +856,7 @@ Derived lifecycle at R3: Production
 The three records and all Policy Forecasts produced under their historical
 contexts remain immutable after R3.
 
-PR12 will document and eventually implement only Governance Record, Governance
+PR12 implements only Governance Scope, Governance Record, Governance
 History, deterministic replay, lifecycle derivation, production and Shadow
 resolution, bounded inspection, fixtures, and focused tests. It will not change
 Forecast Policy execution, add providers, implement Opportunity Analysis or

@@ -389,10 +389,9 @@ market, governance, Opportunity Board, wagering, or network action.
 
 > **Research never changes production. Governance changes production.**
 
-## Planned PR12 governance boundary
+## PR12 governance boundary
 
-PR12 is architecture-approved but not implemented. It will introduce two
-immutable contracts and derived resolvers:
+PR12 implements two immutable contracts and derived resolvers:
 
 - `GovernanceRecord`: one append-only Product Owner decision governing exactly
   one immutable Forecast Policy, with deterministic Governance Scope, material
@@ -429,8 +428,24 @@ material tie. Same-time policy conflicts, simultaneous Production decisions in
 one scope, policy/scope mismatch, unknown policy, missing effective time or
 Product Owner, and any decision after terminal Reject fail closed.
 
-PR12 will add governance contracts, replay, resolvers, bounded fixtures,
-inspection, and focused tests only. It will not change Forecast Policy
+The stable Product Owner ID—not the optional display name—is material to record
+identity. Equivalent same-time records with the same policy, scope, decision,
+effective time, and stable owner ID preserve their complete supporting record
+set without conflict. Different same-time decisions conflict. Conflicts for a
+current or candidate Production policy fail scope resolution closed; unrelated
+Research/Shadow-only conflicts remain visible without removing otherwise
+unambiguous authority. History construction canonicalizes a copied tuple,
+append returns a new history, and duplicate IDs never mutate prior history.
+
+Run the deterministic offline inspection with:
+
+```bash
+./venv/bin/python inspect_forecast_governance.py \
+  tests/fixtures/forecast_governance_cases.json
+```
+
+PR12 adds governance contracts, replay, resolvers, bounded fixtures,
+inspection, and focused tests only. It does not change Forecast Policy
 execution, Opportunity Analysis, Opportunity Board, providers, market
 valuation, wagering, or World Cup workflows. PR13 remains the Research
 Workspace and PR14 remains Policy Forecast consumer migration.

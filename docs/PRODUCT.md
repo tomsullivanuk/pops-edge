@@ -371,8 +371,8 @@ Policy based on those Research artifacts, while their contracts remain separate.
 
 ## Product Owner Governance
 
-PR12 defines the architecture for Product Owner governance without implementing
-it. `GovernanceRecord` is one immutable append-only Product Owner decision about
+PR12 implements Product Owner governance. `GovernanceRecord` is one immutable
+append-only Product Owner decision about
 exactly one immutable Forecast Policy. It never governs a provider, policy
 family, multiple policies, or Policy Hypothesis, and it is Governance rather
 than Evidence, Forecast Intelligence, Forecast Policy, or Policy Forecast.
@@ -387,6 +387,8 @@ Material governance inputs determine identity; wall-clock generation metadata,
 repository location, filesystem timestamps, and derived lifecycle do not.
 Changing scope or effective time changes identity. `generated_at`, `recorded_at`,
 `imported_at`, input order, and file order never establish governance chronology.
+The stable Product Owner ID is material; an optional display name is descriptive
+metadata and does not change Governance Record identity.
 
 The initial Governance Scope is deterministically defined by the governed
 Forecast Policy's sport, competition, and proposition type, such as
@@ -423,9 +425,16 @@ are resolved separately and exist solely for measurement.
 
 Replay never breaks a material tie with record ID, input order, serialization
 order, filenames, or filesystem time. It also fails closed on a decision after
-terminal Reject, same-time policy conflicts, simultaneous Production decisions
-within one scope, unknown policy identity, policy/scope mismatch, or missing
+terminal Reject, different same-time policy decisions, simultaneous Production
+decisions within one scope, unknown policy identity, policy/scope mismatch, or missing
 effective time or Product Owner identity.
+
+Equivalent records with the same policy, scope, decision, effective time, and
+stable Product Owner ID are one lifecycle effect with every supporting record
+preserved. Different same-time decisions conflict. A conflict involving current
+or candidate Production authority fails scope resolution closed; an unrelated
+Research/Shadow-only conflict remains visible without changing otherwise
+unambiguous production authority.
 
 Research never creates authority. A Policy Hypothesis and Policy Proposal may
 support the Product Owner's decision about a separate Forecast Policy, but only

@@ -232,9 +232,20 @@ authorized policy per immutable sport/competition/proposition scope. Material
 never breaks simultaneous conflicts, which fail closed. Policy-level lifecycle
 and scope-level authority remain separate derived views, while Shadow resolution
 is measurement-only. Supporting Forecast Intelligence, Policy Hypotheses, and
-Policy Proposals remain referenced non-executable Analysis. PR12 implementation,
-Forecast Policy execution changes, Opportunity Analysis migration, wagering,
-and PR13/PR14 work are not included in this documentation pass.
+Policy Proposals remain referenced non-executable Analysis.
+
+PR12 implements that bounded governance layer with deterministic Governance
+Scope and Governance Record identities, explicit Product Owner and effective
+decision time, immutable Governance History, historical lifecycle views,
+scope-level production resolution, structured conflicts, fixture-only
+inspection, and regression coverage. It does not change Forecast Policy
+execution, Opportunity Analysis, wagering, or begin PR13/PR14 work.
+The final governance-semantics audit makes stable Product Owner ID material but
+keeps optional display name descriptive, distinguishes equivalent same-time
+decisions from conflicting decisions, retains complete supporting and conflict
+record provenance, and fails scope authority closed only for conflicts material
+to current or candidate Production authority. Unrelated research-only conflict
+diagnostics remain visible without mutating valid production resolution.
 
 ## [v1.0.0] — World Cup baseline
 

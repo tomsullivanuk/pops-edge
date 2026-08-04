@@ -1,0 +1,49 @@
+{
+  "fixture_version": "1",
+  "product_owner": {
+    "product_owner_id": "product-owner:pops-edge-owner",
+    "display_name": "Pops Edge Product Owner"
+  },
+  "as_of_boundaries": [
+    "2026-08-01T08:30:00-05:00",
+    "2026-08-01T09:30:00-05:00",
+    "2026-08-01T10:15:00-05:00",
+    "2026-08-01T10:45:00-05:00",
+    "2026-08-01T11:15:00-05:00",
+    "2026-08-01T11:45:00-05:00",
+    "2026-08-01T12:15:00-05:00",
+    "2026-08-01T12:45:00-05:00",
+    "2026-08-01T13:15:00-05:00"
+  ],
+  "records": [
+    ["mlb-a", "research", "2026-08-01T09:00:00-05:00"],
+    ["mlb-a", "shadow", "2026-08-01T10:00:00-05:00"],
+    ["mlb-a", "production", "2026-08-01T11:00:00-05:00"],
+    ["mlb-c", "shadow", "2026-08-01T11:30:00-05:00"],
+    ["mlb-b", "production", "2026-08-01T12:00:00-05:00"],
+    ["mlb-b", "retire", "2026-08-01T13:00:00-05:00"],
+    ["mlb-d", "reject", "2026-08-01T10:30:00-05:00"],
+    ["soccer-a", "production", "2026-08-01T10:00:00-05:00"]
+  ],
+  "conflict_cases": [
+    "equivalent-same-time-production",
+    "material-policy-conflict",
+    "unrelated-research-conflict",
+    "decision-after-reject",
+    "same-time-policy-decision-conflict",
+    "simultaneous-production-conflict",
+    "unknown-forecast-policy",
+    "governance-scope-mismatch"
+  ],
+  "invalid_construction_cases": [
+    "missing-product-owner",
+    "missing-decision-effective-at",
+    "naive-decision-effective-at",
+    "malformed-analytical-reference",
+    "unsupported-governance-version"
+  ],
+  "limitations": [
+    "synthetic fixture-only governance evidence",
+    "no operational production selection"
+  ]
+}

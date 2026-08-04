@@ -45,7 +45,10 @@ capabilities are implemented. PR10's provider-neutral Forecast Intelligence
 Report, Policy Hypothesis, and advisory Policy Proposal foundation is also
 implemented. PR11's executable Policy definitions, deterministic batch
 execution, and Policy Forecast foundation are implemented pending review.
-PR12 governance architecture is documented; implementation remains PR12. The
+PR12 governance records, append-only replay, lifecycle views, and fail-closed
+production-policy resolution are implemented, including stable-owner identity,
+equivalent same-time decisions, complete provenance, and production-material
+conflict propagation. The
 Research Workspace remains PR13, and
 Policy Forecast consumer integration remains PR14. v1.1.0 remains unreleased.
 

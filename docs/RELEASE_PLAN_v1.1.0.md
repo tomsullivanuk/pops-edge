@@ -421,8 +421,8 @@ behavior is added.
   policy removes authority; no earlier policy resumes implicitly. A
   non-Production decision for another policy does not disturb current authority.
   Policies in different scopes resolve independently.
-- Fail closed on decisions after terminal Reject, same-time policy conflicts,
-  simultaneous same-scope Production decisions, scope/policy mismatch, unknown
+- Fail closed on decisions after terminal Reject, different same-time policy
+  decisions, simultaneous same-scope Production decisions, scope/policy mismatch, unknown
   policy, or missing effective time or Product Owner. Never order material ties
   by input, serialization, filename, record ID, operational timestamp, or
   filesystem metadata.
@@ -437,6 +437,17 @@ historical lifecycle and authority without mutable state; Reject is terminal;
 missing or conflicting production authority fails closed; Research artifacts
 remain non-executable; changing effective time or scope changes record identity;
 PR14 consumer migration remains deferred.
+
+**Implemented boundary:** PR12 now provides immutable deterministic Governance
+Scope and Governance Record contracts, append-only Governance History,
+historical lifecycle derivation, structured fail-closed conflict diagnostics,
+and exclusive production-policy resolution from a caller-supplied immutable
+policy registry. Fixture-only inspection is available; no operational workflow
+selects or executes a governed policy, and PR13/PR14 remain deferred.
+Stable Product Owner ID is identifying while display name is optional metadata;
+equivalent same-time decisions retain all supporting record IDs, materially
+different decisions fail closed, and only conflicts involving current or
+candidate Production authority invalidate an otherwise resolved scope.
 
 ### PR13 — Forecast Research Workspace
 
