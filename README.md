@@ -72,13 +72,15 @@ game, reconciles evaluation-level result/favorite/probability segments, excludes
 forecast ties from directional-accuracy denominators, and derives advisory
 proposal actions from a versioned rule with factual benchmark-absence reasons.
 
-PR11 is architecture-approved but not implemented. It will define a Forecast
-Policy as a provider-neutral immutable executable specification, apply it through
-an immutable explicit batch Forecast Policy Execution, and emit one independently
-replayable Policy Forecast per Canonical Event. Rule stages and production
+PR11 implements a Forecast Policy as a provider-neutral immutable executable
+specification, applies it through an immutable explicit batch Forecast Policy
+Execution, and emits one independently replayable Policy Forecast per Canonical
+Event. Rule stages and production
 observation eligibility/selection are explicit, versioned, deterministic, and
-fail closed. Policies contain no approval or lifecycle state; PR12 governance
-alone determines production authority. The current Opportunity Board continues
+fail closed. Each Policy Forecast is canonical only to its specific policy
+execution; multiple outputs may coexist for an event. Policies and forecasts
+contain no approval or lifecycle state; PR12 governance alone determines which
+output, if any, has production authority. The current Opportunity Board continues
 to consume DRatings directly until a bounded PR14 consumer migration.
 
 ## Documentation

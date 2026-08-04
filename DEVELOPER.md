@@ -339,10 +339,9 @@ Run the bounded inspection explicitly:
 The command consumes fixtures only. It performs no network, Kalshi, Opportunity
 Board, governance, Forecast Policy, Policy Forecast, or Execution action.
 
-## Planned PR11 production forecast boundary
+## Forecast Policy production forecast boundary
 
-PR11 is documentation-approved but not implemented. It will introduce three
-separate immutable contracts:
+`forecast_policy.py` implements three separate immutable PR11 contracts:
 
 - `Forecast Policy`: a complete provider-neutral executable specification with
   domain/provider constraints and versioned compatibility, production
@@ -350,11 +349,11 @@ separate immutable contracts:
   normalization, missing-provider, fallback, and output-validation stages;
 - `Forecast Policy Execution`: one deterministic explicit batch context with
   scope/as-of boundary, candidate/included/excluded observation identities and
-  reasons, event/output identities, statistics, warnings, limitations, and
-  non-identifying generation time; and
-- `Policy Forecast`: the independently identified event-level canonical
-  internal probability distribution with complete input and stage-decision
-  provenance.
+  reasons, identified event contexts and conflicts, event/output identities,
+  statistics, warnings, and limitations; and
+- `Policy Forecast`: the independently identified event-level canonical output
+  of its specific execution, with complete input, context, and stage-decision
+  provenance. It is not globally or production canonical.
 
 Execution consumes supplied immutable Forecast Observations; it never discovers
 events, fetches providers, or reads mutable production configuration. Each stage
@@ -363,14 +362,30 @@ dynamic plug-in framework. PR9 historical Evaluation Eligibility is not reused
 as PR11 production observation eligibility. The initial rule selects the unique
 latest eligible observation before the explicit analysis-as-of boundary and
 fails closed on a latest-timestamp tie rather than using input order.
+Execution identity is derived from material inputs before output creation;
+completed output IDs are reconciliation references only. Canonical execution and
+forecast serialization omit wall-clock run time. Reason-code counts are
+overlapping observation- and event-level occurrences and need not sum to a
+population count.
 
-The initial offline demonstration will select the latest eligible validated
+The initial offline demonstration selects the latest eligible validated
 DRatings MLB winner observation before an explicit analysis-as-of boundary,
-apply identity transformation and weight `1.0`, validate the complete binary
+applies identity transformation and weight `1.0`, validates the complete binary
 distribution without silent correction, and fail closed with no fallback when
 the provider is absent. This neither approves nor activates the policy. PR12
-owns governance and lifecycle state. PR14, not PR11, will separately migrate
-Opportunity Analysis and the Opportunity Board to Policy Forecast inputs.
+owns governance and lifecycle state and will select any production-authoritative
+Policy Forecast. PR14, not PR11, will separately migrate Opportunity Analysis
+and the Opportunity Board to that authorized input.
+
+Run the bounded fixture inspection with:
+
+```bash
+./venv/bin/python inspect_forecast_policy.py \
+  tests/fixtures/forecast_policy_cases.json
+```
+
+The inspection consumes supplied fixtures only. It performs no provider,
+market, governance, Opportunity Board, wagering, or network action.
 
 > **Research never changes production. Governance changes production.**
 

@@ -362,10 +362,13 @@ wagering evaluation, sizing, bankroll, or Execution behavior.
   weighting, normalization, missing-provider, fallback, and validation stages.
 - Implement immutable Forecast Policy Execution as an explicit deterministic
   batch context with candidate/included/excluded observation provenance,
-  reasons, scope/as-of boundary, statistics, warnings, and output identities.
+  reasons, identified material event contexts and conflicts, scope/as-of
+  boundary, statistics, warnings, and output identities. Derive its identity
+  before output creation; completed output IDs are reconciliation references.
 - Produce independently identified immutable Policy Forecast derived Analysis
   for each Canonical Event with complete input, stage-decision, distribution,
   validation, precision, limitation, and derivation provenance.
+  Each is canonical to its specific execution, not globally or for production.
 - Demonstrate a supplied DRatings MLB winner policy: unique latest eligible
   validated pregame observation before explicit analysis-as-of, failing closed
   on a latest-timestamp tie; identity transform;
@@ -381,6 +384,20 @@ closed; Evidence is never mutated or impersonated. Historical Evaluation
 Eligibility remains distinct from production observation eligibility. A PR10
 Policy Hypothesis does not automatically become this separate executable
 production definition, and offline execution does not imply active status.
+Wall-clock run time is absent from canonical analytical serialization. PR12
+governance will select which Policy Forecast, if any, has production authority;
+PR14 will consume that authorized output.
+
+**Implemented boundary:** immutable provider-neutral Forecast Policy and
+versioned rule components; distinct structured production eligibility;
+deterministic unique-latest selection; exact Decimal identity transformation,
+weight `1.0`, and complete-distribution validation; immutable multi-event batch
+execution; independently replayable Policy Forecasts; structured unresolved
+events and overlapping reason-code occurrence counts; acyclic execution/output
+identity; identified event-context provenance; deterministic serialization;
+compact synthetic fixtures; offline inspection; and focused tests. No governance state, provider
+access, automatic policy selection, Opportunity Board migration, or wagering
+behavior is added.
 
 ### PR12 — Product Owner Governance and Policy Lifecycle
 

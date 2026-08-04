@@ -25,7 +25,7 @@ boards, portfolio and ladder views, wager log, CLV, archives, and web reports.
     Evaluations.
 11. Implement provider-neutral immutable Forecast Policy definitions,
     versioned rule stages, deterministic batch execution, and independently
-    replayable Policy Forecasts.
+    replayable policy-relative Policy Forecasts.
 12. Add Product Owner governance records and Research, Shadow, Active, Retired,
     and Rejected lifecycle transitions.
 13. Add the Forecast Research Workspace.
@@ -41,10 +41,10 @@ The implemented and validated baseline through PR6 is recorded in
 architecture adds Outcome Evidence and Forecast Evaluation; those PR9
 capabilities are implemented. PR10's provider-neutral Forecast Intelligence
 Report, Policy Hypothesis, and advisory Policy Proposal foundation is also
-implemented. Separate executable Policy definitions and batch execution remain
-PR11, governance lifecycle remains PR12, the Research Workspace remains PR13,
-and Policy Forecast consumer integration remains PR14. v1.1.0 remains
-unreleased.
+implemented. PR11's executable Policy definitions, deterministic batch
+execution, and Policy Forecast foundation are implemented pending review.
+Governance lifecycle remains PR12, the Research Workspace remains PR13, and
+Policy Forecast consumer integration remains PR14. v1.1.0 remains unreleased.
 
 PR2 selected a licensed official MLB feed as the production identity/pitcher
 strategy, with MLB `gamePk` canonical, and made forecast-provider licensing a

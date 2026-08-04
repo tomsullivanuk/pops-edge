@@ -190,7 +190,8 @@ no synthetic benchmark is introduced.
 The approved PR11 architecture defines Forecast Policy as a provider-neutral
 immutable executable specification, Forecast Policy Execution as an immutable
 explicit batch context, and Policy Forecast as independently replayable
-event-level derived Analysis and Pops' Edge's canonical internal forecast.
+event-level derived Analysis that is canonical only to its specific policy
+execution, not globally or for production.
 Execution uses versioned compatibility, production eligibility, observation and
 provider selection, transformation, weighting, normalization, fallback, and
 validation stages; invalid or unresolved inputs fail closed. Policies contain
@@ -200,6 +201,26 @@ policy with latest eligible pregame selection, identity transform, weight
 `1.0`, complete-distribution validation, and no fallback. Opportunity Board
 consumer migration is deliberately separated into PR14; release hardening moves
 to PR15. This documentation adds no PR11 implementation or production behavior.
+
+PR11 implements the provider-neutral Forecast Policy execution foundation.
+Immutable executable policy specifications preserve versioned bounded rule
+components without governance state. Distinct structured production eligibility
+and unique-latest selection process supplied Forecast Observations in immutable
+multi-event batch executions; ambiguous, missing, invalid, incompatible, or
+chronologically unresolved inputs fail closed. Event-level Policy Forecasts
+preserve exact Decimal source distributions, identity transformation, fixed
+weight `1.0`, no-fallback decisions, complete rule-stage provenance, validation,
+and deterministic identity. A compact synthetic fixture and offline inspection
+exercise two successful events alongside unresolved cases. No provider access,
+Opportunity Board migration, governance, market valuation, or wagering behavior
+is introduced.
+
+The PR11 boundary audit makes execution identity explicitly acyclic, identifies
+and preserves every material event context, removes wall-clock time from
+canonical analytical contracts, reconciles completed output references, and
+labels reason-code totals as overlapping occurrences. Multiple Policy Forecasts
+may coexist for an event; PR12 alone will govern production authority and PR14
+will migrate the downstream consumer.
 
 ## [v1.0.0] — World Cup baseline
 

@@ -96,9 +96,10 @@ Policy Hypothesis, Policy Proposal, Forecast Policy Execution, Policy Forecast,
 and Opportunity Analysis are reproducible objects or derived Analysis; they
 never become Evidence.
 Execution consumes derived results but does not define the Mission. PR9
-Forecast Evaluation and the PR10 Forecast Intelligence Report, Policy
-Hypothesis, and Policy Proposal foundation are implemented. Governance,
-Forecast Policy, and Policy Forecast remain planned capabilities.
+Forecast Evaluation, the PR10 Forecast Intelligence Report, Policy Hypothesis
+and Policy Proposal foundation, and the PR11 Forecast Policy, batch execution,
+and Policy Forecast foundation are implemented. Governance and Policy Forecast
+consumer integration remain planned capabilities.
 
 Research supports this flow but is not its endpoint. Measurement exists to
 improve future decisions, and Forecast Policies remain valid only while
@@ -710,37 +711,46 @@ collects provider data autonomously; collection remains upstream.
 The execution preserves execution ID; policy ID/version; execution algorithm
 version; scope and any analysis-as-of boundary; candidate, included, and
 excluded Forecast Observation IDs with structured reasons; Canonical Event IDs;
-produced Policy Forecast IDs; rule-component identities; deterministic input
-digest; statistics, warnings, and limitations; and a non-identifying
-`generated_at`. Its identity depends on the policy, canonical immutable input
-set, explicit scope/as-of boundary, algorithm version, and material parameters,
-not runtime, filesystem or input order without semantics, repository state, or
-governance lifecycle. One execution may cover multiple events, but no mutable
-Policy Forecast Set is introduced.
+identified material event contexts and conflicts; produced Policy Forecast IDs;
+rule-component identities; deterministic input digest; statistics, warnings,
+and limitations. Its identity is derived before any Policy Forecast exists and
+depends only on the policy, canonical immutable input set, explicit scope/as-of
+boundary, algorithm version, material event-context identities, and material
+parameters. Produced Policy Forecast IDs are completion references and never
+feed back into execution identity. Runtime, filesystem or incidental input
+order, repository state, and governance lifecycle are non-identifying. One
+execution may cover multiple events, but no mutable Policy Forecast Set is
+introduced.
 
 #### Policy Forecast
 
-A Policy Forecast is the immutable canonical internal forecast produced by one
+A Policy Forecast is the immutable canonical analytical result of one specific
 Forecast Policy Execution for one Canonical Event and proposition. It is
 derived Analysis, never Evidence, and answers which complete probability
-distribution Pops' Edge deterministically produced from which inputs and rules.
+distribution that policy execution deterministically produced from which inputs
+and rules. Multiple valid Policy Forecasts may coexist for one event and
+proposition. None is globally canonical or production-authoritative before PR12
+governance selection.
 
 It preserves its ID and deterministic digest; execution and policy IDs/versions;
 event and domain scope; output algorithm version; candidate, included, and
 excluded Forecast Observation IDs; provider/model/version identities; input
 probabilities and compatibility limitations; every material eligibility,
 selection, provider-selection, transformation, weighting, normalization,
-fallback, and validation decision with rule-component identity; complete output
+fallback, and validation decision with rule-component identity; identified
+event context and its source-object references; complete output
 distribution with outcome semantics and arithmetic precision; validation
-status, issues, limitations, analysis-as-of boundary, and non-identifying
-generation timestamp. It contains no market price, expected value, Kelly or
+status, issues, limitations, and analysis-as-of boundary. Wall-clock generation
+time is absent from canonical analytical serialization. It contains no market price, expected value, Kelly or
 bankroll policy, position, wager recommendation, order, activation state, or
 Product Owner approval state.
 
-Opportunity Analysis is intended to apply a Policy Forecast to compatible
-current Market Evidence. The current PR7/PR8 MLB workflow directly compares
+PR12 governance will select which otherwise-valid Policy Forecast, if any, has
+production authority. PR14 Opportunity Analysis is intended to apply that
+production-authoritative Policy Forecast to compatible current Market Evidence.
+The current PR7/PR8 MLB workflow directly compares
 DRatings Evidence with Kalshi Evidence and remains the implemented precursor.
-PR11 will create Policy Forecasts but will not redesign that consumer. A later
+PR11 creates Policy Forecasts but does not redesign that consumer. A later
 bounded PR14 will migrate Opportunity Analysis and the Opportunity Board to
 consume Policy Forecast identities; until then no documentation claims the
 consumer integration is implemented. Market-relative analysis, wagering Policy,
@@ -798,15 +808,17 @@ infers weights, falls back to market probability, or emits a partial
 distribution as authoritative. Fallback behavior and invocation are explicit,
 versioned, output-affecting provenance.
 
-PR11's bounded demonstration is a supplied, offline DRatings MLB winner policy:
+PR11 implements a bounded supplied, offline DRatings MLB winner policy:
 latest eligible validated pregame observation before the explicit analysis-as-of
 boundary; identity transformation; weight `1.0`; complete two-outcome
 distribution validation without silent correction; fail closed when DRatings is
 missing; and no fallback. This demonstrates a deterministic production contract,
 not empirical approval, active status, provider access, or governance authority.
-PR11 will add immutable policy, rule-component, batch-execution, and event-level
-forecast contracts plus deterministic serialization, fixtures, inspection, and
-tests only. PR12 retains all approval and lifecycle behavior.
+`forecast_policy.py` provides immutable policy, rule-component, production
+eligibility, batch-execution, and event-level forecast contracts plus exact
+Decimal execution. `inspect_forecast_policy.py` demonstrates deterministic
+fixture-only execution. PR12 retains all approval and lifecycle behavior, and
+PR14 retains Opportunity Analysis consumer migration.
 
 Research Mode follows this flow:
 

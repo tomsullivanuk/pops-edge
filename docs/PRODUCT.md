@@ -363,11 +363,11 @@ determined solely by material executable specification inputs and versions, not
 wall-clock time, filesystem or repository state, Product Owner identity, or
 governance lifecycle.
 
-Forecast Policy is a separate PR11 production concept. A PR10 Policy Hypothesis
-is analytical, measurable, replayable, and non-executable; a Policy Proposal is
-advisory. Neither automatically becomes a Forecast Policy. Future Product Owner
-governance may authorize a distinct complete Forecast Policy based on those
-Research artifacts, while their contracts remain separate.
+Forecast Policy is a separate implemented PR11 production contract. A PR10
+Policy Hypothesis is analytical, measurable, replayable, and non-executable; a
+Policy Proposal is advisory. Neither automatically becomes a Forecast Policy.
+Future Product Owner governance may authorize a distinct complete Forecast
+Policy based on those Research artifacts, while their contracts remain separate.
 
 ### Forecast Policy Execution
 
@@ -376,26 +376,36 @@ deterministic application of one supplied Forecast Policy to one explicit input
 scope. One execution may cover an MLB slate or other competition/date scope and
 produce multiple independently identified, replayable Policy Forecasts. It
 preserves policy and algorithm identity; scope and analysis-as-of boundary;
-candidate, included, and excluded observation identities and reasons; event and
-output identities; stage versions; digest, statistics, warnings, limitations;
-and non-identifying generation time. It does not discover events, fetch provider
-data, or determine whether the supplied policy is active.
+candidate, included, and excluded observation identities and reasons; immutable
+identified event contexts and conflicts; event and output identities; stage
+versions; digest, statistics, warnings, and limitations. Its identity is fixed
+from material inputs before outputs exist; completed output references cannot
+feed back into it. It does not discover events, fetch provider data, or determine
+whether the supplied policy is active.
 
 ## Policy Forecast
 
-A Policy Forecast is the immutable canonical internal forecast produced by one
+A Policy Forecast is the immutable canonical analytical result of one specific
 Forecast Policy Execution for exactly one Canonical Event and proposition. It
 preserves execution and policy identity; candidate, included, and excluded
 Forecast Observation identities; provider/model/version and input probability
 provenance; every eligibility, selection, provider-selection, transformation,
 weighting, normalization, fallback, and validation decision; complete output
 distribution and outcome semantics; precision, validation, issues, limitations,
-digest, as-of boundary, and non-identifying generation time.
+identified event context, digest, and as-of boundary. Wall-clock generation time
+is not canonical analytical content.
 
 A Policy Forecast is derived Analysis, not provider Evidence, and never claims
 a provider published the derived distribution. It contains no market price,
 expected value, wager recommendation, Kelly sizing, bankroll or position data,
 order, governance state, or Product Owner approval.
+
+Different policies or executions may produce distinct valid Policy Forecasts
+for the same event and proposition. Neither validity nor creation grants global
+or production authority. PR12 governance will be the only bridge that selects a
+production-authoritative Policy Forecast; PR14 will migrate Opportunity Analysis
+to consume that authorized result. PR11 implements neither selection nor
+consumer migration.
 
 Execution uses deterministic versioned stages: Input Compatibility, Observation
 Eligibility, Observation Selection, Provider Selection, Transformation,
@@ -417,24 +427,25 @@ an implicit fallback.
 ## Opportunity Analysis
 
 Opportunity Analysis is intended to consume a Policy Forecast together with
-compatible current Market Evidence. PR11 produces the canonical internal
-forecast but does not redesign the PR8 consumer. A bounded PR14 will migrate
-Opportunity Analysis and the Opportunity Board to Policy Forecast identities.
+compatible current Market Evidence. PR11 now produces policy-relative canonical
+analytical results but does not designate a production-authoritative result or
+redesign the PR8 consumer. PR12 governance will make that designation. A bounded
+PR14 will migrate Opportunity Analysis and the Opportunity Board to the
+authorized Policy Forecast identity.
 It remains separate from wagering Policy, Kelly sizing, bankroll management,
 recommendation thresholds, and Execution.
 
 The current MLB workflow compares DRatings Forecast Observations directly with
 Kalshi market Evidence under deterministic PR7 valuation. That is the present
 single-provider precursor to the fuller Forecast Policy capability. PR10
-Forecast Intelligence is implemented; Forecast Policy, Forecast Policy
-Execution, Policy Forecast, and their Opportunity Analysis integration remain
-planned.
+Forecast Intelligence and the PR11 Forecast Policy execution foundation are
+implemented; their Opportunity Analysis integration remains planned for PR14.
 
-PR11's initial demonstration is a supplied DRatings MLB winner policy selecting
-the latest eligible validated pregame observation before an explicit
-analysis-as-of boundary, applying identity transformation and weight `1.0`,
-validating a complete two-outcome distribution without silent correction, and
-failing closed with no fallback when DRatings is absent. It demonstrates the
+PR11's implemented initial demonstration is a supplied DRatings MLB winner
+policy selecting the latest eligible validated pregame observation before an
+explicit analysis-as-of boundary, applying identity transformation and weight
+`1.0`, validating a complete two-outcome distribution without silent correction,
+and failing closed with no fallback when DRatings is absent. It demonstrates the
 contract, not empirical approval, active status, or production authority.
 
 PR9 implements authoritative MLB Outcome Evidence, explicit Evaluation
