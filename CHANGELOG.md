@@ -187,6 +187,20 @@ Policy Proposal suggestions now use a versioned deterministic rule preserving
 adequacy, benchmark absence, metrics, reason codes, and evaluation identities;
 no synthetic benchmark is introduced.
 
+The approved PR11 architecture defines Forecast Policy as a provider-neutral
+immutable executable specification, Forecast Policy Execution as an immutable
+explicit batch context, and Policy Forecast as independently replayable
+event-level derived Analysis and Pops' Edge's canonical internal forecast.
+Execution uses versioned compatibility, production eligibility, observation and
+provider selection, transformation, weighting, normalization, fallback, and
+validation stages; invalid or unresolved inputs fail closed. Policies contain
+no approval or lifecycle state, and PR12 retains all governance authority. The
+initial planned demonstration is a supplied single-provider DRatings MLB winner
+policy with latest eligible pregame selection, identity transform, weight
+`1.0`, complete-distribution validation, and no fallback. Opportunity Board
+consumer migration is deliberately separated into PR14; release hardening moves
+to PR15. This documentation adds no PR11 implementation or production behavior.
+
 ## [v1.0.0] — World Cup baseline
 
 The existing production World Cup implementation is designated Pops' Edge

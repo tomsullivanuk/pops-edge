@@ -46,14 +46,13 @@ Across event facts and forecasts, Pops' Edge treats durable identity as the
 owner of append-only observations. “Current” state is a derived view;
 historical evidence is never updated in place.
 
-The approved PR9 direction adds authoritative Outcome Evidence and immutable
-Forecast Evaluation, then derives provider-neutral Forecast Intelligence from
-many evaluations. That intelligence will justify Forecast Policy selection and
-configuration; Policy execution will consume eligible current Forecast
-Observations to produce an immutable derived Policy Forecast. Opportunity
-Analysis will consume that Policy Forecast with current Market Evidence. These
-are architectural decisions, not claims of implemented PR9 functionality.
-Derived objects never become Evidence.
+PR9 implements authoritative Outcome Evidence and immutable Forecast
+Evaluation; PR10 derives provider-neutral Forecast Intelligence from current
+evaluations. That intelligence may justify future Forecast Policy selection and
+configuration. Planned policy execution will consume eligible current Forecast
+Observations to produce immutable Policy Forecasts, which later Opportunity
+Analysis integration will combine with current Market Evidence. Derived objects
+never become Evidence.
 
 PR9 now implements the first half of that direction: immutable MLB Outcome
 Observations, explicit eligibility decisions, deterministic forecast-quality
@@ -73,6 +72,15 @@ game, reconciles evaluation-level result/favorite/probability segments, excludes
 forecast ties from directional-accuracy denominators, and derives advisory
 proposal actions from a versioned rule with factual benchmark-absence reasons.
 
+PR11 is architecture-approved but not implemented. It will define a Forecast
+Policy as a provider-neutral immutable executable specification, apply it through
+an immutable explicit batch Forecast Policy Execution, and emit one independently
+replayable Policy Forecast per Canonical Event. Rule stages and production
+observation eligibility/selection are explicit, versioned, deterministic, and
+fail closed. Policies contain no approval or lifecycle state; PR12 governance
+alone determines production authority. The current Opportunity Board continues
+to consume DRatings directly until a bounded PR14 consumer migration.
+
 ## Documentation
 
 - [Developer guide](DEVELOPER.md) — current World Cup workflows and behavior
@@ -81,7 +89,7 @@ proposal actions from a versioned rule with factual benchmark-absence reasons.
 - [Roadmap](ROADMAP.md) — ordered product direction
 - [Backlog](BACKLOG.md) — deferred and uncommitted work
 - [Changelog](CHANGELOG.md) — version history
-- [v1.1.0 release plan](docs/RELEASE_PLAN_v1.1.0.md) — PR1–PR14 sequence
+- [v1.1.0 release plan](docs/RELEASE_PLAN_v1.1.0.md) — PR1–PR15 sequence
 - [v1.1.0 checkpoint through PR6](docs/V1.1.0_CHECKPOINT_THROUGH_PR6.md) —
   implemented platform baseline before MLB market valuation
 - [Codex workflow](docs/CODEX_WORKFLOW.md) — pull-request and completion-report

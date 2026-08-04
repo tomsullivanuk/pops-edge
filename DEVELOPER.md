@@ -339,6 +339,41 @@ Run the bounded inspection explicitly:
 The command consumes fixtures only. It performs no network, Kalshi, Opportunity
 Board, governance, Forecast Policy, Policy Forecast, or Execution action.
 
+## Planned PR11 production forecast boundary
+
+PR11 is documentation-approved but not implemented. It will introduce three
+separate immutable contracts:
+
+- `Forecast Policy`: a complete provider-neutral executable specification with
+  domain/provider constraints and versioned compatibility, production
+  eligibility, observation/provider selection, transformation, weighting,
+  normalization, missing-provider, fallback, and output-validation stages;
+- `Forecast Policy Execution`: one deterministic explicit batch context with
+  scope/as-of boundary, candidate/included/excluded observation identities and
+  reasons, event/output identities, statistics, warnings, limitations, and
+  non-identifying generation time; and
+- `Policy Forecast`: the independently identified event-level canonical
+  internal probability distribution with complete input and stage-decision
+  provenance.
+
+Execution consumes supplied immutable Forecast Observations; it never discovers
+events, fetches providers, or reads mutable production configuration. Each stage
+has an ID, version, parameters, deterministic result, and limitations, without a
+dynamic plug-in framework. PR9 historical Evaluation Eligibility is not reused
+as PR11 production observation eligibility. The initial rule selects the unique
+latest eligible observation before the explicit analysis-as-of boundary and
+fails closed on a latest-timestamp tie rather than using input order.
+
+The initial offline demonstration will select the latest eligible validated
+DRatings MLB winner observation before an explicit analysis-as-of boundary,
+apply identity transformation and weight `1.0`, validate the complete binary
+distribution without silent correction, and fail closed with no fallback when
+the provider is absent. This neither approves nor activates the policy. PR12
+owns governance and lifecycle state. PR14, not PR11, will separately migrate
+Opportunity Analysis and the Opportunity Board to Policy Forecast inputs.
+
+> **Research never changes production. Governance changes production.**
+
 ## Opportunity Board manual workflow
 
 `opportunity_board.py` defines derived Position, Opportunity, and BoardEntry

@@ -354,16 +354,33 @@ PR10 adds no Forecast Policy, Policy Forecast, governance record or transition,
 Shadow mode, additional provider, Opportunity Board change, market-relative or
 wagering evaluation, sizing, bankroll, or Execution behavior.
 
-### PR11 — Forecast Policy and Policy Forecast
+### PR11 — Forecast Policy, Batch Execution, and Policy Forecast
 
-- Implement approved versioned Forecast Policy definitions and deterministic
-  current-event execution over eligible current Forecast Observations.
-- Produce immutable Policy Forecast derived Analysis with complete input and
-  derivation identity.
+- Implement provider-neutral immutable Forecast Policy specifications with
+  explicit domain/provider constraints and versioned compatibility,
+  production-eligibility, observation/provider selection, transformation,
+  weighting, normalization, missing-provider, fallback, and validation stages.
+- Implement immutable Forecast Policy Execution as an explicit deterministic
+  batch context with candidate/included/excluded observation provenance,
+  reasons, scope/as-of boundary, statistics, warnings, and output identities.
+- Produce independently identified immutable Policy Forecast derived Analysis
+  for each Canonical Event with complete input, stage-decision, distribution,
+  validation, precision, limitation, and derivation provenance.
+- Demonstrate a supplied DRatings MLB winner policy: unique latest eligible
+  validated pregame observation before explicit analysis-as-of, failing closed
+  on a latest-timestamp tie; identity transform;
+  weight `1.0`; complete two-outcome validation without silent correction;
+  missing provider fails closed; no fallback.
+- Add bounded offline fixtures, inspection tooling, deterministic serialization,
+  focused tests, and documentation. Do not add dynamic rule plug-ins, provider
+  access, weight optimization, governance, or Opportunity Board integration.
 
-**Gate:** Policy execution is empirically configured, identity-preserving, and
-does not mutate or impersonate provider Evidence. A PR10 Policy Hypothesis does
-not automatically become this separate executable production definition.
+**Gate:** identical policy specifications and immutable input batches reproduce
+identical execution and Policy Forecast identities; unresolved cases fail
+closed; Evidence is never mutated or impersonated. Historical Evaluation
+Eligibility remains distinct from production observation eligibility. A PR10
+Policy Hypothesis does not automatically become this separate executable
+production definition, and offline execution does not imply active status.
 
 ### PR12 — Product Owner Governance and Policy Lifecycle
 
@@ -385,7 +402,20 @@ without silently changing historical decisions.
 **Gate:** research outputs remain derived, reproducible, and separate from
 production Opportunity Analysis and Execution.
 
-### PR14 — Release hardening and v1.1.0 handoff
+### PR14 — Policy Forecast Opportunity Analysis Integration
+
+- Migrate MLB Opportunity Analysis and Opportunity Board inputs from direct
+  DRatings Forecast Observations to immutable Policy Forecast identities.
+- Preserve the existing deterministic valuation and presentation boundaries;
+  add no wagering recommendation, sizing, bankroll, or automated Execution.
+- Retain explicit traceability from Opportunity Analysis to the exact Policy
+  Forecast, Forecast Policy Execution, policy, and source observations.
+
+**Gate:** the consumer transition is bounded, regression-tested, and does not
+silently redesign PR8 or claim governance authority. Until PR14 is implemented,
+the direct DRatings consumer remains the documented precursor.
+
+### PR15 — Release hardening and v1.1.0 handoff
 
 - Run complete regression, compilation, shell, fixture, and documentation
   validation.

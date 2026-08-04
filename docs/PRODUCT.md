@@ -46,6 +46,8 @@ Product Owner Governance
     ↓
 Forecast Policy
     ↓
+Forecast Policy Execution
+    ↓
 Policy Forecast
     ↓
 Opportunity Analysis
@@ -72,6 +74,8 @@ Execution
 - **Forecast Policy** defines a versioned, testable method for converting
   eligible current Forecast Observations into a derived Policy Forecast. Its
   selection and configuration are justified by Forecast Intelligence.
+- **Forecast Policy Execution** records one deterministic application of one
+  Forecast Policy to an explicit batch of supplied Forecast Observations.
 - **Policy Forecast** is the immutable derived probability distribution
   produced by executing one Forecast Policy for one Canonical Event.
 - **Opportunity Analysis** applies a Policy Forecast to compatible current
@@ -346,51 +350,92 @@ advisory Analysis and cannot alter lifecycle or production configuration.
 
 ## Forecast Policy
 
-A Forecast Policy is a versioned, measurable, and replaceable rule set. Its
-adoption and configuration must be justified by Forecast Intelligence. When
-executed for a current Canonical Event, it consumes eligible current Forecast
-Observations according to explicit rules. It preserves all input Forecast
-Observation identities and never mutates or replaces provider Evidence.
+A Forecast Policy is an immutable executable specification that deterministically
+transforms eligible current Forecast Observations into Policy Forecasts. It is a
+production-side Policy object with complete domain, provider/model, eligibility,
+selection, weighting, transformation, normalization, missing-provider,
+fallback, validation, rule-component, implementation, limitation, and identity
+material. It never mutates or impersonates provider Evidence.
 
-Forecast Policy is a separate PR11 production concept: an immutable executable
-definition used to create Policy Forecasts. Product Owner governance may use a
-Policy Proposal concerning a Policy Hypothesis when approving creation or
-lifecycle advancement, but the hypothesis never automatically becomes the
-Forecast Policy.
+It contains no approval, activation, Shadow, retirement, rejection, promotion,
+or Product Owner state. Those remain PR12 governance concerns. Its identity is
+determined solely by material executable specification inputs and versions, not
+wall-clock time, filesystem or repository state, Product Owner identity, or
+governance lifecycle.
 
-Candidate Forecast Policies may include a single-provider Forecast Policy,
-equal-weight combination, fixed weighted combination, exclusion of stale or
-incomplete observations, and future adaptive Forecast Policies. These are
-competing rule sets, not declarations of “the correct model.” Each must
-demonstrate value through reproducible Measurement before adoption and remain
-subject to replacement when later Measurement no longer supports it.
+Forecast Policy is a separate PR11 production concept. A PR10 Policy Hypothesis
+is analytical, measurable, replayable, and non-executable; a Policy Proposal is
+advisory. Neither automatically becomes a Forecast Policy. Future Product Owner
+governance may authorize a distinct complete Forecast Policy based on those
+Research artifacts, while their contracts remain separate.
+
+### Forecast Policy Execution
+
+A Forecast Policy Execution is an immutable batch context recording one
+deterministic application of one supplied Forecast Policy to one explicit input
+scope. One execution may cover an MLB slate or other competition/date scope and
+produce multiple independently identified, replayable Policy Forecasts. It
+preserves policy and algorithm identity; scope and analysis-as-of boundary;
+candidate, included, and excluded observation identities and reasons; event and
+output identities; stage versions; digest, statistics, warnings, limitations;
+and non-identifying generation time. It does not discover events, fetch provider
+data, or determine whether the supplied policy is active.
 
 ## Policy Forecast
 
-A Policy Forecast is the immutable derived Analysis produced by executing one
-Forecast Policy against eligible current Forecast Observations for exactly one
-Canonical Event. It preserves the Forecast Policy identifier and version;
-input Forecast Observation identifiers; provider, model, and version identity;
-eligibility and exclusion decisions; weights or transformation parameters; the
-resulting probability distribution; deterministic derivation identity;
-limitations; and an appropriate derivation or Analysis timestamp.
+A Policy Forecast is the immutable canonical internal forecast produced by one
+Forecast Policy Execution for exactly one Canonical Event and proposition. It
+preserves execution and policy identity; candidate, included, and excluded
+Forecast Observation identities; provider/model/version and input probability
+provenance; every eligibility, selection, provider-selection, transformation,
+weighting, normalization, fallback, and validation decision; complete output
+distribution and outcome semantics; precision, validation, issues, limitations,
+digest, as-of boundary, and non-identifying generation time.
 
-A Policy Forecast is not provider Evidence, never becomes Evidence, and never
-claims that a provider published the derived distribution.
+A Policy Forecast is derived Analysis, not provider Evidence, and never claims
+a provider published the derived distribution. It contains no market price,
+expected value, wager recommendation, Kelly sizing, bankroll or position data,
+order, governance state, or Product Owner approval.
+
+Execution uses deterministic versioned stages: Input Compatibility, Observation
+Eligibility, Observation Selection, Provider Selection, Transformation,
+Weighting, Normalization, Output Validation, then Policy Forecast. Each material
+stage preserves its ID, version, parameters, result, and limitations. PR11 does
+not require a dynamic plug-in framework; explicit stage provenance is sufficient
+for the initial bounded implementations and later replacement.
+
+PR11 production observation eligibility is distinct from PR9 historical
+Evaluation Eligibility. The initial selection rule chooses the unique latest
+eligible observation before the analysis-as-of boundary and fails closed on a
+latest-timestamp tie; it never uses input order. Provider
+weights, precision, unavailable-provider treatment, redistribution, fallback,
+normalization, and validation are material policy inputs. Invalid, incomplete,
+ambiguous, stale, unsupported, or irreproducible inputs fail closed unless the
+policy contains an explicit versioned fallback; market probabilities are never
+an implicit fallback.
 
 ## Opportunity Analysis
 
-Opportunity Analysis consumes a Policy Forecast together with compatible
-current Market Evidence. Once the Forecast Policy capability is implemented,
-it does not consume provider Forecast Observations directly. It remains
-separate from wagering Policy, Kelly sizing, bankroll management,
+Opportunity Analysis is intended to consume a Policy Forecast together with
+compatible current Market Evidence. PR11 produces the canonical internal
+forecast but does not redesign the PR8 consumer. A bounded PR14 will migrate
+Opportunity Analysis and the Opportunity Board to Policy Forecast identities.
+It remains separate from wagering Policy, Kelly sizing, bankroll management,
 recommendation thresholds, and Execution.
 
 The current MLB workflow compares DRatings Forecast Observations directly with
 Kalshi market Evidence under deterministic PR7 valuation. That is the present
-single-provider precursor to the fuller Forecast Policy capability, not a
-claim that Forecast Intelligence, Forecast Policy execution, or Policy
-Forecast has already been implemented.
+single-provider precursor to the fuller Forecast Policy capability. PR10
+Forecast Intelligence is implemented; Forecast Policy, Forecast Policy
+Execution, Policy Forecast, and their Opportunity Analysis integration remain
+planned.
+
+PR11's initial demonstration is a supplied DRatings MLB winner policy selecting
+the latest eligible validated pregame observation before an explicit
+analysis-as-of boundary, applying identity transformation and weight `1.0`,
+validating a complete two-outcome distribution without silent correction, and
+failing closed with no fallback when DRatings is absent. It demonstrates the
+contract, not empirical approval, active status, or production authority.
 
 PR9 implements authoritative MLB Outcome Evidence, explicit Evaluation
 Eligibility Decisions, and immutable Forecast Evaluations. It uses the
@@ -441,7 +486,9 @@ Current-event execution follows a separate flow:
 ```text
 Eligible current Forecast Observations
                     ↓
-       Forecast Policy execution
+           Forecast Policy
+                    ↓
+      Forecast Policy Execution
                     ↓
              Policy Forecast
                     ↓
