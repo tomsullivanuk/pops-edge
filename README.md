@@ -158,6 +158,24 @@ environments, and credentials are intentionally excluded from version control.
 
 ## Development
 
+Pops' Edge is currently developed and validated with Python 3.14.5.
+
+Create a local virtual environment and install the pinned direct dependencies:
+
+```bash
+cd /path/to/pops-edge
+python3 -m venv venv
+source venv/bin/activate
+python3 -m pip install --upgrade pip
+python3 -m pip install -r requirements.txt
+```
+
+Run the automated test suite with:
+
+```bash
+python3 -m unittest discover -s tests
+```
+
 Use the validation and handoff process in
 [docs/CODEX_WORKFLOW.md](docs/CODEX_WORKFLOW.md). Do not mix changes to
 v1.0.0 calculations or reports into documentation-only foundation work.
