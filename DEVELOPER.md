@@ -8,6 +8,10 @@ The planned v1.1.0 work and the repository rename procedure are documented in
 `docs/RELEASE_PLAN_v1.1.0.md` and `docs/REPOSITORY_RENAME.md`. The standard PR
 workflow and completion-report format are in `docs/CODEX_WORKFLOW.md`.
 
+`DEVELOPER.md` documents implementation guidance. The Empirical Research
+Methodology, Product, Architecture, Release Plan, and Roadmap are governed by
+their respective authoritative documents and take precedence over this guide.
+
 ## Offline event contracts
 
 PR3 adds an offline contract layer without connecting it to the v1.0.0 World
@@ -285,13 +289,18 @@ sole currently implemented MLB Forecast Provider and demonstrates the
 architecture without introducing provider-specific intelligence contracts or a
 second provider.
 
-The immutable Forecast Intelligence Report preserves provider/domain,
-window, eligibility, evaluation and intelligence algorithm identities;
-included, excluded, and superseded evaluation IDs; deterministic input digest;
-coverage; Brier and finite/infinite log-loss results; calibration; bounded
-segments and trends; sample-adequacy assessment; gaps; adverse evidence; and
-limitations. It uses current corrected-final selection by default and never
+The immutable `ForecastIntelligenceReport` implementation preserves
+provider/domain, window, eligibility, evaluation and intelligence algorithm
+identities; included, excluded, and superseded evaluation IDs; deterministic
+input digest; coverage; Brier and finite/infinite log-loss results; calibration;
+bounded segments and trends; sample-adequacy assessment; gaps; adverse evidence;
+and limitations. It uses current corrected-final selection by default and never
 silently uses all repository history or stores mutable cumulative totals.
+
+This implemented symbol is a provider-level analytical precursor to the
+canonical Comparative Performance Report. It does not yet provide the complete
+Market-Benchmark-relative Comparative Performance required by the finalized
+Product and Architecture.
 
 Primary MLB calibration is an evaluation-level home-win view: every included
 game contributes its published home-win probability once and a realized
@@ -311,16 +320,23 @@ unstated repository state are never identity inputs. Identical immutable
 material inputs and algorithm versions reproduce identical analytical identity
 and content regardless of rerun time.
 
-The Policy Proposal is immutable advisory Analysis tied to one report and one
-immutable, versioned Policy Hypothesis. That PR10 hypothesis describes
-the non-executable provider/model, eligibility, selection, weighting,
+The implemented `PolicyProposal` is immutable advisory Analysis tied to one
+report and one immutable, versioned `PolicyHypothesis`. That PR10 hypothesis
+describes the non-executable provider/model, eligibility, selection, weighting,
 normalization, missing-provider, fallback, assumption, and domain rules being
 evaluated. It is Research input or derived Analysis—not Evidence, a Forecast
 Policy, or a Policy Forecast—and has no lifecycle authority. A proposal may
 suggest a Product Owner action but cannot create, enter Shadow, activate,
 replace, retire, or reject a Forecast Policy. PR11 owns the separate executable
 Forecast Policy definition and Policy Forecast; PR12 owns governance records
-and lifecycle transitions; PR13 remains the polished Research Workspace.
+and lifecycle transitions.
+
+`PolicyProposal` is the current implementation precursor to the canonical
+Policy Recommendation. The implemented `PolicyHypothesis` retains its
+historical candidate-strategy semantics until PR15 aligns it with the Product
+definition: a proposed operational strategy for exploiting one or more
+empirically supported Market Edges. Neither implementation symbol should be
+treated as though that migration has already occurred.
 
 Proposal actions are derived by an explicit versioned suggestion rule from
 adequacy, factual benchmark availability, comparisons, metrics, and
@@ -371,11 +387,11 @@ population count.
 The initial offline demonstration selects the latest eligible validated
 DRatings MLB winner observation before an explicit analysis-as-of boundary,
 applies identity transformation and weight `1.0`, validates the complete binary
-distribution without silent correction, and fail closed with no fallback when
+distribution without silent correction, and fails closed with no fallback when
 the provider is absent. This neither approves nor activates the policy. PR12
-owns governance and lifecycle state and will select any production-authoritative
-Policy Forecast. PR14, not PR11, will separately migrate Opportunity Analysis
-and the Opportunity Board to that authorized input.
+owns governance and lifecycle state and selects the production-authoritative
+Forecast Policy. PR17, not PR11, will separately migrate Opportunity Analysis
+and the Opportunity Board to governance-authorized Policy Forecast input.
 
 Run the bounded fixture inspection with:
 
@@ -405,10 +421,11 @@ PR12 implements two immutable contracts and derived resolvers:
 The supported decisions are `Research`, `Shadow`, `Production`, `Retire`, and
 terminal `Reject`. Their derived lifecycle values are respectively `Research`,
 `Shadow`, `Production`, `Retired`, and `Rejected`. Research and Shadow do not
-grant production authority. Shadow execution and Policy Forecasts exist only
-for measurement and cannot feed Opportunity Analysis or wagering. Retire
-withdraws authority while preserving historical Analysis. Reject permanently
-closes that immutable policy; reconsideration requires a new Forecast Policy.
+grant production authority. Historical Policy Forecast evaluation and automated
+Shadow measurement are not implemented and require separate architectural
+approval. Retire withdraws authority while preserving historical Analysis.
+Reject permanently closes that immutable policy; reconsideration requires a new
+Forecast Policy.
 
 Production resolution chronologically replays Governance Records and returns at
 most one Forecast Policy per Governance Scope. The initial scope is the policy's
@@ -447,71 +464,66 @@ Run the deterministic offline inspection with:
 PR12 adds governance contracts, replay, resolvers, bounded fixtures,
 inspection, and focused tests only. It does not change Forecast Policy
 execution, Opportunity Analysis, Opportunity Board, providers, market
-valuation, wagering, or World Cup workflows. PR13 remains the Research
-Workspace and PR14 remains Policy Forecast consumer migration.
+valuation, wagering, or World Cup workflows. Subsequent work follows the
+approved sequence in `docs/RELEASE_PLAN_v1.1.0.md`.
 
-## Planned PR13 Forecast Research Workspace boundary
+## Forward implementation boundaries
 
-PR13 will compose existing PR9–PR12 services into a deterministic read-only
-projection for Product Owner research. `ResearchWorkspaceContext` is an
-immutable caller-supplied input containing sport, competition, proposition,
-evaluation window, `analysis_as_of`, `governance_as_of`, provider scope,
-Forecast Policy scope, and Policy Hypothesis scope. It is not persisted. Every
-workspace projection must consume the same context without widening or
-substituting scope or chronology.
+The remaining v1.1.0 sequence is:
 
-Validate supplied Reports, Proposals, Policies, Governance Records, and Policy
-Forecasts fail-closed against domain, evaluation window, analysis and
-governance boundaries, provider/model, Hypothesis, Policy, and Governance
-Scope. Exclude incompatibilities with explicit diagnostics rather than blending
-them.
+1. **PR13 — Forecast Intelligence Research Contracts:** implement first-class
+   Research Protocol, Edge Claim, Market Edge, Research Review, and Drift
+   Surveillance contracts with deterministic identity, provenance,
+   serialization, and fail-closed validation.
+2. **PR14 — Comparative Performance and Forecast Intelligence Alignment:** add
+   Market-Benchmark-relative Comparative Performance and the canonical
+   Comparative Performance Report while preserving truthful compatibility with
+   the implemented `ForecastIntelligenceReport` and `PolicyProposal` symbols.
+3. **PR15 — Policy Hypothesis Alignment:** align `PolicyHypothesis` with one or
+   more empirically supported Market Edges while keeping it non-authoritative
+   and non-executable.
+4. **PR16 — Forecast Intelligence Workspace:** implement the Product Owner's
+   principal research and governance surface.
+5. **PR17 — Policy Forecast Opportunity Integration:** migrate Opportunity
+   Analysis and the Opportunity Board to governance-authorized Policy Forecasts.
+6. **PR18 — v1.1.0 Integration and Release Readiness:** validate the integrated
+   lifecycle, compatibility, documentation, and release gates.
 
-Workspace orchestration may invoke existing evaluation selection, Forecast
-Intelligence, Policy Proposal, and Governance replay functions. It must not
-copy their calculation or transition rules. The workspace layer owns only
-orchestration, workflow organization, and rendering; it introduces no
-authoritative state, mutable cache, database, network service, or browser
-storage.
+The Release Plan owns detailed scope, dependencies, exclusions, and gates. Do
+not infer later-PR behavior into an earlier implementation.
 
-The bounded v1.1 renderer will emit one self-contained static HTML document,
-using the Opportunity Board's navy/white visual family with printable summaries,
-sortable tables where appropriate, collapsible details, and expandable
-provenance. Its top-level sections are Research Context, Executive Overview,
-Provider Performance, Policy Candidate Comparison, Policy Proposal Review,
-Governance Review, Governance Decision Draft, and Diagnostics. Domain contracts
-remain available through drill-down rather than defining the primary navigation.
+### Forecast Intelligence Workspace boundary
 
-PR9 metrics evaluate provider observations, not Policy Forecasts. PR11 supplies
-current Policy Forecasts but no historical policy-evaluation or backtesting
-service, and PR12 adds governance rather than performance measurement. Policy
-Candidate Comparison uses existing Hypotheses, Proposals, Reports, benchmarks,
-constraints, rules, adequacy, evidence, and governance state. It reports policy
-Brier score, log loss, calibration, head-to-head performance, and production
-superiority as unavailable unless compatible immutable policy-evaluation
-artifacts are supplied, and exposes no-history, current-only, prospective
-Shadow, compatible-evaluation, and insufficient-evidence states.
+The future Forecast Intelligence Workspace is a deterministic, read-only,
+locally generated projection and the principal research and governance surface.
+It consumes Forecast Intelligence; it is not Forecast Intelligence itself. It
+may orchestrate existing selection, Forecast Intelligence, advisory, and
+Governance replay services, but it must not copy or fork their analytical or
+transition rules.
 
-The Governance Decision Draft may be projected only from an immutable Policy
-Proposal's suggested action or an explicit Product Owner-selected decision in
-context. It preserves policy ID/version, scope, Proposal/Report/Hypothesis
-provenance, decision, rationale, and limitations; otherwise it states `No
-governance decision drafted.` It keeps `decision_effective_at` blank, declares
-no authority, adds no recommendation algorithm, and cannot call the Governance
-Record constructor.
+All sections share one explicit immutable context covering domain, research and
+governance boundaries, Probability Source scope, Policy Hypothesis scope, and
+Forecast Policy scope. Supplied artifacts must be validated fail-closed against
+that context. Incompatible identities, versions, scopes, or chronology remain
+visible as exclusions and diagnostics rather than being silently blended.
 
-Projection identity, if added, includes context, immutable input identities,
-projection algorithm/version, output-affecting renderer version, and section
-selection. Generated-at time is non-identifying presentation provenance. PR13
-does not add Shadow execution or historical policy evaluation; such evaluation
-is a possible future capability without assignment to PR13–PR15.
+The Workspace surfaces Research Protocols, Comparative Performance and
+Comparative Performance Reports, Edge Claims and Market Edges, Research Reviews
+and Drift Surveillance, Policy Recommendations and aligned Policy Hypotheses,
+Product Owner Governance context, diagnostics, and provenance. A governance
+decision draft remains explicitly non-authoritative, cannot create a Governance
+Record, and cannot determine production authority.
 
-Expected PR13 implementation scope is the context contract, orchestration, HTML
-renderer, provider-performance, policy-candidate-comparison, proposal,
-governance-review, decision-draft, and diagnostic projections, plus offline
-inspection, fixtures, and focused tests. It must not change governance, Forecast Policy execution,
-Opportunity Analysis, Opportunity Board, wagering, providers, or World Cup
-behavior. PR14 retains Policy Forecast consumer migration; PR15 retains release
-hardening.
+The Workspace owns orchestration, organization, and presentation only. It adds
+no authoritative business state, mutable cache, database, browser persistence,
+provider collection, Forecast Policy execution, Opportunity Analysis, wagering,
+or other production behavior. Identical material inputs and context must produce
+substantively identical output; presentation-only generation metadata must not
+alter the projection's substantive identity.
+
+Historical Policy Forecast evaluation and automated Shadow measurement remain
+unimplemented potential analytical capabilities. They are not implicit
+Workspace responsibilities and require separate architectural approval.
 
 ## Opportunity Board manual workflow
 
