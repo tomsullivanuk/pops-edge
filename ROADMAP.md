@@ -1,82 +1,80 @@
 # Pops' Edge Roadmap
 
-## v1.0.0 — World Cup
+## Purpose
 
-First production release: forecast and market ingestion, match/futures value
-boards, portfolio and ladder views, wager log, CLV, archives, and web reports.
+The Roadmap describes Pops' Edge's evolution across releases. It derives from the [Empirical Research Methodology](EMPIRICAL_RESEARCH_METHODOLOGY.md), [Product](docs/PRODUCT.md), [Architecture](ARCHITECTURE.md), and release plans without replacing them or defining implementation sequence.
 
-## v1.1.0 — MLB Research and Multi-Sport Foundation
+It answers **where Pops' Edge is heading over multiple releases**; Release Plans answer **how an approved release is implemented**.
 
-1. Establish product and documentation foundations.
-2. Research and select MLB sources.
-2A. Document approved product-management and architecture decisions.
-3. Define MLB domain contracts and edge cases.
-3A. Document external forecast architecture.
-4. Define provider-neutral Forecast Observation contracts.
-5. Implement the MLB Stats API facts adapter.
-5A. Document the Series / Observation architecture.
-6. Implement Forecast Series and the first external forecast-provider adapter.
-7. Implement MLB valuation.
-8. Add MLB reports and operating workflow.
-9. Introduce Outcome Measurement and Forecast Intelligence boundaries, while
-   extracting only proven multi-sport interfaces.
-10. Derive provider-neutral Forecast Intelligence Reports, immutable Policy
-    Hypotheses, and analytical Policy Proposals from explicit current Forecast
-    Evaluations.
-11. Implement provider-neutral immutable Forecast Policy definitions,
-    versioned rule stages, deterministic batch execution, and independently
-    replayable policy-relative Policy Forecasts.
-12. Add immutable Product Owner Governance Records, append-only history,
-    replay-derived Research, Shadow, Production, Retired, and Rejected
-    lifecycles, and effective-time production-policy resolution per immutable
-    production scope.
-13. Add the Forecast Research Workspace as one deterministic, read-only,
-    self-contained HTML projection over immutable PR9–PR12 inputs and one
-    explicit `ResearchWorkspaceContext`. Organize it around Product Owner
-    decisions, including provider performance, policy candidate comparison,
-    proposal and governance review, a non-authoritative Governance Decision Draft, and
-    diagnostics; add no persistence, governance write, production execution, or
-    Opportunity Analysis behavior. Compare candidates only through available
-    Forecast Intelligence, Policy Proposal, benchmark, rule, and governance
-    evidence; expose absent Shadow or policy-evaluation history and add no
-    historical Policy Forecast evaluation or backtesting framework.
-14. Migrate Opportunity Analysis and the Opportunity Board from direct provider
-    forecasts to Policy Forecast identities without changing wagering policy.
-15. Harden, document, and release.
+## Strategic direction
 
-The authoritative PR scope and gates are in
-`docs/RELEASE_PLAN_v1.1.0.md`.
+Pops' Edge is evolving from a sports-wagering proving ground into an empirical decision platform for positive expected value opportunities supported by validated evidence. Sports remain the proving ground, not the permanent boundary. World Cup and MLB are the implementations from which reusable capabilities are earned.
 
-The implemented and validated baseline through PR6 is recorded in
-`docs/V1.1.0_CHECKPOINT_THROUGH_PR6.md`. PR8 is complete. PR9's approved
-architecture adds Outcome Evidence and Forecast Evaluation; those PR9
-capabilities are implemented. PR10's provider-neutral Forecast Intelligence
-Report, Policy Hypothesis, and advisory Policy Proposal foundation is also
-implemented. PR11's executable Policy definitions, deterministic batch
-execution, and Policy Forecast foundation are implemented pending review.
-PR12 governance records, append-only replay, lifecycle views, and fail-closed
-production-policy resolution are implemented, including stable-owner identity,
-equivalent same-time decisions, complete provenance, and production-material
-conflict propagation. The
-Research Workspace remains PR13, and
-Policy Forecast consumer integration remains PR14. v1.1.0 remains unreleased.
+## Guiding principles
 
-PR2 selected a licensed official MLB feed as the production identity/pitcher
-strategy, with MLB `gamePk` canonical, and made forecast-provider licensing a
-prerequisite rather than assuming public pages may be scraped. See
-`docs/MLB_SOURCE_RESEARCH_v1.1.0.md`.
+- Evidence precedes operational trust; Forecast Intelligence precedes reliance.
+- Product Owner Governance remains the authorization boundary: **Research never changes production. Governance changes production.**
+- Probability Sources and compatible market venues remain replaceable.
+- Evidence remains immutable; derived behavior is deterministic, reproducible, traceable, and fail-closed.
+- Multi-sport and multi-domain evolution remains incremental; shared abstractions must be earned.
+- Pops' Edge remains personal, noncommercial, local, cost-conscious, transparent, and appropriately simple.
 
-## Later releases
+## Capability horizons
 
-Potential directions, subject to research and explicit planning:
+### Horizon 1 — Empirical Decision Foundation
 
-- additional calibration and source-comparison reporting;
-- cross-sport portfolio and exposure analytics;
-- additional market providers;
-- additional sports through isolated adapters;
-- stronger provenance, observability, and operator recovery;
-- configurable bankroll and policy profiles; and
-- packaging or deployment beyond the current local workflow.
+**v1.1.0 — Empirical Decision Foundation** establishes the first complete lifecycle from immutable Evidence and Measurement through Forecast Intelligence, Market-Benchmark-relative Comparative Performance, Edge Claims and Market Edges, governed Forecast Policy, Policy Forecasts, Opportunity Analysis, and Product surfaces.
 
-Items here are directional, not commitments. `BACKLOG.md` records deferred
-ideas without assigning them to a release.
+It delivers Comparative Performance Reports and the Forecast Intelligence Workspace, migrates Opportunity Analysis to authorized Policy Forecasts, and preserves World Cup compatibility. `docs/RELEASE_PLAN_v1.1.0.md` governs implementation.
+
+### Horizon 2 — Richer Forecast Intelligence
+
+Forecast Intelligence matures through more Probability Sources, richer populations, stronger Research Protocols and Research Reviews, and Drift Surveillance. Better evidence produces more defensible Policy Recommendations; Product Owner Governance remains required.
+
+The governing progression remains:
+
+```text
+Research Question
+        ↓
+Edge Claim
+        ↓
+Empirical Support
+        ↓
+Market Edge
+        ↓
+Policy Hypothesis
+```
+
+A probability disagreement never establishes a Market Edge by itself.
+
+### Horizon 3 — Multi-Source and Multi-Market Intelligence
+
+Pops' Edge expands comparison across multiple Probability Sources and compatible market venues. More sources do not guarantee improvement; automatic weighting requires future approval.
+
+### Horizon 4 — Broader Domain Expansion
+
+The framework may extend beyond sports where uncertain outcomes, competing Probability Sources, an observable benchmark, objective outcomes, repeatable decisions, and measurable consequences exist.
+
+No non-sports domain is scheduled, and expansion assumes neither a universal schema nor enterprise infrastructure.
+
+## Product surfaces
+
+The Forecast Intelligence Workspace is the principal research and governance surface; the Opportunity Board is the principal operational surface. Reports communicate state with provenance. None acquires hidden Policy or authority.
+
+## Deferred strategic opportunities
+
+Historical Policy Forecast evaluation or automated Shadow measurement may become valuable but remains unscheduled and subject to separate architectural approval.
+
+Additional providers, venues, sports, and domains are directions, not commitments. No universal schema, broad World Cup rewrite, SaaS, or distributed services are promised.
+
+## Long-term destination
+
+Pops' Edge should become increasingly capable of distinguishing:
+
+> **The evidence supports an edge.**
+
+> **The evidence does not support an edge.**
+
+> **We do not yet know.**
+
+Supported knowledge should produce governed, traceable decisions. Insufficient evidence preserves uncertainty.
