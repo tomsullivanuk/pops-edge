@@ -1,15 +1,28 @@
-# Pops' Edge v1.1.0 — MLB Research and Multi-Sport Foundation
+# Pops' Edge v1.1.0 — Empirical Decision Foundation
 
 ## Release intent
 
-Pops' Edge v1.1.0 introduces MLB research and begins the transition from the
-v1.0.0 World Cup implementation to a multi-sport product. The transition is
-incremental: v1.0.0 World Cup behavior remains the compatibility baseline
-unless a later PR explicitly documents, tests, and obtains review for a change.
+Pops' Edge v1.1.0 completes the first end-to-end empirical decision lifecycle while continuing the incremental transition from the v1.0.0 World Cup implementation to a multi-sport product:
 
-This plan defines the intended sequence. Each PR must remain independently
-reviewable, preserve prior acceptance criteria, and use the workflow in
-`docs/CODEX_WORKFLOW.md`.
+```text
+Evidence
+        ↓
+Measurement
+        ↓
+Forecast Intelligence
+        ↓
+Forecast Policy
+        ↓
+Policy Forecast
+        ↓
+Opportunity Analysis
+        ↓
+Execution
+```
+
+The release preserves the World Cup compatibility baseline, deterministic behavior, provenance, fail-closed validation, and the scope appropriate to a personal hobby project. Shared architecture continues to evolve only where concrete World Cup and MLB implementations justify it.
+
+This plan defines the implementation sequence. Each PR must remain independently reviewable, preserve prior acceptance criteria, and follow `docs/CODEX_WORKFLOW.md`.
 
 ## Version boundaries
 
@@ -23,22 +36,35 @@ workflows are the regression baseline for v1.1.0.
 
 ### v1.1.0
 
-v1.1.0 is complete when the approved MLB workflow is documented, implemented,
-tested, and operable alongside the World Cup workflow through initial
-multi-sport boundaries. It is not a promise to make every component
-sport-agnostic. Broad refactoring is deferred until concrete MLB requirements
-show which abstractions are durable.
+v1.1.0 is complete when Pops' Edge demonstrates the first end-to-end empirical
+decision lifecycle for MLB—from immutable Evidence and Measurement through
+Forecast Intelligence, governed Forecast Policy, Policy Forecast consumption,
+Opportunity Analysis, and operational presentation—while preserving the World
+Cup v1.0.0 compatibility baseline.
+
+The release does not promise universal sport abstraction or require a broad
+World Cup rewrite. It introduces shared boundaries only where concrete World
+Cup and MLB implementations justify them.
 
 ## Release scope
 
-- Research and select reproducible MLB data and market sources.
-- Define canonical MLB contracts and sport-specific edge cases.
-- Add deterministic MLB ingestion, valuation, reports, and operating workflow.
-- Add authoritative MLB Outcome Evidence and deterministic forecast-quality
-  Measurement before deriving Forecast Intelligence.
-- Introduce only multi-sport boundaries proven by both World Cup and MLB.
-- Preserve the World Cup v1.0.0 behavioral baseline.
-- Complete documentation, migration notes, and release validation.
+- Establish reproducible MLB data and market sources, canonical identity, and
+  immutable Evidence.
+- Deliver deterministic ingestion, valuation, operational reporting,
+  authoritative Outcome Evidence, and Forecast Evaluation Measurement.
+- Add first-class Forecast Intelligence research contracts for Research
+  Protocols, Edge Claims, Market Edges, Research Reviews, and Drift
+  Surveillance.
+- Implement Market-Benchmark-relative Comparative Performance and canonical
+  Comparative Performance Reports.
+- Align Policy Hypotheses to empirically supported Market Edges.
+- Deliver the deterministic, read-only Forecast Intelligence Workspace.
+- Migrate Opportunity Analysis to governance-authorized Policy Forecast
+  consumption.
+- Introduce shared multi-sport boundaries only where World Cup and MLB justify
+  them, while preserving the World Cup v1.0.0 behavioral baseline.
+- Complete documentation, operator workflow, regression, and release
+  validation.
 
 ## Architectural principles
 
@@ -449,94 +475,162 @@ equivalent same-time decisions retain all supporting record IDs, materially
 different decisions fail closed, and only conflicts involving current or
 candidate Production authority invalidate an otherwise resolved scope.
 
-### PR13 — Forecast Research Workspace
+### PR13 — Forecast Intelligence Research Contracts
 
-- Implement immutable, non-persisted `ResearchWorkspaceContext` with sport,
-  competition, proposition, evaluation window, explicit `analysis_as_of` and
-  `governance_as_of`, provider scope, Forecast Policy scope, and Policy
-  Hypothesis scope. Require every section to use the same context and exclude
-  incompatible objects with explicit fail-closed diagnostics.
-- Add read-only orchestration over existing PR9–PR12 services without
-  duplicating Measurement, Forecast Intelligence, Forecast Policy execution,
-  or Governance logic.
-- Render one deterministic, self-contained, static local HTML workspace in the
-  Opportunity Board's navy/white product family. Keep it printable and
-  archiveable, with no server, database, browser persistence, or write action.
-- Organize the workspace around Research Context, Executive Overview, Provider
-  Performance, Policy Candidate Comparison, Policy Proposal Review, Governance
-  Review, Governance Decision Draft, and Diagnostics rather than domain object
-  types.
-- Project provider Brier score, log loss, calibration, directional accuracy,
-  coverage and trends; candidate Hypotheses, Proposals, Reports, constraints,
-  rules, preserved benchmarks, adequacy, evidence, limitations, corresponding
-  policies, governance lifecycle, and Shadow/history gaps; proposal support,
-  adverse evidence and uncertainty; and replay-derived lifecycle views at the
-  explicit governance boundary.
-- Never present provider Forecast Evaluation metrics as historical Forecast
-  Policy metrics. Mark policy Brier score, log loss, calibration, head-to-head
-  performance, and production superiority unavailable unless compatible
-  immutable policy-evaluation artifacts are supplied. PR13 adds no Shadow
-  execution, historical Policy Forecast evaluation, or backtesting framework.
-- Add a non-authoritative Governance Decision Draft containing policy/scope and
-  a decision derived only from an existing Proposal's suggested action or an
-  explicit Product Owner selection. Preserve policy/version,
-  Proposal/Report/Hypothesis provenance, rationale, and limitations; otherwise
-  state `No governance decision drafted.` Leave `decision_effective_at` blank,
-  declare no authority, add no independent recommendation algorithm, and never
-  create a Governance Record.
-- Add bounded inspection tooling, deterministic fixtures, focused tests, and
-  documentation. Defer multiple views, tabs, richer interaction, governance
-  writes, production execution changes, Opportunity Analysis, providers, PR14,
-  and PR15.
+**Purpose:** implement the first-class research-domain contracts required by the finalized Methodology and Architecture.
 
-**Gate:** identical immutable inputs and identical `ResearchWorkspaceContext`
-produce substantively identical projections; all sections preserve their shared
-scope and chronology; research outputs remain non-authoritative, read-only,
-reproducible, and separate from Governance writes, production Opportunity
-Analysis, wagering, and Execution.
+**Scope:**
 
-If a workspace ID or digest is introduced, material identity includes context,
-supplied immutable identities, projection algorithm/version, output-affecting
-renderer version, and section selection. Wall-clock generation time is
-non-identifying presentation provenance. Historical policy evaluation remains
-a possible future analytical capability and is not assigned to PR13–PR15.
+- Research Protocol;
+- Edge Claim;
+- Market Edge;
+- Research Review;
+- Drift Surveillance;
+- deterministic identities;
+- provenance;
+- serialization; and
+- validation.
 
-### PR14 — Policy Forecast Opportunity Analysis Integration
+**Dependencies:** completed Evidence, Forecast Evaluation Measurement, Forecast Intelligence precursor, Forecast Policy, and Governance foundations from PR1–PR12.
 
-- Migrate MLB Opportunity Analysis and Opportunity Board inputs from direct
-  DRatings Forecast Observations to immutable Policy Forecast identities.
-- Preserve the existing deterministic valuation and presentation boundaries;
-  add no wagering recommendation, sizing, bankroll, or automated Execution.
-- Retain explicit traceability from Opportunity Analysis to the exact Policy
-  Forecast, Forecast Policy Execution, policy, and source observations.
-- Consume only Policy Forecasts produced by the Governance-authorized Forecast
-  Policy under PR14's explicit timing and execution-selection rules; do not
-  treat every otherwise-valid Policy Forecast as production-authorized.
+**Exclusions:** do not implement the Forecast Intelligence Workspace, migrate Opportunity Analysis, or modify Forecast Policy.
 
-**Gate:** the consumer transition is bounded, regression-tested, and does not
-silently redesign PR8 or claim governance authority. Until PR14 is implemented,
-the direct DRatings consumer remains the documented precursor.
+**Gate:** research contracts preserve the Methodology's boundaries, reproduce deterministic identities and serialization, validate fail-closed, and create no production authority.
 
-### PR15 — Release hardening and v1.1.0 handoff
+### PR14 — Comparative Performance and Forecast Intelligence Alignment
 
-- Run complete regression, compilation, shell, fixture, and documentation
-  validation.
-- Finalize operator/developer documentation, migration notes, known
-  limitations, and rollback guidance.
-- Confirm rename readiness and prepare release notes.
-- Create tags, rename repositories/directories, commit, or push only when
-  separately authorized.
+**Purpose:** align the implemented Forecast Intelligence layer with the finalized Product and Architecture.
 
-**Gate:** all v1.1.0 acceptance criteria are traceable to passing validation or
-an explicitly accepted limitation.
+**Scope:**
+
+- Comparative Performance;
+- Comparative Performance Report;
+- alignment of the legacy `ForecastIntelligenceReport` implementation;
+- Policy Recommendation;
+- continued compatibility with the existing `PolicyProposal`; and
+- reproducible analytical outputs.
+
+**Dependencies:** PR13 research contracts and the completed PR9–PR10 Measurement and Forecast Intelligence foundations.
+
+**Exclusions:** do not redesign Policy Hypothesis or implement the Forecast Intelligence Workspace.
+
+**Gate:** Forecast Intelligence produces reproducible Market-Benchmark-relative analysis using canonical terminology while preserving truthful compatibility with legacy implementation symbols.
+
+### PR15 — Policy Hypothesis Alignment
+
+**Purpose:** align the implemented `PolicyHypothesis` with the finalized Product definition: a proposed operational strategy for exploiting one or more empirically supported Market Edges.
+
+**Scope:**
+
+- explicit linkage to supporting Market Edges and Forecast Intelligence;
+- preservation of deterministic identity and provenance;
+- support for multiple competing hypotheses over the same empirical foundation; and
+- alignment of existing candidate-strategy semantics with the finalized Product boundary.
+
+**Dependencies:** PR13 Edge Claim and Market Edge contracts and PR14 aligned Forecast Intelligence outputs.
+
+**Exclusions:** a Policy Hypothesis remains non-authoritative, is not Evidence, is not a Forecast Policy, and does not redesign Product Owner Governance.
+
+**Gate:** aligned Policy Hypotheses remain reproducible and non-executable, and no hypothesis can grant itself production authority or mutate Governance.
+
+### PR16 — Forecast Intelligence Workspace
+
+**Purpose:** implement the first Forecast Intelligence Workspace as the principal interactive surface for Forecast Intelligence.
+
+The Workspace consumes Forecast Intelligence. It is not Forecast Intelligence.
+
+**Scope:**
+
+- one deterministic, read-only, locally generated workspace;
+- shared explicit research and governance context;
+- Comparative Performance and Comparative Performance Reports;
+- Edge Claims, Market Edges, Research Reviews, and Drift Surveillance;
+- Policy Recommendations and Policy Hypotheses;
+- Product Owner Governance context; and
+- diagnostics and provenance.
+
+**Dependencies:** PR13–PR15 canonical research, Forecast Intelligence, and Policy Hypothesis contracts, plus completed Governance replay.
+
+**Exclusions:** no database, browser persistence, execution, governance authority, mutable business state, or independent analytical rules.
+
+**Gate:** identical immutable inputs and context produce substantively identical projections; the Workspace remains a surface over existing capabilities and cannot create Governance Records or production behavior.
+
+### PR17 — Policy Forecast Opportunity Integration
+
+**Purpose:** complete the migration from direct-provider Opportunity Analysis to governance-authorized Policy Forecast consumption.
+
+```text
+Forecast Policy
+        ↓
+Forecast Policy Execution
+        ↓
+Policy Forecast
+        ↓
+Opportunity Analysis
+```
+
+**Scope:**
+
+- select the production-authorized Forecast Policy through existing Governance;
+- execute that policy against compatible current Forecast Evidence;
+- supply the resulting Policy Forecast to Opportunity Analysis;
+- retain deterministic Expected Value and current Market Evidence;
+- preserve existing position semantics and Opportunity Board behavior; and
+- preserve complete provenance and fail-closed validation.
+
+**Dependencies:** completed PR11 Forecast Policy and Policy Forecast, completed PR12 Governance, and aligned PR13–PR15 research-to-policy contracts. The Workspace is not an operational dependency, but PR16 precedes this work in the release sequence.
+
+**Exclusions:** do not introduce historical Policy Forecast evaluation, automated Shadow measurement, new sizing Policy, or automated Execution.
+
+**Gate:** Opportunity Analysis consumes only a compatible Policy Forecast produced by the Governance-authorized Forecast Policy; the legacy direct-provider path is removed or explicitly isolated without changing World Cup behavior.
+
+### PR18 — v1.1.0 Integration and Release Readiness
+
+**Purpose:** complete integration and release validation without introducing new analytical capabilities.
+
+**Scope:**
+
+- full regression validation;
+- World Cup compatibility;
+- MLB lifecycle validation from Evidence through operational outputs;
+- documentation review;
+- operator workflow validation;
+- known-limitations and rollback review; and
+- release readiness.
+
+**Dependencies:** PR13–PR17 complete and their acceptance gates satisfied.
+
+**Exclusions:** no new research, analytical, governance, policy, or operational capability.
+
+**Gate:** the complete v1.1.0 lifecycle is traceable to passing validation or an explicitly accepted limitation, and release preparation does not create a tag, hosted release, repository rename, commit, or push without separate authorization.
 
 ## Sequencing rules
 
 PRs merge in numerical order. A later PR may refine a future PR's scope through
 a documented decision, but it must not silently absorb unfinished earlier
-work. Source research precedes contracts; contracts precede ingestion;
-ingestion precedes valuation and reports; shared architecture follows two
-working sport implementations.
+work. The completed foundation followed research before contracts, contracts
+before ingestion, and ingestion before valuation and reporting; shared
+architecture remains justified by concrete implementations.
+
+The remaining work follows this sequence:
+
+```text
+Research contracts
+        ↓
+Forecast Intelligence
+        ↓
+Policy alignment
+        ↓
+Product surface
+        ↓
+Operational integration
+        ↓
+Release validation
+```
+
+PR16 precedes PR17 as a release-sequencing choice. The Forecast Intelligence
+Workspace is not an architectural runtime dependency of Policy Forecast
+Opportunity Integration.
 
 Every PR must:
 
@@ -571,9 +665,22 @@ contracts, isolated outputs, and the deferred rename checklist.
 - MLB contracts cover identifiers, time zones, doubleheaders, schedule changes,
   and settlement-relevant states.
 - Fixture-backed MLB ingestion and valuation are deterministic and tested.
-- MLB reports operate without overwriting World Cup inputs or outputs.
-- Proven shared boundaries support both sports without changing World Cup
-  calculations or report behavior.
+- First-class Research Protocol, Edge Claim, Market Edge, Research Review, and
+  Drift Surveillance boundaries are implemented with deterministic provenance
+  and fail-closed validation.
+- Forecast Intelligence measures Comparative Performance relative to the
+  Market Benchmark and produces canonical Comparative Performance Reports.
+- Policy Hypotheses represent operational strategies grounded in empirically
+  supported Market Edges without acquiring production authority.
+- The Forecast Intelligence Workspace is operational as a deterministic,
+  read-only Product surface over Forecast Intelligence.
+- Opportunity Analysis consumes a governance-authorized Policy Forecast rather
+  than the legacy direct-provider path.
+- MLB operational reporting does not overwrite World Cup inputs or outputs.
+- Proven shared boundaries support both sports while preserving World Cup
+  v1.0.0 calculations, reports, and operator behavior.
+- Historical Policy Forecast evaluation and automated Shadow measurement
+  remain explicitly deferred pending separate architectural approval.
 - The complete automated, compilation, shell, documentation, and release
   validation suite passes.
 - Known limitations, operator guidance, rollback, and release notes are
@@ -582,6 +689,13 @@ contracts, isolated outputs, and the deferred rename checklist.
   authorization.
 
 ## Deferred capabilities
+
+The following analytical capabilities remain intentionally deferred pending separate architectural approval:
+
+- Historical Policy Forecast evaluation.
+- Automated Shadow measurement.
+
+Other deferred capabilities:
 
 - Additional sports beyond World Cup and MLB.
 - A universal sport schema or broad rewrite of the v1.0.0 pipeline.
