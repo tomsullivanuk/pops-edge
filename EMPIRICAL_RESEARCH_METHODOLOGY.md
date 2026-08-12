@@ -624,6 +624,7 @@ A Supported Market Edge may lose Current Scientific Applicability because of:
 
 - Drift;
 - Research Review;
+- an unresolved scheduled Research Review obligation;
 - protocol incompatibility;
 - Research Population incompatibility; or
 - another prospectively defined material event.
@@ -1463,6 +1464,19 @@ Every Research Protocol defines:
 
 - scheduled Research Reviews; and
 - material events requiring unscheduled Research Review.
+
+The protocol prospectively defines each scheduled review boundary, including
+any scientifically justified grace period. No implicit or
+implementation-defined grace period applies.
+
+When a scheduled review boundary is reached without a qualifying completed
+Research Review that explicitly addresses it, an unresolved review obligation
+exists. The relevant scientific conclusion is procedurally Under Review and its
+Current Scientific Applicability is suspended.
+
+A valid protocol-defined material-event artifact likewise creates an unresolved
+review obligation. A later completed Research Review resolves only the scheduled
+boundary or material-event artifact that it explicitly addresses.
 
 Evidence accumulates continuously.
 
@@ -2364,11 +2378,19 @@ It does not alter an Edge Claim.
 
 Drift becomes an input to Research Review.
 
+A valid surveillance result may instead find that the available evidence is
+insufficient to determine Drift. That result is distinct from a structurally
+invalid artifact or incompatible input, which cannot produce a scientific
+finding. The governing Research Protocol defines the consequence of valid
+insufficient evidence. If it does not, Current Scientific Applicability remains
+indeterminate and unavailable for operational reliance.
+
 ---
 
 ## 6.20 Current Scientific Applicability
 
-The report identifies whether any currently Supported Market Edge remains scientifically applicable.
+The report presents the findings needed to determine whether any currently
+Supported Market Edge remains scientifically applicable.
 
 It reports:
 
@@ -2377,9 +2399,10 @@ It reports:
 - protocol compatibility;
 - and other relevant scientific limitations.
 
-The report does not decide whether operational reliance should continue.
-
-Research Review makes that determination.
+The report does not decide whether operational reliance should continue. Current
+Scientific Applicability follows the latest completed Research Review, unresolved
+scheduled and material-event obligations, and all applicable protocol,
+population, domain, Evidence, and compatibility requirements.
 
 ---
 
@@ -2502,6 +2525,11 @@ It does not:
 - authorize operational action.
 
 Research Review evaluates the findings already produced under the governing Research Protocol against the prospectively defined Burden of Proof.
+
+A durable Research Review artifact records a completed, immutable scientific
+review. It records only the scientific conclusion reached by that completed
+review. An unresolved obligation or review in progress does not create a partial
+or mutable Research Review artifact.
 
 ---
 
@@ -2672,7 +2700,7 @@ An Alternative Probability Source that satisfies the primary endpoint while mate
 
 ## 7.11 Evidence Classification
 
-Research Review classifies the current scientific status of every Edge Claim.
+Each completed Research Review records a scientific conclusion about the Edge Claim.
 
 Version 1.0 recognizes:
 
@@ -2681,11 +2709,10 @@ Version 1.0 recognizes:
 - Supported
 - Strongly Supported
 - Weakening
-- Under Review
 - No Longer Supported
 - Rejected
 
-These classifications describe scientific status.
+These conclusions describe completed scientific assessment.
 
 They do not authorize operational action.
 
@@ -2736,16 +2763,26 @@ It questions current applicability.
 
 ## 7.15 Under Review
 
-Under Review is a procedural status.
+Under Review is a temporary, derived procedural condition. It is not a completed
+scientific conclusion and is not stored as a Research Review classification.
 
-It indicates that:
+At an explicit timezone-aware `as_of` boundary, Under Review exists when either
+of the following remains unresolved:
 
-- a predefined material event has occurred; and
-- operational reliance has been suspended pending completion of Research Review.
+- a protocol-defined scheduled review boundary that is due; or
+- a valid protocol-defined material-event artifact, including a material Drift
+  finding.
 
-Unlike Weakening, Under Review is not itself a scientific conclusion.
+An obligation is resolved only by a later completed Research Review that
+explicitly addresses that scheduled boundary or material-event artifact. A newer
+review does not implicitly resolve unrelated obligations.
 
-It represents a temporary research state.
+While an obligation remains unresolved, Current Scientific Applicability is
+suspended. The latest completed scientific conclusion, prior Research Reviews,
+the Edge Claim, and any historical Market Edge remain intact.
+
+Under Review is independent of Governance approval and production authority. It
+cannot create, revoke, or modify Governance state.
 
 ---
 
@@ -2756,6 +2793,12 @@ Time-Bounded Surveillance may detect protocol-defined Drift.
 Drift is an empirical finding.
 
 It is not an Edge Claim decision.
+
+Only a valid protocol-defined material Drift finding creates a review obligation.
+A valid insufficient-evidence surveillance result is not silently treated as
+either Drift or no Drift; its consequence follows the governing Research
+Protocol. A structurally invalid artifact or incompatible input cannot produce a
+scientific finding.
 
 The sequence is therefore:
 
@@ -2782,6 +2825,7 @@ A historically Supported Market Edge remains operationally relevant only while i
 Current Scientific Applicability may be suspended because of:
 
 - Drift;
+- an unresolved scheduled Research Review obligation;
 - protocol incompatibility;
 - Research Population incompatibility;
 - or another predefined material event.
@@ -2798,7 +2842,9 @@ Time-Bounded Surveillance may identify that current Comparative Performance has 
 
 This observation does not automatically restore Current Scientific Applicability.
 
-Restoration requires formal Research Review applying the complete Burden of Proof.
+Restoration requires a qualifying completed Research Review applying the complete
+Burden of Proof and explicitly addressing every obligation whose resolution it
+claims. Surveillance alone cannot restore Current Scientific Applicability.
 
 Accordingly:
 
@@ -3058,14 +3104,17 @@ Only a currently applicable Market Edge may support operational decisions.
 
 Historical scientific support alone is insufficient.
 
-Market Edges classified as:
+Market Edges whose latest completed scientific conclusion is:
 
 - Weakening;
-- Under Review;
 - No Longer Supported; or
 - Rejected
 
 do not support new operational opportunities.
+
+A Market Edge that is procedurally Under Review likewise does not support new
+operational opportunities, regardless of its latest completed scientific
+conclusion.
 
 Historical knowledge remains preserved.
 

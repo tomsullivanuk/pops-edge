@@ -290,9 +290,15 @@ First-class Edge Claim and Market Edge contracts are approved but not yet implem
 
 ### Research Reviews and Drift Surveillance
 
-A Research Review evaluates Comparative Performance Reports and Edge Claims against the governing Research Protocol and burden of proof. It changes scientific conclusions discretely while leaving Evidence, Measurement, and historical reports unchanged.
+A Research Review evaluates Comparative Performance Reports and Edge Claims against the governing Research Protocol and burden of proof. The durable `ResearchReview` artifact represents one completed, immutable review and records only its completed scientific conclusion. It changes scientific conclusions discretely while leaving Evidence, Measurement, prior Research Reviews, Edge Claims, and historical Market Edges unchanged.
 
-Drift Surveillance is deterministic, rerunnable analysis over cumulative and time-bounded Evidence. A Drift finding may trigger Research Review and suspend reliance through governed behavior, but it does not mutate an Edge Claim, Forecast Policy, or Governance History by itself.
+Drift Surveillance is deterministic, rerunnable analysis over cumulative and time-bounded Evidence. A valid material Drift finding creates a review obligation, but it does not mutate an Edge Claim, prior Research Review, Market Edge, Forecast Policy, or Governance History. Valid insufficient evidence remains distinct from a structurally invalid artifact or incompatible input; invalid material cannot produce a scientific finding.
+
+**Under Review** is a derived procedural condition, not a completed Research Review conclusion. At an explicit timezone-aware `as_of` boundary, deterministic replay considers all protocol-defined scheduled review boundaries due by `as_of` and all valid protocol-defined material-event artifacts effective by `as_of`. An obligation remains unresolved unless a qualifying completed Research Review explicitly covers it; a newer Research Review does not resolve an obligation merely because it occurred later. A scheduled boundary may include only a grace period prospectively defined by the Research Protocol. An implementation must not invent another grace period.
+
+While any qualifying obligation remains unresolved, Current Scientific Applicability is suspended and operational reliance must fail closed, while the latest completed scientific conclusion and historical Market Edge remain intact. Scientific inapplicability neither creates nor revokes Governance authority and does not modify Governance History.
+
+Current Scientific Applicability may be exposed as a deterministic replayable projection; it is not stored as mutable authoritative state. Workspace or UI state cannot originate, resolve, or override Under Review. PR13 introduces no generic `ReviewTrigger` contract, mutable review lifecycle, workflow manager, always-on surveillance service, or additional durable contract whose purpose is to store current applicability.
 
 This personal hobby platform does not require speculative always-on services. Scheduled local analysis and explicit reruns are sufficient until operational evidence justifies more infrastructure.
 
