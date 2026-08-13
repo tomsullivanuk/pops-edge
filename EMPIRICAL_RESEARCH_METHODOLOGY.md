@@ -387,6 +387,10 @@ A Research Protocol defines, at minimum:
 
 A material change to any scientific rule creates a new protocol version.
 
+One Research Protocol may investigate multiple Alternative Probability Sources.
+Each distinct Alternative Probability Source-versus-Market Benchmark hypothesis
+within the applicable Research Domain is represented by a distinct Edge Claim.
+
 ---
 
 ## 2.6 Research Population
@@ -563,6 +567,10 @@ It does not independently change an Edge Claim.
 
 A **Research Review** is the process by which Pops' Edge evaluates the findings contained within a Comparative Performance Report against the Burden of Proof established by the governing Research Protocol.
 
+Each completed Research Review assesses exactly one Edge Claim and records
+exactly one completed scientific conclusion. One Comparative Performance Report
+may provide empirical support for multiple claim-specific Research Reviews.
+
 Research Reviews occur:
 
 - at scheduled review intervals; or
@@ -599,6 +607,9 @@ An Edge Claim begins as a hypothesis.
 
 It becomes supported only through Research Review.
 
+Each Edge Claim represents one Alternative Probability Source-versus-Market
+Benchmark hypothesis under one Research Protocol and Research Domain.
+
 ---
 
 ## 2.22 Market Edge
@@ -606,6 +617,16 @@ It becomes supported only through Research Review.
 A **Market Edge** is the scientific conclusion that an Alternative Probability Source has demonstrated statistically and practically meaningful superior Comparative Performance relative to the Market Benchmark within a defined research domain under a governing Research Protocol.
 
 A Market Edge is historical scientific knowledge.
+
+A Market Edge is established when an Edge Claim first receives a qualifying
+completed Research Review conclusion of Supported or Strongly Supported. At most
+one historical Market Edge is established for an Edge Claim. It identifies that
+Edge Claim and the first qualifying completed Research Review.
+
+Later Research Reviews do not mutate, replace, erase, or recreate the Market
+Edge. A later qualifying completed Research Review may restore Current
+Scientific Applicability to the same historical Market Edge; restoration does
+not create another Market Edge.
 
 It is bounded by:
 
@@ -618,9 +639,9 @@ It is bounded by:
 
 ## 2.23 Current Scientific Applicability
 
-**Current Scientific Applicability** is the condition in which a Supported Market Edge remains eligible to inform current Opportunity Analysis.
+**Current Scientific Applicability** is the condition in which a Market Edge whose latest completed conclusion is Supported or Strongly Supported remains eligible to inform current Opportunity Analysis.
 
-A Supported Market Edge may lose Current Scientific Applicability because of:
+Such a Market Edge may lose Current Scientific Applicability because of:
 
 - Drift;
 - Research Review;
@@ -847,7 +868,7 @@ Operational analysis determines whether that Market Edge creates a current Evide
 
 ## 3.9 Principle 8 — Default to No Wager
 
-> **When the Burden of Proof has not been satisfied, the default operational conclusion is No Wager.**
+> **When the Burden of Proof has not been satisfied, Current Scientific Applicability is absent, or operational requirements fail, the default operational conclusion is No Wager.**
 
 This includes situations in which:
 
@@ -1009,17 +1030,17 @@ It does not repeal statistics.
 
 > **Every Edge Claim must remain capable of being disproved by future Evidence.**
 
-No Market Edge is permanent.
+A historical Market Edge remains permanently preserved as the record of the conclusion reached at its original review boundary. Its Current Scientific Applicability is not permanent.
 
-Every Supported Market Edge remains subject to:
+Every Market Edge remains subject to:
 
 - additional Evidence;
 - Time-Bounded Surveillance;
 - Drift;
 - Research Review;
-- and possible withdrawal of support.
+- and possible withdrawal of Current Scientific Applicability.
 
-A Market Edge that cannot disappear scientifically was never established scientifically.
+An Edge Claim whose current scientific support cannot be weakened or withdrawn by future Evidence is not scientifically falsifiable.
 
 ---
 
@@ -2531,6 +2552,11 @@ review. It records only the scientific conclusion reached by that completed
 review. An unresolved obligation or review in progress does not create a partial
 or mutable Research Review artifact.
 
+Each artifact assesses exactly one Edge Claim. It may explicitly cover multiple
+scheduled review obligations or valid material-event artifacts relevant to that
+claim. One Comparative Performance Report may support multiple Research Review
+artifacts, but each Review remains claim-specific.
+
 ---
 
 ## 7.2 Research Review Is Discrete
@@ -2584,6 +2610,10 @@ Every Edge Claim identifies:
 - proposition;
 - applicable research domain; and
 - applicable Approved Research Dimensions.
+
+A Research Protocol may govern multiple Edge Claims, but each distinct
+Alternative Probability Source-versus-Market Benchmark hypothesis within the
+applicable Research Domain is a separate Edge Claim.
 
 Edge Claims begin as hypotheses.
 
@@ -2649,9 +2679,8 @@ At minimum, the Burden of Proof requires:
 - statistical significance;
 - Practical Significance;
 - satisfactory supporting measures;
-- valid Evidence;
-- protocol compliance; and
-- Current Scientific Applicability.
+- valid Evidence; and
+- protocol compliance.
 
 No individual requirement compensates for failure of another.
 
@@ -2724,6 +2753,10 @@ A Supported Edge Claim satisfies the complete Burden of Proof established by the
 
 Support establishes a Market Edge.
 
+If the Edge Claim already has a historical Market Edge, a later Supported Review
+does not establish another one. It may restore Current Scientific Applicability
+to the existing Market Edge when all other applicability requirements are met.
+
 Support remains bounded by:
 
 - Research Protocol;
@@ -2739,6 +2772,10 @@ Support does not imply universal superiority.
 ## 7.13 Strongly Supported
 
 Where defined by the governing Research Protocol, Strongly Supported represents a higher evidentiary standard than Supported.
+
+Like Supported, Strongly Supported establishes a Market Edge only when the Edge
+Claim has no existing historical Market Edge. Later Strongly Supported Reviews
+may restore applicability to that same Market Edge but never recreate it.
 
 The distinction is based upon prospectively defined scientific criteria.
 
@@ -2800,6 +2837,13 @@ either Drift or no Drift; its consequence follows the governing Research
 Protocol. A structurally invalid artifact or incompatible input cannot produce a
 scientific finding.
 
+Each valid Drift Surveillance finding concerns exactly one Edge Claim under its
+governing Research Protocol and records one protocol-defined disposition: no
+material Drift, material Drift, or insufficient evidence to determine Drift.
+Only a disposition that the protocol defines as a qualifying material event
+creates a review obligation. Drift Surveillance never restores Current
+Scientific Applicability by itself.
+
 The sequence is therefore:
 
 ```text
@@ -2833,6 +2877,29 @@ Current Scientific Applicability may be suspended because of:
 Historical support remains part of the scientific record.
 
 Operational reliance does not.
+
+At an explicit timezone-aware `as_of` boundary, Current Scientific Applicability
+is determined by:
+
+1. identifying the latest completed scientific conclusion for the Edge Claim;
+2. identifying every protocol-defined scheduled obligation due by `as_of` and
+   every valid protocol-defined material-event artifact effective by `as_of`;
+3. excluding only obligations explicitly covered by qualifying completed
+   Research Reviews;
+4. suspending applicability while any qualifying obligation remains unresolved;
+   and
+5. otherwise applying the completed-conclusion consequences and all protocol,
+   Research Domain, Research Population, Evidence, analytical, and compatibility
+   requirements.
+
+Supported and Strongly Supported are the only completed conclusions eligible to
+support Current Scientific Applicability. Weakening, No Longer Supported,
+Insufficient Evidence, Emerging Evidence, and Rejected are not eligible. A
+completed Review may resolve every obligation it covers without restoring
+applicability when its conclusion or another requirement remains ineligible.
+
+This determination does not mutate the Market Edge or create Governance or
+operational authority.
 
 ---
 
@@ -2943,7 +3010,7 @@ Future Evidence may:
 - leave the conclusion unchanged;
 - or eliminate support entirely.
 
-A Market Edge that cannot disappear scientifically was never established scientifically.
+Elimination of current support does not erase the historical Market Edge. An Edge Claim whose current scientific support cannot be weakened or eliminated by future Evidence is not scientifically falsifiable.
 
 ---
 
@@ -3106,6 +3173,8 @@ Historical scientific support alone is insufficient.
 
 Market Edges whose latest completed scientific conclusion is:
 
+- Insufficient Evidence;
+- Emerging Evidence;
 - Weakening;
 - No Longer Supported; or
 - Rejected
@@ -3115,6 +3184,12 @@ do not support new operational opportunities.
 A Market Edge that is procedurally Under Review likewise does not support new
 operational opportunities, regardless of its latest completed scientific
 conclusion.
+
+Supported and Strongly Supported are eligible to support Current Scientific
+Applicability only when no qualifying review obligation remains unresolved and
+all other protocol, Research Domain, Research Population, Evidence, analytical,
+and compatibility requirements are satisfied. Eligibility grants neither
+Governance nor operational authority.
 
 Historical knowledge remains preserved.
 

@@ -486,6 +486,14 @@ candidate Production authority invalidate an otherwise resolved scope.
 - Market Edge;
 - Research Review;
 - Drift Surveillance;
+- one claim-specific completed conclusion per Research Review;
+- at most one immutable historical Market Edge per Edge Claim, established by
+  its first Supported or Strongly Supported completed Review;
+- protocol-defined scheduled review-boundary identities, authorized
+  material-event references, explicit effective and completion times, and
+  explicit review-obligation coverage;
+- an immutable typed reference to the future canonical Comparative Performance
+  Report;
 - deterministic identities;
 - provenance;
 - serialization; and
@@ -493,9 +501,9 @@ candidate Production authority invalidate an otherwise resolved scope.
 
 **Dependencies:** completed Evidence, Forecast Evaluation Measurement, Forecast Intelligence precursor, Forecast Policy, and Governance foundations from PR1–PR12.
 
-**Exclusions:** do not implement the Forecast Intelligence Workspace, migrate Opportunity Analysis, or modify Forecast Policy.
+**Exclusions:** do not calculate or store authoritative Current Scientific Applicability; implement a mutable applicability lifecycle, generic review-trigger contract, canonical Comparative Performance Report, always-on surveillance service, or Workspace/UI state; migrate Opportunity Analysis; modify Forecast Policy; or create Governance or operational authority.
 
-**Gate:** research contracts preserve the Methodology's boundaries, reproduce deterministic identities and serialization, validate fail-closed, and create no production authority.
+**Gate:** the five research contracts preserve the Methodology's boundaries, cardinalities, immutable history, explicit obligation coverage, deterministic identities, provenance, serialization, and fail-closed validation. Drift Surveillance is claim-specific and distinguishes valid no-Drift, material-Drift, and insufficient-evidence findings from invalid input. PR13 creates neither authoritative current applicability nor production authority.
 
 ### PR14 — Comparative Performance and Forecast Intelligence Alignment
 
@@ -507,14 +515,18 @@ candidate Production authority invalidate an otherwise resolved scope.
 - Comparative Performance Report;
 - alignment of the legacy `ForecastIntelligenceReport` implementation;
 - Policy Recommendation;
-- continued compatibility with the existing `PolicyProposal`; and
+- continued compatibility with the existing `PolicyProposal`;
+- deterministic Current Scientific Applicability projection over immutable PR13
+  research contracts at an explicit timezone-aware `as_of` boundary; and
 - reproducible analytical outputs.
 
 **Dependencies:** PR13 research contracts and the completed PR9–PR10 Measurement and Forecast Intelligence foundations.
 
-**Exclusions:** do not redesign Policy Hypothesis or implement the Forecast Intelligence Workspace.
+The applicability projection applies the completed-conclusion mapping, accounts for every unresolved scheduled and valid material-event obligation, preserves historical Research Reviews and Market Edges, and produces no mutable authoritative current-state contract. It grants no Governance or operational authority and is available before PR16 displays it or PR17 relies upon it.
 
-**Gate:** Forecast Intelligence produces reproducible Market-Benchmark-relative analysis using canonical terminology while preserving truthful compatibility with legacy implementation symbols.
+**Exclusions:** do not redesign Policy Hypothesis, implement the Forecast Intelligence Workspace, introduce mutable applicability state, or grant Governance or operational authority.
+
+**Gate:** Forecast Intelligence produces reproducible Market-Benchmark-relative analysis using canonical terminology while preserving truthful compatibility with legacy implementation symbols. At an explicit timezone-aware `as_of` boundary, it deterministically derives Current Scientific Applicability from the latest completed claim-specific conclusion, explicitly covered obligations, and all other required compatibility conditions without mutating historical artifacts.
 
 ### PR15 — Policy Hypothesis Alignment
 

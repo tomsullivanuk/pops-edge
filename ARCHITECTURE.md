@@ -250,6 +250,8 @@ Forecast Intelligence is the umbrella architectural capability that transforms i
 
 A Research Protocol is an immutable, versioned specification for a reproducible investigation. It fixes the research question, population, benchmark and alternative Probability Sources, synchronization and eligibility conditions, measurements, analytical rules, burden of proof, surveillance, and review boundaries before outcomes are interpreted.
 
+One Research Protocol may investigate multiple Alternative Probability Sources. Each distinct Alternative Probability Source-versus-Market Benchmark hypothesis within a Research Domain has its own Edge Claim.
+
 The Methodology governs protocol meaning. Architecture must preserve protocol identity, version, material inputs, and provenance without embedding protocol rules into provider adapters.
 
 Full first-class Research Protocol contracts are approved but not yet implemented. Existing evaluation windows, eligibility policies, segmentation versions, and adequacy rules are narrower precursors and must not be presented as a complete protocol implementation.
@@ -264,13 +266,15 @@ Comparative Performance is pair-specific and reproducible from immutable Measure
 
 A Comparative Performance Report is the canonical immutable research artifact for one Research Protocol and analysis boundary. It communicates comparative findings, uncertainty, coverage, surveillance, and limitations while preserving sufficient input identities and rule versions for deterministic reproduction.
 
+One Comparative Performance Report may support multiple claim-specific Research Reviews. PR13 represents that dependency through an immutable typed report reference; it does not implement the canonical report or bind new Reviews directly to the legacy `ForecastIntelligenceReport` symbol.
+
 The implemented `ForecastIntelligenceReport` in `forecast_intelligence.py` is a provider-neutral precursor. It currently measures one Forecast Provider within an explicit domain and evaluation window and includes coverage, forecast quality, Calibration, segmentation, adequacy, excluded evaluations, deterministic identity, and provenance. Its symbol has not been renamed, and its provider-level absolute analysis does not yet implement the full Market-Benchmark-relative Comparative Performance Report required by the finalized Product and Methodology.
 
 Architecture uses **Comparative Performance Report** as the canonical concept. Compatibility with the legacy symbol must be handled by a separately approved implementation change.
 
 ### Edge Claims and Market Edges
 
-An Edge Claim is a durable or reproducibly derived research assertion under evaluation. It references its Research Protocol, Probability Source, Market Benchmark, research domain, and supporting empirical material sufficiently to reproduce its assessment.
+An Edge Claim is a durable or reproducibly derived research assertion under evaluation. It represents one Alternative Probability Source-versus-Market Benchmark hypothesis under one Research Protocol and Research Domain, and references its supporting empirical material sufficiently to reproduce its assessment.
 
 ```text
 Research Question
@@ -286,19 +290,25 @@ An Edge Claim is not Evidence, Policy, or production authority. Persistence is n
 
 A Market Edge is the Forecast Intelligence conclusion that a Probability Source has demonstrated comparative advantage relative to the Market Benchmark under defined conditions. A probability disagreement is not automatically a Market Edge. Opportunity Analysis neither discovers nor establishes Market Edges; it consumes their operational expression through approved Forecast Policy.
 
+The first completed Research Review for an Edge Claim with a Supported or Strongly Supported conclusion establishes its Market Edge. At most one historical Market Edge exists per Edge Claim, and it identifies that first qualifying Review. Later Reviews may change applicability to the same Market Edge but never mutate, replace, erase, or recreate it.
+
 First-class Edge Claim and Market Edge contracts are approved but not yet implemented. Existing adequacy and proposal artifacts must not be mistaken for those scientific conclusions.
 
 ### Research Reviews and Drift Surveillance
 
-A Research Review evaluates Comparative Performance Reports and Edge Claims against the governing Research Protocol and burden of proof. The durable `ResearchReview` artifact represents one completed, immutable review and records only its completed scientific conclusion. It changes scientific conclusions discretely while leaving Evidence, Measurement, prior Research Reviews, Edge Claims, and historical Market Edges unchanged.
+A Research Review evaluates Comparative Performance Reports and Edge Claims against the governing Research Protocol and burden of proof. The durable `ResearchReview` artifact represents one completed, immutable review, assesses exactly one Edge Claim, and records exactly one completed scientific conclusion. It may explicitly cover multiple scheduled or valid material-event obligations relevant to that claim. It changes scientific conclusions discretely while leaving Evidence, Measurement, prior Research Reviews, Edge Claims, and historical Market Edges unchanged.
 
-Drift Surveillance is deterministic, rerunnable analysis over cumulative and time-bounded Evidence. A valid material Drift finding creates a review obligation, but it does not mutate an Edge Claim, prior Research Review, Market Edge, Forecast Policy, or Governance History. Valid insufficient evidence remains distinct from a structurally invalid artifact or incompatible input; invalid material cannot produce a scientific finding.
+Drift Surveillance is deterministic, rerunnable analysis over cumulative and time-bounded Evidence. Each immutable artifact concerns exactly one Edge Claim under its governing Research Protocol and records one valid protocol-defined disposition: no material Drift, material Drift, or insufficient evidence to determine Drift. Only a disposition that the protocol defines as a qualifying material event creates a review obligation. It does not mutate an Edge Claim, prior Research Review, Market Edge, Forecast Policy, or Governance History, and it cannot restore Current Scientific Applicability by itself. Structurally invalid or incompatible input fails validation and cannot become a scientific disposition.
 
 **Under Review** is a derived procedural condition, not a completed Research Review conclusion. At an explicit timezone-aware `as_of` boundary, deterministic replay considers all protocol-defined scheduled review boundaries due by `as_of` and all valid protocol-defined material-event artifacts effective by `as_of`. An obligation remains unresolved unless a qualifying completed Research Review explicitly covers it; a newer Research Review does not resolve an obligation merely because it occurred later. A scheduled boundary may include only a grace period prospectively defined by the Research Protocol. An implementation must not invent another grace period.
 
 While any qualifying obligation remains unresolved, Current Scientific Applicability is suspended and operational reliance must fail closed, while the latest completed scientific conclusion and historical Market Edge remain intact. Scientific inapplicability neither creates nor revokes Governance authority and does not modify Governance History.
 
-Current Scientific Applicability may be exposed as a deterministic replayable projection; it is not stored as mutable authoritative state. Workspace or UI state cannot originate, resolve, or override Under Review. PR13 introduces no generic `ReviewTrigger` contract, mutable review lifecycle, workflow manager, always-on surveillance service, or additional durable contract whose purpose is to store current applicability.
+Current Scientific Applicability is a deterministic replayable Forecast Intelligence projection owned by PR14; it is not stored as mutable authoritative state. At an explicit timezone-aware `as_of` boundary, the projection identifies the latest completed conclusion for the Edge Claim, all scheduled obligations due by `as_of`, all valid material-event artifacts effective by `as_of`, and the obligations explicitly covered by completed Reviews. Unresolved obligations suspend applicability. Otherwise only Supported or Strongly Supported may support applicability, subject to every other protocol, Research Domain, Research Population, Evidence, analytical, and compatibility requirement. Resolving an obligation does not by itself restore applicability.
+
+PR13 provides the immutable structures needed for this replay: claim and Market Edge relationships, scheduled review-boundary identities, authorized material-event references, effective and completion times, completed conclusions, explicit obligation coverage, deterministic identities, provenance, serialization, and fail-closed validation. Bounded typed supporting value objects may express these relationships; they are not additional top-level research contracts and must not become mutable workflow or current-state objects.
+
+PR13 does not calculate or store authoritative Current Scientific Applicability, implement the canonical Comparative Performance Report, or introduce a generic `ReviewTrigger`, mutable review lifecycle, workflow manager, always-on surveillance service, Workspace/UI state, or additional durable current-applicability contract. Workspace or UI state cannot originate, resolve, or override Under Review. The PR14 projection grants no Governance or operational authority and is available for PR16 presentation and PR17 operational reliance.
 
 This personal hobby platform does not require speculative always-on services. Scheduled local analysis and explicit reruns are sufficient until operational evidence justifies more infrastructure.
 
