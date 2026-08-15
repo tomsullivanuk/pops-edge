@@ -47,6 +47,28 @@ Each layer has a distinct responsibility:
 
 Derived state never becomes Evidence. Research never creates production authority. Governance is the only bridge from empirical knowledge to authorized operational behavior.
 
+The durable comparative-research path crosses those layers explicitly:
+
+```text
+Protocol-governed Schedule Evidence
+        ↓
+ResearchCaptureOpportunity          (Evidence identity/supporting value)
+        ↓
+ResearchSnapshot                    (Evidence)
+        ↓
+Outcome Evidence
+        ↓
+ComparativeMeasurement              (Measurement)
+        ↓
+ComparativePerformance              (Forecast Intelligence)
+        ↓
+ComparativePerformanceReport        (PR15 Forecast Intelligence)
+        ↓
+ResearchReview / Drift Surveillance
+```
+
+PR14 implements this path only through cumulative `ComparativePerformance`.
+
 ## Current implementation state
 
 Pops' Edge contains two implementation generations that intentionally coexist.
@@ -68,6 +90,8 @@ The MLB implementation provides most of the reusable architectural foundation:
 The following Product-aligned integration remains approved but not implemented:
 
 - the Forecast Intelligence Workspace;
+- protocol-governed Research Capture Opportunities and Research Snapshots;
+- immutable Comparative Measurement and cumulative claim-level Comparative Performance;
 - canonical Comparative Performance Report naming in implementation;
 - migration of Opportunity Analysis from the direct DRatings forecast path to governance-authorized Policy Forecast consumption.
 
@@ -184,6 +208,47 @@ An Outcome Observation is authoritative immutable Evidence for one Canonical Eve
 
 Outcome corrections append a new observation. The earlier outcome and any Measurements derived from it remain immutable. A derived latest-authoritative-final view selects the current outcome without rewriting history.
 
+### Research Capture Opportunity
+
+`ResearchCaptureOpportunity` has one purpose:
+
+> Identify one protocol-defined pregame scientific capture opportunity independently of later canonical-event interpretation or runtime execution details.
+
+It is a bounded Evidence identity and planning value, not an additional scientific stage, scheduler, workflow, mutable attempt, service, or queue.
+
+Its deterministic identity is based only on the Research Protocol ID, upstream Schedule Observation ID, proposition type, and schema/identity version. Canonical-event mapping, parsed scheduled start, target or actual capture timestamps, runtime job or process IDs, retries, filesystem metadata, and capture success do not define it.
+
+A genuine new upstream Schedule Observation, including an actual reschedule, creates a new Research Capture Opportunity. A corrected mapping or parsing of the same Schedule Observation remains within the original opportunity, and retries do not automatically create a new scientific opportunity. The Research Protocol's postponement and rescheduling rules determine whether either opportunity is scientifically eligible.
+
+```text
+Schedule Observation A (7:00 PM) → Research Capture Opportunity A
+Schedule Observation B (9:00 PM) → Research Capture Opportunity B
+```
+
+Opportunity B does not correct Opportunity A.
+
+### Research Snapshot
+
+A `ResearchSnapshot` is one first-class immutable Evidence record of what was actually available at one protocol-defined pregame information state. It preserves its Research Capture Opportunity and Research Protocol references; event and proposition interpretation; scheduled-event information; target and capture chronology; source-capture results; pairwise synchronization; prospectively approved Research Dimension classifications; validation status and reasons; limitations; provenance; correction lineage; and timezone-aware `effective_at`.
+
+Source-capture state distinguishes scientifically meaningful outcomes such as captured and valid, missing, captured but invalid, and outside capture tolerance. Individual source validity and pairwise synchronization are distinct. Synchronization is evaluated independently between the Market Benchmark and each Alternative Probability Source, and the Snapshot preserves pair-specific diagnostics. Failure of one challenger pair does not invalidate another valid pair from the same Snapshot. No standalone generic comparative-pair reference or trigger is introduced.
+
+Research Dimension classifications use only information available at the Snapshot and prospectively approved Research Protocol rules. They are preserved immutably for later Comparative Performance selection. Reports never reconstruct or retrospectively reclassify them using later information.
+
+A known protocol-eligible capture opportunity may produce a Snapshot even when every provider observation is missing. Missing capture is scientific Evidence and remains visible in later Coverage. A Snapshot contains no Outcome, Brier Score, Log Loss, Research Review conclusion, Market Edge status, Current Scientific Applicability, Policy, Governance, Opportunity Analysis, or production authority.
+
+#### Snapshot correction, uniqueness, and replay
+
+Snapshot correction is append-only. A correction creates a new immutable Snapshot that explicitly supersedes the earlier Snapshot; there is no mutable `is_current`, `is_superseded`, or current-Snapshot pointer.
+
+> A correction repairs the preserved representation or deterministic interpretation of prospectively captured Evidence. A materially different information state is a new observation or capture opportunity.
+
+Legitimate corrections include event or proposition mapping errors, timezone parsing errors, probability parsing errors reproducible from preserved raw Evidence, incorrect dimension classification under unchanged rules and inputs, incorrect synchronization under unchanged timestamps and rules, or a prospectively captured observation incorrectly recorded as missing. Corrections cannot introduce retrospectively discovered probabilities, later provider updates, actual provider/model-version changes, actual reschedules or postponements, new propositions or Research Protocols, later Outcome Evidence, retrospective partition changes, or changed capture tolerances. They never reconstruct prospectively missing Evidence.
+
+Within each Research Capture Opportunity, identical deterministic Snapshot copies represent the same artifact. Materially different Snapshots require explicit supersession lineage within that opportunity. Lineage is acyclic; unknown references and branching fail closed. Deterministic replay at an analysis boundary must yield exactly one authoritative terminal Snapshot. Ambiguity is never resolved by ID, generation time, input order, filesystem order, serialization order, or another arbitrary tie breaker.
+
+`target_capture_at`, `capture_started_at`, and `capture_completed_at` preserve capture chronology. They are distinct from `effective_at`: the instant an immutable Snapshot version entered the accepted scientific record and became available to downstream scientific computation. A correction may preserve original capture chronology while becoming effective later. Historical analysis includes only versions satisfying `snapshot.effective_at <= analysis_boundary`, so a later correction cannot silently alter an earlier analysis or report.
+
 ### Current state is a derived view
 
 Time-varying Evidence follows the durable pattern:
@@ -240,6 +305,25 @@ Forecast Evaluation History is append-only. When an authoritative final changes,
 
 Expected Value is not Forecast Evaluation Measurement. It belongs to Opportunity Analysis, where an authorized Policy Forecast is compared with current Market Evidence.
 
+### Comparative Measurement
+
+`ComparativeMeasurement` is one immutable Measurement-layer artifact for one valid synchronized Market Benchmark/Alternative Probability Source pair from one Research Snapshot and one authoritative Outcome. The Outcome remains separate from the pregame Snapshot:
+
+```text
+ResearchSnapshot + Outcome Evidence → ComparativeMeasurement
+```
+
+Snapshot identity and content never depend on the realized Outcome. A valid Comparative Measurement requires the same immutable Research Protocol, Research Snapshot, event, proposition, and authoritative Outcome; the Protocol's Market Benchmark; one authorized Alternative Probability Source; valid benchmark and challenger observations; valid pair synchronization and Outcome; and complete Protocol compatibility. One failed challenger pair does not invalidate another valid pair.
+
+The Measurement references authoritative upstream artifacts and preserves benchmark and challenger probabilities, Outcome, each Brier Score, Brier improvement, each Log Loss, Log Loss improvement, preserved Research Dimension classifications, methodology and algorithm versions, validation, limitations, and provenance. These deterministic Measurement outputs do not compete with upstream Evidence authority and must reproduce from the referenced inputs.
+
+```text
+Brier improvement    = benchmark Brier Score - challenger Brier Score
+Log Loss improvement = benchmark Log Loss - challenger Log Loss
+```
+
+Positive values favor the challenger. Calibration remains a population-level supporting measure rather than an event-level comparative conclusion.
+
 ## Forecast Intelligence
 
 Forecast Intelligence is the umbrella architectural capability that transforms immutable Evidence and Measurement into reproducible operational knowledge about Probability Sources relative to the Market Benchmark.
@@ -264,13 +348,29 @@ First-class Research Protocol contracts are implemented. Existing evaluation win
 
 ### Comparative Performance
 
-Comparative Performance evaluates a Probability Source relative to the Market Benchmark over a common qualifying evidence population. Absolute Brier Score, Log Loss, Calibration, or directional accuracy may describe a source, but absolute forecast quality alone does not establish a Market Edge.
+One immutable `ComparativePerformance` is cumulative claim-level Forecast Intelligence for exactly one Research Protocol, one Edge Claim, one Research Domain, one Market Benchmark, one challenger, one analysis boundary, and one cumulative paired Comparative Measurement population. `ComparativeMeasurement` is not Edge-Claim-specific; the same Measurement may contribute to multiple prospectively authorized Research Domains through classifications preserved on its Snapshot.
 
-Comparative Performance is pair-specific and reproducible from immutable Measurement under an explicit Research Protocol. Missing, excluded, unsynchronized, invalid, and superseded inputs remain visible. Different challengers may have different valid paired populations.
+Its population contains all and only Measurements satisfying Protocol, benchmark, challenger, validity, eligibility, and Research Domain compatibility; whose authoritative Snapshot is effective by the analysis boundary; and whose Measurement is available/effective by that boundary. The broad Research Domain is independently aggregated from all qualifying broad-population Measurements. Segmented-domain results never reconstruct the broad result.
+
+Brier improvement relative to the Market Benchmark is the single Methodology v1 primary endpoint. Comparative Performance reports at minimum paired sample size, benchmark and challenger mean Brier Scores, and mean paired Brier improvement. It introduces no weighted composite score.
+
+Uncertainty follows the immutable Research Protocol statistical-method rule. For the approved paired bootstrap, the resampling unit is the complete Comparative Measurement, benchmark and challenger values are never independently resampled, and the resampled statistic is mean paired Brier improvement. Output includes the point estimate, paired sample size, interval bounds, confidence level, statistical-rule identity/version, resample count, and analysis algorithm version.
+
+Bootstrap is reproducible: its pseudorandom seed derives from immutable scientific material such as Protocol ID, Edge Claim ID, analysis boundary, canonically ordered Comparative Measurement IDs, statistical-rule identity, and Comparative Performance algorithm version. Wall-clock randomness is forbidden, and a material mechanics change requires a new analysis algorithm version.
+
+Comparative Performance reports findings, not scientific conclusions. It stores none of `statistically_significant`, `practically_significant`, `burden_of_proof_met`, `edge_supported`, or `market_edge_exists`; it neither creates nor modifies an Edge Claim or Market Edge. It reports observed mean Brier improvement beside the Protocol Practical Significance threshold, leaving interpretation to Research Review.
+
+Over the exact same paired population it reports benchmark and challenger mean Log Loss and mean Log Loss improvement. Log Loss is a safeguard, not a second primary endpoint, and receives no independent inferential test unless prospectively required by the Protocol. Calibration is calculated separately for benchmark and challenger over that same population using the Protocol's supporting-measure rule. Legacy PR10 calibration is implementation precedent only, not scientific authority for fixed PR14 bins or rules.
+
+Coverage is first-class scientific information within Comparative Performance, not another top-level scientific stage. It preserves exact opportunity, Snapshot, and Measurement identities sufficient to reproduce all counts. Snapshot/population coverage distinguishes eligible Research Capture Opportunities, authoritative Research Snapshots, benchmark and challenger capture successes and failures, and timing failures. Pair-specific analytical coverage distinguishes the eligible Snapshot population, benchmark and challenger availability, synchronized and unsynchronized pairs, resolved Outcomes, Protocol exclusions, and the Comparative Measurement population.
+
+The denominator is the protocol-eligible Research Capture Opportunity/authoritative Research Snapshot population through the analysis boundary, never only successful Comparative Measurements. Missing benchmark or challenger captures, invalid or out-of-tolerance captures, synchronization failures, cancellations, unresolved Outcomes, and Protocol-defined exclusions remain visible. This prevents survivorship bias, including when an eligible opportunity has zero successful provider observations.
+
+PR14 implements Research Capture Opportunity, Research Snapshot, Comparative Measurement, and cumulative Comparative Performance only. It does not implement the canonical Comparative Performance Report, time-bounded surveillance analytics beyond existing PR13 contract support, Research Review conclusions, Current Scientific Applicability, Policy Recommendation, Policy Hypothesis, Forecast Policy, Governance, Workspace, Opportunity Analysis, Position Sizing, Execution, wagering, mutable scientific state, generic triggers, workflow management, scheduling, services, queues, databases, provider-network collection, or always-on surveillance infrastructure.
 
 ### Comparative Performance Reports
 
-A Comparative Performance Report is the canonical immutable research artifact for one Research Protocol and analysis boundary. It communicates comparative findings, uncertainty, coverage, surveillance, and limitations while preserving sufficient input identities and rule versions for deterministic reproduction.
+A Comparative Performance Report is the canonical immutable research artifact for one Research Protocol and analysis boundary. It communicates comparative findings, uncertainty, coverage, surveillance, and limitations while preserving sufficient input identities and rule versions for deterministic reproduction. PR15 owns this canonical report and alignment with Forecast Intelligence.
 
 One Comparative Performance Report may support multiple claim-specific Research Reviews. PR13 represents that dependency through an immutable typed report reference; it does not implement the canonical report or bind new Reviews directly to the legacy `ForecastIntelligenceReport` symbol.
 
@@ -310,11 +410,11 @@ Drift Surveillance is deterministic, rerunnable analysis over cumulative and tim
 
 While any qualifying obligation remains unresolved, Current Scientific Applicability is suspended and operational reliance must fail closed, while the latest completed scientific conclusion and historical Market Edge remain intact. Scientific inapplicability neither creates nor revokes Governance authority and does not modify Governance History.
 
-Current Scientific Applicability is a deterministic replayable Forecast Intelligence projection owned by PR14; it is not stored as mutable authoritative state. At an explicit timezone-aware `as_of` boundary, the projection identifies the latest completed conclusion for the Edge Claim, all scheduled obligations due by `as_of`, all valid material-event artifacts effective by `as_of`, and the obligations explicitly covered by completed Reviews. Unresolved obligations suspend applicability. Otherwise only Supported or Strongly Supported may support applicability, subject to every other protocol, Research Domain, Research Population, Evidence, analytical, and compatibility requirement. Resolving an obligation does not by itself restore applicability.
+Current Scientific Applicability is a deterministic replayable Forecast Intelligence projection owned by PR16; it is not stored as mutable authoritative state. At an explicit timezone-aware `as_of` boundary, the projection identifies the latest completed conclusion for the Edge Claim, all scheduled obligations due by `as_of`, all valid material-event artifacts effective by `as_of`, and the obligations explicitly covered by completed Reviews. Unresolved obligations suspend applicability. Otherwise only Supported or Strongly Supported may support applicability, subject to every other protocol, Research Domain, Research Population, Evidence, analytical, and compatibility requirement. Resolving an obligation does not by itself restore applicability.
 
 PR13 provides the immutable structures needed for this replay: claim and Market Edge relationships, scheduled review-boundary identities, authorized material-event references, effective and completion times, completed conclusions, explicit obligation coverage, deterministic identities, provenance, serialization, and fail-closed validation. Bounded typed supporting value objects may express these relationships; they are not additional top-level research contracts and must not become mutable workflow or current-state objects.
 
-PR13 does not calculate or store authoritative Current Scientific Applicability, implement the canonical Comparative Performance Report, or introduce a generic `ReviewTrigger`, mutable review lifecycle, workflow manager, always-on surveillance service, Workspace/UI state, or additional durable current-applicability contract. Workspace or UI state cannot originate, resolve, or override Under Review. The PR14 projection grants no Governance or operational authority and is available for PR16 presentation and PR17 operational reliance.
+PR13 does not calculate or store authoritative Current Scientific Applicability, implement the canonical Comparative Performance Report, or introduce a generic `ReviewTrigger`, mutable review lifecycle, workflow manager, always-on surveillance service, Workspace/UI state, or additional durable current-applicability contract. Workspace or UI state cannot originate, resolve, or override Under Review. PR16 owns Current Scientific Applicability and Policy Recommendation without granting Governance or operational authority.
 
 This personal hobby platform does not require speculative always-on services. Scheduled local analysis and explicit reruns are sufficient until operational evidence justifies more infrastructure.
 
@@ -634,7 +734,9 @@ The following gaps are architectural state, not roadmap commitments:
 | Forecast Evaluation Measurement | Implemented for MLB winner forecasts |
 | Provider-neutral Forecast Intelligence precursor | Implemented with legacy report and proposal symbols |
 | Full Research Protocol contracts | Implemented with typed scientific rules and deterministic validation |
-| Canonical Comparative Performance Report | Approved for PR14; PR13 provides a typed forward reference only |
+| Research Snapshot, Comparative Measurement, and cumulative Comparative Performance | Approved for PR14; not implemented |
+| Canonical Comparative Performance Report | Approved for PR15; PR13 provides a typed forward reference only |
+| Current Scientific Applicability and Policy Recommendation | Approved for PR16; not implemented |
 | Edge Claim, Market Edge, Research Review, and Drift Surveillance contracts | Implemented |
 | Policy Hypothesis aligned explicitly to supported Market Edges | Product-approved; existing symbol has older analytical-candidate semantics |
 | Forecast Policy, deterministic execution, and Policy Forecast | Implemented |

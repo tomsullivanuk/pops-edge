@@ -333,7 +333,7 @@ and lifecycle transitions.
 
 `PolicyProposal` is the current implementation precursor to the canonical
 Policy Recommendation. The implemented `PolicyHypothesis` retains its
-historical candidate-strategy semantics until PR15 aligns it with the Product
+historical candidate-strategy semantics until PR17 aligns it with the Product
 definition: a proposed operational strategy for exploiting one or more
 empirically supported Market Edges. Neither implementation symbol should be
 treated as though that migration has already occurred.
@@ -390,7 +390,7 @@ applies identity transformation and weight `1.0`, validates the complete binary
 distribution without silent correction, and fails closed with no fallback when
 the provider is absent. This neither approves nor activates the policy. PR12
 owns governance and lifecycle state and selects the production-authoritative
-Forecast Policy. PR17, not PR11, will separately migrate Opportunity Analysis
+Forecast Policy. PR19, not PR11, will separately migrate Opportunity Analysis
 and the Opportunity Board to governance-authorized Policy Forecast input.
 
 Run the bounded fixture inspection with:
@@ -471,18 +471,23 @@ approved sequence in `docs/RELEASE_PLAN_v1.1.0.md`.
 
 The remaining v1.1.0 sequence after the implemented PR13 contract foundation is:
 
-1. **PR14 — Comparative Performance and Forecast Intelligence Alignment:** add
-   Market-Benchmark-relative Comparative Performance and the canonical
-   Comparative Performance Report while preserving truthful compatibility with
-   the implemented `ForecastIntelligenceReport` and `PolicyProposal` symbols.
-2. **PR15 — Policy Hypothesis Alignment:** align `PolicyHypothesis` with one or
+1. **PR14 — Research Snapshot, Comparative Measurement, and Comparative
+   Performance:** implement immutable pregame research Evidence, pair-specific
+   Measurement, cumulative claim-level analysis, paired uncertainty, and exact
+   failure-inclusive Coverage.
+2. **PR15 — Comparative Performance Report and Forecast Intelligence
+   Alignment:** implement canonical reporting while preserving truthful
+   compatibility with the legacy `ForecastIntelligenceReport`.
+3. **PR16 — Current Scientific Applicability and Policy Recommendation:** add
+   deterministic applicability replay and non-authoritative recommendations.
+4. **PR17 — Policy Hypothesis Alignment:** align `PolicyHypothesis` with one or
    more empirically supported Market Edges while keeping it non-authoritative
    and non-executable.
-3. **PR16 — Forecast Intelligence Workspace:** implement the Product Owner's
+5. **PR18 — Forecast Intelligence Workspace:** implement the Product Owner's
    principal research and governance surface.
-4. **PR17 — Policy Forecast Opportunity Integration:** migrate Opportunity
+6. **PR19 — Policy Forecast Opportunity Integration:** migrate Opportunity
    Analysis and the Opportunity Board to governance-authorized Policy Forecasts.
-5. **PR18 — v1.1.0 Integration and Release Readiness:** validate the integrated
+7. **PR20 — v1.1.0 Integration and Release Readiness:** validate the integrated
    lifecycle, compatibility, documentation, and release gates.
 
 The Release Plan owns detailed scope, dependencies, exclusions, and gates. Do

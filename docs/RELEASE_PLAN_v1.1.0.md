@@ -412,7 +412,7 @@ Policy Hypothesis does not automatically become this separate executable
 production definition, and offline execution does not imply active status.
 Wall-clock run time is absent from canonical analytical serialization. PR12
 governance will select which Policy Forecast, if any, has production authority;
-PR14 will consume that authorized output.
+PR19 will consume that authorized output.
 
 **Implemented boundary:** immutable provider-neutral Forecast Policy and
 versioned rule components; distinct structured production eligibility;
@@ -462,14 +462,14 @@ Governance Record identities; append-only replay reproduces current and
 historical lifecycle and authority without mutable state; Reject is terminal;
 missing or conflicting production authority fails closed; Research artifacts
 remain non-executable; changing effective time or scope changes record identity;
-PR14 consumer migration remains deferred.
+PR19 consumer migration remains deferred.
 
 **Implemented boundary:** PR12 now provides immutable deterministic Governance
 Scope and Governance Record contracts, append-only Governance History,
 historical lifecycle derivation, structured fail-closed conflict diagnostics,
 and exclusive production-policy resolution from a caller-supplied immutable
 policy registry. Fixture-only inspection is available; no operational workflow
-selects or executes a governed policy, and PR13/PR14 remain deferred.
+selects or executes a governed policy, and PR19 remains deferred.
 Stable Product Owner ID is identifying while display name is optional metadata;
 equivalent same-time decisions retain all supporting record IDs, materially
 different decisions fail closed, and only conflicts involving current or
@@ -512,71 +512,70 @@ and provenance values. A compact offline MLB fixture, inspector, focused tests,
 and pure `validate_research_contracts(...)` graph validation exercise scheduled
 and Drift obligation chronology and first-qualifying Market Edge recognition.
 The canonical Comparative Performance Report and deterministic Current
-Scientific Applicability projection remain PR14 responsibilities.
+Scientific Applicability projection remain PR15 and PR16 responsibilities,
+respectively.
 
-### PR14 — Comparative Performance and Forecast Intelligence Alignment
+### PR14 — Research Snapshot, Comparative Measurement, and Comparative Performance
 
-**Purpose:** align the implemented Forecast Intelligence layer with the finalized Product and Architecture.
+**Purpose:** implement the protocol-governed path from pregame Evidence through cumulative claim-level Forecast Intelligence.
 
-**Scope:**
+**Scope:** Research Capture Opportunity identity; immutable Research Snapshot Evidence, correction lineage, and historical replay; immutable pair-specific Comparative Measurement; cumulative claim/domain Comparative Performance; Protocol-governed paired uncertainty; and exact Coverage populations.
 
-- Comparative Performance;
-- Comparative Performance Report;
-- alignment of the legacy `ForecastIntelligenceReport` implementation;
-- Policy Recommendation;
-- continued compatibility with the existing `PolicyProposal`;
-- deterministic Current Scientific Applicability projection over immutable PR13
-  research contracts at an explicit timezone-aware `as_of` boundary; and
-- reproducible analytical outputs.
+**Dependencies:** PR13 research contracts and the completed identity, Evidence, Outcome, and Forecast Evaluation foundations.
 
-**Dependencies:** PR13 research contracts and the completed PR9–PR10 Measurement and Forecast Intelligence foundations.
+**Exclusions:** canonical Comparative Performance Report, time-bounded surveillance analytics beyond PR13 contract support, scientific conclusions, Current Scientific Applicability, Policy Recommendation, Policy Hypothesis, Governance, Workspace, Opportunity Analysis, production authority, mutable state, and collection or workflow infrastructure.
 
-The applicability projection applies the completed-conclusion mapping, accounts for every unresolved scheduled and valid material-event obligation, preserves historical Research Reviews and Market Edges, and produces no mutable authoritative current-state contract. It grants no Governance or operational authority and is available before PR16 displays it or PR17 relies upon it.
+**Gate:** deterministic protocol-compatible inputs reproduce one authoritative Snapshot lineage, pair-specific Measurements, cumulative Comparative Performance, paired uncertainty, and failure-inclusive Coverage without retrospective reconstruction or survivorship bias.
 
-**Exclusions:** do not redesign Policy Hypothesis, implement the Forecast Intelligence Workspace, introduce mutable applicability state, or grant Governance or operational authority.
+### PR15 — Comparative Performance Report and Forecast Intelligence Alignment
 
-**Gate:** Forecast Intelligence produces reproducible Market-Benchmark-relative analysis using canonical terminology while preserving truthful compatibility with legacy implementation symbols. At an explicit timezone-aware `as_of` boundary, it deterministically derives Current Scientific Applicability from the latest completed claim-specific conclusion, explicitly covered obligations, and all other required compatibility conditions without mutating historical artifacts.
+**Purpose:** implement the canonical Comparative Performance Report and align Forecast Intelligence terminology with the finalized Product and Architecture.
 
-### PR15 — Policy Hypothesis Alignment
+**Scope:** canonical reporting over PR14 cumulative Comparative Performance; alignment of the legacy `ForecastIntelligenceReport` implementation while preserving truthful compatibility; report provenance, findings, limitations, Coverage, and Research Review references.
+
+**Dependencies:** PR13 research contracts and PR14 Evidence, Measurement, and cumulative Comparative Performance.
+
+**Exclusions:** Research Review conclusions, Current Scientific Applicability, Policy Recommendation, Policy Hypothesis redesign, Governance, Workspace, or operational authority.
+
+**Gate:** canonical reports reproducibly communicate Market-Benchmark-relative findings without reclassifying Snapshot Evidence, replacing Research Review, or misrepresenting the legacy provider-level report.
+
+### PR16 — Current Scientific Applicability and Policy Recommendation
+
+**Purpose:** derive current scientific applicability and advisory Policy Recommendations from immutable research history.
+
+**Scope:** deterministic Current Scientific Applicability projection at an explicit timezone-aware `as_of` boundary; complete scheduled and material-event obligation replay; and non-authoritative Policy Recommendation aligned with the legacy `PolicyProposal` precursor.
+
+**Dependencies:** PR13 contracts and PR15 canonical Comparative Performance Reports and Forecast Intelligence alignment.
+
+**Exclusions:** mutable applicability state, Policy Hypothesis alignment, Product Owner Governance decisions, Forecast Policy, Workspace, or operational authority.
+
+**Gate:** replay preserves historical Reviews and Market Edges, fails closed on unresolved obligations or incompatibility, and creates neither Governance nor production authority.
+
+### PR17 — Policy Hypothesis Alignment
 
 **Purpose:** align the implemented `PolicyHypothesis` with the finalized Product definition: a proposed operational strategy for exploiting one or more empirically supported Market Edges.
 
-**Scope:**
+**Scope:** explicit linkage to supporting Market Edges and Forecast Intelligence; deterministic identity and provenance; multiple competing hypotheses over the same empirical foundation; and alignment of existing candidate-strategy semantics.
 
-- explicit linkage to supporting Market Edges and Forecast Intelligence;
-- preservation of deterministic identity and provenance;
-- support for multiple competing hypotheses over the same empirical foundation; and
-- alignment of existing candidate-strategy semantics with the finalized Product boundary.
+**Dependencies:** PR13 Edge Claim and Market Edge contracts and PR16 applicability and recommendation outputs.
 
-**Dependencies:** PR13 Edge Claim and Market Edge contracts and PR14 aligned Forecast Intelligence outputs.
+**Exclusions:** a Policy Hypothesis remains non-authoritative, is not Evidence or a Forecast Policy, and does not redesign Product Owner Governance.
 
-**Exclusions:** a Policy Hypothesis remains non-authoritative, is not Evidence, is not a Forecast Policy, and does not redesign Product Owner Governance.
+**Gate:** aligned Policy Hypotheses remain reproducible and non-executable, and no hypothesis grants itself production authority or mutates Governance.
 
-**Gate:** aligned Policy Hypotheses remain reproducible and non-executable, and no hypothesis can grant itself production authority or mutate Governance.
+### PR18 — Forecast Intelligence Workspace
 
-### PR16 — Forecast Intelligence Workspace
+**Purpose:** implement the first deterministic, read-only Forecast Intelligence Workspace as a surface over existing Forecast Intelligence and Governance context.
 
-**Purpose:** implement the first Forecast Intelligence Workspace as the principal interactive surface for Forecast Intelligence.
+**Scope:** one locally generated workspace; shared explicit research and governance context; Comparative Performance and Reports; Edge Claims, Market Edges, Research Reviews, and Drift Surveillance; Policy Recommendations and Policy Hypotheses; Product Owner Governance context; diagnostics; and provenance.
 
-The Workspace consumes Forecast Intelligence. It is not Forecast Intelligence.
+**Dependencies:** PR13–PR17 canonical research, Forecast Intelligence, applicability, recommendation, and Policy Hypothesis contracts, plus completed Governance replay.
 
-**Scope:**
+**Exclusions:** database, browser persistence, execution, governance authority, mutable business state, or independent analytical rules.
 
-- one deterministic, read-only, locally generated workspace;
-- shared explicit research and governance context;
-- Comparative Performance and Comparative Performance Reports;
-- Edge Claims, Market Edges, Research Reviews, and Drift Surveillance;
-- Policy Recommendations and Policy Hypotheses;
-- Product Owner Governance context; and
-- diagnostics and provenance.
+**Gate:** identical immutable inputs and context produce substantively identical projections; the Workspace cannot create Governance Records or production behavior.
 
-**Dependencies:** PR13–PR15 canonical research, Forecast Intelligence, and Policy Hypothesis contracts, plus completed Governance replay.
-
-**Exclusions:** no database, browser persistence, execution, governance authority, mutable business state, or independent analytical rules.
-
-**Gate:** identical immutable inputs and context produce substantively identical projections; the Workspace remains a surface over existing capabilities and cannot create Governance Records or production behavior.
-
-### PR17 — Policy Forecast Opportunity Integration
+### PR19 — Policy Forecast Opportunity Integration
 
 **Purpose:** complete the migration from direct-provider Opportunity Analysis to governance-authorized Policy Forecast consumption.
 
@@ -599,13 +598,13 @@ Opportunity Analysis
 - preserve existing position semantics and Opportunity Board behavior; and
 - preserve complete provenance and fail-closed validation.
 
-**Dependencies:** completed PR11 Forecast Policy and Policy Forecast, completed PR12 Governance, and aligned PR13–PR15 research-to-policy contracts. The Workspace is not an operational dependency, but PR16 precedes this work in the release sequence.
+**Dependencies:** completed PR11 Forecast Policy and Policy Forecast, completed PR12 Governance, and aligned PR13–PR17 research-to-policy contracts. The Workspace is not an operational dependency, but PR18 precedes this work in the release sequence.
 
 **Exclusions:** do not introduce historical Policy Forecast evaluation, automated Shadow measurement, new sizing Policy, or automated Execution.
 
 **Gate:** Opportunity Analysis consumes only a compatible Policy Forecast produced by the Governance-authorized Forecast Policy; the legacy direct-provider path is removed or explicitly isolated without changing World Cup behavior.
 
-### PR18 — v1.1.0 Integration and Release Readiness
+### PR20 — v1.1.0 Integration and Release Readiness
 
 **Purpose:** complete integration and release validation without introducing new analytical capabilities.
 
@@ -619,7 +618,7 @@ Opportunity Analysis
 - known-limitations and rollback review; and
 - release readiness.
 
-**Dependencies:** PR13–PR17 complete and their acceptance gates satisfied.
+**Dependencies:** PR13–PR19 complete and their acceptance gates satisfied.
 
 **Exclusions:** no new research, analytical, governance, policy, or operational capability.
 
@@ -638,7 +637,11 @@ The remaining work follows this sequence:
 ```text
 Research contracts
         ↓
-Forecast Intelligence
+Evidence → Measurement → cumulative Comparative Performance
+        ↓
+Canonical reporting and Forecast Intelligence alignment
+        ↓
+Current applicability and Policy Recommendation
         ↓
 Policy alignment
         ↓
@@ -649,7 +652,7 @@ Operational integration
 Release validation
 ```
 
-PR16 precedes PR17 as a release-sequencing choice. The Forecast Intelligence
+PR18 precedes PR19 as a release-sequencing choice. The Forecast Intelligence
 Workspace is not an architectural runtime dependency of Policy Forecast
 Opportunity Integration.
 

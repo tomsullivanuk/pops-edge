@@ -80,7 +80,7 @@ observation eligibility/selection are explicit, versioned, deterministic, and
 fail closed. Each Policy Forecast is canonical only to its specific policy
 execution; multiple outputs may coexist for an event. Policies and forecasts
 contain no approval or lifecycle state; PR12 governance alone determines which
-policy, if any, has production authority. PR14 remains responsible for selecting
+policy, if any, has production authority. PR19 remains responsible for selecting
 a compatible Policy Forecast execution for consumption. The current Opportunity
 Board continues to consume DRatings directly until that bounded migration.
 
@@ -107,8 +107,10 @@ typed scientific rules and fail-closed graph validation. Its offline fixture
 and inspector demonstrate the research-contract boundary without provider or
 network access.
 
-The canonical Comparative Performance Report and deterministic Current
-Scientific Applicability projection remain PR14 work. The Forecast Intelligence
+Research Snapshot, Comparative Measurement, and cumulative Comparative
+Performance remain PR14 work. The canonical Comparative Performance Report is
+PR15 work, and deterministic Current Scientific Applicability and Policy
+Recommendation are PR16 work. The Forecast Intelligence
 Workspace remains a later product surface. Research contracts create neither
 Governance nor production authority.
 
@@ -120,7 +122,7 @@ Governance nor production authority.
 - [Roadmap](ROADMAP.md) — ordered product direction
 - [Backlog](BACKLOG.md) — deferred and uncommitted work
 - [Changelog](CHANGELOG.md) — version history
-- [v1.1.0 release plan](docs/RELEASE_PLAN_v1.1.0.md) — PR1–PR15 sequence
+- [v1.1.0 release plan](docs/RELEASE_PLAN_v1.1.0.md) — PR1–PR20 sequence
 - [v1.1.0 checkpoint through PR6](docs/V1.1.0_CHECKPOINT_THROUGH_PR6.md) —
   implemented platform baseline before MLB market valuation
 - [Codex workflow](docs/CODEX_WORKFLOW.md) — pull-request and completion-report
