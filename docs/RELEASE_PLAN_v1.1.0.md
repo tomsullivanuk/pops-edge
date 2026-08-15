@@ -519,13 +519,13 @@ respectively.
 
 **Purpose:** implement the protocol-governed path from pregame Evidence through cumulative claim-level Forecast Intelligence.
 
-**Scope:** Research Capture Opportunity identity; immutable Research Snapshot Evidence, correction lineage, and historical replay; immutable pair-specific Comparative Measurement; cumulative claim/domain Comparative Performance; Protocol-governed paired uncertainty; and exact Coverage populations.
+**Scope:** Research Capture Opportunity identity; immutable Research Snapshot Evidence, correction lineage, and historical replay; immutable pair-specific Comparative Measurement; cumulative claim/domain Comparative Performance; Protocol-governed paired uncertainty and deterministic Calibration safeguards; and exact Coverage populations.
 
 **Dependencies:** PR13 research contracts and the completed identity, Evidence, Outcome, and Forecast Evaluation foundations.
 
 **Exclusions:** canonical Comparative Performance Report, time-bounded surveillance analytics beyond PR13 contract support, scientific conclusions, Current Scientific Applicability, Policy Recommendation, Policy Hypothesis, Governance, Workspace, Opportunity Analysis, production authority, mutable state, and collection or workflow infrastructure.
 
-**Gate:** deterministic protocol-compatible inputs reproduce one authoritative Snapshot lineage, pair-specific Measurements, cumulative Comparative Performance, paired uncertainty, and failure-inclusive Coverage without retrospective reconstruction or survivorship bias.
+**Gate:** deterministic protocol-compatible inputs reproduce one authoritative Snapshot lineage, pair-specific Measurements, cumulative Comparative Performance, paired uncertainty, versioned fixed-bin Calibration over the same paired population, and failure-inclusive Coverage without retrospective reconstruction or survivorship bias.
 
 ### PR15 — Comparative Performance Report and Forecast Intelligence Alignment
 

@@ -1925,6 +1925,97 @@ Their purpose is to identify weaknesses that may undermine confidence in an othe
 
 Their interpretation occurs later during Research Review.
 
+### Calibration safeguard
+
+Calibration uses exactly the same paired Comparative Measurement population as
+the corresponding mean Brier Scores, mean paired Brier improvement, and Log
+Loss safeguard. Benchmark and challenger Calibration therefore describe the
+same events and authoritative Outcomes. Unmatched forecasts, different source
+subsets, and post hoc filtered populations are not substituted.
+
+Each source is calibrated using the probability assigned to the canonical
+binary proposition represented by the Comparative Measurement. The realized
+Outcome is encoded in that same orientation. Labels such as home, YES, or
+favorite are valid only when they are the canonical proposition orientation
+already established by the Research Protocol and Evidence lineage. Calibration
+does not silently reverse that orientation.
+
+The prospective `calibration-safeguard` rule version 2 uses these fixed exact
+decimal probability bins:
+
+```text
+[0.00, 0.10)
+[0.10, 0.20)
+[0.20, 0.30)
+[0.30, 0.40)
+[0.40, 0.50)
+[0.50, 0.60)
+[0.60, 0.70)
+[0.70, 0.80)
+[0.80, 0.90)
+[0.90, 1.00]
+```
+
+Every bin is lower-bound inclusive. Every bin except the final bin is
+upper-bound exclusive; the final bin includes probability exactly `1.00`.
+Probability `0.00` belongs to the first bin, and every valid probability
+belongs to exactly one bin. Benchmark and challenger use identical boundaries.
+The boundaries are prospective and immutable under the rule version; adaptive,
+quantile, equal-count, or other data-dependent bins are not part of version 2.
+
+For each bin, Calibration reports:
+
+- count;
+- mean forecast probability;
+- observed Outcome frequency; and
+- calibration gap, defined as observed Outcome frequency minus mean forecast
+  probability.
+
+A positive gap means Outcomes occurred more frequently than forecast in that
+bin; a negative gap means they occurred less frequently. Empty bins remain in
+the canonical structure with count zero. Their mean probability, observed
+frequency, and gap are absent or not applicable, not numerical zero.
+
+The descriptive scalar safeguard is **weighted absolute calibration error**:
+
+```text
+WACE = Σ_b (n_b / N) × |observed_frequency_b - mean_probability_b|
+```
+
+Here `n_b` is the bin count and `N` is the total paired Calibration sample
+size. When `N > 0`, the sum is evaluated over nonempty bins. Empty bins have
+zero weight without requiring fabricated statistics.
+
+When the complete paired Calibration population is empty (`N = 0`), all ten
+canonical bins remain represented with count zero. Every per-bin mean forecast
+probability, observed Outcome frequency, and calibration gap remains absent or
+not applicable, and weighted absolute calibration error is also absent or not
+applicable. It must not be represented as numerical zero, because zero would
+falsely communicate perfect Calibration rather than absence of Evidence.
+
+Calibration uses exact decimal scientific arithmetic. For an identical paired
+Measurement population and rule version, bin membership, counts, means,
+frequencies, gaps, and weighted absolute calibration error are deterministic
+and independent of input order. Binary floating point is not scientific
+authority.
+
+Every nonempty bin remains visible even when its count is small. Version 2
+introduces no minimum-bin-size exclusion, smoothing, Bayesian shrinkage, or
+pseudocount. Small-sample limitations are reported and interpreted downstream.
+
+Calibration is descriptive supporting Measurement. Comparative Performance
+reports the bins and weighted absolute calibration error for both sources, but
+does not produce a Calibration pass/fail status, hypothesis test, confidence
+interval, or Burden-of-Proof conclusion. Research Review interprets Calibration
+alongside Brier improvement, paired uncertainty, Practical Significance, and
+Log Loss. Calibration alone neither establishes nor rejects a Market Edge.
+
+The under-specified `calibration-safeguard` rule version 1 remains immutable
+historical Protocol material and is not silently reinterpreted. Future
+Protocols requiring this canonical deterministic Calibration methodology use
+rule version 2, which prospectively identifies the fixed exact-decimal bin
+boundaries and weighted absolute calibration error summary method.
+
 ---
 
 ## 5.19 Coverage Measurement
@@ -2724,6 +2815,10 @@ Version 1.0 requires:
 Research Review applies the protocol-defined safeguards.
 
 An Alternative Probability Source that satisfies the primary endpoint while materially failing a required supporting measure does not satisfy the Burden of Proof.
+
+Calibration itself supplies no automatic pass/fail result. Research Review
+interprets its descriptive findings under the Protocol's Burden of Proof, and
+Calibration alone neither establishes nor rejects a Market Edge.
 
 ---
 
