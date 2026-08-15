@@ -525,7 +525,7 @@ respectively.
 
 **Exclusions:** canonical Comparative Performance Report, time-bounded surveillance analytics beyond PR13 contract support, scientific conclusions, Current Scientific Applicability, Policy Recommendation, Policy Hypothesis, Governance, Workspace, Opportunity Analysis, production authority, mutable state, and collection or workflow infrastructure.
 
-**Gate:** deterministic protocol-compatible inputs reproduce one authoritative Snapshot lineage, pair-specific Measurements, cumulative Comparative Performance, paired uncertainty, versioned fixed-bin Calibration over the same paired population, and failure-inclusive Coverage without retrospective reconstruction or survivorship bias.
+**Gate:** deterministic protocol-compatible inputs reproduce one authoritative Snapshot lineage, pair-specific Measurements, cumulative Comparative Performance, paired uncertainty, versioned fixed-bin Calibration over the same paired population, and failure-inclusive Coverage without retrospective reconstruction or survivorship bias. Coverage eligibility derives from provider-neutral immutable event-classification and complete schedule/status-history context through the analysis boundary under the prospective Protocol rules; supporting Log Loss preserves deterministic finite, signed-infinite, and absent/not-applicable indeterminate semantics without changing the paired Brier population.
 
 ### PR15 — Comparative Performance Report and Forecast Intelligence Alignment
 

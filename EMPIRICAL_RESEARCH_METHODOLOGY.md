@@ -403,6 +403,33 @@ Evidence belongs to a Research Population because it satisfies those criteria—
 
 Evidence does not become invalid merely because it becomes old.
 
+Research Population eligibility is evaluated from authoritative immutable
+Evidence at an explicit timezone-aware analysis boundary. A bounded
+`ResearchEventEligibilityContext` assembles, without replacing, the separate
+authorities needed for that evaluation: Canonical Event identity, sport,
+competition, season, and participants; prospectively available sport-provider
+Evidence for event phase or equivalent competition-stage classification; and
+the authoritative schedule and status chronology through the boundary. The
+context is provider-neutral, deterministic, immutable, replayable supporting
+Evidence. It is not a new scientific stage, mutable current state, scheduler or
+workflow state, provider-adapter authority, or production authority.
+
+For schedule-history-sensitive rules, one latest observation is insufficient.
+The applicable immutable Outcome History, or equivalently complete
+authoritative schedule/status history, preserves scheduled-start and status
+transitions through the analysis boundary, including postponement,
+cancellation, and rescheduling. Later Evidence never rewrites an earlier
+eligibility replay, and a future Schedule Observation cannot enter an earlier
+Coverage denominator.
+
+A deterministic Population Eligibility Result applies every prospective
+Research Population rule to that context at the boundary. It preserves the
+capture-opportunity, context, Protocol and population identities, governing
+rule identities and versions, eligibility disposition, deterministic reasons,
+validation, and provenance. It is a bounded derived supporting value, not a
+generic rule engine or mutable lifecycle. If a rule requires authoritative
+facts absent from the context schema, evaluation fails closed.
+
 ---
 
 ## 2.7 Research Snapshot
@@ -1161,6 +1188,33 @@ Typical criteria may include:
 Evidence belongs to a Research Population because it satisfies those criteria.
 
 It is not excluded merely because it becomes old.
+
+Eligibility is not established merely because an opportunity exists, refers
+to the Protocol, has a supplied Snapshot, or appears in a caller-owned list.
+The Protocol's temporal-scope, event-status, postseason-treatment,
+postponement-treatment, cancellation-treatment, rescheduling-treatment,
+inclusion, and exclusion rules are executed deterministically from the
+authoritative eligibility context through the analysis boundary. Protocol
+exclusions are reproducible rule results with preserved identities and reason
+codes, never arbitrary caller-selected opportunity or Snapshot identifiers.
+
+Competition-stage semantics remain provider-neutral. An MLB adapter may derive
+regular-season or postseason classification from authoritative MLB event
+Evidence such as game type, but an MLB-specific event contract does not become
+a generic comparative-research dependency. Other sports supply equivalent
+immutable phase or stage Evidence through their own adapters.
+
+Research Capture Opportunity identity remains based on the Protocol, Schedule
+Observation, proposition, and identity/schema versions. Eligibility evaluation
+does not redefine it. A genuinely new Schedule Observation, including a real
+reschedule, remains a new opportunity; corrected interpretation of the same
+observation remains the same opportunity and uses Snapshot correction lineage.
+Postponement, cancellation, and rescheduling rules evaluate the complete
+history as it stood at the boundary and do not collapse original and later
+opportunities into the latest eventual state. Cancellation remains immutable
+history and is either excluded or retained in the explicitly reasoned Coverage
+category required by the prospective cancellation rule; it is never silently
+dropped.
 
 ---
 
@@ -1925,6 +1979,49 @@ Their purpose is to identify weaknesses that may undermine confidence in an othe
 
 Their interpretation occurs later during Research Review.
 
+### Log Loss safeguard
+
+Valid source-level Log Loss belongs to the extended nonnegative real range
+`[0, +Infinity]`. Assigning zero probability to the realized Outcome may
+legitimately produce `+Infinity`; this is valid Measurement rather than
+structural invalidity. Source Log Loss never admits `NaN` or `-Infinity`.
+
+Event-level paired Log Loss improvement remains:
+
+```text
+benchmark Log Loss - challenger Log Loss
+```
+
+Its governed semantics are:
+
+- finite minus finite produces the finite difference;
+- `+Infinity` minus finite produces `+Infinity`;
+- finite minus `+Infinity` produces `-Infinity`; and
+- `+Infinity` minus `+Infinity` is mathematically indeterminate and therefore
+  absent/not applicable.
+
+Positive values favor the challenger and negative values favor the benchmark.
+In the indeterminate case both source Log Loss values remain `+Infinity`, while
+only the paired improvement is absent. The Comparative Measurement otherwise
+remains valid: its Brier contribution, Outcome and source lineage, Coverage,
+and classifications remain intact. Log Loss indeterminacy never filters the
+event from the paired Brier or Calibration population.
+
+Benchmark and challenger mean Log Loss are computed independently over the
+exact paired Comparative Measurement population. An all-finite source
+population has its finite arithmetic mean; any `+Infinity` source value makes
+that source mean `+Infinity`. Infinite observations are not censored.
+
+Mean paired Log Loss improvement uses event-level paired improvements over that
+same population. If any event-level improvement is absent, the aggregate is
+absent/not applicable rather than computed over a reduced population. When all
+are defined, deterministic extended-real arithmetic applies. A population
+containing both `+Infinity` and `-Infinity` paired improvements has no unique
+arithmetic mean, so its aggregate is likewise absent/not applicable. Neither
+absence is numerical zero. Log Loss remains supporting Evidence and a
+safeguard, not a primary endpoint, exclusion mechanism, or scientific
+conclusion.
+
 ### Calibration safeguard
 
 Calibration uses exactly the same paired Comparative Measurement population as
@@ -2032,6 +2129,24 @@ Coverage distinguishes among:
 - and protocol exclusions.
 
 Coverage provides scientific context for later interpretation.
+
+The Coverage denominator begins with opportunities proven eligible by the
+authoritative event and schedule Evidence, deterministic Population Eligibility
+Result, immutable Protocol rules, and analysis boundary. The sequence is:
+
+```text
+authoritative event and schedule Evidence
+        -> Research Event Eligibility Context
+        -> Protocol Population evaluation
+        -> eligible Research Capture Opportunity population
+        -> Research Snapshot and capture outcomes
+        -> Comparative Coverage
+```
+
+Once prospectively eligible, an opportunity remains visible when all captures
+fail or when later capture, synchronization, or Outcome requirements fail.
+Excluded and cancelled identities remain reproducible with rule-linked reasons.
+This prevents caller-controlled filtering and survivorship bias.
 
 ---
 

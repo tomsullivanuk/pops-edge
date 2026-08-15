@@ -227,6 +227,72 @@ Schedule Observation B (9:00 PM) → Research Capture Opportunity B
 
 Opportunity B does not correct Opportunity A.
 
+#### Research event eligibility context
+
+`ResearchEventEligibilityContext` is a bounded, immutable, deterministic,
+replayable, provider-neutral supporting Evidence value. It assembles and
+validates the authoritative facts required to evaluate one Research Capture
+Opportunity against its Research Population at an explicit timezone-aware
+`analysis_boundary`. It is not a new top-level scientific stage, source-of-truth
+replacement, mutable current-state object, scheduler or workflow state,
+provider-adapter authority, or production authority.
+
+Authority remains separated:
+
+- `CanonicalEvent` owns canonical event identity, sport, competition, season,
+  and participants.
+- Immutable sport-provider event-classification Evidence owns event phase,
+  postseason or regular-season status, or the equivalent competition-stage
+  classification prospectively available for that sport.
+- `OutcomeHistory` owns scheduled-start and authoritative status chronology,
+  including postponement, cancellation, rescheduling, and status transitions.
+- `ResearchEventEligibilityContext` only assembles and validates those facts as
+  available through the analysis boundary.
+
+An MLB adapter may derive competition-stage Evidence from authoritative MLB
+event Evidence such as `MLBGame.game_type`; neither `MLBGame` nor its native
+codes become a provider-neutral dependency of Comparative Performance. Other
+sports may supply equivalent phase/stage Evidence without redesigning PR14.
+
+One latest Outcome Observation is insufficient for history-sensitive rules.
+Eligibility consumes the authoritative Outcome History, or equivalently
+complete immutable schedule/status history, through the analysis boundary.
+Later Evidence cannot rewrite earlier replay, and a future Schedule Observation
+cannot enter an earlier Coverage denominator.
+
+A bounded immutable Population Eligibility Result deterministically applies the
+Research Population's temporal-scope, event-status, postseason, postponement,
+cancellation, rescheduling, inclusion, and exclusion rules. It preserves the
+Research Capture Opportunity, eligibility-context, Protocol and population
+identities; analysis boundary; eligibility disposition; governing rule IDs and
+versions; deterministic reason codes; validation; and provenance. It is not a
+generic rule engine, mutable lifecycle, or caller-owned exclusion state. A rule
+requiring facts not represented by the context fails closed.
+
+```text
+Authoritative event/classification/schedule Evidence
+        -> ResearchEventEligibilityContext
+        -> deterministic Protocol Population evaluation
+        -> eligible Research Capture Opportunity population
+        -> Research Snapshot and capture outcomes
+        -> Comparative Coverage
+```
+
+An opportunity is not eligible merely because it exists, references a Protocol,
+has a supplied Snapshot, or appears in caller input. Conversely, once proven
+prospectively eligible, total or partial capture failure does not remove it from
+Coverage. Protocol exclusions are rule-derived and preserve excluded identities
+and reasons; arbitrary caller-supplied lists have no scientific authority.
+
+Opportunity identity and correction semantics do not change. A genuine new
+Schedule Observation creates a new opportunity; corrected interpretation of
+the same observation remains within the same opportunity and Snapshot lineage.
+Postponement, cancellation, and rescheduling evaluation preserves original and
+later opportunities and the current schedule state at each analysis boundary,
+rather than collapsing history into the latest eventual state. Cancellation
+remains immutable Evidence and is excluded or retained in a reasoned Coverage
+category only as directed by the prospective cancellation rule.
+
 ### Research Snapshot
 
 A `ResearchSnapshot` is one first-class immutable Evidence record of what was actually available at one protocol-defined pregame information state. It preserves its Research Capture Opportunity and Research Protocol references; event and proposition interpretation; scheduled-event information; target and capture chronology; source-capture results; pairwise synchronization; prospectively approved Research Dimension classifications; validation status and reasons; limitations; provenance; correction lineage; and timezone-aware `effective_at`.
@@ -324,6 +390,25 @@ Log Loss improvement = benchmark Log Loss - challenger Log Loss
 
 Positive values favor the challenger. Calibration remains a population-level supporting measure rather than an event-level comparative conclusion.
 
+Source Log Loss is narrowly defined over the extended nonnegative real range
+`[0, +Infinity]`. Zero probability for the realized Outcome legitimately yields
+`+Infinity`; `NaN` and source-level `-Infinity` are invalid. Paired improvement
+uses these exact semantics:
+
+```text
+finite    - finite    -> finite
++Infinity - finite    -> +Infinity
+finite    - +Infinity -> -Infinity
++Infinity - +Infinity -> absent / not applicable
+```
+
+The last case is mathematically indeterminate and supplies no pairwise Log Loss
+ranking. Both source values remain `+Infinity`, but the Comparative Measurement
+remains valid and retains its Brier values and improvement, Outcome and source
+lineage, Snapshot lineage, Coverage contribution, and Research Dimension
+classifications. It remains in the exact Brier and Calibration paired
+population.
+
 ## Forecast Intelligence
 
 Forecast Intelligence is the umbrella architectural capability that transforms immutable Evidence and Measurement into reproducible operational knowledge about Probability Sources relative to the Market Benchmark.
@@ -362,6 +447,28 @@ Comparative Performance reports findings, not scientific conclusions. It stores 
 
 Over the exact same paired population it reports benchmark and challenger mean Log Loss and mean Log Loss improvement. Log Loss is a safeguard, not a second primary endpoint, and receives no independent inferential test unless prospectively required by the Protocol.
 
+Each source mean uses extended nonnegative-real semantics over that complete
+population: all-finite values produce the finite arithmetic mean, while any
+`+Infinity` produces a `+Infinity` source mean. Infinite observations are never
+discarded or diluted by a finite-only convention.
+
+Mean paired Log Loss improvement uses every event-level paired improvement from
+the same population. If any event has an absent improvement because both source
+losses are `+Infinity`, the aggregate improvement is absent/not applicable; the
+event is not dropped and absence is not zero. Otherwise finite and
+signed-infinite improvements use deterministic extended-real arithmetic. If
+both `+Infinity` and `-Infinity` occur in that aggregate, the mean is
+mathematically indeterminate and therefore absent/not applicable rather than
+ordered or coerced. Positive infinity favors the challenger; negative infinity
+favors the benchmark.
+
+Scientific serialization represents finite Decimal, `+Infinity`, `-Infinity`,
+and absent/not-applicable paired improvement with explicit, type-safe,
+deterministic, round-trip-reproducible tagged forms. These states are distinct
+from arbitrary strings and from one another; `NaN` remains invalid. This is a
+bounded Log Loss extension and does not authorize infinity for unrelated
+Decimal fields.
+
 Calibration is calculated separately for benchmark and challenger over that exact same paired Comparative Measurement population. Each uses the probability assigned to the canonical binary proposition and the realized Outcome in that same upstream-governed orientation; downstream analysis never silently flips orientation or substitutes unmatched or post hoc filtered observations.
 
 The prospective `calibration-safeguard` rule version 2 fixes exact-decimal bins `[0.00, 0.10)`, `[0.10, 0.20)`, `[0.20, 0.30)`, `[0.30, 0.40)`, `[0.40, 0.50)`, `[0.50, 0.60)`, `[0.60, 0.70)`, `[0.70, 0.80)`, `[0.80, 0.90)`, and `[0.90, 1.00]`. Lower bounds are inclusive; upper bounds are exclusive except that the final bin includes `1.00`. Every valid probability belongs to exactly one bin, and both sources use identical boundaries. Adaptive or data-dependent bins are not version-2 semantics.
@@ -378,7 +485,16 @@ The under-specified rule version 1 remains immutable historical Protocol materia
 
 Coverage is first-class scientific information within Comparative Performance, not another top-level scientific stage. It preserves exact opportunity, Snapshot, and Measurement identities sufficient to reproduce all counts. Snapshot/population coverage distinguishes eligible Research Capture Opportunities, authoritative Research Snapshots, benchmark and challenger capture successes and failures, and timing failures. Pair-specific analytical coverage distinguishes the eligible Snapshot population, benchmark and challenger availability, synchronized and unsynchronized pairs, resolved Outcomes, Protocol exclusions, and the Comparative Measurement population.
 
-The denominator is the protocol-eligible Research Capture Opportunity/authoritative Research Snapshot population through the analysis boundary, never only successful Comparative Measurements. Missing benchmark or challenger captures, invalid or out-of-tolerance captures, synchronization failures, cancellations, unresolved Outcomes, and Protocol-defined exclusions remain visible. This prevents survivorship bias, including when an eligible opportunity has zero successful provider observations.
+The denominator is the Research Capture Opportunity population proven eligible
+from authoritative immutable eligibility contexts, deterministic Protocol rule
+evaluation, and the analysis boundary, together with its authoritative Snapshot
+population through that boundary—never merely caller-supplied opportunities or
+successful Comparative Measurements. Future Evidence cannot enter an earlier
+denominator. Missing benchmark or challenger captures, invalid or
+out-of-tolerance captures, synchronization failures, cancellations, unresolved
+Outcomes, and rule-derived Protocol exclusions remain visible with identities
+and deterministic reasons. This prevents survivorship bias, including when an
+eligible opportunity has zero successful provider observations.
 
 PR14 implements Research Capture Opportunity, Research Snapshot, Comparative Measurement, and cumulative Comparative Performance only. It does not implement the canonical Comparative Performance Report, time-bounded surveillance analytics beyond existing PR13 contract support, Research Review conclusions, Current Scientific Applicability, Policy Recommendation, Policy Hypothesis, Forecast Policy, Governance, Workspace, Opportunity Analysis, Position Sizing, Execution, wagering, mutable scientific state, generic triggers, workflow management, scheduling, services, queues, databases, provider-network collection, or always-on surveillance infrastructure.
 
