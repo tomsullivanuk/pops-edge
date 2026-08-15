@@ -247,32 +247,26 @@ record provenance, and fails scope authority closed only for conflicts material
 to current or candidate Production authority. Unrelated research-only conflict
 diagnostics remain visible without mutating valid production resolution.
 
-The approved PR13 architecture defines the Forecast Research Workspace as the
-Product Owner's deterministic, read-only projection over immutable PR9–PR12
-inputs. One non-persisted `ResearchWorkspaceContext` fixes sport, competition,
-proposition, evaluation window, analysis and governance boundaries, provider,
-Forecast Policy, and Policy Hypothesis scope for every section. Existing domain
-services retain all Measurement, Forecast Intelligence, Forecast Policy, and
-Governance logic; the workspace owns only orchestration, decision-oriented
-organization, and presentation.
+PR13 implements the first-class `ResearchProtocol`, `EdgeClaim`,
+`ResearchReview`, `MarketEdge`, and `DriftSurveillance` contracts. Bounded
+supporting values express typed scientific rules, Probability Sources, Research
+Populations, approved dimensions and domains, scheduled review boundaries,
+future Comparative Performance Report references, explicit scheduled and
+material-Drift obligation coverage, and nonmaterial audit provenance.
 
-The planned v1.1 output is one self-contained static local HTML document with
-Research Context, Executive Overview, Provider Performance, Policy Candidate
-Comparison, Policy Proposal Review, Governance Review, a non-authoritative
-Governance Decision Draft, and Diagnostics. The draft leaves effective decision
-time blank and cannot create a Governance Record. No PR13 implementation, persistence,
-server, governance write, production execution, Opportunity Analysis or Board
-migration, wagering behavior, PR14, or PR15 work is included in this
-documentation pass.
+Scientific identities use versioned canonical SHA-256 material, exact Decimal,
+UTC-equivalent datetime normalization, tagged serialization, and fail-closed
+reconstruction. Pure graph validation enforces claim/report/protocol
+compatibility, scheduled and Drift chronology, protocol-derived material-event
+qualification, and one historical Market Edge established by the first
+qualifying Review without arbitrary tie-breaking. The compact MLB fixture and
+offline inspector exercise all five contracts without provider or network
+access.
 
-The clarified boundary distinguishes PR9 provider Forecast Evaluation from
-historical Forecast Policy evaluation, which PR11–PR12 do not implement.
-Candidate comparison uses supplied Forecast Intelligence, Policy Proposals,
-benchmarks, rules, and governance context; unavailable Shadow or policy-level
-performance history is explicit. Decision drafts derive only from a Proposal or
-Product Owner selection, compatibility fails closed, and generated-at metadata
-does not identify the deterministic substantive projection. PR13 adds neither
-policy backtesting nor an independent governance recommendation algorithm.
+PR13 does not implement the canonical Comparative Performance Report,
+authoritative Current Scientific Applicability, Policy, Governance, Workspace,
+Opportunity Analysis, or production behavior. Those responsibilities remain
+deferred to their approved later boundaries.
 
 ## [v1.0.0] — World Cup baseline
 

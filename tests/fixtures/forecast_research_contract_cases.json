@@ -1,0 +1,13 @@
+{
+  "fixture_version": "1",
+  "protocol_effective_at": "2026-03-01T00:00:00+00:00",
+  "first_required_analysis_at": "2026-06-01T00:00:00+00:00",
+  "second_required_analysis_at": "2026-07-01T00:00:00+00:00",
+  "positive_grace_seconds": 172800,
+  "first_report_analysis_at": "2026-06-01T00:00:00+00:00",
+  "drift_effective_at": "2026-06-01T03:00:00+00:00",
+  "later_report_analysis_at": "2026-07-02T00:00:00+00:00",
+  "timely_review_completed_at": "2026-06-01T06:00:00+00:00",
+  "late_review_completed_at": "2026-07-04T00:00:00+00:00",
+  "generated_at": "2026-08-14T12:00:00+00:00"
+}

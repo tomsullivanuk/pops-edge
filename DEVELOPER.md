@@ -469,28 +469,45 @@ approved sequence in `docs/RELEASE_PLAN_v1.1.0.md`.
 
 ## Forward implementation boundaries
 
-The remaining v1.1.0 sequence is:
+The remaining v1.1.0 sequence after the implemented PR13 contract foundation is:
 
-1. **PR13 — Forecast Intelligence Research Contracts:** implement first-class
-   Research Protocol, Edge Claim, Market Edge, Research Review, and Drift
-   Surveillance contracts with deterministic identity, provenance,
-   serialization, and fail-closed validation.
-2. **PR14 — Comparative Performance and Forecast Intelligence Alignment:** add
+1. **PR14 — Comparative Performance and Forecast Intelligence Alignment:** add
    Market-Benchmark-relative Comparative Performance and the canonical
    Comparative Performance Report while preserving truthful compatibility with
    the implemented `ForecastIntelligenceReport` and `PolicyProposal` symbols.
-3. **PR15 — Policy Hypothesis Alignment:** align `PolicyHypothesis` with one or
+2. **PR15 — Policy Hypothesis Alignment:** align `PolicyHypothesis` with one or
    more empirically supported Market Edges while keeping it non-authoritative
    and non-executable.
-4. **PR16 — Forecast Intelligence Workspace:** implement the Product Owner's
+3. **PR16 — Forecast Intelligence Workspace:** implement the Product Owner's
    principal research and governance surface.
-5. **PR17 — Policy Forecast Opportunity Integration:** migrate Opportunity
+4. **PR17 — Policy Forecast Opportunity Integration:** migrate Opportunity
    Analysis and the Opportunity Board to governance-authorized Policy Forecasts.
-6. **PR18 — v1.1.0 Integration and Release Readiness:** validate the integrated
+5. **PR18 — v1.1.0 Integration and Release Readiness:** validate the integrated
    lifecycle, compatibility, documentation, and release gates.
 
 The Release Plan owns detailed scope, dependencies, exclusions, and gates. Do
 not infer later-PR behavior into an earlier implementation.
+
+## Forecast Intelligence research-contract inspection
+
+`forecast_research_contracts.py` implements the immutable PR13
+`ResearchProtocol`, `EdgeClaim`, `ResearchReview`, `MarketEdge`, and
+`DriftSurveillance` contracts and their bounded supporting values. It uses the
+shared tagged serializer, exact Decimal rule parameters, UTC-normalized
+content-addressed identity, explicit scheduled and material-Drift obligation
+coverage, and pure caller-supplied graph validation.
+
+Run the deterministic offline inspection with:
+
+```bash
+./venv/bin/python inspect_forecast_research_contracts.py \
+  tests/fixtures/forecast_research_contract_cases.json
+```
+
+The module does not implement the canonical Comparative Performance Report,
+Current Scientific Applicability replay, Policy, Governance, Workspace,
+Opportunity Analysis, or production behavior. Those boundaries remain assigned
+to later release-plan PRs.
 
 ### Forecast Intelligence Workspace boundary
 

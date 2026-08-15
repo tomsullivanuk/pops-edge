@@ -505,6 +505,15 @@ candidate Production authority invalidate an otherwise resolved scope.
 
 **Gate:** the five research contracts preserve the Methodology's boundaries, cardinalities, immutable history, explicit obligation coverage, deterministic identities, provenance, serialization, and fail-closed validation. Drift Surveillance is claim-specific and distinguishes valid no-Drift, material-Drift, and insufficient-evidence findings from invalid input. PR13 creates neither authoritative current applicability nor production authority.
 
+**Implemented boundary:** `forecast_research_contracts.py` supplies exactly the
+five top-level contracts with bounded typed scientific rules, Probability
+Source, population, dimension, domain, schedule, report-reference, obligation,
+and provenance values. A compact offline MLB fixture, inspector, focused tests,
+and pure `validate_research_contracts(...)` graph validation exercise scheduled
+and Drift obligation chronology and first-qualifying Market Edge recognition.
+The canonical Comparative Performance Report and deterministic Current
+Scientific Applicability projection remain PR14 responsibilities.
+
 ### PR14 — Comparative Performance and Forecast Intelligence Alignment
 
 **Purpose:** align the implemented Forecast Intelligence layer with the finalized Product and Architecture.

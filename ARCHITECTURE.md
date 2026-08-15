@@ -68,9 +68,15 @@ The MLB implementation provides most of the reusable architectural foundation:
 The following Product-aligned integration remains approved but not implemented:
 
 - the Forecast Intelligence Workspace;
-- first-class Research Protocol, Edge Claim, Market Edge, Research Review, and Drift Surveillance contracts at the full Methodology boundary;
 - canonical Comparative Performance Report naming in implementation;
 - migration of Opportunity Analysis from the direct DRatings forecast path to governance-authorized Policy Forecast consumption.
+
+The first-class Research Protocol, Edge Claim, Market Edge, Research Review,
+and Drift Surveillance contracts are implemented in
+`forecast_research_contracts.py`. They provide immutable scientific rules,
+typed report and review-obligation references, deterministic identity,
+provenance, serialization, and fail-closed graph validation. They do not
+calculate Current Scientific Applicability or create production authority.
 
 Historical Policy Forecast evaluation and automated Shadow measurement remain unimplemented analytical capabilities that may be required to support future policy evaluation; their implementation scope remains subject to separate architectural approval.
 
@@ -254,7 +260,7 @@ One Research Protocol may investigate multiple Alternative Probability Sources. 
 
 The Methodology governs protocol meaning. Architecture must preserve protocol identity, version, material inputs, and provenance without embedding protocol rules into provider adapters.
 
-Full first-class Research Protocol contracts are approved but not yet implemented. Existing evaluation windows, eligibility policies, segmentation versions, and adequacy rules are narrower precursors and must not be presented as a complete protocol implementation.
+First-class Research Protocol contracts are implemented. Existing evaluation windows, eligibility policies, segmentation versions, and adequacy rules remain narrower precursors and must not be presented as protocol-governed Evidence collection or the canonical Comparative Performance implementation.
 
 ### Comparative Performance
 
@@ -292,7 +298,7 @@ A Market Edge is the Forecast Intelligence conclusion that a Probability Source 
 
 The first completed Research Review for an Edge Claim with a Supported or Strongly Supported conclusion establishes its Market Edge. At most one historical Market Edge exists per Edge Claim, and it identifies that first qualifying Review. Later Reviews may change applicability to the same Market Edge but never mutate, replace, erase, or recreate it.
 
-First-class Edge Claim and Market Edge contracts are approved but not yet implemented. Existing adequacy and proposal artifacts must not be mistaken for those scientific conclusions.
+First-class Edge Claim and historical Market Edge contracts are implemented. Existing adequacy and proposal artifacts remain distinct and must not be mistaken for those scientific conclusions.
 
 ### Research Reviews and Drift Surveillance
 
@@ -627,8 +633,9 @@ The following gaps are architectural state, not roadmap commitments:
 | Canonical Identity and immutable observation contracts | Implemented for MLB; World Cup remains legacy file-based |
 | Forecast Evaluation Measurement | Implemented for MLB winner forecasts |
 | Provider-neutral Forecast Intelligence precursor | Implemented with legacy report and proposal symbols |
-| Full Research Protocol and Comparative Performance Report boundary | Approved, not implemented |
-| Edge Claim, Market Edge, Research Review, and Drift Surveillance contracts | Approved, not implemented |
+| Full Research Protocol contracts | Implemented with typed scientific rules and deterministic validation |
+| Canonical Comparative Performance Report | Approved for PR14; PR13 provides a typed forward reference only |
+| Edge Claim, Market Edge, Research Review, and Drift Surveillance contracts | Implemented |
 | Policy Hypothesis aligned explicitly to supported Market Edges | Product-approved; existing symbol has older analytical-candidate semantics |
 | Forecast Policy, deterministic execution, and Policy Forecast | Implemented |
 | Event-sourced Product Owner Governance | Implemented |

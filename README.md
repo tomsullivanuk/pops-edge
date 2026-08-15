@@ -101,25 +101,16 @@ ambiguity. Production-material conflicts fail scope resolution closed, while
 unrelated research-only conflicts remain visible diagnostics without erasing
 an otherwise unambiguous authorization.
 
-The approved PR13 architecture defines a Forecast Research Workspace as the
-Product Owner's deterministic, read-only projection over immutable PR9–PR12
-inputs. One explicit `ResearchWorkspaceContext` keeps provider, policy,
-hypothesis, evaluation-window, analysis, and governance scope consistent across
-an executive overview, provider performance, policy candidate comparison,
-proposal and governance review, a non-authoritative Governance Decision Draft, and
-diagnostics. The planned v1.1 output is one self-contained local HTML document
-with no server, persistence, write action, production execution, Opportunity
-Analysis migration, or wagering behavior. Implementation remains PR13; PR14
-retains Policy Forecast consumer integration.
+PR13 implements immutable, deterministic Research Protocol, Edge Claim,
+Research Review, historical Market Edge, and Drift Surveillance contracts with
+typed scientific rules and fail-closed graph validation. Its offline fixture
+and inspector demonstrate the research-contract boundary without provider or
+network access.
 
-The workspace does not mistake PR9 provider Forecast Evaluations for historical
-Forecast Policy evaluations. Candidate support comes from supplied PR10
-Forecast Intelligence, Policy Proposals, benchmark evidence, and governance
-context; missing Policy Forecast, Shadow, or policy-evaluation history is shown
-explicitly. Decision drafts come only from a Proposal or explicit Product Owner
-selection and carry no authority. Context compatibility fails closed, while
-wall-clock generation metadata remains outside deterministic projection
-identity. Policy backtesting is not a PR13 capability.
+The canonical Comparative Performance Report and deterministic Current
+Scientific Applicability projection remain PR14 work. The Forecast Intelligence
+Workspace remains a later product surface. Research contracts create neither
+Governance nor production authority.
 
 ## Documentation
 
