@@ -471,23 +471,19 @@ approved sequence in `docs/RELEASE_PLAN_v1.1.0.md`.
 
 The remaining v1.1.0 sequence after the implemented PR13 contract foundation is:
 
-1. **PR14 — Research Snapshot, Comparative Measurement, and Comparative
-   Performance:** implement immutable pregame research Evidence, pair-specific
-   Measurement, cumulative claim-level analysis, paired uncertainty, and exact
-   failure-inclusive Coverage.
-2. **PR15 — Comparative Performance Report and Forecast Intelligence
+1. **PR15 — Comparative Performance Report and Forecast Intelligence
    Alignment:** implement canonical reporting while preserving truthful
    compatibility with the legacy `ForecastIntelligenceReport`.
-3. **PR16 — Current Scientific Applicability and Policy Recommendation:** add
+2. **PR16 — Current Scientific Applicability and Policy Recommendation:** add
    deterministic applicability replay and non-authoritative recommendations.
-4. **PR17 — Policy Hypothesis Alignment:** align `PolicyHypothesis` with one or
+3. **PR17 — Policy Hypothesis Alignment:** align `PolicyHypothesis` with one or
    more empirically supported Market Edges while keeping it non-authoritative
    and non-executable.
-5. **PR18 — Forecast Intelligence Workspace:** implement the Product Owner's
+4. **PR18 — Forecast Intelligence Workspace:** implement the Product Owner's
    principal research and governance surface.
-6. **PR19 — Policy Forecast Opportunity Integration:** migrate Opportunity
+5. **PR19 — Policy Forecast Opportunity Integration:** migrate Opportunity
    Analysis and the Opportunity Board to governance-authorized Policy Forecasts.
-7. **PR20 — v1.1.0 Integration and Release Readiness:** validate the integrated
+6. **PR20 — v1.1.0 Integration and Release Readiness:** validate the integrated
    lifecycle, compatibility, documentation, and release gates.
 
 The Release Plan owns detailed scope, dependencies, exclusions, and gates. Do
@@ -513,6 +509,26 @@ The module does not implement the canonical Comparative Performance Report,
 Current Scientific Applicability replay, Policy, Governance, Workspace,
 Opportunity Analysis, or production behavior. Those boundaries remain assigned
 to later release-plan PRs.
+
+## Comparative research inspection
+
+`forecast_comparative_research.py` implements the PR14 Evidence → Measurement
+→ cumulative Forecast Intelligence path. It preserves failed source captures,
+timestamp-derived pair-specific synchronization, prospective classifications,
+append-only Snapshot corrections, authoritative Forecast and Outcome lineage,
+rule-derived eligibility and exact Coverage identities, deterministic paired
+bootstrap, extended-real Log Loss, and version-2 Calibration.
+
+Run its synthetic offline inspection with:
+
+```bash
+./venv/bin/python inspect_forecast_comparative_research.py \
+  tests/fixtures/forecast_comparative_research_cases.json
+```
+
+The module produces no canonical Comparative Performance Report, Research
+Review conclusion, Current Scientific Applicability, Policy, Governance,
+Workspace, Opportunity Analysis, or production authority.
 
 ### Forecast Intelligence Workspace boundary
 

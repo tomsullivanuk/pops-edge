@@ -268,6 +268,24 @@ authoritative Current Scientific Applicability, Policy, Governance, Workspace,
 Opportunity Analysis, or production behavior. Those responsibilities remain
 deferred to their approved later boundaries.
 
+PR14 implements the protocol-governed path from Schedule Evidence to immutable
+Research Capture Opportunities and Research Snapshots, including missing and
+failed captures, append-only corrections, and deterministic historical replay.
+Provider-neutral event-stage Evidence, complete authoritative Outcome History,
+and boundary-specific Population Eligibility Results derive the Coverage
+denominator and exclusions without caller authority.
+Pair-specific Comparative Measurements reuse authoritative Forecast Evaluation
+Brier and Log Loss values and preserve canonical proposition orientation.
+Cumulative claim/domain Comparative Performance adds exact failure-inclusive
+Coverage, deterministic paired-bootstrap uncertainty, Practical Significance
+threshold reporting, Log Loss, and version-2 fixed-bin Calibration with absent
+WACE for an empty paired population. Log Loss preserves deterministic signed
+infinity and absent indeterminate comparisons without shrinking the Brier or
+Calibration population. The synthetic fixture and offline
+inspector add no provider collection or operational behavior. Canonical
+Comparative Performance Reports remain PR15; Current Scientific Applicability
+and Policy Recommendation remain PR16.
+
 ## [v1.0.0] — World Cup baseline
 
 The existing production World Cup implementation is designated Pops' Edge

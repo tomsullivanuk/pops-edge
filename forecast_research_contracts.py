@@ -163,6 +163,9 @@ _RULE_SCHEMAS: dict[tuple[RulePurpose, str, str], dict[str, _ParameterDefinition
     },
     (RulePurpose.SUPPORTING_MEASURE, "log-loss-safeguard", "1"): {},
     (RulePurpose.SUPPORTING_MEASURE, "calibration-safeguard", "1"): {},
+    (RulePurpose.SUPPORTING_MEASURE, "calibration-safeguard", "2"): {
+        "bin_boundaries": _ParameterDefinition(tuple),
+    },
     (RulePurpose.STATISTICAL_METHOD, "paired-bootstrap", "1"): {
         "confidence_level": _ParameterDefinition(
             Decimal, minimum=Decimal("0"), maximum=Decimal("1")
@@ -187,7 +190,7 @@ _RULE_SCHEMAS: dict[tuple[RulePurpose, str, str], dict[str, _ParameterDefinition
 }
 
 
-RuleParameterValue = str | int | bool | Decimal | tuple[str, ...]
+RuleParameterValue = str | int | bool | Decimal | tuple[str, ...] | tuple[Decimal, ...]
 
 
 @dataclass(frozen=True, slots=True, order=True)
@@ -202,8 +205,14 @@ class RuleParameter:
         if isinstance(self.value, Decimal) and not self.value.is_finite():
             _fail("rule Decimal parameter must be finite")
         if isinstance(self.value, tuple):
-            if any(not isinstance(item, str) or not item for item in self.value):
-                _fail("rule tuple parameters accept only nonempty strings")
+            if not self.value:
+                _fail("rule tuple parameters must not be empty")
+            if all(isinstance(item, str) and item for item in self.value):
+                pass
+            elif all(isinstance(item, Decimal) and item.is_finite() for item in self.value):
+                pass
+            else:
+                _fail("rule tuple parameters require homogeneous nonempty strings or finite Decimals")
         elif not isinstance(self.value, (str, int, bool, Decimal)):
             _fail("unsupported rule parameter type")
 
@@ -255,6 +264,13 @@ def _validated_parameters(purpose: RulePurpose, rule_id: str, rule_version: str,
         valid_dispositions = {item.value for item in DriftDisposition}
         if not dispositions or any(item not in valid_dispositions for item in dispositions):
             _fail("drift material-event mapping must identify valid Drift dispositions")
+    if (purpose, rule_id, rule_version) == (
+        RulePurpose.SUPPORTING_MEASURE, "calibration-safeguard", "2"
+    ):
+        boundaries = {item.name: item.value for item in normalized}["bin_boundaries"]
+        expected = tuple(Decimal(f"{index / 10:.1f}") for index in range(11))
+        if boundaries != expected:
+            _fail("calibration-safeguard version 2 requires canonical decile boundaries")
     return tuple(sorted(normalized, key=lambda item: item.name))
 
 

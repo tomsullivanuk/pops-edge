@@ -864,7 +864,7 @@ The following gaps are architectural state, not roadmap commitments:
 | Forecast Evaluation Measurement | Implemented for MLB winner forecasts |
 | Provider-neutral Forecast Intelligence precursor | Implemented with legacy report and proposal symbols |
 | Full Research Protocol contracts | Implemented with typed scientific rules and deterministic validation |
-| Research Snapshot, Comparative Measurement, and cumulative Comparative Performance | Approved for PR14; not implemented |
+| Research Snapshot, Comparative Measurement, and cumulative Comparative Performance | Implemented by PR14 with deterministic replay, paired analysis, Calibration, and failure-inclusive Coverage |
 | Canonical Comparative Performance Report | Approved for PR15; PR13 provides a typed forward reference only |
 | Current Scientific Applicability and Policy Recommendation | Approved for PR16; not implemented |
 | Edge Claim, Market Edge, Research Review, and Drift Surveillance contracts | Implemented |

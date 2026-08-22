@@ -527,6 +527,15 @@ respectively.
 
 **Gate:** deterministic protocol-compatible inputs reproduce one authoritative Snapshot lineage, pair-specific Measurements, cumulative Comparative Performance, paired uncertainty, versioned fixed-bin Calibration over the same paired population, and failure-inclusive Coverage without retrospective reconstruction or survivorship bias. Coverage eligibility derives from provider-neutral immutable event-classification and complete schedule/status-history context through the analysis boundary under the prospective Protocol rules; supporting Log Loss preserves deterministic finite, signed-infinite, and absent/not-applicable indeterminate semantics without changing the paired Brier population.
 
+**Implemented boundary:** `forecast_comparative_research.py` supplies immutable
+Research Capture Opportunity, Research Snapshot, Comparative Measurement, and
+cumulative Comparative Performance contracts with correction replay,
+rule-derived failure-inclusive Coverage, paired bootstrap uncertainty,
+extended-real Log Loss, and version-2 fixed-bin Calibration. Its synthetic
+offline fixture and inspector exercise eligibility, historical replay, and
+paired analysis. Canonical reporting remains PR15 and
+Current Scientific Applicability remains PR16.
+
 ### PR15 — Comparative Performance Report and Forecast Intelligence Alignment
 
 **Purpose:** implement the canonical Comparative Performance Report and align Forecast Intelligence terminology with the finalized Product and Architecture.

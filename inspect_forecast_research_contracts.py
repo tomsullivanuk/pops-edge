@@ -225,7 +225,7 @@ def run(path: Path) -> tuple[str, ...]:
         f"Drift dispositions: {', '.join(item.disposition.value for item in graph['drift_surveillance'])}",
         f"Material Drift artifacts: {sum(drift_creates_material_event(protocol, item) for item in graph['drift_surveillance'])}",
         f"Historical Market Edge: {graph['market_edges'][0].market_edge_id}",
-        "Current Scientific Applicability: deferred to PR14",
+        "Current Scientific Applicability: deferred to PR16",
     ]
     return tuple(lines)
 

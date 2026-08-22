@@ -107,10 +107,15 @@ typed scientific rules and fail-closed graph validation. Its offline fixture
 and inspector demonstrate the research-contract boundary without provider or
 network access.
 
-Research Snapshot, Comparative Measurement, and cumulative Comparative
-Performance remain PR14 work. The canonical Comparative Performance Report is
-PR15 work, and deterministic Current Scientific Applicability and Policy
-Recommendation are PR16 work. The Forecast Intelligence
+PR14 implements Research Capture Opportunity identity, immutable Research
+Snapshots and historical correction replay, pair-specific Comparative
+Measurement, cumulative claim/domain Comparative Performance, deterministic
+paired uncertainty and Calibration, extended-real Log Loss, and
+failure-inclusive Coverage derived from authoritative boundary-specific
+population eligibility. Its local
+synthetic inspector is `inspect_forecast_comparative_research.py`. The canonical
+Comparative Performance Report remains PR15 work, and deterministic Current
+Scientific Applicability and Policy Recommendation remain PR16 work. The Forecast Intelligence
 Workspace remains a later product surface. Research contracts create neither
 Governance nor production authority.
 

@@ -103,6 +103,7 @@ class ForecastResearchContractTests(unittest.TestCase):
         first = run(FIXTURE)
         self.assertEqual(first, run(FIXTURE))
         self.assertIn("PR13 Forecast Intelligence Research Contracts: VALID", first)
+        self.assertIn("Current Scientific Applicability: deferred to PR16", first)
 
     def test_five_top_level_contracts_are_immutable_and_tagged_serializable(self):
         values = (self.protocol, self.claim, self.supported, self.edge, self.material_drift)
