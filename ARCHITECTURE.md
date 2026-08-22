@@ -60,14 +60,19 @@ Outcome Evidence
         ↓
 ComparativeMeasurement              (Measurement)
         ↓
-ComparativePerformance              (Forecast Intelligence)
+ComparativePerformance              (cumulative Forecast Intelligence)
+        +
+TimeBoundedComparativePerformance
+        ↓
+ComparativeDriftAnalysis
         ↓
 ComparativePerformanceReport        (PR15 Forecast Intelligence)
         ↓
 ResearchReview / Drift Surveillance
 ```
 
-PR14 implements this path only through cumulative `ComparativePerformance`.
+PR14 implements this path only through cumulative `ComparativePerformance`;
+PR15 owns the three downstream artifacts shown here.
 
 ## Current implementation state
 
@@ -90,8 +95,8 @@ The MLB implementation provides most of the reusable architectural foundation:
 The following Product-aligned integration remains approved but not implemented:
 
 - the Forecast Intelligence Workspace;
-- protocol-governed Research Capture Opportunities and Research Snapshots;
-- immutable Comparative Measurement and cumulative claim-level Comparative Performance;
+- time-bounded Comparative Performance, Comparative Drift Analysis, and the
+  canonical Comparative Performance Report;
 - canonical Comparative Performance Report naming in implementation;
 - migration of Opportunity Analysis from the direct DRatings forecast path to governance-authorized Policy Forecast consumption.
 
@@ -496,11 +501,200 @@ Outcomes, and rule-derived Protocol exclusions remain visible with identities
 and deterministic reasons. This prevents survivorship bias, including when an
 eligible opportunity has zero successful provider observations.
 
-PR14 implements Research Capture Opportunity, Research Snapshot, Comparative Measurement, and cumulative Comparative Performance only. It does not implement the canonical Comparative Performance Report, time-bounded surveillance analytics beyond existing PR13 contract support, Research Review conclusions, Current Scientific Applicability, Policy Recommendation, Policy Hypothesis, Forecast Policy, Governance, Workspace, Opportunity Analysis, Position Sizing, Execution, wagering, mutable scientific state, generic triggers, workflow management, scheduling, services, queues, databases, provider-network collection, or always-on surveillance infrastructure.
+PR14 implements Research Capture Opportunity, Research Snapshot, Comparative Measurement, and cumulative Comparative Performance only. PR15 begins downstream of that one canonical cumulative authority and must not recalculate its population, add optional surveillance windows to it, reinterpret Coverage, Brier, Log Loss, Calibration, or paired uncertainty, or create another cumulative authority.
+
+### Time-Bounded Comparative Performance
+
+`TimeBoundedComparativePerformance` is an immutable, deterministic,
+content-addressed supporting Forecast Intelligence artifact representing one
+Edge Claim's comparative empirical performance over one Protocol-defined
+surveillance window at one analysis boundary. It is a sibling of cumulative
+`ComparativePerformance`, not its subtype, mode, or replacement. Its exact
+cardinality is one Protocol, Edge Claim, Research Domain, Market Benchmark,
+challenger, surveillance-window rule, resolved surveillance window, analysis
+boundary, and bounded scientific population.
+
+For rolling-days version 2, `window_end_at == analysis_boundary`,
+`window_start_at == analysis_boundary - timedelta(days=N)`, and membership is
+the timezone-aware interval `(window_start_at, window_end_at]`. Membership uses
+the authoritative scheduled event time of the Protocol-eligible Research
+Capture Opportunity after schedule/rescheduling rules, never Measurement
+effective time. Evidence must still be effective by the analysis boundary, so
+delayed Evidence neither moves an old event into the current window nor leaks
+into the historical baseline.
+
+Bounded Coverage starts from eligible opportunities scheduled within the
+interval and preserves missing, invalid, outside-tolerance, synchronization-
+failed, unresolved-Outcome, Protocol-excluded, and valid Measurement states. A
+valid empty population produces an artifact with truthful Coverage; invalid or
+unreproducible structure does not. The artifact reuses PR14 Brier, paired
+uncertainty, Practical Significance reporting, extended-real Log Loss,
+Calibration, and Coverage semantics and owns no Drift disposition, conclusion,
+Market Edge, applicability, Policy, Governance, or production authority.
+
+For v1.1.0, `surveillance_window_rules` remains a tuple but must contain exactly
+one active rule; zero or multiple rules fail closed. Historical rolling-days
+version 1 identities remain under-specified and unchanged. Prospective version
+2 uses bounded typed parameters and static registration for positive duration,
+scheduled-event membership, open-start/closed-end bounds, and cumulative replay
+through the window start. No dynamic rule/plugin mechanism is introduced.
+
+### Comparative Drift Analysis
+
+`ComparativeDriftAnalysis` is immutable, deterministic, content-addressed
+supporting Forecast Intelligence comparing one claim's historical cumulative
+`ComparativePerformance` with current `TimeBoundedComparativePerformance`. It
+has exactly one Protocol, claim, domain, benchmark, challenger, surveillance
+rule, Drift-classification rule, historical result, current result, and
+analysis boundary. The inputs agree on their shared scientific identities and:
+
+```text
+historical.analysis_boundary == current.window_start_at
+current.window_end_at == current.analysis_boundary
+                      == drift_analysis.analysis_boundary
+```
+
+Historical performance is replayed at `window_start_at` from only artifacts
+scientifically effective by then. It is never today's cumulative population
+filtered by event date, a previous report, or the Market-Edge-establishing
+report; a report need not have existed at that boundary.
+
+Measured deterioration is historical minus current mean Brier improvement, so
+positive is deterioration. Uncertainty uses independent deterministic
+with-replacement resampling of complete Measurements from the two populations,
+not subtraction of their intervals. The Protocol statistical rule supplies
+confidence level and resamples; a distinct Drift algorithm version governs the
+mechanics. Seed material includes all immutable artifact/rule identities,
+boundary, canonical Measurement IDs, algorithm version, replicate/draw index,
+and distinguishable historical/current population role. Wall-clock randomness
+and component-wise resampling are forbidden.
+
+With threshold `T` and interval `[L,U]`, unestimable deterioration is
+`insufficient-evidence-to-determine-drift`; `L >= T` is `material-drift`; `U <
+T` is `no-material-drift`; all other cases are insufficient Evidence. Thus
+`L == T` is material while `U == T` with `L < T` is insufficient. Valid empty
+or otherwise unestimable populations may produce a valid insufficient-Evidence
+analysis with absent statistic and interval. Invalid/incompatible structure
+produces none. There is no hidden minimum sample size. Log Loss, Calibration,
+and Coverage remain non-classifying safeguards.
+
+Historical brier-deterioration version 1 identities remain under-specified and
+unchanged. Prospective version 2 statically governs the threshold, sign,
+two-population bootstrap, interval comparison, and exact three-way mapping with
+bounded typed parameters and no composite score, veto, hidden test/settings, or
+arbitrary executable behavior.
 
 ### Comparative Performance Reports
 
-A Comparative Performance Report is the canonical immutable research artifact for one Research Protocol and analysis boundary. It communicates comparative findings, uncertainty, coverage, surveillance, and limitations while preserving sufficient input identities and rule versions for deterministic reproduction. PR15 owns this canonical report and alignment with Forecast Intelligence.
+`ComparativePerformanceReport` is the canonical immutable, deterministic,
+content-addressed scientific communication artifact for one Research Protocol
+at one analysis boundary. It assembles authoritative Forecast Intelligence
+artifacts and does not recompute or authoritatively copy their populations,
+Brier values, uncertainty, Log Loss, Calibration, WACE, Coverage, or Drift
+deterioration.
+
+The Protocol's authoritative Edge Claim IDs must exactly equal the report's
+claim-finding IDs: no selected subset, duplicate, unknown, or foreign claim.
+Every claim requires exactly one compatible cumulative
+`ComparativePerformance`, one `TimeBoundedComparativePerformance`, and one
+`ComparativeDriftAnalysis` at the report boundary using the Protocol's single
+active surveillance rule. All agree on Protocol, claim, domain, benchmark,
+challenger, and boundary. Broad and segmented claims and multiple challengers
+may coexist, but broad results are never reconstructed from segments.
+
+The bounded report composition is Protocol ID, analysis boundary, claim
+findings, report-level limitations, and provenance. Each finding is Edge Claim
+ID, cumulative Comparative Performance ID, and a surveillance finding made of
+surveillance-rule ID, bounded-performance ID, and Drift-analysis ID. Supporting
+display values are projections, not additional scientific stages or authority.
+
+The report keeps four version concepts distinct:
+
+- `schema_version` versions its structure and serialization;
+- `identity_algorithm_version` versions canonical scientific identity;
+- `contract_version` versions the scientific semantics of the report contract;
+  and
+- `report_algorithm_version` versions deterministic assembly and validation.
+
+An initial implementation may use `"1"` for each, but changing one has only its
+stated meaning. Material report identity comprises those four versions,
+`protocol_id`, `analysis_boundary`, canonically ordered claim findings,
+material report-level limitations, and the canonical material/input digest.
+Each claim finding recursively commits the report to its Edge Claim,
+cumulative Comparative Performance, surveillance-window rule,
+Time-Bounded Comparative Performance, and Comparative Drift Analysis IDs.
+Measurement and Coverage IDs and analytical values such as Brier, Log Loss,
+Calibration, WACE, and Drift deterioration are not redundantly copied into
+top-level identity because the child artifact IDs already commit to that
+scientific lineage.
+
+Claim findings are ordered canonically by Edge Claim ID. Caller order is
+nonmaterial, duplicate findings fail closed, and the single active v1.1.0
+surveillance rule leaves no multiple-window ordering ambiguity. For one
+Protocol, analysis boundary, report contract/algorithm version, and complete
+compatible authoritative analytical graph, exactly one deterministic report
+identity exists. Repeated generation from identical scientific inputs yields
+the same report ID. A material change to boundary, claim scope, a child
+artifact, contract or report algorithm version, or material limitation produces
+a different identity. Evidence effective after an earlier boundary never
+rewrites that earlier report.
+
+Producer identity/version, generation timestamp, audit notes, invocation
+context, and similar provenance are nonmaterial where retained. In particular,
+wall-clock `generated_at`, scheduled or material-Drift trigger, manual
+invocation, job/process/scheduler ID, workflow state, and generation reason do
+not alter scientific identity. PR15 introduces no scientific `ReportTrigger`,
+`ReportPurpose`, or `ReportReason` contract.
+
+The canonical report deterministically projects the unchanged PR13
+`ComparativePerformanceReportReference`; the reference never invents an
+independent report identity. The projection satisfies exactly:
+
+```text
+reference.report_id            == report.comparative_performance_report_id
+reference.contract_version     == report.contract_version
+reference.protocol_id          == report.protocol_id
+reference.analysis_boundary    == report.analysis_boundary
+reference.edge_claim_ids       == canonical report claim Edge Claim IDs
+```
+
+Reference `schema_version` and `identity_algorithm_version` remain compatible
+with the report under the existing PR13 reference contract. Reference claim IDs
+are the report's complete canonical coverage with none omitted, added, or
+alternatively ordered.
+
+A canonical report may exist at any valid explicit analysis boundary when its
+immutable scientific inputs exist. Scheduled, material-Drift, regeneration, and
+intermediate-inspection contexts do not change the artifact. For a scheduled
+boundary with `required_analysis_boundary_at == T`, the normal scheduled report
+uses `analysis_boundary == T`; Review grace affects timeliness only and never
+moves that scientific cutoff. Existing PR13 coverage remains broader: a later
+compatible report may cover an overdue scheduled obligation when
+`T <= report.analysis_boundary <= review.completed_at`.
+
+A report may reveal material Drift, after which the corresponding PR13 Drift
+artifact becomes effective and a compatible unscheduled Research Review may use
+the same report; no second report is required. The Review may instead use a
+later compatible report under existing PR13 chronology. One claim-specific
+Review may explicitly cover both a scheduled-boundary reference and a Drift-
+surveillance reference when both are compatible, chronology is valid, the
+report covers the claim, and `ReviewObligationCoverage` contains both. Mere
+chronology resolves neither obligation.
+
+Downstream use never mutates a report. It stores no `reviewed`,
+`used_for_scheduled_review`, `used_for_drift_review`, `review_ids`, `drift_ids`,
+or `is_current` state; Reviews and Drift artifacts reference the report. These
+artifact semantics introduce no scheduler, daemon, queue, service, workflow
+engine, or always-on surveillance infrastructure.
+
+The report creates no Research Review conclusion, Drift Surveillance contract,
+Market Edge status, Current Scientific Applicability, Policy Recommendation,
+Policy Hypothesis, Governance, Workspace authority, Opportunity Analysis, or
+production authority. Research Review remains the scientific conclusion
+boundary. PR13 `DriftSurveillance` remains the immutable claim-specific Drift
+artifact that records the compatible report reference and disposition; the
+PR15 analytical result supplies its scientific basis without absorbing that
+contract layer.
 
 One Comparative Performance Report may support multiple claim-specific Research Reviews. PR13 represents that dependency through an immutable typed report reference; it does not implement the canonical report or bind new Reviews directly to the legacy `ForecastIntelligenceReport` symbol.
 
@@ -534,7 +728,31 @@ First-class Edge Claim and historical Market Edge contracts are implemented. Exi
 
 A Research Review evaluates Comparative Performance Reports and Edge Claims against the governing Research Protocol and burden of proof. The durable `ResearchReview` artifact represents one completed, immutable review, assesses exactly one Edge Claim, and records exactly one completed scientific conclusion. It may explicitly cover multiple scheduled or valid material-event obligations relevant to that claim. It changes scientific conclusions discretely while leaving Evidence, Measurement, prior Research Reviews, Edge Claims, and historical Market Edges unchanged.
 
-Drift Surveillance is deterministic, rerunnable analysis over cumulative and time-bounded Evidence. Each immutable artifact concerns exactly one Edge Claim under its governing Research Protocol and records one valid protocol-defined disposition: no material Drift, material Drift, or insufficient evidence to determine Drift. Only a disposition that the protocol defines as a qualifying material event creates a review obligation. It does not mutate an Edge Claim, prior Research Review, Market Edge, Forecast Policy, or Governance History, and it cannot restore Current Scientific Applicability by itself. Structurally invalid or incompatible input fails validation and cannot become a scientific disposition.
+Drift Surveillance is the immutable claim-specific Drift artifact in the PR13
+research-contract layer. It references compatible PR15 scientific reporting and
+records one valid protocol-defined disposition: no material Drift, material
+Drift, or insufficient evidence to determine Drift. Only a disposition that the
+protocol defines as a qualifying material event creates a review obligation. It
+does not mutate an Edge Claim, prior Research Review, Market Edge, Forecast
+Policy, or Governance History, and it cannot restore Current Scientific
+Applicability by itself. Structurally invalid or incompatible input fails
+validation and cannot become a scientific disposition.
+
+A PR13 `DriftSurveillance` backed by a canonical report validates against
+exactly one corresponding report `ComparativeDriftAnalysis`. Its report
+reference equals the report's deterministic PR13 projection; Protocol IDs agree
+across all three artifacts; the Drift Edge Claim equals the analysis claim and
+is covered by the report; Drift rule ID and version equal the corresponding
+analysis rule ID and version; and the recorded disposition equals the analysis
+disposition. No competing Drift assertion is permitted.
+
+`DriftSurveillance.effective_at` remains distinct from report and Drift-analysis
+`analysis_boundary` and is not part of PR15 analytical identity. Existing PR13
+chronology is preserved: their shared scientific boundary must not be later
+than `effective_at`, but equality is not required. PR15 does not change the PR13
+contract shape. The one-window invariant makes this mapping unambiguous for
+v1.1.0; any future multi-window identity extension requires a later contract
+version.
 
 **Under Review** is a derived procedural condition, not a completed Research Review conclusion. At an explicit timezone-aware `as_of` boundary, deterministic replay considers all protocol-defined scheduled review boundaries due by `as_of` and all valid protocol-defined material-event artifacts effective by `as_of`. An obligation remains unresolved unless a qualifying completed Research Review explicitly covers it; a newer Research Review does not resolve an obligation merely because it occurred later. A scheduled boundary may include only a grace period prospectively defined by the Research Protocol. An implementation must not invent another grace period.
 

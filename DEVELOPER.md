@@ -471,9 +471,10 @@ approved sequence in `docs/RELEASE_PLAN_v1.1.0.md`.
 
 The remaining v1.1.0 sequence after the implemented PR13 contract foundation is:
 
-1. **PR15 — Comparative Performance Report and Forecast Intelligence
-   Alignment:** implement canonical reporting while preserving truthful
-   compatibility with the legacy `ForecastIntelligenceReport`.
+1. **PR15 — Comparative Performance Reporting and Surveillance:** implement
+   time-bounded performance, comparative Drift analysis, and complete canonical
+   reporting while preserving truthful compatibility with the legacy
+   `ForecastIntelligenceReport`.
 2. **PR16 — Current Scientific Applicability and Policy Recommendation:** add
    deterministic applicability replay and non-authoritative recommendations.
 3. **PR17 — Policy Hypothesis Alignment:** align `PolicyHypothesis` with one or
@@ -526,9 +527,10 @@ Run its synthetic offline inspection with:
   tests/fixtures/forecast_comparative_research_cases.json
 ```
 
-The module produces no canonical Comparative Performance Report, Research
-Review conclusion, Current Scientific Applicability, Policy, Governance,
-Workspace, Opportunity Analysis, or production authority.
+The module produces no time-bounded Comparative Performance, Comparative Drift
+Analysis, canonical Comparative Performance Report, Research Review conclusion,
+Current Scientific Applicability, Policy, Governance, Workspace, Opportunity
+Analysis, or production authority.
 
 ### Forecast Intelligence Workspace boundary
 

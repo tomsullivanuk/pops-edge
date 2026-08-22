@@ -1519,6 +1519,60 @@ Surveillance complements historical analysis.
 
 It does not replace it.
 
+For the prospective v1.1.0 contract, a Research Protocol has exactly one active
+surveillance-window rule. The tuple representation is retained for future
+compatibility, but zero or multiple active rules fail closed because the
+claim-specific Drift Surveillance identity does not distinguish concurrent
+windows.
+
+`TimeBoundedComparativePerformance` is an immutable, deterministic,
+content-addressed supporting Forecast Intelligence artifact representing one
+Edge Claim's comparative empirical performance over one Protocol-defined
+surveillance window at one analysis boundary. It is a sibling of cumulative
+`ComparativePerformance`, not a subtype, optional-window mode, replacement, or
+second cumulative authority. It has exactly one Protocol, Edge Claim, Research
+Domain, Market Benchmark, challenger, surveillance-window rule, resolved
+window, analysis boundary, and bounded scientific population.
+
+For a prospective rolling window of `N` positive days:
+
+```text
+window_end_at   = analysis_boundary
+window_start_at = analysis_boundary - timedelta(days=N)
+membership      = window_start_at < authoritative_scheduled_event_at
+                  <= window_end_at
+```
+
+The membership time is the authoritative scheduled event time associated with
+the Protocol-eligible Research Capture Opportunity after Protocol schedule and
+rescheduling rules have been applied. It is not
+`ComparativeMeasurement.effective_at`. All boundaries are timezone-aware and
+identity-normalized; date-only and implicit local-midnight semantics are
+invalid. Evidence and Measurement must still be scientifically effective by
+the analysis boundary. Delayed Evidence never moves an older event into a
+later surveillance interval.
+
+Bounded Coverage begins with all Protocol-eligible Research Capture
+Opportunities whose authoritative scheduled event times fall in the interval,
+not merely successful Comparative Measurements. Missing, invalid,
+outside-tolerance, unsynchronized, unresolved-Outcome, Protocol-excluded, and
+validly measured cases remain visible. A scientifically valid empty paired
+population produces a truthful bounded artifact and authoritative Coverage;
+structurally invalid or unreproducible input produces no artifact.
+
+The bounded artifact reuses the PR14 definitions of Brier improvement, paired
+uncertainty, Practical Significance threshold reporting, extended-real Log
+Loss, Calibration, and failure-inclusive Coverage. It contains no Drift
+disposition, Research Review conclusion, Market Edge status, Current Scientific
+Applicability, Policy, Governance, or production authority.
+
+Historical `surveillance-window` / `rolling-days` version 1 identities remain
+under-specified and are never reinterpreted. Prospective version 2 is a static,
+self-describing rule with bounded typed parameters defining a positive rolling
+day duration, authoritative-scheduled-event membership, open-start/closed-end
+interval, and cumulative historical baseline through the window start. It is
+not a dynamic executable rule or plugin mechanism.
+
 ---
 
 ## 4.25 Drift Criteria
@@ -1530,6 +1584,73 @@ Drift evaluates whether current Comparative Performance has materially departed 
 Crossing the Drift threshold constitutes a material event requiring Research Review.
 
 Drift itself does not alter an Edge Claim.
+
+`ComparativeDriftAnalysis` is an immutable, deterministic, content-addressed
+supporting Forecast Intelligence artifact comparing one Edge Claim's historical
+cumulative Comparative Performance with its current Protocol-defined
+time-bounded Comparative Performance. It has exactly one Protocol, Edge Claim,
+Research Domain, Market Benchmark, challenger, surveillance-window rule,
+Drift-classification rule, historical `ComparativePerformance`, current
+`TimeBoundedComparativePerformance`, and analysis boundary. Historical and
+current inputs must agree on Protocol, claim, domain, benchmark, and challenger,
+and chronology must satisfy:
+
+```text
+historical.analysis_boundary == current.window_start_at
+current.window_end_at == current.analysis_boundary
+                      == drift_analysis.analysis_boundary
+```
+
+The historical artifact is canonical cumulative `ComparativePerformance`
+replayed exactly at `window_start_at` using only scientific artifacts effective
+by that boundary. It is not today's cumulative population filtered by event
+date, the previous report, or the Market-Edge-establishing report. Later
+Snapshot corrections, Outcomes, Measurements, or other Evidence cannot leak
+backward. No report need have existed at the window start. An event scheduled
+before the start whose Evidence becomes usable later belongs to neither that
+historical replay nor the current bounded window, although it may enter a later
+cumulative analysis.
+
+The primary statistic is
+`historical.mean_brier_improvement - current.mean_brier_improvement`; positive
+values mean deterioration of the challenger's Market-relative Brier advantage.
+Its uncertainty is a deterministic two-population bootstrap, never subtraction
+of two confidence intervals. Each replicate independently resamples complete
+historical and complete current Comparative Measurements with replacement,
+calculates both mean Brier improvements, and subtracts current from historical.
+Benchmark and challenger components of a Measurement are never separated.
+
+The bootstrap reuses the Protocol statistical-method settings, including
+confidence level and resample count, and identifies a distinct Drift-analysis
+algorithm version. Deterministic pseudorandom material includes Protocol,
+claim, historical and bounded artifact IDs, surveillance, Drift-classification
+and statistical-rule IDs, analysis boundary, canonically ordered Measurement
+IDs, algorithm version, replicate and draw indexes, and a distinct historical
+or current population role. Wall-clock randomness is forbidden.
+
+For threshold `T` and uncertainty bounds `L` and `U`, classification is exactly:
+
+```text
+unestimable deterioration -> insufficient-evidence-to-determine-drift
+L >= T                    -> material-drift
+U < T                     -> no-material-drift
+otherwise                 -> insufficient-evidence-to-determine-drift
+```
+
+Thus `L == T` is material Drift, while `L < T` and `U == T` is insufficient
+Evidence. A valid zero or otherwise unestimable population may produce a valid
+analysis with absent deterioration and uncertainty and the insufficient-
+Evidence disposition. Invalid or incompatible inputs produce no artifact.
+There is no hidden minimum sample size. Log Loss, Calibration, and Coverage are
+reported safeguards and do not affect version-2 classification.
+
+Historical `drift-classification` / `brier-deterioration` version 1 identities
+remain under-specified and are never reinterpreted. Prospective version 2 uses
+bounded typed parameters and static registration to govern the deterioration
+threshold, historical-minus-current statistic, deterministic two-population
+bootstrap, uncertainty-relative-to-threshold comparison, and exact three-way
+mapping. It introduces no composite score, secondary veto or test, Coverage
+threshold, hidden confidence setting, or arbitrary executable behavior.
 
 ---
 
@@ -1543,6 +1664,11 @@ Every Research Protocol defines:
 The protocol prospectively defines each scheduled review boundary, including
 any scientifically justified grace period. No implicit or
 implementation-defined grace period applies.
+
+The scheduled boundary's required analysis time is the required scientific
+Evidence cutoff. A grace period governs only Review timeliness after that
+boundary; it does not move the Evidence cutoff or a scheduled report's analysis
+boundary.
 
 When a scheduled review boundary is reached without a qualifying completed
 Research Review that explicitly addresses it, an unresolved review obligation
@@ -1561,16 +1687,35 @@ Research conclusions change only through Research Review.
 
 ## 4.27 Comparative Performance Reports
 
-The protocol defines when Comparative Performance Reports are generated.
+The protocol defines when Comparative Performance Reports are required.
 
-Reports are produced:
+Reports are required at scheduled Research Review boundaries and for valid
+protocol-defined material-event Review obligations. These requirements are not
+an exclusive restriction on valid report existence. A canonical Comparative
+Performance Report may be deterministically generated for any scientifically
+valid explicit analysis boundary when its required immutable scientific inputs
+are available, including for reproducibility, explicit intermediate scientific
+inspection, or investigation of potential Drift.
 
-- at scheduled Research Reviews; and
-- following protocol-defined material events.
+For a scheduled boundary with required analysis time `T`, the normal scheduled
+report uses `T` as its scientific analysis boundary. A later compatible report
+may nevertheless support a completed Review covering that earlier obligation
+when existing chronology permits; the scheduled boundary must not be later than
+the covering report boundary, which must not be later than Review completion.
+
+A report may itself reveal a material Drift finding. The corresponding Drift
+artifact may then create an unscheduled Review obligation using that same report
+or a later compatible report. No second report is required merely because the
+first revealed Drift.
 
 Reports summarize preserved Measurements.
 
 They do not reinterpret historical Evidence.
+
+Report validity follows its immutable Protocol, analysis boundary, and
+scientific inputs, not an operational trigger or generation reason. Permitting
+explicit intermediate reports introduces no scheduler, daemon, queue, service,
+workflow engine, or always-on surveillance authority.
 
 ---
 
@@ -2279,6 +2424,11 @@ The report answers one question:
 
 A Comparative Performance Report presents findings.
 
+It is the immutable, deterministic, content-addressed scientific communication
+artifact for one Research Protocol at one analysis boundary. It assembles
+authoritative Forecast Intelligence artifacts and never recomputes their
+populations or metrics.
+
 It does not determine whether a Market Edge exists.
 
 It does not change an Edge Claim.
@@ -2375,6 +2525,25 @@ At minimum this includes:
 - and material limitations.
 
 Independent researchers using the same inputs should obtain materially identical findings.
+
+Report claim coverage is complete: the Protocol's authoritative Edge Claim IDs
+must equal the report's claim-finding IDs. Caller-selected subsets, duplicates,
+unknown claims, and claims from another Protocol fail closed. Every claim has
+exactly one compatible cumulative `ComparativePerformance`, one
+`TimeBoundedComparativePerformance`, and one `ComparativeDriftAnalysis` at the
+report boundary, all sharing Protocol, claim, domain, benchmark, challenger,
+analysis boundary, and the Protocol's one active surveillance rule. Broad and
+segmented claims and multiple challengers may coexist; broad results are never
+reconstructed from segments.
+
+The bounded composition contains Protocol ID, analysis boundary, claim
+findings, report-level limitations, and provenance. Each claim finding contains
+the Edge Claim ID, cumulative Comparative Performance ID, and one surveillance
+finding containing the surveillance-rule, bounded-performance, and Drift-
+analysis IDs. Supporting report values are not new scientific stages. The
+report does not duplicate authoritative Brier, uncertainty, Log Loss,
+Calibration, WACE, Coverage, or deterioration values already owned by its
+referenced analytical artifacts.
 
 ---
 
@@ -2587,6 +2756,11 @@ The surveillance analysis is presented separately from the cumulative analysis.
 
 The two are never blended through undocumented recency weighting.
 
+PR15 begins downstream of canonical PR14 cumulative
+`ComparativePerformance`. It never recalculates that population, adds an
+optional window to it, reinterprets Coverage or statistical measures, or
+creates another cumulative analytical authority.
+
 ---
 
 ## 6.19 Drift
@@ -2616,20 +2790,17 @@ indeterminate and unavailable for operational reliance.
 
 ## 6.20 Current Scientific Applicability
 
-The report presents the findings needed to determine whether any currently
-Supported Market Edge remains scientifically applicable.
+The report presents Drift, compatibility, and limitation findings that may
+later be inputs to Current Scientific Applicability. It does not create,
+calculate, store, or report an authoritative Current Scientific Applicability
+result. That deterministic historical projection is a separate Forecast
+Intelligence responsibility downstream of completed Research Reviews.
 
-It reports:
-
-- current applicability;
-- Drift status;
-- protocol compatibility;
-- and other relevant scientific limitations.
-
-The report does not decide whether operational reliance should continue. Current
-Scientific Applicability follows the latest completed Research Review, unresolved
-scheduled and material-event obligations, and all applicable protocol,
-population, domain, Evidence, and compatibility requirements.
+This resolves the reporting boundary without changing the substantive
+applicability method in Chapter 7: reports communicate empirical findings;
+Research Review owns scientific conclusions; Current Scientific Applicability
+replays those conclusions and obligations; and Policy and Governance remain
+separate downstream authorities.
 
 ---
 

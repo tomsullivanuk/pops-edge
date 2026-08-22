@@ -536,17 +536,48 @@ offline fixture and inspector exercise eligibility, historical replay, and
 paired analysis. Canonical reporting remains PR15 and
 Current Scientific Applicability remains PR16.
 
-### PR15 — Comparative Performance Report and Forecast Intelligence Alignment
+### PR15 — Comparative Performance Reporting and Surveillance
 
-**Purpose:** implement the canonical Comparative Performance Report and align Forecast Intelligence terminology with the finalized Product and Architecture.
+**Purpose:** implement deterministic time-bounded surveillance, comparative
+Drift analysis, and the canonical Comparative Performance Report downstream of
+PR14 cumulative Comparative Performance.
 
-**Scope:** canonical reporting over PR14 cumulative Comparative Performance; alignment of the legacy `ForecastIntelligenceReport` implementation while preserving truthful compatibility; report provenance, findings, limitations, Coverage, and Research Review references.
+**Scope:** immutable `TimeBoundedComparativePerformance` over the Protocol's one
+active rolling-days version-2 rule; authoritative-scheduled-event interval
+membership and failure-inclusive bounded Coverage; exact historical replay at
+the window start; immutable `ComparativeDriftAnalysis` using historical-minus-
+current mean Brier improvement, deterministic two-population bootstrap, and the
+version-2 three-way Drift classification; complete Protocol-level
+`ComparativePerformanceReport` composition over every Edge Claim; report
+provenance, limitations, and PR13 report/Drift contract integration; and
+truthful alignment of the legacy `ForecastIntelligenceReport` precursor.
 
-**Dependencies:** PR13 research contracts and PR14 Evidence, Measurement, and cumulative Comparative Performance.
+**Dependencies:** PR13 research contracts and PR14 Evidence, Measurement,
+historical replay, and canonical cumulative Comparative Performance.
 
-**Exclusions:** Research Review conclusions, Current Scientific Applicability, Policy Recommendation, Policy Hypothesis redesign, Governance, Workspace, or operational authority.
+**Required boundaries:** canonical cumulative `ComparativePerformance` remains
+the only cumulative claim-level analytical authority. The time-bounded sibling
+and Drift analysis reuse PR14 metric and Coverage semantics without modifying
+them. Historical rolling-days and brier-deterioration version-1 identities are
+not reinterpreted. The v1.1.0 Protocol retains the tuple representation but
+fails closed unless exactly one surveillance-window rule is active.
 
-**Gate:** canonical reports reproducibly communicate Market-Benchmark-relative findings without reclassifying Snapshot Evidence, replacing Research Review, or misrepresenting the legacy provider-level report.
+**Exclusions:** recalculation or optional-window mutation of cumulative
+Comparative Performance; Research Review conclusions; Current Scientific
+Applicability; Policy Recommendation; Policy Hypothesis; Governance; Workspace;
+Opportunity Analysis; collection/workflow infrastructure; or production
+authority. PR16 continues to own Current Scientific Applicability and Policy
+Recommendation.
+
+**Gate:** identical immutable scientific inputs reproduce compatible bounded
+performance, historical replay, Drift analysis, and one complete report for all
+Protocol Edge Claims. Scheduled-event window membership, `(start, end]`
+chronology, valid empty populations, failure-inclusive Coverage, deterministic
+two-population uncertainty, exact threshold-boundary classification, and report
+non-duplication of analytical authority are explicit and fail closed on
+structural incompatibility. Reports communicate findings without creating a
+Research Review conclusion or any applicability, Policy, Governance, Workspace,
+Opportunity, or production authority.
 
 ### PR16 — Current Scientific Applicability and Policy Recommendation
 
@@ -648,7 +679,7 @@ Research contracts
         ↓
 Evidence → Measurement → cumulative Comparative Performance
         ↓
-Canonical reporting and Forecast Intelligence alignment
+Time-bounded surveillance, Drift analysis, and canonical reporting
         ↓
 Current applicability and Policy Recommendation
         ↓
