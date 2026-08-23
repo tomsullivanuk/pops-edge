@@ -542,7 +542,9 @@ Current Scientific Applicability remains PR16.
 Drift analysis, and the canonical Comparative Performance Report downstream of
 PR14 cumulative Comparative Performance.
 
-**Scope:** immutable `TimeBoundedComparativePerformance` over the Protocol's one
+**Scope:** immutable supporting `ProtocolClaimSet` authority establishing the
+complete admitted Edge Claim membership required by canonical Protocol-wide
+reporting; immutable `TimeBoundedComparativePerformance` over the Protocol's one
 active rolling-days version-2 rule; authoritative-scheduled-event interval
 membership and failure-inclusive bounded Coverage; exact historical replay at
 the window start; immutable `ComparativeDriftAnalysis` using historical-minus-
@@ -569,9 +571,11 @@ Opportunity Analysis; collection/workflow infrastructure; or production
 authority. PR16 continues to own Current Scientific Applicability and Policy
 Recommendation.
 
-**Gate:** identical immutable scientific inputs reproduce compatible bounded
-performance, historical replay, Drift analysis, and one complete report for all
-Protocol Edge Claims. Scheduled-event window membership, `(start, end]`
+**Gate:** deterministic Claim Set replay establishes one complete authoritative
+Protocol claim membership at the report boundary, and identical immutable
+scientific inputs reproduce compatible bounded performance, historical replay,
+Drift analysis, and one complete report with findings exactly equal to that
+membership. Scheduled-event window membership, `(start, end]`
 chronology, valid empty populations, failure-inclusive Coverage, deterministic
 two-population uncertainty, exact threshold-boundary classification, and report
 non-duplication of analytical authority are explicit and fail closed on

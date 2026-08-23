@@ -436,6 +436,60 @@ The Methodology governs protocol meaning. Architecture must preserve protocol id
 
 First-class Research Protocol contracts are implemented. Existing evaluation windows, eligibility policies, segmentation versions, and adequacy rules remain narrower precursors and must not be presented as protocol-governed Evidence collection or the canonical Comparative Performance implementation.
 
+### Protocol Claim Sets
+
+`ProtocolClaimSet` is an immutable, deterministic, content-addressed,
+versioned, tagged-serializable supporting Identity and research-contract
+artifact. It establishes the complete authoritative Edge Claim membership of
+one immutable `ResearchProtocol` as of one scientific effective time. It is not
+a new scientific stage: `ResearchProtocol` remains prospective scientific
+protocol authority, `EdgeClaim` remains immutable scientific claim identity,
+and `ResearchReview` remains scientific conclusion authority.
+
+The bounded contract contains material equivalent to `schema_version`,
+`identity_algorithm_version`, `protocol_claim_set_id`, `protocol_id`, a
+timezone-aware `effective_at`, canonically Edge-Claim-ID-ordered
+`edge_claim_ids`, and an optional `predecessor_protocol_claim_set_id`, plus
+bounded provenance under the research-contract convention. Its semantic ID
+prefix is `protocol-claim-set:`. Protocol, scientific time, membership, and
+predecessor lineage are identity-material; generation time, runtime metadata,
+and audit provenance are nonmaterial. `effective_at` is specifically the
+timezone-aware instant the immutable Claim Set entered the accepted scientific
+record and became available to downstream scientific replay. It is
+identity-material and replay-authoritative; generation or creation time,
+serialization, filesystem, process, job, scheduler, approval-workflow runtime,
+and audit-record timestamps do not determine it unless that instant
+independently is the scientific effective time. Membership is nonempty and
+unique; duplicates fail before normalization. Referenced claims must exist,
+retain valid immutable identity and Protocol compatibility, and share the Claim
+Set's Protocol. Unknown, foreign-Protocol, and same-ID/different-content claims
+fail closed at graph validation.
+
+Claim membership is explicit scientific history, not the Cartesian product of
+the Protocol's Alternative Probability Sources and Research Domains and not a
+projection from report-selected analytical children. A Protocol may exist
+before claim admission, but its first Claim Set becomes effective only when at
+least one existing valid Edge Claim is admitted. `ProtocolClaimSet` never
+creates a claim or introduces a mutable catalog, current pointer, database,
+workflow, scheduler, or approval service.
+
+Lineage is immutable, append-only, and monotonic for v1.1.0. The first Claim Set
+has no predecessor. Every distinct successor references the same Protocol's
+immediately preceding Claim Set, has a strictly later `effective_at`, retains
+all predecessor claim IDs, and adds at least one claim. Identical deterministic
+copies have one identity rather than forming a successor. A Research Review
+conclusion—including weakening, no-longer-supported, or rejected—does not remove
+or mutate membership. Claim retirement, removal, inactive/current state, and
+`is_active` or `is_current` semantics require a later architecture decision.
+
+At analysis boundary `T`, deterministic replay uses only Claim Sets with
+`effective_at <= T` and must resolve exactly one authoritative terminal set for
+the Protocol in one connected linear lineage. Unknown or cross-Protocol
+predecessors, multiple initial sets, disconnected lineage, cycles, branches,
+and competing or ambiguous terminal sets fail closed. Generation timestamp,
+lexical ID, caller, filesystem, and serialization ordering are not tie-breakers.
+A later Claim Set cannot rewrite the membership of an earlier report.
+
 ### Comparative Performance
 
 One immutable `ComparativePerformance` is cumulative claim-level Forecast Intelligence for exactly one Research Protocol, one Edge Claim, one Research Domain, one Market Benchmark, one challenger, one analysis boundary, and one cumulative paired Comparative Measurement population. `ComparativeMeasurement` is not Edge-Claim-specific; the same Measurement may contribute to multiple prospectively authorized Research Domains through classifications preserved on its Snapshot.
@@ -593,8 +647,15 @@ artifacts and does not recompute or authoritatively copy their populations,
 Brier values, uncertainty, Log Loss, Calibration, WACE, Coverage, or Drift
 deterioration.
 
-The Protocol's authoritative Edge Claim IDs must exactly equal the report's
-claim-finding IDs: no selected subset, duplicate, unknown, or foreign claim.
+The report references exactly one `ProtocolClaimSet`: the uniquely authoritative
+terminal Claim Set for its Protocol at its analysis boundary. Its
+`protocol_claim_set_id` is material report identity. The Claim Set must share
+the report Protocol, must be effective no later than the report boundary, and
+its Edge Claim IDs must exactly equal the report's claim-finding IDs: no older
+nonterminal set, selected subset, duplicate, unknown, additional, or foreign
+claim. The report therefore cannot establish its own completeness from its
+selected analytical package.
+
 Every claim requires exactly one compatible cumulative
 `ComparativePerformance`, one `TimeBoundedComparativePerformance`, and one
 `ComparativeDriftAnalysis` at the report boundary using the Protocol's single
@@ -618,7 +679,7 @@ The report keeps four version concepts distinct:
 
 An initial implementation may use `"1"` for each, but changing one has only its
 stated meaning. Material report identity comprises those four versions,
-`protocol_id`, `analysis_boundary`, canonically ordered claim findings,
+`protocol_id`, `protocol_claim_set_id`, `analysis_boundary`, canonically ordered claim findings,
 material report-level limitations, and the canonical material/input digest.
 Each claim finding recursively commits the report to its Edge Claim,
 cumulative Comparative Performance, surveillance-window rule,
@@ -661,7 +722,11 @@ reference.edge_claim_ids       == canonical report claim Edge Claim IDs
 Reference `schema_version` and `identity_algorithm_version` remain compatible
 with the report under the existing PR13 reference contract. Reference claim IDs
 are the report's complete canonical coverage with none omitted, added, or
-alternatively ordered.
+alternatively ordered. The reference shape does not add
+`protocol_claim_set_id`: `reference.report_id` identifies the canonical report
+whose material identity commits to that Claim Set, while the reference claim
+IDs equal both report coverage and Claim Set membership. The PR13 reference has
+no independent authority to select a Claim Set or claim subset.
 
 A canonical report may exist at any valid explicit analysis boundary when its
 immutable scientific inputs exist. Scheduled, material-Drift, regeneration, and
@@ -754,7 +819,9 @@ contract shape. The one-window invariant makes this mapping unambiguous for
 v1.1.0; any future multi-window identity extension requires a later contract
 version.
 
-**Under Review** is a derived procedural condition, not a completed Research Review conclusion. At an explicit timezone-aware `as_of` boundary, deterministic replay considers all protocol-defined scheduled review boundaries due by `as_of` and all valid protocol-defined material-event artifacts effective by `as_of`. An obligation remains unresolved unless a qualifying completed Research Review explicitly covers it; a newer Research Review does not resolve an obligation merely because it occurred later. A scheduled boundary may include only a grace period prospectively defined by the Research Protocol. An implementation must not invent another grace period.
+**Under Review** is a derived procedural condition, not a completed Research Review conclusion. At an explicit timezone-aware `as_of` boundary, claim-specific deterministic replay considers only Protocol-defined scheduled review boundaries due by `as_of` at which the Edge Claim was already a member of the authoritative `ProtocolClaimSet`, plus all valid Protocol-defined material-event artifacts effective by `as_of`. Claim Set replay at a scheduled boundary includes only sets with `effective_at <=` that boundary. A scheduled boundary earlier than claim admission creates no obligation for that claim and never becomes retrospectively overdue; before the first Claim Set it creates no claim-specific obligation or empty Protocol-level Review/report. The first scheduled boundary that may apply is the first otherwise-valid boundary at which the claim is already a member, and admission between boundaries creates no special immediate Review.
+
+An applicable obligation remains unresolved unless a qualifying completed Research Review explicitly covers it; a newer Research Review does not resolve an obligation merely because it occurred later. A scheduled boundary may include only a grace period prospectively defined by the Research Protocol. Grace governs timeliness after applicability; it cannot move admission backward, change Claim Set `effective_at`, make an earlier boundary applicable, move the Evidence cutoff, or create a retrospective obligation. `ReviewObligationCoverage` remains authoritative for explicit coverage, and chronology alone resolves none. These scheduled-boundary membership rules do not change material-Drift or other valid material-event obligations.
 
 While any qualifying obligation remains unresolved, Current Scientific Applicability is suspended and operational reliance must fail closed, while the latest completed scientific conclusion and historical Market Edge remain intact. Scientific inapplicability neither creates nor revokes Governance authority and does not modify Governance History.
 

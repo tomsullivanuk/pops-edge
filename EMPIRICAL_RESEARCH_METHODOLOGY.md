@@ -391,6 +391,68 @@ One Research Protocol may investigate multiple Alternative Probability Sources.
 Each distinct Alternative Probability Source-versus-Market Benchmark hypothesis
 within the applicable Research Domain is represented by a distinct Edge Claim.
 
+### 2.5.1 Protocol Claim Set
+
+A **Protocol Claim Set** is one immutable, deterministic, content-addressed
+supporting Identity and research-contract artifact establishing the complete
+authoritative Edge Claim membership of one Research Protocol as of one
+scientific effective time. It answers:
+
+> **Which Edge Claims has this Research Protocol scientifically undertaken by
+> this point in history?**
+
+It does not answer which claims are currently supported. Support, weakening,
+rejection, and other scientific conclusions remain properties of immutable
+Research Review history; Current Scientific Applicability remains a later
+deterministic projection. A Protocol Claim Set is not Evidence, Measurement, a
+Forecast Intelligence conclusion, Policy, Governance, or Operations authority,
+and it neither creates an Edge Claim nor prescribes a claim-admission workflow.
+
+Protocol compatibility establishes which Alternative Probability Source and
+Research Domain combinations could form valid Edge Claims. It does not
+establish which distinct scientific claims have actually been admitted.
+Authoritative membership is therefore explicit and is never inferred from the
+Cartesian product of a Protocol's Alternative Probability Sources and Research
+Domains or from the analytical artifacts selected for one report.
+
+One Protocol Claim Set materially identifies its schema and identity-algorithm
+versions, Protocol, timezone-aware scientific `effective_at`, canonically
+Edge-Claim-ID-ordered nonempty membership, and optional predecessor Protocol
+Claim Set ID, with bounded provenance under the normal research-contract
+convention. Its semantic identifier uses `protocol-claim-set:`. Membership and
+lineage are material to identity. `effective_at` is the timezone-aware instant
+the immutable Protocol Claim Set entered the accepted scientific record and
+became available to downstream scientific replay. It is identity-material and
+replay-authoritative. Generation or creation time, serialization time,
+filesystem time, process or job time, scheduler time, approval-workflow runtime,
+and audit-record time do not determine it unless that instant independently is
+the scientific effective time. Caller ordering, runtime metadata, and other
+audit provenance are nonmaterial. Duplicate membership fails before
+normalization, and unknown, conflicting, or foreign-Protocol Edge Claims fail
+closed during graph validation. A Research Protocol may exist before any Edge
+Claim has been admitted, but no Protocol Claim Set or canonical Comparative
+Performance Report exists for it until at least one claim has been admitted.
+
+Protocol Claim Set history is immutable, append-only, and monotonic in v1.1.0.
+The first set has no predecessor. Every distinct successor references the same
+Protocol's immediately preceding set, becomes effective strictly later, retains
+every predecessor Edge Claim, and adds at least one Edge Claim. Identical
+deterministic copies are the same artifact, not a new scientific version. A
+successor cannot remove a claim: insufficient-evidence, emerging-evidence,
+supported, strongly-supported, weakening, no-longer-supported, and rejected
+Research Review conclusions never mutate either the Edge Claim or its Claim Set
+membership. Claim retirement, active/current membership flags, and mutable
+current-set pointers are outside v1.1.0.
+
+Historical replay for one Protocol considers only Protocol Claim Sets with
+`effective_at <=` the analysis boundary and must yield exactly one terminal set
+in one connected linear lineage. Unknown or cross-Protocol predecessors,
+multiple initial sets, disconnected history, cycles, branches, and competing or
+otherwise ambiguous terminal sets fail closed. Caller order, lexical identity,
+filesystem or serialization order, and generation timestamps cannot resolve
+ambiguity. A later Claim Set may add a claim prospectively but cannot leak that
+membership into reconstruction of an earlier report.
+
 ---
 
 ## 2.6 Research Population
@@ -1670,6 +1732,24 @@ Evidence cutoff. A grace period governs only Review timeliness after that
 boundary; it does not move the Evidence cutoff or a scheduled report's analysis
 boundary.
 
+A scheduled Review boundary applies to an Edge Claim only when that claim is a
+member of the authoritative Protocol Claim Set replayed at the scheduled
+boundary using `effective_at <=` that boundary. A boundary before the claim's
+admission effective time creates no obligation for that claim and never becomes
+retrospectively overdue. Before the first Claim Set, a Protocol boundary creates
+no claim-specific obligation and requires no empty Protocol-level Review or
+report. For a newly admitted claim, the first boundary that may apply is the
+first otherwise-valid scheduled boundary at which it is already a member.
+Admission between scheduled boundaries creates no special immediate Review.
+
+Grace governs timeliness only after an applicable claim-specific obligation
+exists. It does not move admission backward, change Claim Set `effective_at`,
+make an earlier boundary applicable, move the Evidence cutoff, or create a
+retrospective obligation. `ReviewObligationCoverage` remains the explicit
+authority for which applicable obligations a completed claim-specific Review
+covers; chronology alone resolves none. These admission rules do not change
+material-Drift or other valid material-event obligations.
+
 When a scheduled review boundary is reached without a qualifying completed
 Research Review that explicitly addresses it, an unresolved review obligation
 exists. The relevant scientific conclusion is procedurally Under Review and its
@@ -2526,9 +2606,14 @@ At minimum this includes:
 
 Independent researchers using the same inputs should obtain materially identical findings.
 
-Report claim coverage is complete: the Protocol's authoritative Edge Claim IDs
-must equal the report's claim-finding IDs. Caller-selected subsets, duplicates,
-unknown claims, and claims from another Protocol fail closed. Every claim has
+Report claim coverage is established by exactly one authoritative Protocol
+Claim Set: the uniquely replayed terminal Claim Set for the report's Protocol
+using only Claim Sets effective by the analysis boundary. The report materially
+identifies that Claim Set, and its claim-finding IDs must exactly equal the Claim
+Set's canonically ordered Edge Claim IDs. An older nonterminal Claim Set, a
+caller-selected subset, duplicates, unknown claims, additional claims, and
+claims from another Protocol fail closed. The report cannot establish its own
+completeness from its selected analytical children. Every claim has
 exactly one compatible cumulative `ComparativePerformance`, one
 `TimeBoundedComparativePerformance`, and one `ComparativeDriftAnalysis` at the
 report boundary, all sharing Protocol, claim, domain, benchmark, challenger,
@@ -2544,6 +2629,14 @@ analysis IDs. Supporting report values are not new scientific stages. The
 report does not duplicate authoritative Brier, uncertainty, Log Loss,
 Calibration, WACE, Coverage, or deterioration values already owned by its
 referenced analytical artifacts.
+
+The unchanged PR13 `ComparativePerformanceReportReference` continues to project
+report ID, contract version, Protocol, analysis boundary, and report claim IDs.
+It needs no independent Protocol Claim Set field: the canonical report ID
+already commits materially to `protocol_claim_set_id`, and the projected claim
+IDs equal both report coverage and authoritative Claim Set membership. The
+reference cannot choose a Claim Set or claim subset. Claim-specific Research
+Review and Drift Surveillance contracts remain unchanged.
 
 ---
 
