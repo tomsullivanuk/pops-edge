@@ -115,8 +115,12 @@ failure-inclusive Coverage derived from authoritative boundary-specific
 population eligibility. Its local
 synthetic inspector is `inspect_forecast_comparative_research.py`. Time-bounded
 Comparative Performance, comparative Drift analysis, and the canonical
-Comparative Performance Report remain PR15 work, and deterministic Current
-Scientific Applicability and Policy Recommendation remain PR16 work. The Forecast Intelligence
+Comparative Performance Report are implemented by PR15 in
+`forecast_comparative_reporting.py`; its offline inspector is
+`inspect_forecast_comparative_reporting.py`. Complete report membership is
+governed by the immutable `ProtocolClaimSet` effective at the report boundary.
+Deterministic Current Scientific
+Applicability and Policy Recommendation remain PR16 work. The Forecast Intelligence
 Workspace remains a later product surface. Research contracts create neither
 Governance nor production authority.
 

@@ -763,9 +763,9 @@ contract layer.
 
 One Comparative Performance Report may support multiple claim-specific Research Reviews. PR13 represents that dependency through an immutable typed report reference; it does not implement the canonical report or bind new Reviews directly to the legacy `ForecastIntelligenceReport` symbol.
 
-The implemented `ForecastIntelligenceReport` in `forecast_intelligence.py` is a provider-neutral precursor. It currently measures one Forecast Provider within an explicit domain and evaluation window and includes coverage, forecast quality, Calibration, segmentation, adequacy, excluded evaluations, deterministic identity, and provenance. Its symbol has not been renamed, and its provider-level absolute analysis does not yet implement the full Market-Benchmark-relative Comparative Performance Report required by the finalized Product and Methodology.
+The implemented `ForecastIntelligenceReport` in `forecast_intelligence.py` remains a provider-neutral legacy precursor. It measures one Forecast Provider within an explicit domain and evaluation window and includes coverage, forecast quality, Calibration, segmentation, adequacy, excluded evaluations, deterministic identity, and provenance. Its symbol has not been renamed, and its provider-level absolute analysis remains distinct from the PR15 Market-Benchmark-relative `ComparativePerformanceReport`.
 
-Architecture uses **Comparative Performance Report** as the canonical concept. Compatibility with the legacy symbol must be handled by a separately approved implementation change.
+Architecture uses **Comparative Performance Report** as the canonical concept. PR15 implements it as an independent Forecast Intelligence contract with no structural dependency on the legacy symbol.
 
 ### Edge Claims and Market Edges
 
@@ -1150,7 +1150,7 @@ The following gaps are architectural state, not roadmap commitments:
 | Provider-neutral Forecast Intelligence precursor | Implemented with legacy report and proposal symbols |
 | Full Research Protocol contracts | Implemented with typed scientific rules and deterministic validation |
 | Research Snapshot, Comparative Measurement, and cumulative Comparative Performance | Implemented by PR14 with deterministic replay, paired analysis, Calibration, and failure-inclusive Coverage |
-| Canonical Comparative Performance Report | Approved for PR15; PR13 provides a typed forward reference only |
+| Protocol Claim Set, time-bounded Comparative Performance, comparative Drift analysis, and canonical Comparative Performance Report | Implemented by PR15 with deterministic replay, authoritative claim completeness, and PR13 reference compatibility |
 | Current Scientific Applicability and Policy Recommendation | Approved for PR16; not implemented |
 | Edge Claim, Market Edge, Research Review, and Drift Surveillance contracts | Implemented |
 | Policy Hypothesis aligned explicitly to supported Market Edges | Product-approved; existing symbol has older analytical-candidate semantics |

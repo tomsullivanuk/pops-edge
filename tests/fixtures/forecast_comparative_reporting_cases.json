@@ -1,0 +1,25 @@
+{
+  "fixture_version": "1",
+  "analysis_before_correction": "2026-06-10T00:00:00+00:00",
+  "analysis_after_correction": "2026-06-20T00:00:00+00:00",
+  "generated_at": "2026-08-15T18:00:00+00:00",
+  "surveillance_days": 10,
+  "drift_threshold": "0.01",
+  "all_challengers": true,
+  "all_domains": true,
+  "events": [
+    {"key": "a", "start": "2026-06-02T01:00:00+00:00", "benchmark": "0.55", "challenger": "0.65", "home_won": true},
+    {"key": "b", "start": "2026-06-03T01:00:00+00:00", "all_missing": true},
+    {"key": "c", "start": "2026-06-04T01:00:00+00:00", "challenger_missing": true, "other_invalid": true},
+    {"key": "e", "start": "2026-06-06T01:00:00+00:00", "benchmark": "0.62", "challenger": "0.52", "home_won": false, "partition": "underdog"},
+    {"key": "i", "start": "2026-06-12T01:00:00+00:00", "benchmark": "0.60", "challenger": "0.52", "home_won": true},
+    {"key": "j", "start": "2026-06-14T01:00:00+00:00", "all_missing": true},
+    {"key": "k", "start": "2026-06-16T01:00:00+00:00", "benchmark": "0.40", "challenger": "0.55", "home_won": false},
+    {"key": "l", "start": "2026-06-18T01:00:00+00:00", "benchmark": "0.58", "challenger": "0.61", "unresolved": true},
+    {"key": "m", "start": "2026-06-10T00:00:00+00:00", "all_missing": true},
+    {"key": "o", "start": "2026-06-10T00:00:00.000001+00:00", "all_missing": true},
+    {"key": "n", "start": "2026-06-20T00:00:00+00:00", "all_missing": true},
+    {"key": "p", "start": "2026-06-20T00:00:00.000001+00:00", "all_missing": true,
+     "schedule_collected_at": "2026-06-19T00:00:00+00:00"}
+  ]
+}

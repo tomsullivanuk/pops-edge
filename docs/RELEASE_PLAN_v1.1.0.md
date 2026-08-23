@@ -583,6 +583,15 @@ structural incompatibility. Reports communicate findings without creating a
 Research Review conclusion or any applicability, Policy, Governance, Workspace,
 Opportunity, or production authority.
 
+**Implemented boundary:** `forecast_comparative_reporting.py` supplies the
+immutable PR15 analytical and report contracts, version-2 rule enforcement,
+deterministic factories, PR13 reference/Drift validation, and a synthetic
+offline fixture and inspector. `forecast_research_contracts.py` supplies the
+supporting immutable `ProtocolClaimSet`, deterministic lineage replay, and
+scheduled-boundary admission validation; canonical report completeness derives
+from that authority. Current Scientific Applicability and Policy Recommendation
+remain deferred to PR16.
+
 ### PR16 — Current Scientific Applicability and Policy Recommendation
 
 **Purpose:** derive current scientific applicability and advisory Policy Recommendations from immutable research history.

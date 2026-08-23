@@ -144,6 +144,7 @@ def _forecast_observation(*, key: str, source: object, event: CanonicalEvent,
 
 
 def _protocol_and_claims(path: Path) -> tuple[ResearchProtocol, tuple[EdgeClaim, ...], object]:
+    payload = json.loads(path.read_text())
     base_graph = load_pr13_fixture(Path("tests/fixtures/forecast_research_contract_cases.json"))
     base = base_graph["protocols"][0]
     calibration = VersionedRuleSpecification.create(
@@ -164,20 +165,27 @@ def _protocol_and_claims(path: Path) -> tuple[ResearchProtocol, tuple[EdgeClaim,
                 RuleParameter("confidence_level", Decimal("0.95")), RuleParameter("resamples", 200))),
         practical_significance_rule=base.practical_significance_rule,
         burden_of_proof_rule=base.burden_of_proof_rule,
-        surveillance_window_rules=base.surveillance_window_rules,
-        drift_classification_rule=base.drift_classification_rule,
+        surveillance_window_rules=((VersionedRuleSpecification.create(
+            RulePurpose.SURVEILLANCE_WINDOW, "rolling-days", "2",
+            (RuleParameter("days", int(payload["surveillance_days"])),)),)
+            if "surveillance_days" in payload else base.surveillance_window_rules),
+        drift_classification_rule=(VersionedRuleSpecification.create(
+            RulePurpose.DRIFT_CLASSIFICATION, "brier-deterioration", "2",
+            (RuleParameter("threshold", Decimal(payload["drift_threshold"])),))
+            if "drift_threshold" in payload else base.drift_classification_rule),
         drift_material_event_rule=base.drift_material_event_rule,
         scheduled_review_boundaries=base.scheduled_review_boundaries,
         limitations=("synthetic PR14 fixture; no empirical finding",), provenance=base_graph["provenance"],
     )
-    broad = next(item for item in protocol.research_domains if not item.partition_selections)
+    domains = (protocol.research_domains if payload.get("all_domains") else
+               (next(item for item in protocol.research_domains if not item.partition_selections),))
     claims = tuple(EdgeClaim.create(
         protocol_id=protocol.research_protocol_id,
         challenger_source_reference_id=challenger.probability_source_reference_id,
         benchmark_source_reference_id=protocol.market_benchmark.probability_source_reference_id,
-        research_domain_id=broad.research_domain_id,
+        research_domain_id=domain.research_domain_id,
         provenance=base_graph["provenance"],
-    ) for challenger in protocol.alternative_sources)
+    ) for domain in domains for challenger in protocol.alternative_sources)
     return protocol, claims, base_graph["provenance"]
 
 
@@ -283,6 +291,25 @@ def load_fixture(path: Path) -> dict[str, object]:
                     effective_at=max(outcome.collected_at, version.effective_at) + timedelta(seconds=1),
                     provenance=provenance,
                 ))
+            if payload.get("all_challengers"):
+                other_capture = next(item for item in snapshot.source_captures
+                                     if item.probability_source_reference_id == other.probability_source_reference_id)
+                other_pair = next(item for item in snapshot.pairwise_synchronization
+                                  if item.challenger_source_reference_id == other.probability_source_reference_id)
+                if (other_capture.disposition is SourceCaptureDisposition.CAPTURED_VALID
+                        and other_pair.synchronized):
+                    other_eval = _evaluation(
+                        f"{key}:other", other, f"forecast-observation:{key}:other", outcome,
+                        Decimal(spec.get("other", "0.50")), target)
+                    evaluations.append(other_eval)
+                    for version in tuple(item for item in snapshots
+                                         if item.research_capture_opportunity_id == opportunity.research_capture_opportunity_id):
+                        measurements.append(create_comparative_measurement(
+                            protocol=protocol, snapshot=version, benchmark_evaluation=b_eval,
+                            challenger_evaluation=other_eval, outcome=outcome,
+                            effective_at=max(outcome.collected_at, version.effective_at) + timedelta(seconds=1),
+                            provenance=provenance,
+                        ))
     before = _at(payload["analysis_before_correction"])
     after = _at(payload["analysis_after_correction"])
     observations_by_event: dict[str, list[OutcomeObservation]] = {}
@@ -310,13 +337,17 @@ def load_fixture(path: Path) -> dict[str, object]:
                 provenance=provenance))
     broad = next(item for item in protocol.research_domains if not item.partition_selections)
     claim = next(item for item in claims if item.challenger_source_reference_id == challenger.probability_source_reference_id)
+    performance_claims = claims if payload.get("all_challengers") else (claim,)
     performances = tuple(create_comparative_performance(
-        protocol=protocol, edge_claim=claim, research_domain=broad, analysis_boundary=boundary,
+        protocol=protocol, edge_claim=performance_claim,
+        research_domain=next(item for item in protocol.research_domains
+                             if item.research_domain_id == performance_claim.research_domain_id),
+        analysis_boundary=boundary,
         opportunities=opportunities, eligibility_contexts=contexts,
         eligibility_results=eligibility_results, snapshots=snapshots, measurements=measurements,
         outcome_histories=histories,
         provenance=provenance, limitations=("synthetic output; not an empirical conclusion",),
-    ) for boundary in (before, after))
+    ) for boundary in (before, after) for performance_claim in performance_claims)
     graph = dict(protocols=(protocol,), claims=claims, canonical_events=tuple(canonical_events.values()),
                  event_stage_evidence=tuple(stages), schedule_observations=tuple(schedules),
                  outcome_histories=histories, opportunities=tuple(opportunities),

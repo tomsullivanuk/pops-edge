@@ -181,8 +181,14 @@ _RULE_SCHEMAS: dict[tuple[RulePurpose, str, str], dict[str, _ParameterDefinition
     (RulePurpose.SURVEILLANCE_WINDOW, "rolling-days", "1"): {
         "days": _ParameterDefinition(int, minimum=1),
     },
+    (RulePurpose.SURVEILLANCE_WINDOW, "rolling-days", "2"): {
+        "days": _ParameterDefinition(int, minimum=1),
+    },
     (RulePurpose.DRIFT_CLASSIFICATION, "brier-deterioration", "1"): {
         "threshold": _ParameterDefinition(Decimal, minimum=Decimal("0")),
+    },
+    (RulePurpose.DRIFT_CLASSIFICATION, "brier-deterioration", "2"): {
+        "threshold": _ParameterDefinition(Decimal, minimum=Decimal("0"), maximum=Decimal("2")),
     },
     (RulePurpose.DRIFT_MATERIAL_EVENT_MAPPING, "drift-disposition-material-events", "1"): {
         "qualifying_dispositions": _ParameterDefinition(tuple, tuple_order_nonmaterial=True),
@@ -943,6 +949,138 @@ def _claim_material(schema: str, identity: str, protocol: str, challenger: str,
 
 
 @dataclass(frozen=True, slots=True)
+class ProtocolClaimSet:
+    protocol_claim_set_id: str
+    schema_version: str
+    identity_algorithm_version: str
+    protocol_id: str
+    effective_at: datetime
+    edge_claim_ids: tuple[str, ...]
+    predecessor_protocol_claim_set_id: str | None
+    provenance: ResearchContractProvenance
+    input_digest: str
+
+    @classmethod
+    def create(cls, *, protocol_id: str, effective_at: datetime,
+               edge_claim_ids: Iterable[str], provenance: ResearchContractProvenance,
+               predecessor_protocol_claim_set_id: str | None = None,
+               schema_version: str = RESEARCH_CONTRACT_SCHEMA_VERSION,
+               identity_algorithm_version: str = RESEARCH_IDENTITY_ALGORITHM_VERSION) -> "ProtocolClaimSet":
+        claims = _ordered_unique(edge_claim_ids, "Protocol Claim Set Edge Claim IDs")
+        material = _protocol_claim_set_material(
+            schema_version, identity_algorithm_version, protocol_id, effective_at,
+            claims, predecessor_protocol_claim_set_id)
+        digest = _digest(material)
+        return cls(f"protocol-claim-set:{digest}", schema_version, identity_algorithm_version,
+                   protocol_id, effective_at, claims, predecessor_protocol_claim_set_id,
+                   provenance, digest)
+
+    def __post_init__(self) -> None:
+        _require_versions(self.schema_version, self.identity_algorithm_version)
+        _require_identifier(self.protocol_id, "Protocol Claim Set protocol_id")
+        _require_aware(self.effective_at, "Protocol Claim Set effective_at")
+        if self.predecessor_protocol_claim_set_id is not None:
+            _require_identifier(self.predecessor_protocol_claim_set_id,
+                                "predecessor_protocol_claim_set_id")
+        claims = _ordered_unique(self.edge_claim_ids, "Protocol Claim Set Edge Claim IDs")
+        if not claims:
+            _fail("Protocol Claim Set membership must be nonempty")
+        material = _protocol_claim_set_material(
+            self.schema_version, self.identity_algorithm_version, self.protocol_id,
+            self.effective_at, claims, self.predecessor_protocol_claim_set_id)
+        digest = _digest(material)
+        if self.input_digest != digest or self.protocol_claim_set_id != f"protocol-claim-set:{digest}":
+            _fail("Protocol Claim Set identity conflicts with material",
+                  ReasonCode.CONFLICTING_NATIVE_IDENTITY)
+        object.__setattr__(self, "edge_claim_ids", claims)
+
+
+def _protocol_claim_set_material(schema: str, identity: str, protocol: str,
+                                 effective_at: datetime, claim_ids: tuple[str, ...],
+                                 predecessor_id: str | None) -> dict[str, Any]:
+    return {"schema": schema, "identity": identity, "protocol": protocol,
+            "effective_at": effective_at, "edge_claim_ids": claim_ids,
+            "predecessor_protocol_claim_set_id": predecessor_id}
+
+
+def _protocol_claim_set_registry(values: Iterable[ProtocolClaimSet]) -> dict[str, ProtocolClaimSet]:
+    result: dict[str, ProtocolClaimSet] = {}
+    for value in values:
+        if value.protocol_claim_set_id in result:
+            detail = "conflicting content" if result[value.protocol_claim_set_id] != value else "duplicate entry"
+            _fail(f"Protocol Claim Set registry contains {detail} for {value.protocol_claim_set_id}",
+                  ReasonCode.CONFLICTING_NATIVE_IDENTITY)
+        result[value.protocol_claim_set_id] = value
+    return result
+
+
+def _validated_protocol_claim_set_lineage(*, protocol_id: str,
+        protocol_claim_sets: Iterable[ProtocolClaimSet]) -> tuple[ProtocolClaimSet, ...]:
+    registry = _protocol_claim_set_registry(protocol_claim_sets)
+    lineage = tuple(item for item in registry.values() if item.protocol_id == protocol_id)
+    if not lineage:
+        return ()
+    by_id = {item.protocol_claim_set_id: item for item in lineage}
+    initial = tuple(item for item in lineage if item.predecessor_protocol_claim_set_id is None)
+    if len(initial) != 1:
+        _fail("Protocol Claim Set lineage requires exactly one initial set")
+    successors: dict[str, list[ProtocolClaimSet]] = {}
+    for item in lineage:
+        predecessor_id = item.predecessor_protocol_claim_set_id
+        if predecessor_id is None:
+            continue
+        predecessor = registry.get(predecessor_id)
+        if predecessor is None:
+            _fail("Protocol Claim Set references unknown predecessor")
+        if predecessor.protocol_id != protocol_id:
+            _fail("Protocol Claim Set predecessor belongs to another Protocol")
+        if item.effective_at <= predecessor.effective_at:
+            _fail("Protocol Claim Set successor must become effective strictly later")
+        if not set(predecessor.edge_claim_ids) < set(item.edge_claim_ids):
+            _fail("Protocol Claim Set successor must retain all claims and add at least one")
+        successors.setdefault(predecessor_id, []).append(item)
+    if any(len(values) != 1 for values in successors.values()):
+        _fail("Protocol Claim Set lineage branches")
+    ordered: list[ProtocolClaimSet] = []
+    current = initial[0]
+    visited: set[str] = set()
+    while True:
+        if current.protocol_claim_set_id in visited:
+            _fail("Protocol Claim Set lineage contains a cycle")
+        visited.add(current.protocol_claim_set_id)
+        ordered.append(current)
+        children = successors.get(current.protocol_claim_set_id, [])
+        if not children:
+            break
+        current = children[0]
+    if visited != set(by_id):
+        _fail("Protocol Claim Set lineage is disconnected or has competing terminals")
+    return tuple(ordered)
+
+
+def replay_protocol_claim_set(*, protocol_id: str, analysis_boundary: datetime,
+        protocol_claim_sets: Iterable[ProtocolClaimSet]) -> ProtocolClaimSet | None:
+    """Return the unique authoritative Claim Set effective at the boundary."""
+    _require_identifier(protocol_id, "Protocol Claim Set replay protocol_id")
+    _require_aware(analysis_boundary, "Protocol Claim Set replay boundary")
+    effective_values = tuple(
+        item for item in protocol_claim_sets if item.effective_at <= analysis_boundary)
+    lineage = _validated_protocol_claim_set_lineage(
+        protocol_id=protocol_id, protocol_claim_sets=effective_values)
+    return lineage[-1] if lineage else None
+
+
+def scheduled_review_boundary_applies(*, protocol_id: str, edge_claim_id: str,
+        boundary: ScheduledReviewBoundary,
+        protocol_claim_sets: Iterable[ProtocolClaimSet]) -> bool:
+    claim_set = replay_protocol_claim_set(
+        protocol_id=protocol_id,
+        analysis_boundary=boundary.required_analysis_boundary_at,
+        protocol_claim_sets=protocol_claim_sets)
+    return claim_set is not None and edge_claim_id in claim_set.edge_claim_ids
+
+
+@dataclass(frozen=True, slots=True)
 class ResearchReview:
     research_review_id: str
     schema_version: str
@@ -1149,12 +1287,15 @@ def _index(values: Iterable[Any], id_attribute: str, label: str) -> dict[str, An
 
 def validate_research_contracts(*, protocols: Iterable[ResearchProtocol], claims: Iterable[EdgeClaim],
                                 reviews: Iterable[ResearchReview], market_edges: Iterable[MarketEdge],
-                                drift_surveillance: Iterable[DriftSurveillance]) -> None:
+                                drift_surveillance: Iterable[DriftSurveillance],
+                                protocol_claim_sets: Iterable[ProtocolClaimSet] = ()) -> None:
     protocol_map = _index(protocols, "research_protocol_id", "Research Protocol")
     claim_map = _index(claims, "edge_claim_id", "Edge Claim")
     review_map = _index(reviews, "research_review_id", "Research Review")
     edge_map = _index(market_edges, "market_edge_id", "Market Edge")
     drift_map = _index(drift_surveillance, "drift_surveillance_id", "Drift Surveillance")
+    claim_set_values = tuple(protocol_claim_sets)
+    claim_set_map = _protocol_claim_set_registry(claim_set_values)
 
     semantic_claims: dict[tuple[str, str, str, str], str] = {}
     for claim in claim_map.values():
@@ -1173,6 +1314,20 @@ def validate_research_contracts(*, protocols: Iterable[ResearchProtocol], claims
         if prior is not None and prior != claim.edge_claim_id:
             _fail("equivalent Edge Claims have different deterministic identities")
         semantic_claims[key] = claim.edge_claim_id
+
+    for claim_set in claim_set_map.values():
+        protocol = protocol_map.get(claim_set.protocol_id)
+        if protocol is None:
+            _fail("Protocol Claim Set references unknown Research Protocol")
+        for claim_id in claim_set.edge_claim_ids:
+            claim = claim_map.get(claim_id)
+            if claim is None:
+                _fail("Protocol Claim Set references unknown Edge Claim")
+            if claim.protocol_id != claim_set.protocol_id:
+                _fail("Protocol Claim Set contains a foreign-Protocol Edge Claim")
+    for protocol_id in {item.protocol_id for item in claim_set_values}:
+        _validated_protocol_claim_set_lineage(
+            protocol_id=protocol_id, protocol_claim_sets=claim_set_values)
 
     def validate_report_reference(report: ComparativePerformanceReportReference) -> None:
         if report.protocol_id not in protocol_map:
@@ -1211,6 +1366,11 @@ def validate_research_contracts(*, protocols: Iterable[ResearchProtocol], claims
                     _fail("scheduled obligation reference is incompatible")
                 if boundary.required_analysis_boundary_at > review.report_reference.analysis_boundary:
                     _fail("Review report predates scheduled required analysis boundary")
+                if claim_set_values and not scheduled_review_boundary_applies(
+                        protocol_id=protocol.research_protocol_id,
+                        edge_claim_id=review.edge_claim_id, boundary=boundary,
+                        protocol_claim_sets=claim_set_values):
+                    _fail("scheduled Review boundary predates Edge Claim admission")
             else:
                 reference = obligation.drift_surveillance
                 assert reference is not None
@@ -1250,7 +1410,7 @@ _CONTRACTS = (
     ScheduledReviewBoundary, ScheduledReviewBoundaryReference,
     ComparativePerformanceReportReference, DriftSurveillanceReference,
     ReviewObligationReference, ReviewObligationCoverage, ResearchProtocol,
-    EdgeClaim, ResearchReview, MarketEdge, DriftSurveillance,
+    EdgeClaim, ProtocolClaimSet, ResearchReview, MarketEdge, DriftSurveillance,
 )
 for _contract in _CONTRACTS:
     _contract.to_dict = SerializableContract.to_dict  # type: ignore[attr-defined]

@@ -532,6 +532,28 @@ Analysis, canonical Comparative Performance Report, Research Review conclusion,
 Current Scientific Applicability, Policy, Governance, Workspace, Opportunity
 Analysis, or production authority.
 
+## Comparative performance reporting inspection
+
+`forecast_comparative_reporting.py` implements the PR15 Forecast Intelligence
+layer: rolling-days version-2 bounded Comparative Performance, deterministic
+historical replay, brier-deterioration version-2 comparative Drift analysis,
+complete Protocol-level Comparative Performance Reports, and exact projection
+to the existing PR13 report reference. Run its offline inspection with:
+
+```bash
+./venv/bin/python inspect_forecast_comparative_reporting.py \
+  tests/fixtures/forecast_comparative_reporting_cases.json
+```
+
+The implementation creates no Research Review conclusion, Current Scientific
+Applicability, Policy Recommendation, Governance, Workspace, Opportunity
+Analysis, mutable workflow state, or production authority.
+
+The supporting `ProtocolClaimSet` contract and replay helper live in
+`forecast_research_contracts.py`. Report completeness is derived from the
+authoritative Claim Set effective at the report boundary; the analytical
+children cannot define their own claim universe.
+
 ### Forecast Intelligence Workspace boundary
 
 The future Forecast Intelligence Workspace is a deterministic, read-only,
