@@ -606,6 +606,10 @@ remain deferred to PR18.
 
 ### PR16B — Standalone Market Benchmark Measurement Implementation
 
+**Implementation state:** implemented as a deterministic provider-neutral contract,
+replay, validation, fixture, test, and inspection path. Prospective operation and
+the first empirical report remain PR17.
+
 **Purpose:** deterministically implement standalone Probability Source performance, first exercised for Kalshi in the MLB Market Benchmark role while preserving provider-neutral and sport-neutral authority.
 
 **Scope:** market probability derivation; standalone source Measurement; failure-inclusive Coverage; cumulative and time-bounded performance; Calibration; deterministic one-sample uncertainty; correction-aware replay; canonical report integration; and offline fixtures, inspection, validation, and focused tests.

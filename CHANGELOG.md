@@ -284,7 +284,23 @@ infinity and absent indeterminate comparisons without shrinking the Brier or
 Calibration population. The synthetic fixture and offline
 inspector add no provider collection or operational behavior. Canonical
 Comparative Performance Reports remain PR15; Current Scientific Applicability
-and Policy Recommendation remain PR18. This documentation-only PR16A defines standalone Probability Source performance architecture; PR16B will implement the approved architecture, and PR17 will operate the prospective MLB study and produce the first empirical report.
+and Policy Recommendation remain PR18. PR16A defines standalone Probability
+Source performance architecture. PR16B now implements its explicit v2 Protocol,
+typed capture, market derivation, source Measurement, failure-inclusive Coverage,
+cumulative and time-bounded performance, uncertainty, report-reference,
+replay-validation, fixture, test, and offline inspection path. PR17 will operate
+the prospective MLB study and produce the first empirical report.
+The PR16B replay path derives capture eligibility from prospective authority,
+selects corrected Outcome/Measurement lineage at explicit boundaries, enforces
+causal effective chronology and complete schedule windows, and validates typed
+paired cumulative, bounded, and Drift references during report composition.
+Due-state replay is independent of the prospectively frozen population decision;
+forecast-backed Measurements now replay their eligibility and evaluation
+authority; paired populations are claim-specific for multi-challenger reports;
+and equal-price market depth preserves every contributing Evidence level.
+Snapshot schedule and target timing now replay from immutable Schedule Evidence,
+standalone Coverage rejects cross-Protocol analytical authority, and pairwise
+synchronization is reproduced from exact capture timestamps and Protocol rules.
 
 ## [v1.0.0] — World Cup baseline
 

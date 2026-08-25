@@ -1,0 +1,13 @@
+{
+  "market": {
+    "yes_offer": "0.56",
+    "yes_offer_quantity": "2",
+    "no_offer": "0.46",
+    "no_offer_quantity": "5"
+  },
+  "standalone": {
+    "confidence_level": "0.95",
+    "resamples": 200,
+    "window_days": 30
+  }
+}
