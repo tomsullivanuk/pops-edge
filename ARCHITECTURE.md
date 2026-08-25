@@ -414,13 +414,55 @@ lineage, Snapshot lineage, Coverage contribution, and Research Dimension
 classifications. It remains in the exact Brier and Calibration paired
 population.
 
+### Standalone Probability Source analytical path (PR16A target)
+
+PR16A defines target architecture only; PR16B remains responsible for implementation:
+
+```text
+Protocol-governed Schedule Evidence
+        ↓
+ResearchCaptureOpportunity
+        ↓
+ResearchSnapshot
+        +
+MarketObservation
+        ↓
+MarketProbabilityDerivation
+        +
+Outcome Evidence
+        ↓
+ProbabilitySourceMeasurement
+        ↓
+ProbabilitySourcePerformance
+        +
+TimeBoundedProbabilitySourcePerformance
+        ↓
+ComparativePerformanceReport references
+```
+
+`MarketProbabilityDerivation` is narrow immutable supporting derived Analysis. It identifies the Market Observation; Market Series and proposition; Probability Source Reference and Protocol role; canonical event, outcome mapping, and fixed canonical outcome; valid contemporaneous bid and offer; direct or exact complement-derived origin, source side, and source price of each bound; positive displayed quantities; component chronology; exact midpoint and complement; representation and transformation rules; algorithm identity/version; limitations; deterministic identity; and provenance. It may exist before an outcome. It contains no outcome, score, population, aggregate performance, execution valuation, conclusion, Policy, or production authority. Market Evidence remains Market Evidence and never becomes Forecast Evidence.
+
+`ProbabilitySourceMeasurement` is one immutable event-level Measurement for one Protocol, Research Snapshot, Probability Source Reference and Protocol role, compatible probability distribution, authoritative outcome, scoring algorithm, and effective/available time. It owns realized outcome, probability distribution, Brier Score, extended-real Log Loss, Calibration input, a derivation or direct-source reference, arithmetic inputs, limitations, deterministic identity, and provenance. A Market Benchmark Measurement consumes `MarketProbabilityDerivation`.
+
+Compatible standalone and paired paths reuse the same `MarketProbabilityDerivation`. On overlapping events they agree exactly on source identity, probability distribution, realized outcome, Brier Score, and Log Loss. Aggregate equality is neither required nor expected because populations differ. This reconciliation does not rewrite historical PR9 Forecast Evaluations or persisted PR14/PR15 artifacts.
+
+`ProbabilitySourceCoverage` owns complete failure-inclusive accounting without creating another scientific stage. It distinguishes the schedule-derived Coverage universe from its eligible standalone denominator. The former contains every relevant schedule-derived opportunity known and effective at the boundary and reconciles exactly into capture not yet due, protocol-ineligible, and the eligible standalone denominator. The latter contains only due, prospectively eligible opportunities and reconciles exactly into source capture missing, source capture invalid, outside capture tolerance, probability derivation unavailable or invalid, outcome unresolved or ineligible, and successfully measured. Categories are deterministic, disjoint, exhaustive for their parent population, correction-aware, and capable of valid empty populations. Coverage rates use the eligible standalone denominator; capture-not-yet-due and protocol-ineligible opportunities provide obligation accounting but never enter that rate denominator. Challenger state is nonmaterial to every standalone population level, and missing or invalid states remain visible rather than being retrospectively reconstructed or filtered away.
+
+`ProbabilitySourcePerformance` is cumulative immutable Forecast Intelligence for exactly one Research Protocol, Research Domain, Probability Source Reference, Protocol source role, analysis boundary, measured performance population, and Coverage authority. Its performance metrics use only valid `ProbabilitySourceMeasurement` members of the measured performance population; failures remain in the eligible standalone Coverage denominator without contaminating metric calculation. Its identity commits materially to the relevant schemas and algorithms, Protocol, domain, source, role, boundary, canonically ordered Measurements, Coverage, Calibration rule, uncertainty rule, and material limitations.
+
+`TimeBoundedProbabilitySourcePerformance` is an immutable sibling over the Protocol's approved rolling window using the same metrics, Coverage, and open-left/closed-right chronology. It does not mutate cumulative performance, become an optional field on it, or create standalone Drift or a review obligation.
+
+Both performance authorities carry `SourcePerformanceUncertainty`, a deterministic one-sample bootstrap result for mean Brier Score. Seed material includes Protocol, domain, source, source role, cumulative or time-bounded scope, analysis boundary, applicable window, canonical Measurement IDs, statistical rule/version, confidence level, resample count, and algorithm version. Wall-clock randomness, input ordering, filesystem state, and ambient Decimal context are nonmaterial. Empty populations have absent point estimate and interval; singletons have a deterministic degenerate interval and explicit limitation; identical scores have a zero-width interval and explicit no-observed-variation limitation; otherwise the ordinary deterministic bootstrap applies. No universal minimum sample threshold or automatic evidence classification is introduced.
+
+Corrections preserve append-only Evidence and correction lineage. Deterministic replay selects authoritative Snapshot and outcome versions at explicit boundaries and produces new immutable Measurements after corrections while preserving earlier performance artifacts. Ambiguous, branched, incomplete, or conflicting lineage fails closed; incidental ordering is never a substantive tie-breaker.
+
 ## Forecast Intelligence
 
-Forecast Intelligence is the umbrella architectural capability that transforms immutable Evidence and Measurement into reproducible operational knowledge about Probability Sources relative to the Market Benchmark.
+Forecast Intelligence is the umbrella architectural capability that transforms immutable Evidence and Measurement into reproducible knowledge about the standalone and comparative performance of Probability Sources.
 
 **Consumes:** Research Protocols, immutable Evidence, Forecast Evaluations and other Measurement, explicit research populations and analysis boundaries, and versioned analytical rules.
 
-**Produces:** Comparative Performance, Comparative Performance Reports, Edge Claims and their assessments, Research Reviews, Drift findings, Market Edges, Policy Recommendations, and inputs to Policy Hypotheses.
+**Produces:** standalone Probability Source Performance, Comparative Performance, Comparative Performance Reports, Edge Claims and their assessments, Research Reviews, Drift findings, Market Edges, Policy Recommendations, and inputs to Policy Hypotheses.
 
 **Owns:** provider-neutral empirical analysis, reproducibility, research provenance, and the scientific status of Market Edges.
 
@@ -656,6 +698,8 @@ nonterminal set, selected subset, duplicate, unknown, additional, or foreign
 claim. The report therefore cannot establish its own completeness from its
 selected analytical package.
 
+Every canonical report boundary also requires exactly one compatible broad-domain cumulative `ProbabilitySourcePerformance` and one `TimeBoundedProbabilitySourcePerformance` for the Probability Source in the Protocol's Market Benchmark role. The report references their identities and does not copy authoritative standalone metrics. Its presentation identifies which counts describe the schedule-derived Coverage universe, eligible standalone denominator, and measured performance population; Coverage rates use the eligible denominator, while performance metrics use the measured population. This Protocol-level standalone completeness is independent of `ProtocolClaimSet`, which continues to govern Edge Claim membership. Challenger state cannot change any standalone population level.
+
 Every claim requires exactly one compatible cumulative
 `ComparativePerformance`, one `TimeBoundedComparativePerformance`, and one
 `ComparativeDriftAnalysis` at the report boundary using the Protocol's single
@@ -825,11 +869,11 @@ An applicable obligation remains unresolved unless a qualifying completed Resear
 
 While any qualifying obligation remains unresolved, Current Scientific Applicability is suspended and operational reliance must fail closed, while the latest completed scientific conclusion and historical Market Edge remain intact. Scientific inapplicability neither creates nor revokes Governance authority and does not modify Governance History.
 
-Current Scientific Applicability is a deterministic replayable Forecast Intelligence projection owned by PR16; it is not stored as mutable authoritative state. At an explicit timezone-aware `as_of` boundary, the projection identifies the latest completed conclusion for the Edge Claim, all scheduled obligations due by `as_of`, all valid material-event artifacts effective by `as_of`, and the obligations explicitly covered by completed Reviews. Unresolved obligations suspend applicability. Otherwise only Supported or Strongly Supported may support applicability, subject to every other protocol, Research Domain, Research Population, Evidence, analytical, and compatibility requirement. Resolving an obligation does not by itself restore applicability.
+Current Scientific Applicability is a deterministic replayable Forecast Intelligence projection owned by PR18; it is not stored as mutable authoritative state. At an explicit timezone-aware `as_of` boundary, the projection identifies the latest completed conclusion for the Edge Claim, all scheduled obligations due by `as_of`, all valid material-event artifacts effective by `as_of`, and the obligations explicitly covered by completed Reviews. Unresolved obligations suspend applicability. Otherwise only Supported or Strongly Supported may support applicability, subject to every other protocol, Research Domain, Research Population, Evidence, analytical, and compatibility requirement. Resolving an obligation does not by itself restore applicability.
 
 PR13 provides the immutable structures needed for this replay: claim and Market Edge relationships, scheduled review-boundary identities, authorized material-event references, effective and completion times, completed conclusions, explicit obligation coverage, deterministic identities, provenance, serialization, and fail-closed validation. Bounded typed supporting value objects may express these relationships; they are not additional top-level research contracts and must not become mutable workflow or current-state objects.
 
-PR13 does not calculate or store authoritative Current Scientific Applicability, implement the canonical Comparative Performance Report, or introduce a generic `ReviewTrigger`, mutable review lifecycle, workflow manager, always-on surveillance service, Workspace/UI state, or additional durable current-applicability contract. Workspace or UI state cannot originate, resolve, or override Under Review. PR16 owns Current Scientific Applicability and Policy Recommendation without granting Governance or operational authority.
+PR13 does not calculate or store authoritative Current Scientific Applicability, implement the canonical Comparative Performance Report, or introduce a generic `ReviewTrigger`, mutable review lifecycle, workflow manager, always-on surveillance service, Workspace/UI state, or additional durable current-applicability contract. Workspace or UI state cannot originate, resolve, or override Under Review. PR18 owns Current Scientific Applicability and Policy Recommendation without granting Governance or operational authority.
 
 This personal hobby platform does not require speculative always-on services. Scheduled local analysis and explicit reruns are sufficient until operational evidence justifies more infrastructure.
 
@@ -1151,7 +1195,10 @@ The following gaps are architectural state, not roadmap commitments:
 | Full Research Protocol contracts | Implemented with typed scientific rules and deterministic validation |
 | Research Snapshot, Comparative Measurement, and cumulative Comparative Performance | Implemented by PR14 with deterministic replay, paired analysis, Calibration, and failure-inclusive Coverage |
 | Protocol Claim Set, time-bounded Comparative Performance, comparative Drift analysis, and canonical Comparative Performance Report | Implemented by PR15 with deterministic replay, authoritative claim completeness, and PR13 reference compatibility |
-| Current Scientific Applicability and Policy Recommendation | Approved for PR16; not implemented |
+| Standalone Probability Source methodology and target architecture | Defined by PR16A; not implemented |
+| Market probability derivation, standalone Measurement, Coverage, cumulative/time-bounded performance, and report integration | Approved for PR16B; not implemented |
+| Prospective MLB operation and first real Market Benchmark report | Approved for PR17; not implemented |
+| Current Scientific Applicability and Policy Recommendation | Approved for PR18; not implemented |
 | Edge Claim, Market Edge, Research Review, and Drift Surveillance contracts | Implemented |
 | Policy Hypothesis aligned explicitly to supported Market Edges | Product-approved; existing symbol has older analytical-candidate semantics |
 | Forecast Policy, deterministic execution, and Policy Forecast | Implemented |

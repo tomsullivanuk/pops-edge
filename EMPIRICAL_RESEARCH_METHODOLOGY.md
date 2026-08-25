@@ -579,6 +579,14 @@ Comparative Performance is pair-specific.
 
 It is the principal scientific subject investigated by Pops' Edge.
 
+### 2.12.1 Standalone Probability Source Performance
+
+**Standalone Probability Source Performance** is the absolute probabilistic performance of one Probability Source over its complete prospectively defined eligible population through an explicit analysis boundary. It answers:
+
+> **How accurately did this Probability Source estimate eligible outcomes?**
+
+It is a separate authority from Comparative Performance, which answers whether an Alternative Probability Source outperformed the Market Benchmark over a synchronized paired population. A market-derived estimate is a Probability Source estimate, and Market Benchmark is a role assigned within a Research Protocol rather than an intrinsic identity of a provider.
+
 ---
 
 ## 2.13 Approved Research Dimension
@@ -2344,7 +2352,63 @@ boundaries and weighted absolute calibration error summary method.
 
 Coverage is a required scientific Measurement.
 
-Coverage distinguishes among:
+### Standalone Probability Source Measurement and performance
+
+Standalone analysis distinguishes three nested population levels at every explicit analysis boundary.
+
+The **schedule-derived Coverage universe** is the complete set of relevant schedule-derived `ResearchCaptureOpportunity` identities known and effective by the analysis boundary under the Protocol and Research Domain context. It provides honest obligation accounting and contains three disjoint categories: capture not yet due, protocol-ineligible, and opportunities whose capture obligation is due and prospectively eligible. This broader universe is not the denominator for standalone Coverage rates or performance metrics.
+
+The **eligible standalone denominator** is the subset of the schedule-derived Coverage universe whose capture obligation is due by the analysis boundary and which satisfies the prospectively applicable Protocol population rules at the capture/population boundary. It is the denominator for standalone source Coverage. Events remain in this denominator when later source capture, probability derivation, or outcome conditions prevent Measurement; those failures cannot disappear through post hoc filtering.
+
+The **measured performance population** is the subset of the eligible standalone denominator that produces an authoritative compatible source capture, a valid `MarketProbabilityDerivation` or other compatible probability representation, an eligible authoritative outcome, and a valid `ProbabilitySourceMeasurement`. Only this population contributes to Brier Score, Log Loss, Calibration, weighted absolute calibration error, one-sample uncertainty, or another aggregate standalone performance metric.
+
+All three levels depend only on the Protocol and Research Domain; source identity and Protocol role; prospectively available schedule, event, capture, probability-representation, chronology, tolerance, and outcome facts applicable to that level; and the explicit analysis boundary. None depends on challenger availability, validity, timing or tolerance, pairwise synchronization, or challenger identity or count.
+
+Their required exact reconciliation is:
+
+```text
+schedule-derived Coverage universe
+= capture not yet due
++ protocol-ineligible
++ eligible standalone denominator
+
+eligible standalone denominator
+= source capture missing
++ source capture invalid
++ outside capture tolerance
++ probability derivation unavailable or invalid
++ outcome unresolved or ineligible
++ successfully measured
+
+measured performance population = successfully measured
+```
+
+Each category is deterministic as of the analysis boundary, disjoint and exhaustive for its stated parent population, correction-aware, and capable of representing a valid empty set. Counts reconcile exactly at both levels without treating absence of a Measurement as absence from the eligible standalone denominator.
+
+Source captures in a `ResearchSnapshot` are preserved independently. A valid Market Benchmark capture may support standalone Measurement even when no challenger supports Comparative Measurement. No additional Evidence container is created, and Market Evidence never becomes Forecast Evidence.
+
+For a prospectively fixed canonical binary outcome, the initial Market Benchmark estimand is derived as follows:
+
+1. Map provider YES/NO semantics to canonical event outcomes.
+2. Obtain the valid contemporaneous best bid and best offer.
+3. Require positive displayed quantity at both bounds and a valid non-crossed interval.
+4. Calculate the exact bid-offer midpoint and assign the complementary outcome exactly `1 - p`.
+
+Either bound may be direct or exactly complement-derived when its source side, source price, transformation, and provenance are preserved. Missing, invalid, ambiguous, stale, crossed, chronologically incompatible, or non-positive-depth bounds yield no Measurement and remain visible in Coverage. Last trade, one-sided bounds, assumed spreads, defaults, later observations, retrospective quote history, and reconstructed Evidence are forbidden fallbacks. Depth, volume, open interest, spread, and notional value remain Evidence and limitations; no higher initial liquidity threshold applies. Execution prices, order-book consumption, slippage, fees, expected profit, and expected return do not alter this standalone probability.
+
+This midpoint is a quote-implied wagering probability: it reflects participants' demonstrated willingness to commit capital in the captured two-sided market. It does not reveal private beliefs or correct for popularity, loyalty, entertainment, hedging, or unwillingness to wager.
+
+One immutable event-level `ProbabilitySourceMeasurement` owns the realized outcome, compatible probability distribution, Brier Score, extended-real Log Loss, Calibration input, arithmetic inputs, limitations, deterministic identity, and provenance for one Protocol, Snapshot, source and role, authoritative outcome, scoring algorithm, and effective/available time. A Market Benchmark Measurement consumes the supporting derived-Analysis `MarketProbabilityDerivation`; that derivation is neither Evidence nor outcome scoring or aggregate performance.
+
+`ProbabilitySourcePerformance` presents cumulative standalone findings through the analysis boundary for exactly one Protocol, domain, source, and Protocol role. `TimeBoundedProbabilitySourcePerformance` presents the same metrics and Coverage semantics over the Protocol's approved rolling window using open-left, closed-right `(start, end]` chronology. Each identifies its schedule-derived Coverage universe count, eligible standalone denominator and disjoint Coverage categories, and measured performance population. Coverage rates use the eligible standalone denominator. Sample size and mean Brier Score, one-sample uncertainty for mean Brier Score, extended-real mean Log Loss, Calibration, and weighted absolute calibration error use only the measured performance population. Exclusions and limitations preserve the relationship among all three levels. Valid empty populations remain representable. These artifacts present findings, not conclusions.
+
+The versioned deterministic one-sample bootstrap applies to both cumulative and time-bounded mean Brier Score. Its seed commits to Protocol, domain, source, source role, scope, analysis boundary, applicable window, canonical Measurement IDs, statistical rule and version, confidence level, resample count, and algorithm version. Wall-clock randomness, input ordering, filesystem state, and ambient Decimal context are nonmaterial. For `n = 0`, the point estimate and interval are absent. For `n = 1`, the interval is deterministically degenerate and carries an explicit single-observation limitation. Identical scores produce a zero-width interval with an explicit no-observed-variation limitation. Otherwise the ordinary deterministic bootstrap interval applies. There is no universal minimum sample threshold, and interval availability implies neither evidence sufficiency nor a statistical or scientific classification. The interval captures empirical sampling uncertainty only, not every market or methodological uncertainty.
+
+Standalone Coverage owns complete, failure-inclusive accounting across the schedule-derived Coverage universe and the eligible standalone denominator. Capture-not-yet-due and protocol-ineligible opportunities reconcile the broader universe but never enter the eligible standalone denominator or its Coverage-rate calculations. Within that denominator, source capture missing, source capture invalid, outside capture tolerance, probability derivation unavailable or invalid, outcome unresolved or ineligible, and successfully measured are the complete disjoint partition. Missing Evidence is never reconstructed retrospectively or removed from the eligible standalone denominator, and challenger state is irrelevant. Corrections are append-only and correction-aware replay selects authoritative Snapshot and outcome lineage at explicit boundaries; ambiguous, branched, incomplete, or conflicting lineage fails closed without incidental ordering as a tie-breaker.
+
+Standalone performance cannot support or reject an Edge Claim, establish or invalidate a Market Edge, determine Practical Significance, create a Research Review conclusion or Current Scientific Applicability, or establish profitability, efficiency, actionable opportunity, Policy, Governance, or production authority. Time-bounded standalone performance is descriptive and creates no standalone Drift or review obligation.
+
+Comparative Coverage additionally distinguishes among:
 
 - successful captures;
 - missing observations;
@@ -2353,9 +2417,9 @@ Coverage distinguishes among:
 - unresolved outcomes;
 - and protocol exclusions.
 
-Coverage provides scientific context for later interpretation.
+Standalone and Comparative Coverage provide scientific context for later interpretation without sharing or silently substituting denominators.
 
-The Coverage denominator begins with opportunities proven eligible by the
+The Comparative Coverage denominator begins with opportunities proven eligible by the
 authoritative event and schedule Evidence, deterministic Population Eligibility
 Result, immutable Protocol rules, and analysis boundary. The sequence is:
 
@@ -2621,6 +2685,8 @@ analysis boundary, and the Protocol's one active surveillance rule. Broad and
 segmented claims and multiple challengers may coexist; broad results are never
 reconstructed from segments.
 
+At every canonical report boundary the report also references exactly one compatible broad-domain cumulative `ProbabilitySourcePerformance` and one `TimeBoundedProbabilitySourcePerformance` for the Protocol's Market Benchmark role. These standalone identities are Protocol-level rather than Edge-Claim-level; existing `ProtocolClaimSet` completeness continues to govern Edge Claim membership. The report references, and never copies, their authoritative metrics.
+
 The bounded composition contains Protocol ID, analysis boundary, claim
 findings, report-level limitations, and provenance. Each claim finding contains
 the Edge Claim ID, cumulative Comparative Performance ID, and one surveillance
@@ -2656,12 +2722,13 @@ They do not replace it.
 
 ## 6.7 Market Benchmark Performance
 
-The report first presents the performance of the Market Benchmark itself.
+The report first presents the standalone performance of the Probability Source serving in the Protocol's Market Benchmark role over its complete eligible benchmark population. “Market Benchmark Performance” is the role-specific presentation of `ProbabilitySourcePerformance`, not a competing analytical authority and not a challenger-paired sample.
 
 At minimum:
 
-- paired sample size;
+- standalone sample size;
 - Brier Score;
+- one-sample uncertainty for mean Brier Score;
 - Log Loss;
 - Calibration;
 - coverage;
@@ -2671,6 +2738,8 @@ At minimum:
 This answers the first research question:
 
 > **How accurately did the Market Benchmark forecast events under these research conditions?**
+
+The report presents both cumulative and Protocol-window time-bounded standalone Market Benchmark Performance. The time-bounded result is descriptive only and creates no standalone Drift, Research Review obligation, Current Scientific Applicability, or downstream authority.
 
 ---
 
@@ -2695,6 +2764,8 @@ It does not establish a Market Edge.
 ## 6.9 Comparative Performance
 
 The principal findings of the report are comparative.
+
+Paired benchmark metrics remain valid but are labeled explicitly as applying only to the associated benchmark-challenger paired population. The paired population is the subset producing a valid, compatible, synchronized pair; different standalone and paired denominators and aggregate results are expected.
 
 For every benchmark-versus-challenger pair, the report presents:
 
@@ -2992,6 +3063,8 @@ The Comparative Performance Report exists so that the Product Owner can answer:
 - Does current performance remain consistent with historical performance?
 
 The report presents those findings faithfully.
+
+Accordingly, the canonical report separately presents cumulative standalone Market Benchmark Performance, time-bounded standalone Market Benchmark Performance, cumulative paired Comparative Performance, time-bounded paired Comparative Performance, and Comparative Drift Analysis. Standalone results never create a scientific or economic conclusion, Policy, Governance, or operational authority.
 
 Research Review determines what they mean.
 

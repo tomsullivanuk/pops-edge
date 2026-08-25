@@ -284,7 +284,7 @@ infinity and absent indeterminate comparisons without shrinking the Brier or
 Calibration population. The synthetic fixture and offline
 inspector add no provider collection or operational behavior. Canonical
 Comparative Performance Reports remain PR15; Current Scientific Applicability
-and Policy Recommendation remain PR16.
+and Policy Recommendation remain PR18. This documentation-only PR16A defines standalone Probability Source performance architecture; PR16B will implement the approved architecture, and PR17 will operate the prospective MLB study and produce the first empirical report.
 
 ## [v1.0.0] — World Cup baseline
 
