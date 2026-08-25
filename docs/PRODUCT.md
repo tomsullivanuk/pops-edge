@@ -132,12 +132,15 @@ A Forecast Provider is a Probability Source that publishes externally generated 
 
 ## Market Benchmark
 
-The Market Benchmark represents the market's probability estimate. It has two product roles:
+The Market Benchmark is the role assigned to a Probability Source within a Research Protocol; it is not an intrinsic global identity of that source. It represents wager-backed quoted market pricing: the probability implied by participants' demonstrated willingness to commit capital in the captured two-sided market. Pops' Edge does not claim to observe participants' private beliefs or correct for popularity, loyalty, entertainment, hedging, or unwillingness to wager.
+
+It has three product roles:
 
 - it provides current economic Evidence for Opportunity Analysis; and
-- it is the primary empirical comparator for evaluating alternative Probability Sources.
+- it is the primary empirical comparator for evaluating alternative Probability Sources; and
+- its absolute probabilistic performance can be measured independently over its complete eligible population.
 
-Market prices aggregate information, incentives, and participant beliefs, so Pops' Edge does not assume that an alternative forecast is more informative. Superior absolute forecasting accuracy alone does not establish a Market Edge. Forecast Intelligence must determine whether a Probability Source contributes useful information beyond the Market Benchmark.
+Market prices reflect wager-backed quoted behavior under incentives, so Pops' Edge does not assume that an alternative forecast is more informative. They do not provide direct access to private participant belief. Superior absolute forecasting accuracy alone does not establish a Market Edge. Forecast Intelligence must determine whether a Probability Source contributes useful information beyond the Market Benchmark.
 
 Market Benchmark observations preserve market state over time so research and operational decisions can be evaluated against the prices that were actually available. The Market Benchmark answers:
 
@@ -145,13 +148,23 @@ Market Benchmark observations preserve market state over time so research and op
 
 ## Forecast Intelligence
 
-Forecast Intelligence is the umbrella product capability that transforms accumulated Evidence and Measurement into empirically supported operational knowledge about the comparative performance of Probability Sources.
+Forecast Intelligence is the umbrella product capability that transforms accumulated Evidence and Measurement into reproducible knowledge about the absolute and comparative performance of Probability Sources.
 
 It establishes the basis on which operational trust may be granted, limited, reconsidered, or withdrawn. Forecast Intelligence answers:
 
 > **What does the accumulated evidence justify believing about the comparative performance of Probability Sources?**
 
 Forecast Intelligence encompasses the following capabilities.
+
+### Standalone Probability Source Performance
+
+Standalone Probability Source Performance evaluates one Probability Source over its complete prospectively defined eligible population, independently of every challenger.
+
+It answers:
+
+> **How accurately did this Probability Source estimate eligible outcomes?**
+
+For a source serving as the Market Benchmark, the product presents this result as Market Benchmark Performance. Absolute accuracy is not comparative superiority and is not profitability. Good Calibration does not automatically establish market efficiency, and poor Calibration does not automatically establish an exploitable edge.
 
 ### Research Protocols
 
@@ -168,6 +181,8 @@ Comparative Performance evaluates a Probability Source relative to the Market Be
 It answers:
 
 > **How did this Probability Source perform relative to the Market Benchmark?**
+
+Comparison with the Market Benchmark remains the required foundation for Market Edge and operational-trust conclusions. Standalone and Comparative Performance may use different populations and answer different questions; challenger availability or validity never changes the standalone denominator.
 
 ### Comparative Performance Reports
 

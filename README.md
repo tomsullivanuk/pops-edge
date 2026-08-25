@@ -80,7 +80,7 @@ observation eligibility/selection are explicit, versioned, deterministic, and
 fail closed. Each Policy Forecast is canonical only to its specific policy
 execution; multiple outputs may coexist for an event. Policies and forecasts
 contain no approval or lifecycle state; PR12 governance alone determines which
-policy, if any, has production authority. PR19 remains responsible for selecting
+policy, if any, has production authority. PR21 remains responsible for selecting
 a compatible Policy Forecast execution for consumption. The current Opportunity
 Board continues to consume DRatings directly until that bounded migration.
 
@@ -119,8 +119,7 @@ Comparative Performance Report are implemented by PR15 in
 `forecast_comparative_reporting.py`; its offline inspector is
 `inspect_forecast_comparative_reporting.py`. Complete report membership is
 governed by the immutable `ProtocolClaimSet` effective at the report boundary.
-Deterministic Current Scientific
-Applicability and Policy Recommendation remain PR16 work. The Forecast Intelligence
+PR16A defines the documentation authority for standalone Probability Source performance. PR16B remains responsible for future deterministic implementation, and PR17 remains responsible for future prospective MLB operation and the first empirical report. Current Scientific Applicability and Policy Recommendation remain future PR18 work. The Forecast Intelligence
 Workspace remains a later product surface. Research contracts create neither
 Governance nor production authority.
 
@@ -132,7 +131,7 @@ Governance nor production authority.
 - [Roadmap](ROADMAP.md) — ordered product direction
 - [Backlog](BACKLOG.md) — deferred and uncommitted work
 - [Changelog](CHANGELOG.md) — version history
-- [v1.1.0 release plan](docs/RELEASE_PLAN_v1.1.0.md) — PR1–PR20 sequence
+- [v1.1.0 release plan](docs/RELEASE_PLAN_v1.1.0.md) — PR1–PR22 sequence, including PR16A/PR16B
 - [v1.1.0 checkpoint through PR6](docs/V1.1.0_CHECKPOINT_THROUGH_PR6.md) —
   implemented platform baseline before MLB market valuation
 - [Codex workflow](docs/CODEX_WORKFLOW.md) — pull-request and completion-report

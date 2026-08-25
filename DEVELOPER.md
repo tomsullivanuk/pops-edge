@@ -333,7 +333,7 @@ and lifecycle transitions.
 
 `PolicyProposal` is the current implementation precursor to the canonical
 Policy Recommendation. The implemented `PolicyHypothesis` retains its
-historical candidate-strategy semantics until PR17 aligns it with the Product
+historical candidate-strategy semantics until PR19 aligns it with the Product
 definition: a proposed operational strategy for exploiting one or more
 empirically supported Market Edges. Neither implementation symbol should be
 treated as though that migration has already occurred.
@@ -390,7 +390,7 @@ applies identity transformation and weight `1.0`, validates the complete binary
 distribution without silent correction, and fails closed with no fallback when
 the provider is absent. This neither approves nor activates the policy. PR12
 owns governance and lifecycle state and selects the production-authoritative
-Forecast Policy. PR19, not PR11, will separately migrate Opportunity Analysis
+Forecast Policy. PR21, not PR11, will separately migrate Opportunity Analysis
 and the Opportunity Board to governance-authorized Policy Forecast input.
 
 Run the bounded fixture inspection with:
@@ -469,22 +469,20 @@ approved sequence in `docs/RELEASE_PLAN_v1.1.0.md`.
 
 ## Forward implementation boundaries
 
-The remaining v1.1.0 sequence after the implemented PR13 contract foundation is:
+The remaining v1.1.0 sequence after implemented PR15 reporting is:
 
-1. **PR15 — Comparative Performance Reporting and Surveillance:** implement
-   time-bounded performance, comparative Drift analysis, and complete canonical
-   reporting while preserving truthful compatibility with the legacy
-   `ForecastIntelligenceReport`.
-2. **PR16 — Current Scientific Applicability and Policy Recommendation:** add
-   deterministic applicability replay and non-authoritative recommendations.
-3. **PR17 — Policy Hypothesis Alignment:** align `PolicyHypothesis` with one or
+1. **PR16A — Standalone Probability Source Performance Methodology and Architecture:** define the documentation authority.
+2. **PR16B — Standalone Market Benchmark Measurement Implementation:** implement deterministic derivation, Measurement, Coverage, performance, uncertainty, replay, and report integration.
+3. **PR17 — Prospective MLB Research Operation and First Report:** collect durable prospective Evidence and produce the first real report.
+4. **PR18 — Current Scientific Applicability and Policy Recommendation:** add deterministic applicability replay and non-authoritative recommendations.
+5. **PR19 — Policy Hypothesis Alignment:** align `PolicyHypothesis` with one or
    more empirically supported Market Edges while keeping it non-authoritative
    and non-executable.
-4. **PR18 — Forecast Intelligence Workspace:** implement the Product Owner's
+6. **PR20 — Forecast Intelligence Workspace:** implement the Product Owner's
    principal research and governance surface.
-5. **PR19 — Policy Forecast Opportunity Integration:** migrate Opportunity
+7. **PR21 — Policy Forecast Opportunity Integration:** migrate Opportunity
    Analysis and the Opportunity Board to governance-authorized Policy Forecasts.
-6. **PR20 — v1.1.0 Integration and Release Readiness:** validate the integrated
+8. **PR22 — v1.1.0 Integration and Release Readiness:** validate the integrated
    lifecycle, compatibility, documentation, and release gates.
 
 The Release Plan owns detailed scope, dependencies, exclusions, and gates. Do
