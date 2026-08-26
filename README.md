@@ -119,7 +119,7 @@ Comparative Performance Report are implemented by PR15 in
 `forecast_comparative_reporting.py`; its offline inspector is
 `inspect_forecast_comparative_reporting.py`. Complete report membership is
 governed by the immutable `ProtocolClaimSet` effective at the report boundary.
-PR16A defines the documentation authority for standalone Probability Source performance. PR16B remains responsible for future deterministic implementation, and PR17 remains responsible for future prospective MLB operation and the first empirical report. Current Scientific Applicability and Policy Recommendation remain future PR18 work. The Forecast Intelligence
+PR16A defines the documentation authority for standalone Probability Source performance. PR16B implements the deterministic provider-neutral path, first exercised with synthetic offline Kalshi-shaped MLB Market Evidence. PR17 remains responsible for prospective MLB operation and the first empirical report. Current Scientific Applicability and Policy Recommendation remain future PR18 work. The Forecast Intelligence
 Workspace remains a later product surface. Research contracts create neither
 Governance nor production authority.
 

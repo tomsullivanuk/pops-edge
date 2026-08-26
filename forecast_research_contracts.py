@@ -101,6 +101,8 @@ class RulePurpose(str, Enum):
     PRIMARY_MEASURE = "primary-measure"
     SUPPORTING_MEASURE = "supporting-measure"
     STATISTICAL_METHOD = "statistical-method"
+    STANDALONE_PRIMARY_MEASURE = "standalone-primary-measure"
+    STANDALONE_STATISTICAL_METHOD = "standalone-statistical-method"
     PRACTICAL_SIGNIFICANCE = "practical-significance"
     BURDEN_OF_PROOF = "burden-of-proof"
     SURVEILLANCE_WINDOW = "surveillance-window"
@@ -120,7 +122,9 @@ class _ParameterDefinition:
 
 _RULE_SCHEMAS: dict[tuple[RulePurpose, str, str], dict[str, _ParameterDefinition]] = {
     (RulePurpose.PROBABILITY_REPRESENTATION, "direct-probability", "1"): {},
+    (RulePurpose.PROBABILITY_REPRESENTATION, "positive-depth-two-sided-quote", "1"): {},
     (RulePurpose.PROBABILITY_TRANSFORMATION, "identity-probability", "1"): {},
+    (RulePurpose.PROBABILITY_TRANSFORMATION, "bid-offer-midpoint-complement", "1"): {},
     (RulePurpose.SOURCE_AVAILABILITY, "required-at-snapshot", "1"): {},
     (RulePurpose.POPULATION_TEMPORAL_SCOPE, "season-range", "1"): {
         "first_season": _ParameterDefinition(str), "last_season": _ParameterDefinition(str),
@@ -167,6 +171,13 @@ _RULE_SCHEMAS: dict[tuple[RulePurpose, str, str], dict[str, _ParameterDefinition
         "bin_boundaries": _ParameterDefinition(tuple),
     },
     (RulePurpose.STATISTICAL_METHOD, "paired-bootstrap", "1"): {
+        "confidence_level": _ParameterDefinition(
+            Decimal, minimum=Decimal("0"), maximum=Decimal("1")
+        ),
+        "resamples": _ParameterDefinition(int, minimum=1),
+    },
+    (RulePurpose.STANDALONE_PRIMARY_MEASURE, "mean-brier-score", "1"): {},
+    (RulePurpose.STANDALONE_STATISTICAL_METHOD, "one-sample-brier-bootstrap", "1"): {
         "confidence_level": _ParameterDefinition(
             Decimal, minimum=Decimal("0"), maximum=Decimal("1")
         ),

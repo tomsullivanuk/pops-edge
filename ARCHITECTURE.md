@@ -414,9 +414,10 @@ lineage, Snapshot lineage, Coverage contribution, and Research Dimension
 classifications. It remains in the exact Brier and Calibration paired
 population.
 
-### Standalone Probability Source analytical path (PR16A target)
+### Standalone Probability Source analytical path (implemented in PR16B)
 
-PR16A defines target architecture only; PR16B remains responsible for implementation:
+PR16A defines the governing architecture; PR16B implements its provider-neutral,
+offline-replayable contract path:
 
 ```text
 Protocol-governed Schedule Evidence
@@ -1195,8 +1196,8 @@ The following gaps are architectural state, not roadmap commitments:
 | Full Research Protocol contracts | Implemented with typed scientific rules and deterministic validation |
 | Research Snapshot, Comparative Measurement, and cumulative Comparative Performance | Implemented by PR14 with deterministic replay, paired analysis, Calibration, and failure-inclusive Coverage |
 | Protocol Claim Set, time-bounded Comparative Performance, comparative Drift analysis, and canonical Comparative Performance Report | Implemented by PR15 with deterministic replay, authoritative claim completeness, and PR13 reference compatibility |
-| Standalone Probability Source methodology and target architecture | Defined by PR16A; not implemented |
-| Market probability derivation, standalone Measurement, Coverage, cumulative/time-bounded performance, and report integration | Approved for PR16B; not implemented |
+| Standalone Probability Source methodology and target architecture | Governed by merged PR16A; its synthetic/offline contract path is implemented by PR16B |
+| Market probability derivation, standalone Measurement, Coverage, cumulative/time-bounded performance, and report integration | Implemented in PR16B for the broad Research Domain with synthetic offline Evidence |
 | Prospective MLB operation and first real Market Benchmark report | Approved for PR17; not implemented |
 | Current Scientific Applicability and Policy Recommendation | Approved for PR18; not implemented |
 | Edge Claim, Market Edge, Research Review, and Drift Surveillance contracts | Implemented |

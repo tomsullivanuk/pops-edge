@@ -467,22 +467,63 @@ execution, Opportunity Analysis, Opportunity Board, providers, market
 valuation, wagering, or World Cup workflows. Subsequent work follows the
 approved sequence in `docs/RELEASE_PLAN_v1.1.0.md`.
 
+## Standalone Market Benchmark inspection (PR16B)
+
+Run the deterministic provider-neutral PR16B inspection with:
+
+```bash
+./venv/bin/python inspect_forecast_standalone_performance.py \
+  tests/fixtures/forecast_standalone_performance_cases.json
+```
+
+This uses synthetic offline Evidence only. It reports the three standalone
+population levels, both Coverage reconciliations, cumulative and `(start, end]`
+performance, Calibration/WACE, deterministic uncertainty, and report references.
+It makes no scientific conclusion and performs no provider access or operation.
+
+Capture-boundary eligibility is evaluator-owned and replays the prospectively
+available population context. Outcome histories select the authoritative final
+at each boundary, and Measurements are resolved by both Snapshot and Outcome
+identity so corrected and historical versions may coexist. Time-bounded replay
+requires complete timezone-aware schedule authority. Canonical report v2 uses
+typed references to reproduced v2 paired cumulative, bounded, and Drift
+authorities; unrestricted child identifiers are not accepted.
+
+Prospective population eligibility is frozen exactly at the capture boundary;
+Coverage calculates due/not-due independently at each analysis boundary from
+complete Schedule Evidence. Forecast-backed replay reconstructs evaluation
+eligibility and `ForecastEvaluation` from the captured observation and selected
+Outcome. Paired v2 aggregation filters the complete Measurement registry by the
+exact Edge Claim, so multi-challenger Claim Sets remain isolated. Aggregated
+market bounds retain every canonically ordered equal-price contributing level,
+including its direct or derived Evidence provenance.
+Snapshot replay also reconstructs schedule and target-capture authority before
+using any source capture. Coverage registries are isolated by exact Protocol
+generation, and paired synchronization is recomputed from the two captured
+Evidence timestamps and the Protocol rule rather than trusted as caller input.
+Snapshot corrections resolve their immediate predecessor, preserve all
+scientific capture history, and permit changes only to explicit correction
+metadata and provenance. Direct Coverage construction now receives the typed
+Market, Forecast, evaluation, and Outcome registries and reproduces the complete
+capture-to-Measurement chain before assigning `successfully-measured`.
+The same Snapshot-authority replay now governs direct paired and Coverage
+construction, and Market Evidence must match the Protocol benchmark provider,
+Market Series, and native provider-market identity.
+
 ## Forward implementation boundaries
 
-The remaining v1.1.0 sequence after implemented PR15 reporting is:
+The remaining v1.1.0 sequence after implemented PR16B analysis is:
 
-1. **PR16A — Standalone Probability Source Performance Methodology and Architecture:** define the documentation authority.
-2. **PR16B — Standalone Market Benchmark Measurement Implementation:** implement deterministic derivation, Measurement, Coverage, performance, uncertainty, replay, and report integration.
-3. **PR17 — Prospective MLB Research Operation and First Report:** collect durable prospective Evidence and produce the first real report.
-4. **PR18 — Current Scientific Applicability and Policy Recommendation:** add deterministic applicability replay and non-authoritative recommendations.
-5. **PR19 — Policy Hypothesis Alignment:** align `PolicyHypothesis` with one or
+1. **PR17 — Prospective MLB Research Operation and First Report:** collect durable prospective Evidence and produce the first real report.
+2. **PR18 — Current Scientific Applicability and Policy Recommendation:** add deterministic applicability replay and non-authoritative recommendations.
+3. **PR19 — Policy Hypothesis Alignment:** align `PolicyHypothesis` with one or
    more empirically supported Market Edges while keeping it non-authoritative
    and non-executable.
-6. **PR20 — Forecast Intelligence Workspace:** implement the Product Owner's
+4. **PR20 — Forecast Intelligence Workspace:** implement the Product Owner's
    principal research and governance surface.
-7. **PR21 — Policy Forecast Opportunity Integration:** migrate Opportunity
+5. **PR21 — Policy Forecast Opportunity Integration:** migrate Opportunity
    Analysis and the Opportunity Board to governance-authorized Policy Forecasts.
-8. **PR22 — v1.1.0 Integration and Release Readiness:** validate the integrated
+6. **PR22 — v1.1.0 Integration and Release Readiness:** validate the integrated
    lifecycle, compatibility, documentation, and release gates.
 
 The Release Plan owns detailed scope, dependencies, exclusions, and gates. Do
