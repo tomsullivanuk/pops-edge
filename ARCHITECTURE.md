@@ -489,8 +489,61 @@ forecast_standalone_performance.py
         ↓
 forecast_standalone_research.py
         ↓
-future PR17B2 operational implementation
+forecast_standalone_operations.py
+        ↓
+operate_forecast_standalone_research.py + thin launchd wrappers
 ```
+
+The PR17B2 layer is implemented but inactive. Each operating namespace owns
+separate content-addressed raw and normalized stores, immutable per-entry
+manifests, an OS advisory mutation lock, a rebuildable SQLite discovery index,
+and a create-only digest-verified secondary copy. Primary manifest publication
+is authoritative; index and secondary failures remain visible Operations state
+without rewriting primary authority. Status, preflight, and inspection share one
+typed deterministic diagnostic representation and make no scientific claim.
+
+Provider calls occur only after acquiring the namespace lock. Prospective slots
+invoke the PR17B1 timing function and allow one request with redirects and hidden
+retries disabled. A fresh trusted request-start timestamp fixes the authorized
+slot and becomes the typed attempt's invocation time. The trusted completion
+timestamp becomes its effective time and the manifest's completed acquisition
+time; crossing slot boundaries never relabels the call or authorizes another
+request. Every actual call receives one immutable typed disposition in its
+request-start slot. An observation collected outside the inclusive request-start
+to request-completion interval is captured-invalid: its permitted raw response
+and call remain visible, but it cannot enter valid Market Evidence. Supporting acquisition may use only configured bounded
+deterministic retries. Operational configuration controls paths, endpoints,
+timeouts, locks, logging, and scheduling—not Protocol rules or scientific identity.
+
+Malformed, incomplete, unknown, or contract-invalid provider-supplied PR17
+payloads cross a narrow provider-data exception boundary into captured-invalid
+attempts with sanitized deterministic diagnostics. Expected provider-data
+failures cannot create Market Evidence or erase the executed call; unexpected
+internal, archive-integrity, and system failures are not relabeled as provider
+invalidity.
+Before scientific deserialization, the adapter recursively validates every
+shared tagged-serialization marker (`__type__`, `__enum__`, `__date__`,
+`__datetime__`, `__decimal__`, and `__non_finite_decimal__`), including exact
+scalar-marker shape, value type, nesting depth, and conflicting/duplicate keys.
+The parsed envelope is then checked structurally against the actual annotated
+`MarketObservation` dataclass tree: complete canonical fields, no unknown
+fields, exact nested contract and enum tags, exact primitive types, encoded
+tuples, optionals, aware datetimes, dates, and Decimals. Canonical constructors
+and PR17B1 replay remain the sole owners of scientific semantics.
+
+The persistence adapter stores exact version-dispatched PR17B1 serializations in
+an operational envelope. Replay reconstructs those existing contract types and
+invokes their resolvers and graph validator; an operational string never stands
+in for typed authority. Prospective discovery is a locked archive query driven
+by a trusted execution clock. The scheduled command accepts configuration only,
+and its wrapper contains no scientific identity or timestamp.
+
+Archive reconciliation treats immutable manifests as the sole reference set.
+Missing or corrupt referenced objects fail closed. Unreferenced raw/normalized
+objects left by interrupted manifest-last publication are visible non-authority:
+they are excluded from replay, indexes, and secondary synchronization and are
+never automatically moved or deleted. Deterministic failpoints cover every
+publication boundary and identical retry completion.
 
 The V3 module owns closed tagged designs, the shared activation-boundary
 identity, complete historical manifest correction replay, typed prospective

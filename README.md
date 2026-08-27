@@ -159,8 +159,19 @@ or enter prospective research or support paired authority.
 PR17B has two non-renumbering slices. PR17B1 adds the offline scientific-contract
 and deterministic-replay foundation in `forecast_standalone_research.py`,
 downstream of `forecast_standalone_performance.py`, plus a synthetic inspector
-that presents two separate report roots. PR17B2 retains provider acquisition,
-content-addressed persistence, scheduling, backup, CLI, and dry-run operations.
+that presents two separate report roots. PR17B2 adds the inactive operational
+layer in `forecast_standalone_operations.py`: physically isolated dry-run
+namespaces, atomic content-addressed persistence, immutable manifest entries,
+bounded provider calls, a non-authoritative rebuildable SQLite index, verified
+secondary copy, typed diagnostics, an explicit CLI, and thin scheduling wrappers.
+Dry-run material cannot be promoted, and these operations do not activate a
+Protocol or create real research Evidence.
+
+Archived operational envelopes reconstruct existing PR17B1 contracts and replay
+through the real graph validator. Prospective work is discovered from archived
+authority under the execution clock; the CLI and scheduling wrapper cannot
+choose identities or chronology. Reconciliation reports interrupted orphan
+objects and excludes them from Evidence, indexes, and secondary synchronization.
 PR17C activation and PR17D reporting closure remain unchanged.
 
 Replay is upstream-first: Schedule-bound opportunities determine targets and

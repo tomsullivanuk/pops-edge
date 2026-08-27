@@ -252,9 +252,21 @@ offline tagged Protocol/activation contracts, complete historical manifest
 lineage, prospective attempt and terminal Snapshot semantics, standalone reuse
 of approved legacy Evidence/derivation records, and V3 Measurement, Coverage,
 performance, report, registry, replay, and graph authority. Its two-study bundle
-is synthetic validation material only. PR17B2 retains acquisition, persistence,
-scheduling, backup, CLI, and operational dry runs. PR17C activation and PR17D
+is synthetic validation material only. PR17B2 now implements inactive, fixture-
+validated acquisition, immutable persistence, scheduling wrappers, secondary
+copy, one bounded CLI, and typed dry-run diagnostics. Dry-run namespaces are
+physically isolated and can never be promoted into activated Evidence. The
+SQLite index and diagnostics are derived operational views; individually
+immutable manifests and verified primary objects are operational authority.
+PR17C activation and PR17D
 prospective close remain unchanged.
+
+The inactive operational archive now reconstructs the actual PR17B1 typed graph
+from exact manifest-referenced normalized contracts and raw digests. Scheduled
+prospective capture discovers archived authority with a trusted clock; users and
+`launchd` cannot select scientific IDs, targets, slots, or invocation times.
+Interrupted orphan objects remain visible but cannot become Evidence, enter the
+derived index, or reach the secondary copy.
 
 PR17B1 replay derives Measurement-to-opportunity mapping, historical targets,
 and bounded populations from authoritative Schedule history. Ordered pagination
