@@ -521,7 +521,7 @@ MLB Stats API owns schedule, state, and Outcome facts.
 These are `StandaloneProbabilitySourceProtocol` siblings, not empty-challenger
 uses of implemented comparative `ResearchProtocol`/`ResearchProtocolV2`.
 Existing comparative contracts and all PR16B v1/v2 identities remain unchanged.
-PR17B must implement the standalone Protocol and canonical
+PR17B1 implements the standalone Protocol and canonical
 `ProbabilitySourcePerformanceReport`; the latter references exactly one
 compatible cumulative and applicable time-bounded performance plus Coverage,
 uncertainty, limitations, and provenance and never requires Claim Sets or pairs.
@@ -559,7 +559,7 @@ doubleheaders, suspensions, cancellations, ambiguous mappings, and operational
 failures remain explicit; reschedules create new opportunities and never rewrite
 prior Evidence.
 
-PR17B will implement one idempotent application CLI with an injected clock and
+PR17B2 will implement one idempotent application CLI with an injected clock and
 explicit `as_of`. It will own discovery, due-attempt calculation, acquisition,
 validation, atomic persistence, failure dispositions, daily Outcome
 reconciliation, backup invocation/status, and diagnostics. A thin `launchd`
@@ -575,7 +575,7 @@ non-authoritative. One digest-verified secondary copy protects completed objects
 and manifest material, but primary persistence alone determines capture success;
 backup lag and health are Operations diagnostics.
 
-After PR17B dry-run validation, the Product Owner may approve a future Eastern
+After PR17B2 dry-run validation, the Product Owner may approve a future Eastern
 calendar date before it begins. Midnight at that date becomes immutable
 timezone-aware `activation_at`; PR17A sets no date. Dry-run material cannot
 become Evidence, and no retrospective performance may be calculated before the
@@ -586,7 +586,7 @@ summary cannot pool or create analytical authority.
 The filesystem and `launchd` are replaceable seams. Do not choose a cloud
 provider, database, deployment model, or migration plan under PR17A.
 
-PR17B uses explicit `ProbabilitySourceMeasurementV3` dispatch: existing
+PR17B1 uses explicit `ProbabilitySourceMeasurementV3` dispatch: existing
 `MarketProbabilityDerivation` for prospective Protocols and
 `HistoricalCandleProbabilityDerivation` for retrospective Protocols. Exactly
 one typed derivation is required; mixed, wrong-kind, missing, multiple, unknown,
@@ -600,18 +600,44 @@ contracts.
 The remaining v1.1.0 sequence after implemented PR16B analysis is:
 
 1. **PR17A — Retrospective and Prospective Methodology and Architecture:** documentation authority only (this change).
-2. **PR17B — Acquisition, Persistence, Validation, Replay, and Operations Tooling:** implement and dry-run without activating either Protocol.
-3. **PR17C — Activation, Retrospective Report, and Prospective Start:** freeze the future boundary, produce the separate retrospective report, and begin collection.
-4. **PR17D — Prospective Close and Separate Report:** close after the 2026 regular season and publish the independent prospective report.
-5. **PR19 — Current Scientific Applicability and Policy Recommendation:** add deterministic applicability replay and non-authoritative recommendations.
-6. **PR20 — Policy Hypothesis Alignment:** align `PolicyHypothesis` with one or
+2. **PR17B1 — Scientific Contracts and Deterministic Replay:** offline successor
+   contracts, synthetic fixture/inspector, V3 registry, replay, and graph validation.
+3. **PR17B2 — Acquisition, Persistence, and Operations Tooling:** provider
+   acquisition, archive, backup, scheduling, CLI, and dry-run operations without activation.
+
+PR17B1 constructors consume complete typed registries and replay Schedule and
+eligibility authority, ordered manifest pages/corrections, attempts and Snapshot
+corrections, derivations, Outcomes, Measurements, scoped Coverage, bootstrap
+performance, and reports. Bounded Coverage/performance uses `(start, end]`
+Schedule membership and never reuses cumulative Coverage. The inspector's two
+roots are a fixture invariant only.
+Coverage constructors do not accept reconciliation membership: they derive the
+complete opportunity universe, eligibility denominator, category partition, and
+Measurement mapping from Schedule through Evidence and Outcome authority. The
+Protocol must use the supported scoring, fixed-bin Calibration/WACE, bootstrap,
+and exact duration-based report-window specifications. Candle Evidence must
+match exactly one retrieval page's position, archive reference/digest, and
+retrieval time. `deserialize_v3(...)` handles V3 locally and explicitly delegates
+the approved legacy graph families to their existing canonical deserializers.
+Schedule discovery creates opportunities per changed scheduled-state Observation,
+not per eventual event history, so cross-activation reschedules remain visible
+on both sides. Pass the complete `StandaloneEventClassificationEvidence`
+registry to eligibility, Coverage, and graph replay. Prospective Coverage uses
+valid-success-first precedence; without success it applies captured-invalid,
+acquisition-failed, then pure no-call missed-window. Derivation, Outcome, and
+Measurement registries are filtered at the explicit boundary and ambiguous
+candidates fail closed independently of ordering.
+4. **PR17C — Activation, Retrospective Report, and Prospective Start:** freeze the future boundary, produce the separate retrospective report, and begin collection.
+5. **PR17D — Prospective Close and Separate Report:** close after the 2026 regular season and publish the independent prospective report.
+6. **PR19 — Current Scientific Applicability and Policy Recommendation:** add deterministic applicability replay and non-authoritative recommendations.
+7. **PR20 — Policy Hypothesis Alignment:** align `PolicyHypothesis` with one or
    more empirically supported Market Edges while keeping it non-authoritative
    and non-executable.
-7. **PR21 — Forecast Intelligence Workspace:** implement the Product Owner's
+8. **PR21 — Forecast Intelligence Workspace:** implement the Product Owner's
    principal research and governance surface.
-8. **PR22 — Policy Forecast Opportunity Integration:** migrate Opportunity
+9. **PR22 — Policy Forecast Opportunity Integration:** migrate Opportunity
    Analysis and the Opportunity Board to governance-authorized Policy Forecasts.
-9. **PR23 — v1.1.0 Integration and Release Readiness:** validate the integrated
+10. **PR23 — v1.1.0 Integration and Release Readiness:** validate the integrated
    lifecycle, compatibility, documentation, and release gates.
 
 The Release Plan owns detailed scope, dependencies, exclusions, and gates. Do

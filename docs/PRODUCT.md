@@ -247,6 +247,26 @@ Claim Set, Edge Claim, comparative result, scientific conclusion, Policy,
 Governance, or production authority. The existing
 `ComparativePerformanceReport` remains a distinct unchanged artifact.
 
+PR17B is split without renumbering downstream work. PR17B1 implements the
+offline tagged Protocol/activation contracts, complete historical manifest
+lineage, prospective attempt and terminal Snapshot semantics, standalone reuse
+of approved legacy Evidence/derivation records, and V3 Measurement, Coverage,
+performance, report, registry, replay, and graph authority. Its two-study bundle
+is synthetic validation material only. PR17B2 retains acquisition, persistence,
+scheduling, backup, CLI, and operational dry runs. PR17C activation and PR17D
+prospective close remain unchanged.
+
+PR17B1 replay derives Measurement-to-opportunity mapping, historical targets,
+and bounded populations from authoritative Schedule history. Ordered pagination
+entries preserve cursor and archive reference/digest pairing. The validator is
+composable across either study and prospective pre-report state; only the
+canonical inspector asserts two report roots. Uncertainty is the governed
+deterministic one-sample bootstrap, not an observed-score range.
+
+Coverage construction derives the complete schedule opportunity universe, eligibility denominator, and every reconciliation category from upstream authority rather than accepting caller-authored membership. Protocol identity fixes scoring, Calibration bins and WACE, bootstrap parameters, and exact bounded report windows. Each historical candle resolves to one archived retrieval page, and the PR17 successor deserializer explicitly delegates approved reused legacy contracts without changing their registries.
+
+Cross-activation reschedules retain one opportunity per genuine scheduled state, independently partitioned by that state's scheduled start. Standalone eligibility uses immutable boundary-aware event-classification Evidence, and prospective Coverage gives any later valid in-window capture precedence over earlier unsuccessful attempts. Derivations, Outcomes, and Measurements are selected at the explicit boundary without last-input-wins behavior.
+
 ### Comparative Performance
 
 Comparative Performance evaluates a Probability Source relative to the Market Benchmark. It determines whether observed forecasting performance contains useful information beyond what the market already reflects, including the conditions and limitations under which that conclusion holds.

@@ -155,6 +155,29 @@ or enter prospective research or support paired authority.
 - [Backlog](BACKLOG.md) — deferred and uncommitted work
 - [Changelog](CHANGELOG.md) — version history
 - [v1.1.0 release plan](docs/RELEASE_PLAN_v1.1.0.md) — PR1–PR23 sequence, including PR16A/PR16B and PR17A–PR17D
+
+PR17B has two non-renumbering slices. PR17B1 adds the offline scientific-contract
+and deterministic-replay foundation in `forecast_standalone_research.py`,
+downstream of `forecast_standalone_performance.py`, plus a synthetic inspector
+that presents two separate report roots. PR17B2 retains provider acquisition,
+content-addressed persistence, scheduling, backup, CLI, and dry-run operations.
+PR17C activation and PR17D reporting closure remain unchanged.
+
+Replay is upstream-first: Schedule-bound opportunities determine targets and
+`(start, end]` populations, typed pages preserve pagination/archive pairing,
+attempts determine terminal Snapshots, and each V3 Measurement maps one-to-one
+to an opportunity. Cumulative and bounded analyses use separate Coverage, while
+uncertainty uses the governed deterministic bootstrap.
+Coverage categories are likewise replayed from the complete upstream registries,
+including schedule-universe completeness and deterministic eligibility. Protocols
+fix exact analytical rules and bounded windows, historical candles bind to one
+archived retrieval page, and the successor deserializer explicitly delegates
+approved reused legacy contracts.
+Cross-boundary reschedules preserve each genuine scheduled-state opportunity on
+its own activation side. Eligibility is reconstructed from typed event-
+classification Evidence, valid later captures outrank earlier failed attempts,
+pure no-call terminal windows remain missed-window, and boundary-effective
+derivation selection rejects ambiguity without relying on input order.
 - [v1.1.0 checkpoint through PR6](docs/V1.1.0_CHECKPOINT_THROUGH_PR6.md) —
   implemented platform baseline before MLB market valuation
 - [Codex workflow](docs/CODEX_WORKFLOW.md) — pull-request and completion-report

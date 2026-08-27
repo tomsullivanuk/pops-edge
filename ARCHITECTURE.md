@@ -477,8 +477,39 @@ failure rules, typed probability representation, schedule/Outcome authority,
 correction replay, scoring, Calibration, uncertainty, cumulative/time-bounded
 analysis and report boundaries, limitations, identity, and provenance. It owns
 no challenger, pair, Claim Set, Edge Claim, comparative significance, Burden of
-Proof, Drift, or Research Review obligation. PR17B implements the sibling
-contract.
+Proof, Drift, or Research Review obligation. PR17B1 implements the offline
+sibling contract and deterministic replay; PR17B2 implements later operations.
+
+The dependency remains one-way:
+
+```text
+existing foundational contracts
+        ↓
+forecast_standalone_performance.py
+        ↓
+forecast_standalone_research.py
+        ↓
+future PR17B2 operational implementation
+```
+
+The V3 module owns closed tagged designs, the shared activation-boundary
+identity, complete historical manifest correction replay, typed prospective
+attempts and terminal Snapshots, standalone-specific legacy derivation reuse,
+V3 analytics and reports, explicit registry dispatch, and upstream-first graph
+validation. Its canonical bundle and inspector are synthetic/offline only.
+
+Every V3 Measurement resolves one exact `ResearchCaptureOpportunity` and its
+Schedule Observation, eligibility, derivation, and Outcome authority. Coverage
+derives the one-to-one measured mapping. Cumulative and `(start, end]` bounded
+performance use separate matching Coverage. Uncertainty uses the governed
+deterministic one-sample bootstrap and commits scope, window, population, rule,
+and algorithm material to its seed.
+
+Historical pagination is an ordered chain of typed page entries binding cursor,
+position, completion, archive reference/digest, retrieval time, candle IDs,
+validation, and limitations. Generic upstream-first graph replay accepts either
+study independently, prospective pre-report state, or both studies. Exactly two
+report roots is a canonical-fixture assertion, not a universal requirement.
 
 The immutable activation boundary partitions authoritative scheduled starts:
 
@@ -494,7 +525,7 @@ scheduled_start_at >= activation_at
 final 2026 regular-season games
 ```
 
-PR17A does not set `activation_at`. After PR17B dry-run validation, the Product
+PR17A does not set `activation_at`. After PR17B2 dry-run validation, the Product
 Owner approves a future Eastern calendar date before it begins. The boundary is
 timezone-aware, contiguous, non-overlapping, has no mid-date split, and cannot
 be changed according to prices, outcomes, Coverage, or performance. No
@@ -617,7 +648,7 @@ differences cannot be attributed solely to capture method.
 
 Existing PR16B `ProbabilitySourceMeasurement` v1/v2 and all associated
 serialization, identities, registries, and graph behavior remain unchanged.
-PR17B implements explicit `ProbabilitySourceMeasurementV3` dispatch from exactly
+PR17B1 implements explicit `ProbabilitySourceMeasurementV3` dispatch from exactly
 one typed derivation authorized by its standalone Protocol: retrospective uses
 `HistoricalCandleProbabilityDerivation`; prospective uses existing
 `MarketProbabilityDerivation`. Missing, multiple, unknown, foreign, wrong-kind,
@@ -627,8 +658,29 @@ Calibration-input meanings plus complete typed lineage.
 
 Where existing Coverage, cumulative/time-bounded performance, uncertainty,
 reference, registry, replay, or graph contracts cannot consume V3 without
-reinterpretation, PR17B provides explicit versioned successors. Dispatch is by
+reinterpretation, PR17B1 provides explicit versioned successors. Dispatch is by
 version and type, never optional fields. Historical identities remain stable.
+
+Coverage replay starts from complete Schedule histories, derives every expected
+opportunity and eligibility result, and independently assigns each failure or
+success category; stored reconciliation is an output rather than constructor
+authority. Protocol identity validates exact scoring, fixed-bin Calibration and
+WACE, bootstrap, and bounded-report-window specifications. Each historical
+candle resolves to exactly one retrieval page's position, raw-response archive
+reference/digest, and chronology. The V3 entry point handles successor records
+locally and explicitly delegates approved legacy graph records to their
+canonical deserializers without changing legacy registries.
+
+Schedule-universe projection operates per genuine scheduled-state Observation,
+so a reschedule across activation preserves one opportunity on each applicable
+Protocol side while status-only changes add none. A V3 immutable provider-neutral
+event-classification Evidence value supplies season, phase, game type,
+ordinary/doubleheader identity, participant mapping, validation, chronology, and
+correction lineage to eligibility replay. Prospective opportunity classification
+first honors the authoritative earliest valid capture; only when none exists does
+the explicit acquired-invalid, provider-call-failure, pure-no-call precedence
+apply. Derivation, Outcome, and Measurement selection filters by effective
+boundary, rejects ambiguity, and never uses registry order as authority.
 
 ```text
 Retrospective:
@@ -710,7 +762,7 @@ merely because its source serves as a benchmark elsewhere.
 The Methodology governs protocol meaning. Architecture must preserve protocol identity, version, material inputs, and provenance without embedding protocol rules into provider adapters.
 
 First-class comparative Research Protocol contracts are implemented. The
-standalone sibling remains PR17B implementation scope. Existing evaluation
+standalone sibling is PR17B1 implementation scope. Existing evaluation
 windows, eligibility policies, segmentation versions, and adequacy rules remain
 narrower precursors and must not be presented as either family or as canonical
 Comparative Performance implementation.
@@ -1434,7 +1486,7 @@ The following gaps are architectural state, not roadmap commitments:
 | Protocol Claim Set, time-bounded Comparative Performance, comparative Drift analysis, and canonical Comparative Performance Report | Implemented by PR15 with deterministic replay, authoritative claim completeness, and PR13 reference compatibility |
 | Standalone Probability Source methodology and target architecture | Governed by merged PR16A; its synthetic/offline contract path is implemented by PR16B |
 | Market probability derivation, standalone Measurement, Coverage, cumulative/time-bounded performance, and report integration | Implemented in PR16B for the broad Research Domain with synthetic offline Evidence |
-| Separate retrospective/prospective Kalshi MLB authority | Defined by PR17A; implementation and activation remain PR17B–PR17D |
+| Separate retrospective/prospective Kalshi MLB authority | Defined by PR17A; contracts/replay implemented in PR17B1; operations and activation remain PR17B2–PR17D |
 | Current Scientific Applicability and Policy Recommendation | Approved for PR19; not implemented |
 | Edge Claim, Market Edge, Research Review, and Drift Surveillance contracts | Implemented |
 | Policy Hypothesis aligned explicitly to supported Market Edges | Product-approved; existing symbol has older analytical-candidate semantics |
