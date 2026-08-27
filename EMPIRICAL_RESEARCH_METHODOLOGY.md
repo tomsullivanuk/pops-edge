@@ -77,7 +77,10 @@ It does not presume that Market Edges exist.
 
 It does not presume that wagering is appropriate.
 
-Instead, it requires those conclusions to be earned through prospective experimental design, reproducible evidence collection, rigorous statistical analysis, and disciplined interpretation.
+Instead, it requires those conclusions to be earned through prospectively
+governed experimental design, reproducible Evidence acquisition, rigorous
+statistical analysis, and disciplined interpretation. Comparative Market Edge
+research continues to require contemporaneous prospective capture.
 
 ---
 
@@ -85,7 +88,11 @@ Instead, it requires those conclusions to be earned through prospective experime
 
 The methodology is founded upon several enduring principles.
 
-Evidence is collected prospectively.
+Prospective research Evidence is collected prospectively. Separately governed
+retrospective research may acquire immutable historical archive Evidence after
+the represented events, provided its later acquisition time and historical
+effective time remain distinct and it never repairs or substitutes for
+prospective Evidence.
 
 Measurements are reproducible.
 
@@ -362,43 +369,77 @@ The burden of proof always rests with the Alternative Probability Source.
 
 ---
 
-## 2.5 Research Protocol
+## 2.5 Research Protocol families
 
-A **Research Protocol** is the immutable specification governing one empirical investigation.
+A **Research Protocol** is the immutable specification governing one empirical
+investigation. Pops' Edge recognizes two explicit sibling families:
 
-A Research Protocol defines, at minimum:
+1. `ComparativeResearchProtocol`; and
+2. `StandaloneProbabilitySourceProtocol`.
 
-- the scientific question;
-- the Research Population;
-- the Market Benchmark;
-- participating Alternative Probability Sources;
-- canonical probability representations;
-- Research Snapshot timing;
-- capture and synchronization tolerances;
-- outcome-resolution rules;
-- Approved Research Dimensions;
-- primary and supporting performance measures;
-- statistical methodology;
-- Practical Significance requirements;
-- Burden of Proof;
-- Time-Bounded Surveillance;
-- Drift criteria; and
-- Research Review schedule.
+Both families are immutable, versioned, deterministic, content-addressed
+scientific authority. They share only genuinely identical concepts such as
+identity, question, domain, population, canonical proposition, schedule and
+Outcome authority, capture rules, correction-aware replay, scoring, analysis
+boundaries, limitations, and provenance. Family-specific authority is never
+inferred from absent fields or an empty collection.
 
-A material change to any scientific rule creates a new protocol version.
+`ComparativeResearchProtocol` governs a Market Benchmark-versus-challenger
+investigation. It defines participating Alternative Probability Sources,
+pairwise synchronization, comparative endpoints, Practical Significance,
+Burden of Proof, Approved Research Dimensions, surveillance, Drift, Research
+Review obligations, Edge Claims, and Protocol Claim Sets as specified throughout
+this methodology. One comparative Protocol may investigate multiple Alternative
+Probability Sources. Each distinct Alternative Probability Source-versus-Market
+Benchmark hypothesis within the applicable Research Domain is a distinct Edge
+Claim.
 
-One Research Protocol may investigate multiple Alternative Probability Sources.
-Each distinct Alternative Probability Source-versus-Market Benchmark hypothesis
-within the applicable Research Domain is represented by a distinct Edge Claim.
+The existing persisted and implemented `ResearchProtocol` and
+`ResearchProtocolV2` symbols are the comparative Protocol contracts. Their
+schemas, serialization, identities, validation, and historical artifacts remain
+unchanged. They are not renamed or reinterpreted.
+
+`StandaloneProbabilitySourceProtocol` is a new sibling authority for exactly
+one Probability Source investigation. It is not a mode, wrapper,
+empty-challenger instance, or optional-field variant of a comparative Protocol.
+PR17B owns its implementation. Its identity-material authority includes:
+
+- standalone Protocol identity and version;
+- scientific or descriptive question and Research Domain;
+- exactly one Probability Source Reference and source role;
+- canonical proposition and Outcome mapping;
+- Research Population and eligibility rules;
+- schedule-derived Coverage-universe and eligible-denominator rules;
+- source-capture and failure dispositions;
+- capture target, tolerance, attempt, and selection rules;
+- probability representation and permitted typed derivation authority;
+- authoritative schedule and Outcome sources;
+- correction and replay rules;
+- scoring, Calibration, and uncertainty rules;
+- cumulative and time-bounded analysis semantics;
+- analysis and report boundaries;
+- material limitations; and
+- deterministic identity and provenance.
+
+It has no challenger, Edge Claim, Protocol Claim Set, or paired population. It
+defines no comparative Practical Significance, Burden of Proof, Drift, or
+Research Review obligation and cannot establish or reject a Market Edge. Its
+performance and report contain descriptive findings only. A Probability Source
+acting as a Market Benchmark in a different comparative Protocol does not make
+its standalone Protocol comparative.
+
+A material change to a scientific rule of either family creates a new Protocol
+version. Evidence collected under materially different Protocol identities or
+versions is not silently pooled.
 
 ### 2.5.1 Protocol Claim Set
 
 A **Protocol Claim Set** is one immutable, deterministic, content-addressed
 supporting Identity and research-contract artifact establishing the complete
-authoritative Edge Claim membership of one Research Protocol as of one
+authoritative Edge Claim membership of one `ComparativeResearchProtocol` as of one
 scientific effective time. It answers:
 
-> **Which Edge Claims has this Research Protocol scientifically undertaken by
+> **Which Edge Claims has this comparative Protocol scientifically undertaken by
 > this point in history?**
 
 It does not answer which claims are currently supported. Support, weakening,
@@ -429,7 +470,7 @@ and audit-record time do not determine it unless that instant independently is
 the scientific effective time. Caller ordering, runtime metadata, and other
 audit provenance are nonmaterial. Duplicate membership fails before
 normalization, and unknown, conflicting, or foreign-Protocol Edge Claims fail
-closed during graph validation. A Research Protocol may exist before any Edge
+closed during graph validation. A Comparative Research Protocol may exist before any Edge
 Claim has been admitted, but no Protocol Claim Set or canonical Comparative
 Performance Report exists for it until at least one claim has been admitted.
 
@@ -457,9 +498,12 @@ membership into reconstruction of an earlier report.
 
 ## 2.6 Research Population
 
-A **Research Population** is the prospectively defined population of events to which a Research Protocol applies.
+A **Research Population** is the Protocol-precommitted population of events to which a Research Protocol applies.
 
-Eligibility and exclusion criteria are established before outcomes are known.
+Comparative and prospective standalone eligibility and exclusion criteria are
+established before outcomes are known. Retrospective standalone criteria are
+established before the archive is queried for the study and before results are
+calculated or interpreted.
 
 Evidence belongs to a Research Population because it satisfies those criteria—not because it is recent.
 
@@ -581,7 +625,7 @@ It is the principal scientific subject investigated by Pops' Edge.
 
 ### 2.12.1 Standalone Probability Source Performance
 
-**Standalone Probability Source Performance** is the absolute probabilistic performance of one Probability Source over its complete prospectively defined eligible population through an explicit analysis boundary. It answers:
+**Standalone Probability Source Performance** is the absolute probabilistic performance of one Probability Source over its complete Protocol-precommitted eligible population through an explicit analysis boundary. It answers:
 
 > **How accurately did this Probability Source estimate eligible outcomes?**
 
@@ -799,12 +843,12 @@ They do not create them.
 
 ## 2.27 Relationship Among the Terms
 
-The empirical research process may be summarized as:
+Comparative Market Edge research follows this sequence:
 
 ```text
 Reality
         ↓
-Immutable Evidence
+Prospectively captured immutable Evidence
         ↓
 Measurement
         ↓
@@ -822,6 +866,54 @@ Evidence-Supported Positive Expected Value
         ↓
 Operational Decision
 ```
+
+Standalone Probability Source research ends in descriptive findings rather than
+Edge Claim assessment. It follows one of two separately governed Evidence paths:
+
+```text
+Prospectively fixed StandaloneProbabilitySourceProtocol
+        ↓
+Contemporaneous prospective acquisition
+        ↓
+MarketObservation
+        ↓
+MarketProbabilityDerivation
+        +
+Authoritative Outcome Evidence
+        ↓
+ProbabilitySourceMeasurementV3
+        ↓
+ProbabilitySourcePerformance
+        +
+TimeBoundedProbabilitySourcePerformance
+        ↓
+ProbabilitySourcePerformanceReport
+        ↓
+Descriptive standalone findings only
+
+Prospectively fixed StandaloneProbabilitySourceProtocol
+        ↓
+Later historical archive acquisition
+        ↓
+HistoricalMarketCandleObservation
+        ↓
+HistoricalCandleProbabilityDerivation
+        +
+Authoritative Outcome Evidence
+        ↓
+ProbabilitySourceMeasurementV3
+        ↓
+ProbabilitySourcePerformance
+        +
+TimeBoundedProbabilitySourcePerformance
+        ↓
+ProbabilitySourcePerformanceReport
+        ↓
+Descriptive standalone findings only
+```
+
+Neither standalone path flows into Edge Claim, Market Edge, Research Review,
+Policy, Governance, or operational authority.
 
 Throughout this methodology, Pops' Edge preserves one fundamental distinction:
 
@@ -843,7 +935,7 @@ They are intentionally independent of:
 - software architecture; and
 - implementation technology.
 
-Every Research Protocol, product decision, architectural decision, and implementation shall conform to these principles.
+Every Protocol in either family, product decision, architectural decision, and implementation shall conform to these principles.
 
 ---
 
@@ -881,11 +973,14 @@ The burden of proof rests entirely with the challenger.
 
 ---
 
-## 3.4 Principle 3 — Prospective Experimental Design
+## 3.4 Principle 3 — Protocol Precommitment
 
-> **Every empirical investigation is completely specified before the relevant outcomes are known.**
+> **Comparative and prospective standalone investigations are completely
+> specified before capture opportunities and relevant outcomes. A retrospective
+> standalone investigation is completely specified before its archive is queried
+> for the study and before results are calculated or interpreted.**
 
-Research Protocols prospectively define:
+Research Protocols precommit:
 
 - the scientific question;
 - the Research Population;
@@ -893,10 +988,12 @@ Research Protocols prospectively define:
 - capture timing;
 - Approved Research Dimensions;
 - statistical methodology;
-- Burden of Proof;
-- and Research Review schedule.
+- Burden of Proof and Research Review schedule where comparative; and
+- Evidence-acquisition, Coverage, analysis, and reporting rules.
 
 Research questions are not rewritten after observing results.
+Retrospective precommitment prevents result-directed selection and
+interpretation but does not make later acquisition prospective.
 
 ---
 
@@ -982,7 +1079,7 @@ Restraint is an intended capability of Pops' Edge.
 
 ## 3.10 Principle 9 — Explicit Burden of Proof
 
-> **Every Research Protocol prospectively defines the Burden of Proof required to establish a Market Edge.**
+> **Every Comparative Research Protocol prospectively defines the Burden of Proof required to establish a Market Edge.**
 
 The Burden of Proof distinguishes:
 
@@ -1159,15 +1256,18 @@ Throughout the methodology, one principle governs all others:
 
 > **Evidence is permanent. Conclusions are provisional.**
 
-# Chapter 4 — Research Protocols
+# Chapter 4 — Comparative Research Protocols
 
 ## 4.1 Purpose
 
-A **Research Protocol** is the governing specification for one reproducible empirical investigation within Pops' Edge.
+A **Comparative Research Protocol** is the governing specification for one
+reproducible benchmark-versus-challenger investigation within Pops' Edge. The
+sibling `StandaloneProbabilitySourceProtocol` authority is defined in Chapter 2
+and its Evidence, Measurement, performance, and report path in Chapter 5.
 
 Its purpose is to define, before the relevant outcomes are known, the scientific question being investigated, the evidence that will be collected, the methodology by which that evidence will be measured, and the standard required before a Market Edge may be recognized.
 
-A Research Protocol is therefore:
+A Comparative Research Protocol is therefore:
 
 - not a forecast;
 - not an Edge Claim;
@@ -1181,7 +1281,7 @@ It is the prospective specification that governs how valid empirical evidence is
 
 ## 4.2 Scientific Question
 
-Every Research Protocol shall define one explicit scientific question.
+Every Comparative Research Protocol shall define one explicit scientific question.
 
 That question shall identify:
 
@@ -1195,7 +1295,7 @@ For example:
 
 > **Does DRatings produce superior pregame MLB winner probabilities relative to the Kalshi Market Benchmark under the defined Research Population?**
 
-A Research Protocol investigates one scientific question.
+A Comparative Research Protocol investigates one scientific question.
 
 It may examine that question across Approved Research Dimensions.
 
@@ -1205,26 +1305,30 @@ It does not investigate multiple unrelated questions simultaneously.
 
 ## 4.3 Protocol Identity and Versioning
 
-Every Research Protocol possesses a durable identity and explicit version.
+Every Protocol in either family possesses a durable identity and explicit version.
 
 Protocol versions are immutable.
 
 A material change to the scientific methodology governing a protocol creates a new protocol version.
 
-Material changes include, at minimum:
+Shared material changes include, at minimum:
 
 - the scientific question;
 - the Research Population;
+- canonical probability representations;
+- capture target, tolerance, selection, or attempt rules;
+- outcome-resolution methodology;
+- statistical methodology;
+- analysis or report boundaries; or
+- material limitations.
+
+For a Comparative Research Protocol, material changes additionally include:
+
 - the Market Benchmark;
 - participating Alternative Probability Sources;
-- canonical probability representations;
-- Research Snapshot timing;
-- capture or synchronization tolerances;
-- outcome-resolution methodology;
+- Research Snapshot timing or synchronization tolerance;
 - Approved Research Dimensions or partitions;
-- primary endpoint;
-- supporting measures;
-- statistical methodology;
+- primary endpoint and supporting measures;
 - Practical Significance threshold;
 - Burden of Proof;
 - Time-Bounded Surveillance;
@@ -1237,11 +1341,15 @@ Evidence collected under materially different protocol versions is not automatic
 
 ## 4.4 Research Population
 
-Every Research Protocol prospectively defines its Research Population.
+Every Protocol in either family precommits its Research Population under the
+family-specific timing rule in Principle 3.
 
 The Research Population specifies the events to which the scientific conclusions are intended to apply.
 
-Eligibility and exclusion criteria shall be fully specified before outcomes are known.
+For comparative and prospective standalone Protocols, eligibility and exclusion
+criteria shall be fully specified before outcomes are known. For retrospective
+standalone Protocols, they shall be fully specified before archive acquisition
+for the study and before results are calculated or interpreted.
 
 Typical criteria may include:
 
@@ -1290,7 +1398,7 @@ dropped.
 
 ## 4.5 Automated Pregame Capture
 
-Every Research Protocol defines exactly one automated pregame capture point.
+Every Comparative Research Protocol defines exactly one automated pregame capture point.
 
 The capture point is expressed as a fixed offset from scheduled event start.
 
@@ -1306,7 +1414,11 @@ If a different pregame horizon is scientifically desired, it constitutes a diffe
 
 ## 4.6 Capture Tolerance
 
-Every Research Protocol defines an allowable tolerance around the target capture point.
+Every Protocol in either family defines its capture target, acquisition
+semantics, and allowable tolerance or selection window. Comparative Protocols
+use an allowable tolerance around their target capture point; standalone
+Protocols may instead authorize a deterministic historical selection window or
+a finite ordered attempt schedule.
 
 For example:
 
@@ -1334,7 +1446,7 @@ Observations that fail synchronization remain Evidence but do not contribute to 
 
 ## 4.8 Market Benchmark Specification
 
-Every Research Protocol defines exactly one Market Benchmark.
+Every Comparative Research Protocol defines exactly one Market Benchmark.
 
 The protocol specifies:
 
@@ -1413,7 +1525,7 @@ Identity ambiguity fails closed.
 
 ## 4.12 Authoritative Outcome Resolution
 
-Every Research Protocol specifies:
+Every Protocol in either family specifies:
 
 - the authoritative Outcome Observation source; and
 - deterministic outcome-resolution rules.
@@ -1444,7 +1556,7 @@ They are not regenerated each time a Comparative Performance Report is requested
 
 ## 4.14 Primary Endpoint
 
-Every Research Protocol defines one primary comparative endpoint.
+Every Comparative Research Protocol defines one primary comparative endpoint.
 
 Within Version 1.0 of this methodology, the primary endpoint is:
 
@@ -1465,7 +1577,7 @@ The primary endpoint answers:
 
 ## 4.15 Supporting Measures
 
-Every Research Protocol defines required supporting measures.
+Every Comparative Research Protocol defines required supporting measures.
 
 Version 1.0 requires:
 
@@ -1482,7 +1594,7 @@ A protocol-defined material deterioration in either supporting measure prevents 
 
 ## 4.16 Statistical Uncertainty
 
-Every Research Protocol specifies how uncertainty surrounding the primary endpoint is estimated.
+Every Comparative Research Protocol specifies how uncertainty surrounding the primary endpoint is estimated.
 
 The Comparative Performance Report shall present:
 
@@ -1498,7 +1610,7 @@ The methodology therefore evaluates sample adequacy through uncertainty rather t
 
 ## 4.17 Practical Significance
 
-Every Research Protocol defines a minimum practically meaningful improvement in the primary endpoint.
+Every Comparative Research Protocol defines a minimum practically meaningful improvement in the primary endpoint.
 
 Practical Significance is evaluated separately from statistical significance.
 
@@ -1510,7 +1622,7 @@ Statistically significant but economically trivial differences do not establish 
 
 ## 4.18 Approved Research Dimensions
 
-Every Research Protocol identifies the Approved Research Dimensions applicable to the investigation.
+Every Comparative Research Protocol identifies the Approved Research Dimensions applicable to the investigation.
 
 Each dimension satisfies the methodological requirements established in Chapter 2.
 
@@ -1547,7 +1659,7 @@ This constraint reduces overfitting and uncontrolled multiple comparisons.
 
 ## 4.21 Broad Comparison First
 
-Every Research Protocol requires the broad, unsegmented comparison across the complete qualifying Research Population to appear before any segmented analysis.
+Every Comparative Research Protocol requires the broad, unsegmented comparison across the complete qualifying Research Population to appear before any segmented analysis.
 
 Broad conclusions establish the scientific context.
 
@@ -1581,7 +1693,7 @@ It does not replace the cumulative analysis.
 
 ## 4.24 Time-Bounded Surveillance
 
-Every Research Protocol defines at least one Time-Bounded Surveillance window appropriate to its Research Population.
+Every Comparative Research Protocol defines at least one Time-Bounded Surveillance window appropriate to its Research Population.
 
 The surveillance window evaluates whether current Comparative Performance remains consistent with the historical relationship established by Cumulative Evidence.
 
@@ -1589,7 +1701,7 @@ Surveillance complements historical analysis.
 
 It does not replace it.
 
-For the prospective v1.1.0 contract, a Research Protocol has exactly one active
+For the prospective v1.1.0 comparative contract, a Comparative Research Protocol has exactly one active
 surveillance-window rule. The tuple representation is retained for future
 compatibility, but zero or multiple active rules fail closed because the
 claim-specific Drift Surveillance identity does not distinguish concurrent
@@ -1647,7 +1759,7 @@ not a dynamic executable rule or plugin mechanism.
 
 ## 4.25 Drift Criteria
 
-Every Research Protocol prospectively defines Drift.
+Every Comparative Research Protocol prospectively defines Drift.
 
 Drift evaluates whether current Comparative Performance has materially departed from the historical comparative relationship.
 
@@ -1726,7 +1838,7 @@ threshold, hidden confidence setting, or arbitrary executable behavior.
 
 ## 4.26 Research Review Schedule
 
-Every Research Protocol defines:
+Every Comparative Research Protocol defines:
 
 - scheduled Research Reviews; and
 - material events requiring unscheduled Research Review.
@@ -1845,7 +1957,7 @@ Where changes are unannounced, Time-Bounded Surveillance provides the primary me
 
 ## 4.31 Burden of Proof
 
-Every Research Protocol explicitly defines the Burden of Proof required to establish a Market Edge.
+Every Comparative Research Protocol explicitly defines the Burden of Proof required to establish a Market Edge.
 
 At minimum, the Burden of Proof requires:
 
@@ -1862,7 +1974,7 @@ The Burden of Proof is never weakened retrospectively because observed results a
 
 ## 4.32 Relationship to Edge Claims
 
-A Research Protocol governs how an Edge Claim is tested.
+A Comparative Research Protocol governs how an Edge Claim is tested.
 
 It does not determine whether that Edge Claim is supported.
 
@@ -1907,7 +2019,9 @@ Those decisions occur only after a currently applicable Market Edge has establis
 
 ## 4.34 Governing Principle
 
-A Research Protocol exists so that Pops' Edge can state, before observing outcomes:
+A comparative or prospective standalone Protocol exists so that Pops' Edge can
+state before observing outcomes—and a retrospective standalone Protocol before
+archive acquisition or result calculation:
 
 > **This is the question we intend to investigate, this is the evidence we will collect, this is how we will measure it, and this is the standard the result must satisfy before we will believe it.**
 
@@ -1917,9 +2031,17 @@ That commitment is the foundation of the empirical integrity of Pops' Edge.
 
 ## 5.1 Purpose
 
-This chapter defines how empirical Evidence is collected and transformed into reproducible Measurements.
+This chapter defines how empirical Evidence is acquired and transformed into
+reproducible Measurements. Prospectively captured Evidence is observed and
+preserved contemporaneously under a Protocol fixed before the capture
+opportunity and relevant Outcome. Retrospective Evidence is immutable historical
+source material acquired later from an archive under a separately fixed
+`StandaloneProbabilitySourceProtocol`.
 
-Its purpose is to ensure that all scientific conclusions within Pops' Edge are derived from immutable observations collected prospectively under a governing Research Protocol.
+Its purpose is to ensure that comparative scientific conclusions within Pops'
+Edge are derived from prospectively captured immutable observations under a
+governing `ComparativeResearchProtocol`, while separately governed retrospective
+standalone work remains descriptive and never acquires comparative authority.
 
 The collection and measurement process answers one question:
 
@@ -1933,30 +2055,37 @@ That question belongs to Research Review.
 
 ---
 
-## 5.2 Evidence Collection Is Protocol-Governed
+## 5.2 Evidence Acquisition Is Protocol-Governed
 
-Empirical Evidence is collected only under an active Research Protocol.
+Empirical Evidence is acquired only under an applicable immutable Protocol.
+Prospective acquisition requires the Protocol to be fixed before capture and
+Outcome. Retrospective acquisition requires its standalone Protocol's
+population, selection, representation, scoring, Coverage, and reporting rules
+to be fixed before the archive is queried for the study and before results are
+calculated or interpreted.
 
 The protocol determines:
 
 - the Research Population;
-- participating Probability Sources;
-- the Market Benchmark;
+- participating Probability Sources and roles;
+- the Market Benchmark and challengers for comparative Protocols;
 - capture timing;
-- synchronization requirements;
+- synchronization requirements where comparative;
 - event eligibility;
 - Approved Research Dimensions;
 - and authoritative outcome methodology.
 
-Evidence collection never improvises around missing or inconvenient observations.
+Evidence acquisition never improvises around missing or inconvenient observations.
 
-Scientific validity is established prospectively.
+Scientific rules are established prospectively. Protocol precommitment prevents
+result-directed selection and interpretation; it does not transform later
+historical archive acquisition into prospective Evidence.
 
 ---
 
-## 5.3 Automated Pregame Capture
+## 5.3 Prospective Automated Pregame Capture
 
-Probability collection is automated.
+Prospective probability collection is automated.
 
 For every eligible event, Pops' Edge attempts to capture:
 
@@ -1975,7 +2104,10 @@ Automation minimizes:
 - manual intervention;
 - and hindsight bias.
 
-The methodology therefore measures what was actually available under the Research Protocol rather than what might later be reconstructed.
+Comparative and prospective standalone methodology therefore measures what was
+actually available under the governing Protocol rather than what might later be
+reconstructed. Retrospective archive acquisition follows the separate authority
+in Section 5.7 and cannot enter this prospective path.
 
 ---
 
@@ -2033,7 +2165,7 @@ Coverage therefore becomes part of the scientific record rather than an implemen
 
 ---
 
-## 5.7 No Retrospective Reconstruction
+## 5.7 Retrospective Evidence Is Separate
 
 Evidence not validly captured under the governing Research Protocol remains missing.
 
@@ -2043,11 +2175,33 @@ Such information may support separate retrospective research.
 
 It does not alter the prospective Evidence collected by Pops' Edge.
 
+Retrospective Evidence is immutable historical source material acquired later
+from an archive under a separate `StandaloneProbabilitySourceProtocol`. It
+preserves both the provider-reported historical effective or interval timestamp
+and Pops' Edge's later acquisition timestamp. A historical provider timestamp
+does not make later acquisition contemporaneous or prospective.
+
+Retrospective Evidence cannot repair missing prospective Evidence, enter a
+prospective population, be relabeled as contemporaneous capture, satisfy
+positive-depth point-in-time order-book authority, or support paired Comparative
+Performance unless a future Methodology version explicitly authorizes it. It
+cannot establish or reject an Edge Claim or Market Edge or create Current
+Scientific Applicability, Policy, Governance, wagering, Opportunity Analysis, or
+production authority.
+
+Every retrospective report discloses applicable archive availability,
+survivorship, provider revision, timestamp, schedule-history, aggregation, and
+non-simultaneity limitations. Prospective rule precommitment prevents
+result-directed selection and interpretation; it does not erase those
+limitations or transform historical acquisition into prospective Evidence.
+
 ---
 
 ## 5.8 Canonical Probability Representation
 
-Each participating Probability Source contributes exactly one prospectively defined probability representation.
+Each participating Probability Source contributes exactly one
+Protocol-precommitted probability representation under the applicable family-
+specific timing rule.
 
 The governing Research Protocol determines:
 
@@ -2408,6 +2562,258 @@ Standalone Coverage owns complete, failure-inclusive accounting across the sched
 
 Standalone performance cannot support or reject an Edge Claim, establish or invalidate a Market Edge, determine Practical Significance, create a Research Review conclusion or Current Scientific Applicability, or establish profitability, efficiency, actionable opportunity, Policy, Governance, or production authority. Time-bounded standalone performance is descriptive and creates no standalone Drift or review obligation.
 
+### 2026 Kalshi MLB retrospective and prospective studies
+
+The 2026 MLB investigation contains two separate standalone Probability Source
+studies. Kalshi is the only Probability Source, and MLB regular-season
+game-winner probability is the Research Domain. The retrospective historical-
+candlestick study and the prospective point-in-time order-book study have
+distinct Protocol identities, populations, estimands, Coverage, Measurements,
+cumulative and time-bounded performance, uncertainty, limitations, and reports.
+Neither denominator is governed by a challenger, Edge Claim, paired population,
+or Comparative Performance Report.
+
+Both Protocols fix the home-team YES proposition as the sole authoritative
+probability representation. Each event contributes at most one authoritative
+standalone performance observation. Away-team contract information may be
+preserved and reported as diagnostic Evidence only; it cannot replace, adjust,
+normalize, average with, validate, or repair the home-team probability, and it
+cannot change population membership. A missing or invalid home-team
+representation remains a visible failure even when the away-team contract is
+usable. MLB Stats API Evidence is authoritative for schedules, game states, and
+outcomes. Kalshi timing and settlement metadata may corroborate those facts but
+never replace MLB authority.
+
+The retrospective Protocol begins at the official start of the 2026 MLB regular
+season and ends immediately before an immutable `activation_at`. It includes
+only rule-derived happy-path regular-season games and visibly excludes
+postponed, cancelled, suspended, resumed, rescheduled, doubleheader, ambiguous,
+and otherwise non-ordinary games. Eligibility is never selected according to
+Kalshi availability, price, or outcome. MLB's retrospectively retrieved
+scheduled start remains authoritative. A semantically compatible Kalshi
+scheduled-game time must agree exactly to the UTC minute after explicit timezone
+normalization; absent compatible timing, material mismatch, rescheduling
+evidence, or ambiguous chronology makes the event ineligible. This
+corroboration does not transfer authority to Kalshi, and post-game schedule
+retrieval does not prove what schedule information was visible at the historical
+capture boundary. Reports preserve that limitation.
+
+For each eligible retrospectively Kalshi-offered game:
+
+```text
+target_at = authoritative scheduled_start_at - 6 hours
+target_at - 5 minutes < candle_end_at <= target_at
+probability = (home_yes_bid_close + home_yes_ask_close) / 2
+```
+
+The selected observation is the latest real one-minute historical candle in the
+strict interval with both home-team YES closing bid and closing ask in that same
+candle, calculated with exact-decimal arithmetic. Synthetic continuity candles,
+post-target candles, last-trade or transaction/market-price fallback, null
+filling, unlimited carry-forward, mixed-candle bounds, away-contract
+substitution, and value- or outcome-directed selection are prohibited. Candle
+bid and ask closes are same-candle aggregates; Kalshi does not document them as
+simultaneous point-in-time quotes. Candle volume and open interest establish
+neither quote quantity, executable spread, nor positive depth. This historical
+estimand is not the canonical prospective positive-depth order-book estimand.
+
+Retrospective Coverage preserves disjoint, exhaustive, valid-empty categories:
+
+```text
+schedule-derived universe = excluded non-happy-path + eligible happy-path
+eligible happy-path = no unambiguous qualifying Kalshi market + Kalshi-offered
+Kalshi-offered = measured authoritative home-team candle + unmeasured
+```
+
+Offered-market Coverage over eligible games and measurable-market Coverage over
+offered games are distinct descriptive rates.
+
+The prospective Protocol begins at `activation_at` and ends after the final 2026
+MLB regular-season games; postseason games are excluded. Its schedule-derived
+Coverage universe includes every regular-season capture opportunity rather than
+applying retrospective happy-path exclusions. Ordinary games proceed normally;
+doubleheaders remain distinct by MLB identity and game number. A postponement
+preserves its original opportunity and disposition, while a rescheduled game
+creates a new opportunity and cannot rewrite earlier Evidence. Suspended games
+preserve captures pending authoritative outcome resolution. Cancelled games
+remain visible with a non-measured disposition. Ambiguous mappings and provider,
+schedule, network, scheduler, storage, or capture failures fail closed and
+remain visible. Later facts cannot remove an inconvenient opportunity.
+
+The prospective estimand reuses the existing positive-depth, two-sided bid-offer
+midpoint authority for the home-team YES contract, preserving side, price,
+quantity, provider, acquisition, provenance, timestamp, and derivation. The hard
+capture tolerance includes both `target_at` and the exact
+`target_at + 5 minutes` endpoint and contains exactly five slots:
+
+```text
+slot 0: [target_at,      target_at + 1 minute)
+slot 1: [target_at + 1m, target_at + 2 minutes)
+slot 2: [target_at + 2m, target_at + 3 minutes)
+slot 3: [target_at + 3m, target_at + 4 minutes)
+slot 4: [target_at + 4m, target_at + 5 minutes]
+```
+
+Slots 0 through 3 are half-open; slot 4 includes the exact upper endpoint. A
+valid capture in the earliest successfully completed slot is authoritative and
+selection then stops.
+
+The first invocation in the current slot may execute at most one provider
+acquisition for that slot only if no earlier slot succeeded. An authoritative
+acquisition timestamp exactly equal to `target_at + 5 minutes` belongs to slot 4
+and is within tolerance. The invocation never executes or backfills an earlier
+missed slot, performs a catch-up call, or labels a current quote with an earlier
+slot time. It deterministically appends non-acquisition `missed` dispositions
+for earlier elapsed slots not already resolved; those records do not pretend an
+attempt occurred. Duplicate invocation within one slot is idempotent. Every
+attempted, missed, skipped-after-success, and terminal disposition preserves
+actual acquisition time and exact distance from `target_at` under deterministic
+opportunity, slot, and attempt identity. Later than `target_at + 5 minutes`, no
+acquisition is permitted; all unresolved slots are recorded missed and, if none
+succeeded, one idempotent terminal missed-window disposition is appended. No
+late or historical quote repairs it, and price and Outcome never influence
+attempt or slot selection.
+
+PR17A defines but does not activate the boundary. After PR17B implements and
+dry-run validates acquisition, persistence, validation, and replay, the Product
+Owner approves a future `America/New_York` calendar date before that date
+begins. `activation_at` is midnight at the start of that Eastern date serialized
+as an explicit timezone-aware instant. Retrospective scheduled starts are before
+it and prospective scheduled starts are at or after it, producing no gap,
+overlap, or mid-date split. The boundary cannot move according to prices,
+outcomes, Coverage, or performance, and no retrospective performance is
+calculated before it is fixed. Dry-run material never becomes research Evidence.
+
+An idempotent daily outcome process appends MLB schedule status and outcome
+observations when authoritative state changes. Corrections create lineage and
+never mutate prior observations; postponed, suspended, resumed, cancelled, and
+corrected states remain visible. Every report deterministically replays the
+authoritative Outcome at its explicit analysis boundary. Kalshi settlement is
+corroborating information only.
+
+The two reports cannot repair, extend, reinterpret, or pool each other.
+Historical candles cannot repair missing prospective Evidence. A
+non-authoritative Product summary may display the reports side by side but
+cannot calculate a combined 2026 metric or create Measurement authority.
+Differences cannot be attributed solely to capture method because chronology,
+population composition, market behavior, and other factors also differ. An
+insufficient prospective sample is truthful and does not authorize retrospective
+extension.
+
+The Product Owner's hypothesis that Kalshi MLB probabilities may not be
+particularly accurate is motivation, not a conclusion. Findings remain
+descriptive and create no Scientific Applicability, Market Edge, Research Review
+conclusion, Policy Recommendation, Policy Hypothesis, Governance, Forecast
+Policy, wagering or profitability claim, Opportunity Analysis, or production
+authority.
+
+### Historical candle Evidence and derivation authority
+
+`HistoricalMarketCandleObservation` is immutable retrospective Market Evidence,
+not a `MarketObservation` order-book snapshot. Its identity-material content
+preserves provider identity; provider API tier and endpoint; Market Series and
+provider-native contract identity; canonical event and home-team YES proposition
+mapping; candle interval and start/end or documented `end_period_ts` semantics;
+the complete returned YES bid, YES ask, and transaction-price OHLC fields;
+volume and open interest when present; raw-response digest and archive reference;
+API retrieval timestamp; candle effective/end timestamp; schema and identity
+versions; validation state and limitations; deterministic identity; and
+provenance.
+
+API retrieval time and candle time are distinct and both material. Retrieval
+after the game or Outcome is expected in retrospective research and is never
+relabeled as contemporaneous capture. Candle time describes a provider-reported
+historical aggregate interval. Bid and ask closes are not guaranteed
+simultaneous, while volume and open interest are neither quote-level quantity nor
+depth. Consequently this Evidence cannot satisfy the positive-depth
+`MarketProbabilityDerivation`. Raw archived content remains Evidence; midpoint
+selection is Analysis. Provider revisions and corrections are append-only and
+replayed at explicit boundaries.
+
+`HistoricalCandleProbabilityDerivation` is immutable supporting derived
+Analysis. It materially identifies its `StandaloneProbabilitySourceProtocol`;
+`HistoricalMarketCandleObservation`; authoritative Schedule Evidence and
+scheduled start; Market Series, provider contract, event, home-team proposition,
+and source; target time; selection-window rule and version; the complete
+candidate set or deterministic candidate-selection authority; selected candle
+end and exact distance from target; closing home-team YES bid and ask;
+exact-decimal midpoint and complement; representation and transformation rules;
+algorithm and identity versions; limitations; deterministic identity; and
+provenance.
+
+Construction fails closed unless the standalone Protocol authorizes historical
+candle representation; provider, contract, event, proposition, and home-team
+mapping agree exactly; authoritative MLB schedule time and required normalized
+Kalshi timing corroboration agree; the selected candle is real and one minute;
+it is the latest unambiguous qualifying candidate satisfying
+`target_at - 5 minutes < candle_end_at <= target_at`; both closing home-team YES
+bounds exist in that candle; arithmetic is exact decimal; and no prohibited
+fallback or post-target information is used. The derivation owns no Outcome,
+score, population, aggregate performance, conclusion, Policy, or production
+authority.
+
+### Versioned standalone Measurement path
+
+Existing PR16B `ProbabilitySourceMeasurement` v1/v2 contracts, serialization,
+identities, registries, graph behavior, and historical artifacts remain
+unchanged. PR17B introduces an explicit version-dispatched successor,
+`ProbabilitySourceMeasurementV3`, rather than adding optional fields or
+reinterpreting an old contract. It accepts exactly one typed derivation reference
+authorized by its `StandaloneProbabilitySourceProtocol`:
+
+- prospective order-book representation requires existing
+  `MarketProbabilityDerivation`; and
+- retrospective candle representation requires
+  `HistoricalCandleProbabilityDerivation`.
+
+Missing, multiple, unknown, foreign-Protocol, or wrong-kind derivations fail
+closed. The successor preserves existing canonical probability distribution,
+authoritative Outcome, Brier Score, extended-real Log Loss, and Calibration-input
+semantics, together with exact source, event, proposition, schedule, Outcome,
+derivation, algorithm, limitation, identity, and provenance lineage. A Protocol
+population authorizes exactly one derivation kind and cannot mix kinds.
+
+PR17B must implement version-dispatched successor Coverage, cumulative and
+time-bounded performance, uncertainty, references, registry, replay, and graph
+validation wherever the existing typed v1/v2 registries cannot accept V3
+without reinterpretation. Reuse is permitted only when the existing contract's
+meaning and type compatibility remain exact; otherwise a versioned successor is
+required. Unknown or mixed Measurement versions and derivation kinds fail
+closed, and old identities never change.
+
+### Probability Source Performance Report
+
+`ProbabilitySourcePerformanceReport` is the canonical standalone scientific
+communication artifact. It is immutable, deterministic, content-addressed,
+governed by exactly one `StandaloneProbabilitySourceProtocol`, and scoped to
+exactly one Probability Source, source role, Research Domain, and explicit
+analysis boundary. It communicates already-authoritative standalone Forecast
+Intelligence and does not recompute or copy analytical values as new authority.
+
+The report references exactly one compatible cumulative
+`ProbabilitySourcePerformance`, exactly one applicable compatible
+`TimeBoundedProbabilitySourcePerformance`, and their authoritative
+`ProbabilitySourceCoverage` whether referenced or already embedded by the
+performance contract. It presents complete schedule-universe,
+eligible-denominator, measured-population, and failure reconciliation;
+applicable `SourcePerformanceUncertainty`; limitations; and provenance.
+Protocol, source, role, domain, analysis boundary, probability representation,
+rules, and applicable window must reconcile exactly. Unknown, duplicate,
+foreign-Protocol, incompatible, conflicting, or multiple compatible-looking
+references fail closed without caller ordering or arbitrary selection. Valid
+empty populations remain reportable. Correction-aware replay produces a new
+report identity and never mutates an earlier report.
+
+The standalone report requires and contains no `ProtocolClaimSet`, Edge Claim
+finding, challenger or paired population, Comparative Performance, Comparative
+Drift, Burden-of-Proof disposition, Research Review conclusion, Market Edge,
+Current Scientific Applicability, Policy, Governance, or production authority.
+The existing `ComparativePerformanceReport` remains unchanged. Its established
+PR15/PR16B references to standalone Market Benchmark Performance remain part of
+that comparative report and are not reinterpreted as this standalone-only
+artifact. PR17C and PR17D each produce their own
+`ProbabilitySourcePerformanceReport` under their separate Protocol.
+
 Comparative Coverage additionally distinguishes among:
 
 - successful captures;
@@ -2558,7 +2964,9 @@ Accordingly:
 
 ## 6.1 Purpose
 
-A Comparative Performance Report is the principal scientific reporting artifact of Pops' Edge.
+A Comparative Performance Report is the principal scientific reporting artifact
+for comparative Market Edge research. A standalone investigation instead uses
+`ProbabilitySourcePerformanceReport` and ends in descriptive findings.
 
 Its purpose is to summarize the accumulated empirical evidence collected under one Research Protocol through one defined analysis boundary and present that evidence in a form suitable for Research Review.
 
@@ -2929,7 +3337,7 @@ creates another cumulative analytical authority.
 
 ## 6.19 Drift
 
-Where the governing Research Protocol defines Drift, the report identifies:
+Where the governing Comparative Research Protocol defines Drift, the report identifies:
 
 - current surveillance performance;
 - historical comparative performance;
@@ -2946,7 +3354,7 @@ Drift becomes an input to Research Review.
 A valid surveillance result may instead find that the available evidence is
 insufficient to determine Drift. That result is distinct from a structurally
 invalid artifact or incompatible input, which cannot produce a scientific
-finding. The governing Research Protocol defines the consequence of valid
+finding. The governing Comparative Research Protocol defines the consequence of valid
 insufficient evidence. If it does not, Current Scientific Applicability remains
 indeterminate and unavailable for operational reliance.
 
@@ -3154,7 +3562,7 @@ Every Edge Claim identifies:
 - applicable research domain; and
 - applicable Approved Research Dimensions.
 
-A Research Protocol may govern multiple Edge Claims, but each distinct
+A Comparative Research Protocol may govern multiple Edge Claims, but each distinct
 Alternative Probability Source-versus-Market Benchmark hypothesis within the
 applicable Research Domain is a separate Edge Claim.
 
@@ -4096,7 +4504,7 @@ Methodology versions exist to preserve scientific reproducibility rather than so
 
 Research Protocols implement this methodology.
 
-A Research Protocol may become more specific than the methodology.
+A Protocol in either family may become more specific than the methodology.
 
 It may not contradict it.
 
@@ -4266,22 +4674,25 @@ Those conclusions must be earned through evidence.
 
 ---
 
-## 10.2 The Central Research Question
+## 10.2 Research Questions
 
-Every empirical investigation conducted by Pops' Edge ultimately asks one question:
+Comparative Market Edge research asks:
 
 > **Can an Alternative Probability Source estimate event probabilities more accurately than the Market Benchmark within a defined research domain?**
 
-Everything contained within this methodology exists to answer that question rigorously, reproducibly, and honestly.
+Standalone Probability Source research instead asks how accurately one fixed
+source estimated outcomes over its Protocol-defined population. It produces
+descriptive findings only. The two questions and their authorities remain
+separate.
 
 ---
 
-## 10.3 The Empirical Research Process
+## 10.3 Empirical Research Processes
 
-The methodology follows one governing sequence.
+Comparative Market Edge research preserves its prospectively captured sequence:
 
 ```text
-Research Protocol
+ComparativeResearchProtocol
         ↓
 Prospective Evidence Collection
         ↓
@@ -4310,6 +4721,59 @@ Each stage answers a different question.
 
 No stage bypasses the one before it.
 
+Prospective standalone research follows:
+
+```text
+Prospectively fixed StandaloneProbabilitySourceProtocol
+        ↓
+Contemporaneous prospective acquisition
+        ↓
+MarketObservation
+        ↓
+MarketProbabilityDerivation
+        +
+Authoritative Outcome Evidence
+        ↓
+ProbabilitySourceMeasurementV3
+        ↓
+ProbabilitySourcePerformance
+        +
+TimeBoundedProbabilitySourcePerformance
+        ↓
+ProbabilitySourcePerformanceReport
+        ↓
+Descriptive standalone findings only
+```
+
+Retrospective standalone research follows:
+
+```text
+Prospectively fixed StandaloneProbabilitySourceProtocol
+        ↓
+Historical archive acquisition
+        ↓
+HistoricalMarketCandleObservation
+        ↓
+HistoricalCandleProbabilityDerivation
+        +
+Authoritative Outcome Evidence
+        ↓
+ProbabilitySourceMeasurementV3
+        ↓
+ProbabilitySourcePerformance
+        +
+TimeBoundedProbabilitySourcePerformance
+        ↓
+ProbabilitySourcePerformanceReport
+        ↓
+Descriptive standalone findings only
+```
+
+Neither standalone sequence continues to Research Review, Edge Claim, Market
+Edge, Current Scientific Applicability, Policy, Governance, wagering,
+Opportunity Analysis, or production authority. Retrospective Evidence never
+repairs or enters the prospective sequence.
+
 ---
 
 ## 10.4 The Fundamental Distinctions
@@ -4336,9 +4800,11 @@ Those distinctions preserve the integrity of the methodology.
 
 ---
 
-## 10.5 The Role of the Market
+## 10.5 The Role of the Market in Comparative Research
 
-The Market Benchmark is the foundation of every empirical investigation.
+The Market Benchmark is the foundation of every comparative Market Edge
+investigation. Standalone research may measure a source in a benchmark role,
+but that role does not create comparative authority.
 
 It is not merely another Probability Source.
 
@@ -4478,7 +4944,10 @@ Everything contained within this methodology ultimately rests upon one enduring 
 
 > **Evidence is permanent. Conclusions are provisional.**
 
-Evidence is collected prospectively.
+Prospective research Evidence is collected prospectively. Separately governed
+retrospective research may acquire immutable historical archive Evidence after
+the represented events, with later acquisition and historical effective times
+preserved distinctly; it never repairs or substitutes for prospective Evidence.
 
 Measurements are reproducible.
 
