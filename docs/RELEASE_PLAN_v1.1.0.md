@@ -728,6 +728,22 @@ explicit boundaries; delayed invocation never backdates or catches up; typed
 derivation dispatch and standalone report replay fail closed; dry-run material is
 segregated and cannot become Evidence.
 
+**Implemented inactive capability:** `forecast_standalone_operations.py` and
+`operate_forecast_standalone_research.py` provide versioned configuration,
+mode/namespace isolation, one advisory mutation lock, create-only atomic raw,
+normalized, and per-entry manifest storage, bounded provider-call ownership,
+rebuildable SQLite discovery, digest-verified filesystem secondary copy, and
+typed status/preflight/inspect output. Three thin `launchd` groups invoke only
+their documented commands. Offline fixtures validate the operations; neither
+Protocol is activated and no real Evidence or empirical report exists.
+
+The gate additionally requires archive-to-PR17B1 version-dispatched
+reconstruction, authority-derived prospective discovery under a trusted clock,
+and deterministic archive-wide interruption reconciliation. Only complete
+manifest-referenced objects participate in replay, indexing, or secondary copy;
+orphans remain visible non-authority. The prospective `launchd` group invokes
+configuration only and carries no scientific identifier or timestamp.
+
 ### PR17C — Activation, Retrospective Report, and Prospective Collection Start
 
 **Purpose:** freeze the contiguous study boundary, create durable retrospective

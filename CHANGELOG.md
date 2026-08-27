@@ -1,5 +1,38 @@
 # Changelog
 
+## PR17B2 — Kalshi MLB acquisition and durable Evidence operations
+
+- Added an inactive, fixture-driven Kalshi operational boundary with separate
+  dry-run namespaces, bounded retry ownership, and exactly one transport request
+  per PR17B1-derived prospective slot.
+- Added atomic create-only raw/normalized storage, individually immutable
+  manifests, bounded OS advisory locking and recovery diagnostics, rebuildable
+  SQLite discovery, and create-only digest-verified secondary synchronization.
+- Added one explicit operations CLI, typed JSON/human diagnostics, offline
+  status/preflight/inspection, and three thin `launchd` template groups.
+- Added offline concurrency, recovery, pagination, identity, retry, index,
+  secondary-copy, namespace-isolation, and compatibility validation. Neither
+  Protocol is activated and no real Evidence or empirical report is created.
+- Independent-review amendments replace caller-selected prospective chronology
+  with trusted-clock discovery from archived PR17B1 authority, reconstruct exact
+  version-dispatched contracts for real graph replay, and reconcile interrupted
+  raw/normalized orphans as visible non-authority excluded from indexes and
+  secondary synchronization.
+- Preserve every prospective provider call across slot/window boundaries by
+  fixing slot authority at trusted request start and recording completion as
+  attempt effectiveness and completed manifest chronology.
+- Classify out-of-request-interval provider observations as persisted typed
+  captured-invalid attempts so no executed call disappears from Coverage.
+- Translate expected provider-controlled PR17 deserialization and contract
+  validation failures into replayable malformed/incomplete/mapping attempts
+  without disguising unexpected internal failures.
+- Recursively validate every shared tagged-serialization marker before provider
+  contract deserialization, including malformed enum/Decimal shapes that could
+  otherwise escape without an immutable attempt.
+- Add annotation-derived structural validation for the complete provider
+  `MarketObservation` tree so incompatible ordinary field shapes also become
+  failure-inclusive captured-invalid attempts.
+
 ## PR17B1 — standalone scientific contracts and deterministic replay
 
 - Added the offline-only `forecast_standalone_research.py` successor family for

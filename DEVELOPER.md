@@ -559,8 +559,8 @@ doubleheaders, suspensions, cancellations, ambiguous mappings, and operational
 failures remain explicit; reschedules create new opportunities and never rewrite
 prior Evidence.
 
-PR17B2 will implement one idempotent application CLI with an injected clock and
-explicit `as_of`. It will own discovery, due-attempt calculation, acquisition,
+PR17B2 implements one bounded application CLI with explicit acquisition times.
+It owns discovery, due-attempt calculation, fixture-safe acquisition,
 validation, atomic persistence, failure dispositions, daily Outcome
 reconciliation, backup invocation/status, and diagnostics. A thin `launchd`
 wrapper may invoke it periodically but owns no scientific semantics and does not
@@ -574,6 +574,61 @@ identity, and incidental ordering. A derived index is rebuildable and
 non-authoritative. One digest-verified secondary copy protects completed objects
 and manifest material, but primary persistence alone determines capture success;
 backup lag and health are Operations diagnostics.
+
+The operational entry point is `operate_forecast_standalone_research.py` with
+`acquire-schedule`, `acquire-classification`, `acquire-retrospective`,
+`capture-prospective`, `reconcile-outcomes`, `sync-secondary`, `rebuild-index`,
+`status`, `preflight`, and `inspect`. Acquisition accepts an explicit offline
+fixture transport in PR17B2; no live client is selected or invoked. Stable exit
+categories are 0 success, 2 not ready, 3 integrity failure, 4 configuration
+error, and 5 operational failure. JSON and terminal diagnostics derive from the
+same typed result. Configuration may set deployment paths, endpoint selection,
+bounded retries/timeouts, lock wait, logs, and scheduling only.
+
+Each primary and secondary path must include `dry-run/<namespace>` (or, after a
+future authorized activation, `activated/<namespace>`). Mutation is prohibited
+for activated mode in PR17B2. Every mutation first takes the namespace advisory
+lock; temporary `.partial` files are ignored and reported. The three wrapper
+groups in `operations/launchd/` contain no timing, retry, repair, activation, or
+scientific logic.
+
+`capture-prospective` accepts configuration only. The library replays the exact
+configured Protocol plus archived activation, Schedule, classification,
+eligibility, opportunity, and Market Series authority under its namespace lock,
+then reads the actual timezone-aware execution clock. Tests inject a fake clock
+directly; no normal CLI time override exists. The prospective wrapper contains
+no event, market, opportunity, Protocol, target, slot, or time value.
+
+Prospective chronology separates discovery, the fresh trusted request start
+immediately before transport, and request completion. Request start fixes
+`slot` and `invocation_at`; completion fixes `effective_at` and manifest
+acquisition time. Boundary-crossing completion persists one typed disposition
+in the start slot and cannot trigger an automatic second call.
+Validate provider `collected_at` inside the inclusive request interval within
+the acquisition-classification boundary. Chronology-invalid responses must use
+the typed captured-invalid path, retain permitted raw bytes and completion-time
+manifest chronology, and must not register valid Market Evidence.
+Decode provider-supplied PR17 contracts only through the narrow adapter helper.
+It translates JSON syntax, missing/type-shape, and repository `ContractError`
+validation failures into sanitized provider-data dispositions. Do not broaden
+that boundary to archive, clock, invariant, runtime, or unexpected exceptions.
+The predecoder must keep parity with all reserved markers in the authoritative
+shared decoder, require exact scalar-marker dictionaries, reject conflicting or
+duplicate tags, validate finite ordinary Decimals and aware datetimes, and walk
+nested lists/objects under a deterministic depth limit without coercion.
+After marker validation, `_validate_provider_schema(...)` derives the exact
+expected structure from `dataclasses.fields` and `typing.get_type_hints` for
+`MarketObservation` and every nested contract. Keep this structural only:
+constructors and replay retain semantic authority, and unsupported annotations
+or unexpected runtime errors must remain visible programming failures.
+
+Normalized `pr17b1-contract-bundle` records contain canonical existing serializer
+output. `replay_pr17_archive(...)` version-dispatches it with
+`deserialize_v3(...)` and calls the existing graph validator. Run
+`reconcile_archive(...)` to derive referenced-valid, missing, corrupt, orphaned,
+malformed, incompatible, and partial sets. Orphans are never indexed or copied
+to secondary storage. Deterministic publication failpoints support recovery
+tests; only an identical retry may complete interrupted manifest-last work.
 
 After PR17B2 dry-run validation, the Product Owner may approve a future Eastern
 calendar date before it begins. Midnight at that date becomes immutable
@@ -602,8 +657,9 @@ The remaining v1.1.0 sequence after implemented PR16B analysis is:
 1. **PR17A — Retrospective and Prospective Methodology and Architecture:** documentation authority only (this change).
 2. **PR17B1 — Scientific Contracts and Deterministic Replay:** offline successor
    contracts, synthetic fixture/inspector, V3 registry, replay, and graph validation.
-3. **PR17B2 — Acquisition, Persistence, and Operations Tooling:** provider
-   acquisition, archive, backup, scheduling, CLI, and dry-run operations without activation.
+3. **PR17B2 — Acquisition, Persistence, and Operations Tooling:** implemented
+   inactive provider boundary, archive, secondary copy, scheduling, CLI, and
+   dry-run operations without activation.
 
 PR17B1 constructors consume complete typed registries and replay Schedule and
 eligibility authority, ordered manifest pages/corrections, attempts and Snapshot

@@ -1,0 +1,26 @@
+{
+  "config_id": "pr17b2-local-dry-run",
+  "lock_timeout_seconds": 5,
+  "log_root": "/path/to/pops-edge-operations/logs",
+  "mode": "dry-run",
+  "namespace": "fixture",
+  "primary_root": "/path/to/pops-edge-operations/dry-run/fixture/primary",
+  "provider_base_url": "https://fixture.invalid",
+  "fixture_response_path": "/path/to/order-book-fixture.json",
+  "research_protocol_ids": ["synthetic-approved-protocol-id"],
+  "retry_policy": {
+    "backoff_seconds": [1, 2],
+    "maximum_attempts": 3,
+    "maximum_retry_after_seconds": 5,
+    "request_timeout_seconds": 5,
+    "total_timeout_seconds": 30
+  },
+  "schedule_parameters": {
+    "maintenance_interval_seconds": "1800",
+    "prospective_interval_seconds": "60",
+    "supporting_interval_seconds": "3600"
+  },
+  "schema_version": "1",
+  "secondary_root": "/path/to/pops-edge-operations/dry-run/fixture/secondary",
+  "timezone_name": "America/New_York"
+}

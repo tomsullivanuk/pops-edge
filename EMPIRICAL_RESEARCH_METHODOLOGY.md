@@ -403,7 +403,8 @@ unchanged. They are not renamed or reinterpreted.
 one Probability Source investigation. It is not a mode, wrapper,
 empty-challenger instance, or optional-field variant of a comparative Protocol.
 PR17B1 owns its offline scientific-contract and deterministic-replay
-implementation. PR17B2 owns later operational acquisition and persistence. Its
+implementation. PR17B2 implements the separate, inactive operational acquisition
+and persistence layer. Its
 identity-material authority includes:
 
 - standalone Protocol identity and version;
@@ -451,6 +452,32 @@ its standalone Protocol comparative.
 A material change to a scientific rule of either family creates a new Protocol
 version. Evidence collected under materially different Protocol identities or
 versions is not silently pooled.
+
+PR17B2 operations do not alter scientific identity. Dry-run and any future
+activated namespace have physically separate raw, normalized, manifest, index,
+lock, status, secondary-copy, and log paths; dry-run material cannot be promoted.
+Raw responses are content-addressed, normalized objects are versioned, and each
+manifest entry is individually immutable. The SQLite index and diagnostics are
+rebuildable projections, never Evidence. Prospective capture permits exactly one
+redirect-free, retry-free request in the PR17B1-derived current slot; supporting
+acquisition alone has bounded deterministic retry authority.
+
+Operational normalized envelopes contain canonical version-dispatched PR17B1
+serialization, not caller-authored scientific identifiers. Archive replay opens
+only digest-valid objects referenced by valid immutable manifests, reconstructs
+the existing typed contracts, resolves their complete upstream authority, and
+passes them to `validate_standalone_research_graph`. Prospective discovery reads
+the configured archived Protocol identity, derives opportunities and targets
+from archived Schedule, classification, and eligibility authority, and assigns
+slots using the trusted execution clock. No scheduled flag or wrapper supplies
+an event, market, opportunity, Protocol, target, slot, or invocation time.
+
+Manifest-last publication can leave raw or normalized objects after interruption.
+Archive-wide reconciliation identifies those objects as non-authoritative
+orphans. Status, preflight, and inspection expose them; indexing excludes them;
+secondary synchronization copies only complete manifest-referenced authority.
+An identical retry may finish publication, while conflicting material fails
+closed. No recovery path deletes, promotes, or silently adopts an orphan.
 
 ### 2.5.1 Protocol Claim Set
 
@@ -2697,6 +2724,33 @@ acquisition is permitted; all unresolved slots are recorded missed and, if none
 succeeded, one idempotent terminal missed-window disposition is appended. No
 late or historical quote repairs it, and price and Outcome never influence
 attempt or slot selection.
+
+Immediately before a prospective transport call, the locked operation obtains
+a fresh trusted request-start time and re-evaluates current authority. That time
+fixes the slot and is the attempt invocation time. A separate trusted completion
+time governs attempt effectiveness and completed acquisition chronology. A call
+that completes across a slot boundary, several slots later, or after the window
+remains assigned to its request-start slot and receives exactly one immutable
+valid, invalid, or failed disposition; it never implicitly authorizes another
+call. If the window closes before authorization, no call occurs and unresolved
+slots are reconciled as canonical no-call dispositions.
+
+Provider observation chronology is validation material. `collected_at` must be
+inside the inclusive trusted request-start/request-completion interval. An
+otherwise authority-matching observation outside that interval is preserved as
+captured-invalid with its permitted raw acquisition reference; it creates no
+valid Market Observation, while the executed call remains failure-inclusive.
+Malformed or incompatible provider-supplied scientific contract encodings use
+the same failure-inclusive captured-invalid rule with the most precise existing
+malformed, incomplete, or mapping category. Sanitized diagnostics and permitted
+raw bytes remain replayable; unexpected internal failures remain distinct.
+The provider adapter recursively validates the complete shared tagged envelope
+before PR17B1 deserialization. Invalid marker shapes and values are mapping
+failures; no coercion or repair is permitted.
+It next validates the complete provider envelope against the resolved type
+annotations of `MarketObservation` and its nested canonical contracts. Missing
+fields are incomplete; wrong ordinary shapes, tags, tuple members, or primitive
+types are mapping-invalid and cannot enter Evidence.
 
 PR17A defines but does not activate the boundary. After PR17B2 implements and
 dry-run validates acquisition, persistence, validation, and replay, the Product
