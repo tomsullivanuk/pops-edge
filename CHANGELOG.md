@@ -23,6 +23,25 @@ and FanGraphs as conditional forecast candidates; documents Kalshi
 `KXMLBGAME`, provenance, backfill, reconciliation, and fail-closed gates; and
 defers sportsbook ingestion without changing production behavior.
 
+The bounded PR17 feasibility spike established qualitative public-API
+feasibility for deterministic Kalshi MLB event discovery and historical
+one-minute candle reconstruction, subject to explicit candle-timing,
+non-simultaneity, historical-schedule, and operational limitations. Its
+temporary API material and observed values are not Evidence or repository
+authority. PR17A records documentation authority only; it activates neither
+Protocol and adds no collected data or empirical result.
+
+Independent review amendments separate comparative and standalone Protocol
+families and add canonical standalone report authority; define immutable
+historical-candle Evidence, typed candle derivation, and version-dispatched
+standalone Measurement successors without changing PR16B identities; and fix
+prospective acquisition to five non-backdating slots, with slots 0–3 half-open,
+slot 4 including exact `target_at + 5 minutes`, and later acquisition prohibited.
+The Methodology now distinguishes contemporaneously captured prospective
+Evidence from later-acquired retrospective archive Evidence, preserves both
+historical effective and acquisition times, and shows separate comparative,
+prospective-standalone, and retrospective-standalone research paths.
+
 PR2A documents Pops' Edge as an external-forecast evaluation platform,
 establishes commercial-data cost and rights review, separates reusable concepts
 from adapter semantics, makes immutable provenance and fail-closed validation
@@ -284,12 +303,16 @@ infinity and absent indeterminate comparisons without shrinking the Brier or
 Calibration population. The synthetic fixture and offline
 inspector add no provider collection or operational behavior. Canonical
 Comparative Performance Reports remain PR15; Current Scientific Applicability
-and Policy Recommendation remain PR18. PR16A defines standalone Probability
+and Policy Recommendation remain PR19. PR16A defines standalone Probability
 Source performance architecture. PR16B now implements its explicit v2 Protocol,
 typed capture, market derivation, source Measurement, failure-inclusive Coverage,
 cumulative and time-bounded performance, uncertainty, report-reference,
-replay-validation, fixture, test, and offline inspection path. PR17 will operate
-the prospective MLB study and produce the first empirical report.
+replay-validation, fixture, test, and offline inspection path. PR17A defines
+separate retrospective candle and prospective order-book Kalshi MLB standalone
+Protocols, home-team YES authority, contiguous activation, failure-inclusive
+Coverage, append-only local Evidence storage, scheduling and backup seams,
+correction-aware Outcome replay, and non-pooled reporting. PR17B–PR17D retain
+implementation, activation, collection, and separate-report ownership.
 The PR16B replay path derives capture eligibility from prospective authority,
 selects corrected Outcome/Measurement lineage at explicit boundaries, enforces
 causal effective chronology and complete schedule windows, and validates typed

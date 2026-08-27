@@ -166,13 +166,86 @@ It answers:
 
 For a source serving as the Market Benchmark, the product presents this result as Market Benchmark Performance. Absolute accuracy is not comparative superiority and is not profitability. Good Calibration does not automatically establish market efficiency, and poor Calibration does not automatically establish an exploitable edge.
 
+For 2026 MLB, PR17 studies Kalshi alone in the regular-season game-winner
+domain through two separate standalone Protocols: one retrospective historical-
+candlestick Protocol and one prospective point-in-time order-book Protocol.
+Each owns its population, Coverage, Measurement, cumulative and time-bounded
+performance, uncertainty, limitations, and report. Neither is governed by a
+challenger, Edge Claim, paired population, or comparative report.
+
+Both studies use exactly one authoritative representation per event: the
+home-team YES probability. Away-team contract information is diagnostic only
+and cannot replace, adjust, normalize, average with, validate, or repair the
+home-team value or its population membership. MLB Stats API is authoritative
+for schedule, status, and Outcome; Kalshi timing and settlement metadata only
+corroborate. The motivating hypothesis that Kalshi's MLB probabilities may not
+be particularly accurate does not predetermine a finding.
+
+The retrospective population covers qualifying ordinary games before the
+immutable activation boundary and uses a same-candle home-team bid/ask-close
+midpoint near T-6h. Those candle aggregates are not represented as simultaneous,
+executable, or positive-depth quotes. The prospective population begins at the
+boundary, keeps every schedule-derived opportunity and failure visible, and uses
+the existing positive-depth two-sided home-team order-book midpoint within five
+fixed slots from `target_at` through the inclusive exact
+`target_at + 5 minutes` endpoint. Slots 0–3 are half-open; slot 4 is closed at
+the upper endpoint. A delayed invocation may use only its current slot and
+actual acquisition time, with at most one provider call per slot; it never
+backdates a quote or catches up missed slots. A later timestamp is prohibited.
+Historical data cannot repair a missed prospective capture.
+
+The retrospective Evidence path is separate: an immutable historical candle
+observation preserves raw provider aggregates and distinct retrieval/candle
+times, and supporting candle derivation selects the authorized home-team
+midpoint. It is not an order-book snapshot and cannot satisfy PR16B positive-
+depth derivation. A versioned successor Measurement accepts the one derivation
+kind authorized by its standalone Protocol without changing historical PR16B
+contracts.
+
+The retrospective Protocol and all selection, Coverage, scoring, and reporting
+rules are fixed before its archive query and any result calculation or
+interpretation. This prevents result-directed selection but does not make later
+archive acquisition prospective. Retrospective Evidence cannot enter or repair
+a prospective population or support paired comparison under current authority;
+its report preserves archive availability, survivorship, revision, timestamp,
+schedule-history, aggregation, and non-simultaneity limitations.
+
+The reports remain separate. A Product summary may display them side by side but
+cannot pool observations or create a combined 2026 metric. Their descriptive
+findings create no Current Scientific Applicability, Market Edge, Policy,
+Governance, wagering, Opportunity Analysis, profitability, or production
+authority.
+
 ### Research Protocols
 
-A Research Protocol defines a reproducible empirical investigation so its findings can be tested, reviewed, and challenged.
+A Research Protocol defines a reproducible empirical investigation. Pops' Edge
+has two sibling families. A `ComparativeResearchProtocol` governs benchmark-
+versus-challenger questions, Edge Claims, paired populations, Practical
+Significance, Burden of Proof, surveillance, Drift, and Research Review.
+Existing `ResearchProtocol` and `ResearchProtocolV2` implementations retain
+that comparative meaning unchanged.
+
+A `StandaloneProbabilitySourceProtocol` governs exactly one Probability Source
+and descriptive standalone performance. It is not an empty-challenger mode of a
+comparative Protocol and has no Claim Set, Edge Claim, pair, comparative
+significance, Burden of Proof, Drift, or Review obligation. A source's Market
+Benchmark role elsewhere does not make the standalone investigation comparative.
 
 It answers:
 
 > **How will we test this question?**
+
+### Standalone Probability Source Performance Reports
+
+A `ProbabilitySourcePerformanceReport` is the canonical immutable standalone
+communication artifact for exactly one standalone Protocol, source, role,
+domain, and analysis boundary. It references compatible cumulative and
+time-bounded standalone performance, Coverage, uncertainty, limitations, and
+provenance without recomputing them. It truthfully reports empty populations and
+fails closed on ambiguous or incompatible authority. It contains no challenger,
+Claim Set, Edge Claim, comparative result, scientific conclusion, Policy,
+Governance, or production authority. The existing
+`ComparativePerformanceReport` remains a distinct unchanged artifact.
 
 ### Comparative Performance
 

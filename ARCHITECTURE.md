@@ -457,6 +457,229 @@ Both performance authorities carry `SourcePerformanceUncertainty`, a determinist
 
 Corrections preserve append-only Evidence and correction lineage. Deterministic replay selects authoritative Snapshot and outcome versions at explicit boundaries and produces new immutable Measurements after corrections while preserving earlier performance artifacts. Ambiguous, branched, incomplete, or conflicting lineage fails closed; incidental ordering is never a substantive tie-breaker.
 
+### PR17 Kalshi MLB study architecture (documentation authority)
+
+PR17A defines two Kalshi-only standalone Protocols in the 2026 MLB regular-
+season game-winner domain. The retrospective candle Protocol and prospective
+order-book Protocol share no Protocol, Coverage, Measurement, performance,
+uncertainty, or report identity. Each event contributes at most one
+authoritative home-team YES observation. Away-team contracts remain diagnostic
+Evidence and cannot affect derivation or membership. MLB Stats API owns schedule,
+state, and Outcome authority; Kalshi timing and settlement only corroborate it.
+
+Both are instances of the new sibling
+`StandaloneProbabilitySourceProtocol`, not the implemented comparative
+`ResearchProtocol` or `ResearchProtocolV2`. Existing comparative schemas,
+serialization, identity, registries, graph validation, and artifacts remain
+unchanged. A standalone Protocol materially owns one source and role, question,
+domain, proposition/outcome mapping, population and Coverage rules, capture and
+failure rules, typed probability representation, schedule/Outcome authority,
+correction replay, scoring, Calibration, uncertainty, cumulative/time-bounded
+analysis and report boundaries, limitations, identity, and provenance. It owns
+no challenger, pair, Claim Set, Edge Claim, comparative significance, Burden of
+Proof, Drift, or Research Review obligation. PR17B implements the sibling
+contract.
+
+The immutable activation boundary partitions authoritative scheduled starts:
+
+```text
+2026 regular-season start
+        ↓ retrospective happy-path Protocol
+scheduled_start_at < activation_at
+        │
+        ├── activation_at = midnight at a pre-approved America/New_York date
+        │
+scheduled_start_at >= activation_at
+        ↓ prospective all-opportunity Protocol
+final 2026 regular-season games
+```
+
+PR17A does not set `activation_at`. After PR17B dry-run validation, the Product
+Owner approves a future Eastern calendar date before it begins. The boundary is
+timezone-aware, contiguous, non-overlapping, has no mid-date split, and cannot
+be changed according to prices, outcomes, Coverage, or performance. No
+retrospective performance is calculated before approval, and dry-run material
+cannot become Evidence.
+
+The retrospective path uses a new immutable
+`HistoricalMarketCandleObservation`, which preserves provider and API tier/
+endpoint; series and native contract; event and home-team proposition mapping;
+interval and end-period semantics; complete returned YES bid, YES ask, and
+transaction-price OHLC; volume/open interest when present; raw digest/archive
+reference; distinct retrieval and candle timestamps; schema/identity versions;
+validation, limitations, identity, and provenance. Retrieval after Outcome is
+expected and never represented as contemporaneous capture; a historical
+provider timestamp does not change that acquisition classification. The
+standalone Protocol's population, selection, representation, scoring, Coverage,
+and report rules are fixed before the archive query and any calculation or
+interpretation. That precommitment prevents result-directed choice but does not
+make acquisition prospective. It is not a
+`MarketObservation` and cannot satisfy positive-depth
+`MarketProbabilityDerivation`.
+
+`HistoricalCandleProbabilityDerivation` derives an exact-decimal midpoint from the latest real
+one-minute candle satisfying `T-6h-5m < end_period_ts <= T-6h` and containing
+both closing home-team YES bid and ask. Historical and live candle schemas may
+be normalized without changing decimal meaning, but candle closes are
+same-candle aggregates, not documented simultaneous quotes. Synthetic candles,
+late observations, fallbacks, null repair, away-side substitution, and claims of
+positive depth or executability from volume/open interest fail closed.
+Retrospective Coverage separately reconciles schedule universe, rule-derived
+happy-path exclusion, Kalshi offering, and home-team measurement, with offered-
+over-eligible and measurable-over-offered rates and valid empty populations.
+
+The derivation references its standalone Protocol, candle Evidence,
+authoritative Schedule Evidence, source/series/contract/event/proposition,
+target and versioned window rule, complete candidate authority, selected end and
+distance, exact bounds, midpoint/complement, transformations, algorithms,
+limitations, identity, and provenance. It validates exact home-team mapping,
+MLB/Kalshi minute corroboration, real one-minute semantics, latest-candidate
+selection, and exact arithmetic and fails closed on ambiguity or fallback. Raw
+content remains Evidence; selection is supporting Analysis.
+
+This retrospective Evidence cannot repair or enter prospective Evidence, feed
+paired Comparative Performance under the current Methodology, or establish an
+Edge Claim, Market Edge, applicability, Policy, Governance, wagering,
+Opportunity Analysis, or production authority. Reports disclose archive
+availability, survivorship, provider revision, timestamp, schedule-history,
+aggregation, and non-simultaneity limitations where applicable.
+
+The prospective path reuses PR16's positive-depth, two-sided home-team YES
+order-book midpoint. Exactly five slots cover `target_at` through the inclusive
+`target_at + 5 minutes` endpoint: slots 0–3 are the half-open one-minute
+intervals beginning at minutes 0–3, and slot 4 is
+`[target_at + 4m, target_at + 5m]`. The first current-slot invocation may execute
+at most one provider acquisition only if no earlier slot succeeded. Equality at
+the upper endpoint belongs to slot 4; later timestamps are prohibited. An
+invocation uses actual acquisition time and exact target distance, never
+backdates a current quote, executes a missed earlier slot, or performs catch-up
+acquisitions. Duplicate same-slot invocation is idempotent. Elapsed unresolved
+earlier slots receive deterministic non-acquisition `missed` dispositions,
+never fabricated attempts; the earliest successful slot is selected and later
+slots are skipped visibly. Every slot disposition is persisted. After the
+inclusive endpoint, unresolved slots become missed, no quote is acquired, and
+one idempotent terminal missed-window disposition is appended if none succeeded.
+No late or historical observation repairs it. Price and Outcome never influence
+slot selection. The schedule-derived population
+keeps ordinary games, explicitly numbered doubleheaders, postponements,
+reschedules as new opportunities, suspensions pending Outcome, cancellations,
+ambiguous mappings, and acquisition or persistence failures visible without
+later-fact deletion.
+
+#### Evidence archive and acquisition boundary
+
+Raw Evidence remains outside Git in a local content-addressed, append-only
+filesystem archive. Paths use stable content identity or another deterministic
+non-semantic layout. Scientific identity excludes absolute path, hostname, user,
+filesystem timestamp, scheduler identity, and incidental ordering. A versioned
+append-only manifest records capture opportunity and attempt; sanitized request
+and endpoint; retrieval and effective timestamps; HTTP disposition and content
+type; schema version; raw digest and archive reference; validation result;
+software and Protocol versions; and correction or supersession lineage.
+
+Persistence is atomic. Duplicate invocation is idempotent; conflicting content
+under one semantic identity fails closed; interrupted writes never appear as
+valid Evidence. A rebuildable derived query index is non-authoritative. One
+configured secondary copy preserves completed immutable objects and manifest
+material and is digest-verified. Primary persistence determines capture success;
+backup health and lag are Operations diagnostics and never change Evidence
+identity or validity. Evidence, reports, archives, indexes, and secrets stay
+outside version control.
+
+One idempotent application CLI owns opportunity discovery, due-attempt
+calculation, retry rules, provider acquisition, atomic persistence, validation,
+failure dispositions, daily Outcome reconciliation, backup invocation/status,
+and diagnostics. It uses an injected clock and explicit `as_of` boundaries. A
+thin macOS `launchd` wrapper invokes it periodically and owns no scientific or
+analytical semantics. Sleeping, offline, or late machines produce visible
+missed opportunities; PR17 does not automate wake or power management. A future
+status/preflight surface may report upcoming windows, clock/timezone state,
+scheduler health, archive writability, backup freshness, and recent failures,
+but remains Operations rather than Evidence.
+
+An idempotent daily process appends MLB schedule and Outcome observations on
+state change. Corrections preserve prior observations and deterministic lineage;
+every report replays authoritative Outcome state at its explicit boundary.
+
+The filesystem and `launchd` are replaceable implementation seams, not Product
+boundaries. A future cloud scheduler or object store may replace them without
+changing Protocol, Evidence, identity, replay, Measurement, or reporting
+semantics. PR17A selects no cloud provider, service, database, deployment model,
+or migration plan and introduces no speculative distributed-system abstraction.
+
+Retrospective and prospective reports remain separate through cumulative and
+time-bounded performance and uncertainty. Neither repairs or reinterprets the
+other. A non-authoritative side-by-side Product summary cannot pool observations,
+create a combined metric, or become Measurement authority, and observed
+differences cannot be attributed solely to capture method.
+
+#### Versioned Measurement and standalone report paths
+
+Existing PR16B `ProbabilitySourceMeasurement` v1/v2 and all associated
+serialization, identities, registries, and graph behavior remain unchanged.
+PR17B implements explicit `ProbabilitySourceMeasurementV3` dispatch from exactly
+one typed derivation authorized by its standalone Protocol: retrospective uses
+`HistoricalCandleProbabilityDerivation`; prospective uses existing
+`MarketProbabilityDerivation`. Missing, multiple, unknown, foreign, wrong-kind,
+or mixed-within-Protocol derivations fail closed. V3 preserves the existing
+probability distribution, Outcome, Brier, extended-real Log Loss, and
+Calibration-input meanings plus complete typed lineage.
+
+Where existing Coverage, cumulative/time-bounded performance, uncertainty,
+reference, registry, replay, or graph contracts cannot consume V3 without
+reinterpretation, PR17B provides explicit versioned successors. Dispatch is by
+version and type, never optional fields. Historical identities remain stable.
+
+```text
+Retrospective:
+StandaloneProbabilitySourceProtocol
+        +
+HistoricalMarketCandleObservation
+        ↓
+HistoricalCandleProbabilityDerivation
+        +
+Authoritative Outcome Evidence
+        ↓
+ProbabilitySourceMeasurementV3
+        ↓
+ProbabilitySourcePerformance successor/reuse
+        ↓
+ProbabilitySourcePerformanceReport
+
+Prospective:
+StandaloneProbabilitySourceProtocol
+        +
+MarketObservation
+        ↓
+MarketProbabilityDerivation
+        +
+Authoritative Outcome Evidence
+        ↓
+ProbabilitySourceMeasurementV3
+        ↓
+ProbabilitySourcePerformance successor/reuse
+        ↓
+ProbabilitySourcePerformanceReport
+```
+
+`ProbabilitySourcePerformanceReport` is immutable, deterministic,
+content-addressed, and governed by exactly one standalone Protocol, source,
+role, domain, and boundary. It references rather than recomputes exactly one
+compatible cumulative performance, one applicable compatible time-bounded
+performance, their authoritative Coverage, full three-level/failure
+reconciliation, uncertainty, limitations, and provenance. Protocol,
+representation, rules, boundary, and window compatibility are exact. Empty
+populations remain reportable; unknown, duplicate, foreign, conflicting, or
+multiple compatible-looking authorities fail closed. Corrections produce new
+report identities.
+
+It has no Claim Set, Edge Claim, challenger, pair, Comparative Performance or
+Drift, Burden-of-Proof disposition, Review conclusion, Market Edge,
+applicability, Policy, Governance, or production authority. Existing
+`ComparativePerformanceReport` and its PR15/PR16B standalone benchmark
+references are unchanged and are not reinterpreted. PR17C and PR17D each own a
+separate `ProbabilitySourcePerformanceReport`.
+
 ## Forecast Intelligence
 
 Forecast Intelligence is the umbrella architectural capability that transforms immutable Evidence and Measurement into reproducible knowledge about the standalone and comparative performance of Probability Sources.
@@ -469,15 +692,28 @@ Forecast Intelligence is the umbrella architectural capability that transforms i
 
 **Does not own:** Evidence, Product Owner decisions, Forecast Policy lifecycle, production authority, Opportunity Analysis, or Execution.
 
-### Research Protocols
+### Research Protocol families
 
-A Research Protocol is an immutable, versioned specification for a reproducible investigation. It fixes the research question, population, benchmark and alternative Probability Sources, synchronization and eligibility conditions, measurements, analytical rules, burden of proof, surveillance, and review boundaries before outcomes are interpreted.
+`ComparativeResearchProtocol` and `StandaloneProbabilitySourceProtocol` are
+explicit sibling authorities. The implemented `ResearchProtocol` and
+`ResearchProtocolV2` remain the comparative contracts: they fix benchmark and
+challengers, synchronization, comparative rules, Burden of Proof, surveillance,
+Review, Claim Set, and Edge Claim authority. One comparative Protocol may
+investigate multiple Alternative Probability Sources, and each distinct
+benchmark-versus-challenger hypothesis has its own Edge Claim.
 
-One Research Protocol may investigate multiple Alternative Probability Sources. Each distinct Alternative Probability Source-versus-Market Benchmark hypothesis within a Research Domain has its own Edge Claim.
+The standalone sibling fixes exactly one source investigation and the
+descriptive standalone authority listed above. It is never constructed by
+emptying or wrapping a comparative contract and gains no comparative semantics
+merely because its source serves as a benchmark elsewhere.
 
 The Methodology governs protocol meaning. Architecture must preserve protocol identity, version, material inputs, and provenance without embedding protocol rules into provider adapters.
 
-First-class Research Protocol contracts are implemented. Existing evaluation windows, eligibility policies, segmentation versions, and adequacy rules remain narrower precursors and must not be presented as protocol-governed Evidence collection or the canonical Comparative Performance implementation.
+First-class comparative Research Protocol contracts are implemented. The
+standalone sibling remains PR17B implementation scope. Existing evaluation
+windows, eligibility policies, segmentation versions, and adequacy rules remain
+narrower precursors and must not be presented as either family or as canonical
+Comparative Performance implementation.
 
 ### Protocol Claim Sets
 
@@ -870,11 +1106,11 @@ An applicable obligation remains unresolved unless a qualifying completed Resear
 
 While any qualifying obligation remains unresolved, Current Scientific Applicability is suspended and operational reliance must fail closed, while the latest completed scientific conclusion and historical Market Edge remain intact. Scientific inapplicability neither creates nor revokes Governance authority and does not modify Governance History.
 
-Current Scientific Applicability is a deterministic replayable Forecast Intelligence projection owned by PR18; it is not stored as mutable authoritative state. At an explicit timezone-aware `as_of` boundary, the projection identifies the latest completed conclusion for the Edge Claim, all scheduled obligations due by `as_of`, all valid material-event artifacts effective by `as_of`, and the obligations explicitly covered by completed Reviews. Unresolved obligations suspend applicability. Otherwise only Supported or Strongly Supported may support applicability, subject to every other protocol, Research Domain, Research Population, Evidence, analytical, and compatibility requirement. Resolving an obligation does not by itself restore applicability.
+Current Scientific Applicability is a deterministic replayable Forecast Intelligence projection owned by PR19; it is not stored as mutable authoritative state. At an explicit timezone-aware `as_of` boundary, the projection identifies the latest completed conclusion for the Edge Claim, all scheduled obligations due by `as_of`, all valid material-event artifacts effective by `as_of`, and the obligations explicitly covered by completed Reviews. Unresolved obligations suspend applicability. Otherwise only Supported or Strongly Supported may support applicability, subject to every other protocol, Research Domain, Research Population, Evidence, analytical, and compatibility requirement. Resolving an obligation does not by itself restore applicability.
 
 PR13 provides the immutable structures needed for this replay: claim and Market Edge relationships, scheduled review-boundary identities, authorized material-event references, effective and completion times, completed conclusions, explicit obligation coverage, deterministic identities, provenance, serialization, and fail-closed validation. Bounded typed supporting value objects may express these relationships; they are not additional top-level research contracts and must not become mutable workflow or current-state objects.
 
-PR13 does not calculate or store authoritative Current Scientific Applicability, implement the canonical Comparative Performance Report, or introduce a generic `ReviewTrigger`, mutable review lifecycle, workflow manager, always-on surveillance service, Workspace/UI state, or additional durable current-applicability contract. Workspace or UI state cannot originate, resolve, or override Under Review. PR18 owns Current Scientific Applicability and Policy Recommendation without granting Governance or operational authority.
+PR13 does not calculate or store authoritative Current Scientific Applicability, implement the canonical Comparative Performance Report, or introduce a generic `ReviewTrigger`, mutable review lifecycle, workflow manager, always-on surveillance service, Workspace/UI state, or additional durable current-applicability contract. Workspace or UI state cannot originate, resolve, or override Under Review. PR19 owns Current Scientific Applicability and Policy Recommendation without granting Governance or operational authority.
 
 This personal hobby platform does not require speculative always-on services. Scheduled local analysis and explicit reruns are sufficient until operational evidence justifies more infrastructure.
 
@@ -1198,8 +1434,8 @@ The following gaps are architectural state, not roadmap commitments:
 | Protocol Claim Set, time-bounded Comparative Performance, comparative Drift analysis, and canonical Comparative Performance Report | Implemented by PR15 with deterministic replay, authoritative claim completeness, and PR13 reference compatibility |
 | Standalone Probability Source methodology and target architecture | Governed by merged PR16A; its synthetic/offline contract path is implemented by PR16B |
 | Market probability derivation, standalone Measurement, Coverage, cumulative/time-bounded performance, and report integration | Implemented in PR16B for the broad Research Domain with synthetic offline Evidence |
-| Prospective MLB operation and first real Market Benchmark report | Approved for PR17; not implemented |
-| Current Scientific Applicability and Policy Recommendation | Approved for PR18; not implemented |
+| Separate retrospective/prospective Kalshi MLB authority | Defined by PR17A; implementation and activation remain PR17B–PR17D |
+| Current Scientific Applicability and Policy Recommendation | Approved for PR19; not implemented |
 | Edge Claim, Market Edge, Research Review, and Drift Surveillance contracts | Implemented |
 | Policy Hypothesis aligned explicitly to supported Market Edges | Product-approved; existing symbol has older analytical-candidate semantics |
 | Forecast Policy, deterministic execution, and Policy Forecast | Implemented |

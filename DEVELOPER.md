@@ -333,7 +333,7 @@ and lifecycle transitions.
 
 `PolicyProposal` is the current implementation precursor to the canonical
 Policy Recommendation. The implemented `PolicyHypothesis` retains its
-historical candidate-strategy semantics until PR19 aligns it with the Product
+historical candidate-strategy semantics until PR20 aligns it with the Product
 definition: a proposed operational strategy for exploiting one or more
 empirically supported Market Edges. Neither implementation symbol should be
 treated as though that migration has already occurred.
@@ -390,7 +390,7 @@ applies identity transformation and weight `1.0`, validates the complete binary
 distribution without silent correction, and fails closed with no fallback when
 the provider is absent. This neither approves nor activates the policy. PR12
 owns governance and lifecycle state and selects the production-authoritative
-Forecast Policy. PR21, not PR11, will separately migrate Opportunity Analysis
+Forecast Policy. PR22, not PR11, will separately migrate Opportunity Analysis
 and the Opportunity Board to governance-authorized Policy Forecast input.
 
 Run the bounded fixture inspection with:
@@ -510,20 +510,108 @@ The same Snapshot-authority replay now governs direct paired and Coverage
 construction, and Market Evidence must match the Protocol benchmark provider,
 Market Series, and native provider-market identity.
 
+## PR17A acquisition and replay boundaries
+
+PR17A is documentation authority only. Kalshi is the sole Probability Source
+for two separate 2026 MLB regular-season game-winner standalone Protocols. Both
+fix the home-team YES proposition as authoritative; away-team markets are
+diagnostic and cannot repair or influence derivation or population membership.
+MLB Stats API owns schedule, state, and Outcome facts.
+
+These are `StandaloneProbabilitySourceProtocol` siblings, not empty-challenger
+uses of implemented comparative `ResearchProtocol`/`ResearchProtocolV2`.
+Existing comparative contracts and all PR16B v1/v2 identities remain unchanged.
+PR17B must implement the standalone Protocol and canonical
+`ProbabilitySourcePerformanceReport`; the latter references exactly one
+compatible cumulative and applicable time-bounded performance plus Coverage,
+uncertainty, limitations, and provenance and never requires Claim Sets or pairs.
+
+The retrospective Protocol covers rule-derived ordinary games before the future
+activation boundary. Its collector will select the latest real one-minute candle
+strictly within `(T-6h-5m, T-6h]` only when that candle has both home-team YES
+bid and ask closes. Treat these as same-candle aggregates, never simultaneous
+quotes, positive depth, or executable spread. Do not enable synthetic
+continuity, fallbacks, null filling, away-side substitution, or late repair.
+Persist the response as `HistoricalMarketCandleObservation`, including complete
+returned bid/ask/transaction OHLC and distinct retrieval/effective times. Derive
+with `HistoricalCandleProbabilityDerivation`. Never pass candle Evidence to
+`MarketProbabilityDerivation` or represent it as `MarketObservation`.
+Freeze the retrospective population, selection, representation, scoring,
+Coverage, and report rules before querying the archive or calculating results.
+This precommitment does not make acquisition prospective. Never use the result
+to repair or enter a prospective population or paired Comparative Performance.
+Preserve archive availability, survivorship, provider revision, timestamp,
+schedule-history, aggregation, and non-simultaneity limitations.
+
+The prospective Protocol includes every schedule-derived opportunity at or
+after activation. It has exactly five slots: slots 0–3 are half-open one-minute
+intervals from `target_at` through minute 4, while slot 4 is
+`[target_at + 4m, target_at + 5m]`. Exact equality at the upper endpoint belongs
+to slot 4; later acquisition is prohibited. The first invocation in a current
+slot may execute at most one provider call only if no earlier slot succeeded.
+It preserves actual acquisition time and exact target distance, never backdates
+or catches up a missed slot, and is idempotent within a slot.
+Append deterministic non-acquisition `missed` dispositions for earlier elapsed
+unresolved slots. Select the earliest successful slot; after the inclusive
+endpoint mark all unresolved slots missed, acquire nothing, and append one idempotent terminal
+failure if no slot succeeded. Preserve every slot disposition. Postponements, reschedules,
+doubleheaders, suspensions, cancellations, ambiguous mappings, and operational
+failures remain explicit; reschedules create new opportunities and never rewrite
+prior Evidence.
+
+PR17B will implement one idempotent application CLI with an injected clock and
+explicit `as_of`. It will own discovery, due-attempt calculation, acquisition,
+validation, atomic persistence, failure dispositions, daily Outcome
+reconciliation, backup invocation/status, and diagnostics. A thin `launchd`
+wrapper may invoke it periodically but owns no scientific semantics and does not
+wake the Mac. Late, asleep, or offline execution produces visible failure.
+
+Raw bodies and versioned append-only manifests belong outside Git in a local
+content-addressed archive. Writes must be atomic and duplicate-safe; semantic
+content conflicts fail closed; interrupted writes are invalid. Scientific
+identity excludes paths, host/user identity, filesystem timestamps, scheduler
+identity, and incidental ordering. A derived index is rebuildable and
+non-authoritative. One digest-verified secondary copy protects completed objects
+and manifest material, but primary persistence alone determines capture success;
+backup lag and health are Operations diagnostics.
+
+After PR17B dry-run validation, the Product Owner may approve a future Eastern
+calendar date before it begins. Midnight at that date becomes immutable
+timezone-aware `activation_at`; PR17A sets no date. Dry-run material cannot
+become Evidence, and no retrospective performance may be calculated before the
+boundary is fixed. Retrospective and prospective reports remain independent;
+historical candles cannot repair prospective capture, and any side-by-side
+summary cannot pool or create analytical authority.
+
+The filesystem and `launchd` are replaceable seams. Do not choose a cloud
+provider, database, deployment model, or migration plan under PR17A.
+
+PR17B uses explicit `ProbabilitySourceMeasurementV3` dispatch: existing
+`MarketProbabilityDerivation` for prospective Protocols and
+`HistoricalCandleProbabilityDerivation` for retrospective Protocols. Exactly
+one typed derivation is required; mixed, wrong-kind, missing, multiple, unknown,
+or foreign references fail closed. Add versioned Coverage/performance/reference/
+report registries and graph validation wherever current typed v1/v2 contracts
+cannot consume V3 without reinterpretation. Do not add optional fields to old
+contracts.
+
 ## Forward implementation boundaries
 
 The remaining v1.1.0 sequence after implemented PR16B analysis is:
 
-1. **PR17 — Prospective MLB Research Operation and First Report:** collect durable prospective Evidence and produce the first real report.
-2. **PR18 — Current Scientific Applicability and Policy Recommendation:** add deterministic applicability replay and non-authoritative recommendations.
-3. **PR19 — Policy Hypothesis Alignment:** align `PolicyHypothesis` with one or
+1. **PR17A — Retrospective and Prospective Methodology and Architecture:** documentation authority only (this change).
+2. **PR17B — Acquisition, Persistence, Validation, Replay, and Operations Tooling:** implement and dry-run without activating either Protocol.
+3. **PR17C — Activation, Retrospective Report, and Prospective Start:** freeze the future boundary, produce the separate retrospective report, and begin collection.
+4. **PR17D — Prospective Close and Separate Report:** close after the 2026 regular season and publish the independent prospective report.
+5. **PR19 — Current Scientific Applicability and Policy Recommendation:** add deterministic applicability replay and non-authoritative recommendations.
+6. **PR20 — Policy Hypothesis Alignment:** align `PolicyHypothesis` with one or
    more empirically supported Market Edges while keeping it non-authoritative
    and non-executable.
-4. **PR20 — Forecast Intelligence Workspace:** implement the Product Owner's
+7. **PR21 — Forecast Intelligence Workspace:** implement the Product Owner's
    principal research and governance surface.
-5. **PR21 — Policy Forecast Opportunity Integration:** migrate Opportunity
+8. **PR22 — Policy Forecast Opportunity Integration:** migrate Opportunity
    Analysis and the Opportunity Board to governance-authorized Policy Forecasts.
-6. **PR22 — v1.1.0 Integration and Release Readiness:** validate the integrated
+9. **PR23 — v1.1.0 Integration and Release Readiness:** validate the integrated
    lifecycle, compatibility, documentation, and release gates.
 
 The Release Plan owns detailed scope, dependencies, exclusions, and gates. Do

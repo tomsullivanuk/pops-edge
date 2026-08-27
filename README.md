@@ -80,7 +80,7 @@ observation eligibility/selection are explicit, versioned, deterministic, and
 fail closed. Each Policy Forecast is canonical only to its specific policy
 execution; multiple outputs may coexist for an event. Policies and forecasts
 contain no approval or lifecycle state; PR12 governance alone determines which
-policy, if any, has production authority. PR21 remains responsible for selecting
+policy, if any, has production authority. PR22 remains responsible for selecting
 a compatible Policy Forecast execution for consumption. The current Opportunity
 Board continues to consume DRatings directly until that bounded migration.
 
@@ -119,9 +119,32 @@ Comparative Performance Report are implemented by PR15 in
 `forecast_comparative_reporting.py`; its offline inspector is
 `inspect_forecast_comparative_reporting.py`. Complete report membership is
 governed by the immutable `ProtocolClaimSet` effective at the report boundary.
-PR16A defines the documentation authority for standalone Probability Source performance. PR16B implements the deterministic provider-neutral path, first exercised with synthetic offline Kalshi-shaped MLB Market Evidence. PR17 remains responsible for prospective MLB operation and the first empirical report. Current Scientific Applicability and Policy Recommendation remain future PR18 work. The Forecast Intelligence
+PR16A defines the documentation authority for standalone Probability Source
+performance. PR16B implements the deterministic provider-neutral path, first
+exercised with synthetic offline Kalshi-shaped MLB Market Evidence. PR17A now
+defines separate retrospective historical-candlestick and prospective point-in-
+time order-book Kalshi MLB standalone Protocols. Both use the home-team YES
+representation; preserve independent populations, Coverage, Measurements,
+performance, uncertainty, limitations, and reports; and create no scientific,
+Policy, Governance, wagering, or production authority. PR17B–PR17D retain
+implementation, activation, collection, and separate-report ownership. Current
+Scientific Applicability and Policy Recommendation remain future PR19 work. The Forecast Intelligence
 Workspace remains a later product surface. Research contracts create neither
 Governance nor production authority.
+
+PR17A also distinguishes the new `StandaloneProbabilitySourceProtocol` and
+`ProbabilitySourcePerformanceReport` from the unchanged comparative Protocol
+and report contracts. Retrospective candles use their own immutable Evidence and
+derivation path rather than PR16B positive-depth order-book semantics. The
+prospective window contains five non-backdating slots: slots 0–3 are half-open
+and slot 4 includes the exact `target_at + 5 minutes` endpoint. Delayed
+execution cannot catch up or relabel a current quote as an earlier attempt, and
+anything later than the endpoint is prohibited.
+
+Retrospective archive acquisition remains retrospective even though its
+standalone Protocol is fixed before querying and analysis. Historical effective
+time and later acquisition time remain distinct, and this Evidence cannot repair
+or enter prospective research or support paired authority.
 
 ## Documentation
 
@@ -131,7 +154,7 @@ Governance nor production authority.
 - [Roadmap](ROADMAP.md) — ordered product direction
 - [Backlog](BACKLOG.md) — deferred and uncommitted work
 - [Changelog](CHANGELOG.md) — version history
-- [v1.1.0 release plan](docs/RELEASE_PLAN_v1.1.0.md) — PR1–PR22 sequence, including PR16A/PR16B
+- [v1.1.0 release plan](docs/RELEASE_PLAN_v1.1.0.md) — PR1–PR23 sequence, including PR16A/PR16B and PR17A–PR17D
 - [v1.1.0 checkpoint through PR6](docs/V1.1.0_CHECKPOINT_THROUGH_PR6.md) —
   implemented platform baseline before MLB market valuation
 - [Codex workflow](docs/CODEX_WORKFLOW.md) — pull-request and completion-report

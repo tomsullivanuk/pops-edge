@@ -412,7 +412,7 @@ Policy Hypothesis does not automatically become this separate executable
 production definition, and offline execution does not imply active status.
 Wall-clock run time is absent from canonical analytical serialization. PR12
 governance will select which Policy Forecast, if any, has production authority;
-PR21 will consume that authorized output.
+PR22 will consume that authorized output.
 
 **Implemented boundary:** immutable provider-neutral Forecast Policy and
 versioned rule components; distinct structured production eligibility;
@@ -462,14 +462,14 @@ Governance Record identities; append-only replay reproduces current and
 historical lifecycle and authority without mutable state; Reject is terminal;
 missing or conflicting production authority fails closed; Research artifacts
 remain non-executable; changing effective time or scope changes record identity;
-PR21 consumer migration remains deferred.
+PR22 consumer migration remains deferred.
 
 **Implemented boundary:** PR12 now provides immutable deterministic Governance
 Scope and Governance Record contracts, append-only Governance History,
 historical lifecycle derivation, structured fail-closed conflict diagnostics,
 and exclusive production-policy resolution from a caller-supplied immutable
 policy registry. Fixture-only inspection is available; no operational workflow
-selects or executes a governed policy, and PR21 remains deferred.
+selects or executes a governed policy, and PR22 remains deferred.
 Stable Product Owner ID is identifying while display name is optional metadata;
 equivalent same-time decisions retain all supporting record IDs, materially
 different decisions fail closed, and only conflicts involving current or
@@ -512,7 +512,7 @@ and provenance values. A compact offline MLB fixture, inspector, focused tests,
 and pure `validate_research_contracts(...)` graph validation exercise scheduled
 and Drift obligation chronology and first-qualifying Market Edge recognition.
 The canonical Comparative Performance Report and deterministic Current
-Scientific Applicability projection remain PR15 and PR18 responsibilities,
+Scientific Applicability projection remain PR15 and PR19 responsibilities,
 respectively.
 
 ### PR14 — Research Snapshot, Comparative Measurement, and Comparative Performance
@@ -534,7 +534,7 @@ rule-derived failure-inclusive Coverage, paired bootstrap uncertainty,
 extended-real Log Loss, and version-2 fixed-bin Calibration. Its synthetic
 offline fixture and inspector exercise eligibility, historical replay, and
 paired analysis. Canonical reporting remains PR15 and
-Current Scientific Applicability remains PR18.
+Current Scientific Applicability remains PR19.
 
 ### PR15 — Comparative Performance Reporting and Surveillance
 
@@ -568,7 +568,7 @@ fails closed unless exactly one surveillance-window rule is active.
 Comparative Performance; Research Review conclusions; Current Scientific
 Applicability; Policy Recommendation; Policy Hypothesis; Governance; Workspace;
 Opportunity Analysis; collection/workflow infrastructure; or production
-authority. PR18 continues to own Current Scientific Applicability and Policy
+authority. PR19 continues to own Current Scientific Applicability and Policy
 Recommendation.
 
 **Gate:** deterministic Claim Set replay establishes one complete authoritative
@@ -590,7 +590,7 @@ offline fixture and inspector. `forecast_research_contracts.py` supplies the
 supporting immutable `ProtocolClaimSet`, deterministic lineage replay, and
 scheduled-boundary admission validation; canonical report completeness derives
 from that authority. Current Scientific Applicability and Policy Recommendation
-remain deferred to PR18.
+remain deferred to PR19.
 
 ### PR16A — Standalone Probability Source Performance Methodology and Architecture
 
@@ -607,8 +607,8 @@ remain deferred to PR18.
 ### PR16B — Standalone Market Benchmark Measurement Implementation
 
 **Implementation state:** implemented as a deterministic provider-neutral contract,
-replay, validation, fixture, test, and inspection path. Prospective operation and
-the first empirical report remain PR17.
+replay, validation, fixture, test, and inspection path. Real acquisition and the
+first empirical reports remain in PR17B–PR17D.
 
 **Purpose:** deterministically implement standalone Probability Source performance, first exercised for Kalshi in the MLB Market Benchmark role while preserving provider-neutral and sport-neutral authority.
 
@@ -616,59 +616,180 @@ the first empirical report remain PR17.
 
 **Dependencies:** PR16A-approved methodology and architecture plus implemented PR14/PR15 foundations.
 
-**Exclusions:** live collection, prospective operation, first empirical report, standalone Drift, Research Review conclusions, Current Scientific Applicability, Policy, Governance, Opportunity Analysis, wagering, or production authority.
+**Exclusions:** real acquisition, Protocol activation, empirical reports,
+standalone Drift, Research Review conclusions, Current Scientific Applicability,
+Policy, Governance, Opportunity Analysis, wagering, or production authority.
 
 **Gate:** deterministic compatible inputs reproduce reconciled standalone Measurements, exact Coverage, cumulative and `(start, end]` time-bounded performance, uncertainty edge cases, historical replay, and report references without challenger state changing standalone membership.
 
-### PR17 — Prospective MLB Research Operation and First Report
+### PR17 feasibility spike — Kalshi historical API feasibility
 
-**Purpose:** operate the prospectively fixed MLB Protocol and produce the first real Kalshi Market Benchmark report without redefining the estimand after outcomes are known.
+**Implementation state:** completed as a bounded read-only investigation.
 
-**Scope:** scheduled prospective collection; durable real Evidence; operational diagnostics and failures; authoritative outcome collection; deterministic replay through PR16B; and the first empirical standalone Market Benchmark and paired Comparative Performance report.
+**Purpose:** establish whether public Kalshi event, historical-market, cutoff,
+and one-minute candlestick APIs can support deterministic retrospective
+discovery and reconstruction before any Protocol is implemented or activated.
 
-**Dependencies:** PR16B implementation and the existing MLB collection, outcome, paired-analysis, and reporting foundations.
+**Finding:** technically feasible subject to documented candle-semantic,
+historical-schedule, and operational rate-limit limitations. Temporary responses,
+scripts, manifests, hashes, and observed values are not durable Evidence,
+repository authority, or empirical findings and must not be committed or
+reclassified.
 
-**Exclusions:** retrospective Evidence reconstruction, post-outcome estimand changes, scientific conclusions, Current Scientific Applicability, Policy, Governance, wagering, or production authority.
+### PR17A — Retrospective and Prospective Kalshi MLB Methodology and Architecture
 
-**Gate:** the first report is reproducible from durable prospective Evidence, exposes collection failures and complete standalone Coverage, and preserves the independently governed paired populations.
+**Purpose:** establish separate documentation authority for one retrospective
+historical-candlestick study and one prospective point-in-time order-book study
+of Kalshi 2026 MLB regular-season game-winner probabilities.
 
-### PR18 — Current Scientific Applicability and Policy Recommendation
+**Scope:** separate standalone Protocol identities, populations, estimands,
+Coverage, Measurements, performance, uncertainty, limitations, and reports;
+explicit comparative and standalone Protocol families; unchanged implemented
+comparative contracts; canonical `ProbabilitySourcePerformanceReport`;
+`HistoricalMarketCandleObservation`, `HistoricalCandleProbabilityDerivation`,
+and version-dispatched Measurement/performance/report successor authority;
+distinct historical effective and later acquisition times; precommitted
+retrospective archive-query rules without retrospective relabeling or
+prospective repair;
+home-team YES as the sole authoritative representation; MLB schedule and Outcome
+authority; immutable activation mechanism; retrospective happy-path eligibility
+and exact candle selection; prospective all-opportunity accounting and fixed
+capture attempts; correction-aware replay; local content-addressed append-only
+Evidence storage and secondary copy; idempotent CLI and thin `launchd` scheduling
+seam; and non-authoritative side-by-side Product presentation.
+
+**Dependencies:** PR16A methodology, PR16B implementation, PR14/PR15 replay and
+reporting foundations, and the qualitative PR17 feasibility decision.
+
+**Exclusions:** no code, contracts, tests, fixtures, collection, Evidence,
+activation timestamp, empirical metric or report, cloud-provider selection,
+alternative source, paired work, standalone Drift, scientific conclusion,
+Current Scientific Applicability, Policy, Governance, wagering, Opportunity
+Analysis, or production authority.
+
+**Gate:** the seven governing documents agree; populations are contiguous and
+non-overlapping; home-team authority and failure accounting are explicit; candle
+semantics have a truthful typed Evidence-to-Measurement path without weakening
+PR16B and disclose retrospective archive limitations; standalone reports require
+no comparative authority; five prospective
+slots include the exact approved upper endpoint without a sixth attempt and
+cannot backdate or catch up; prospective failures cannot be repaired; storage,
+backup, scheduling, Outcome, replay, and reporting boundaries are deterministic;
+and release sequencing is consistent through PR23.
+
+### PR17B — Acquisition, Persistence, Validation, Replay, and Operations Tooling
+
+**Purpose:** implement and dry-run validate the acquisition boundary without
+activating either Protocol or creating research Evidence.
+
+**Scope:** provider and schedule acquisition; deterministic opportunity and
+five-slot attempt calculation; positive-depth order-book and historical-candle
+validation; standalone Protocol, candle Evidence/derivation, V3 Measurement and
+required successor analytical/registry/graph contracts;
+atomic content-addressed archive and append-only manifest; duplicate/conflict
+handling; correction-aware replay; rebuildable index; secondary-copy integrity;
+idempotent application CLI; thin `launchd` wrapper; Outcome reconciliation;
+fixtures, tests, inspectors; and status/preflight diagnostics.
+
+**Dependencies:** PR17A authority and PR16B analytical contracts.
+
+**Exclusions:** no activation approval, durable research Evidence, empirical
+analysis or report, machine wake automation, cloud selection, Policy,
+Governance, wagering, Opportunity Analysis, or production authority.
+
+**Gate:** dry runs reproduce acquisition, persistence, validation, retry,
+failure, correction, backup, and replay behavior under injected clocks and
+explicit boundaries; delayed invocation never backdates or catches up; typed
+derivation dispatch and standalone report replay fail closed; dry-run material is
+segregated and cannot become Evidence.
+
+### PR17C — Activation, Retrospective Report, and Prospective Collection Start
+
+**Purpose:** freeze the contiguous study boundary, create durable retrospective
+Evidence and its separate report, and begin prospective collection.
+
+**Scope:** Product Owner approval of a future `America/New_York` calendar date
+before it begins; immutable timezone-aware midnight `activation_at`; durable
+archive population under the retrospective Protocol; deterministic retrospective
+Coverage, Measurement, performance, uncertainty, limitations, and report; and
+prospective collection beginning at the boundary.
+
+**Dependencies:** successful PR17B dry-run validation and explicit Product Owner
+activation approval.
+
+**Exclusions:** no pooled report, historical repair of prospective Evidence,
+paired analysis, scientific conclusion, Current Scientific Applicability,
+Policy, Governance, wagering, Opportunity Analysis, or production authority.
+
+**Gate:** the fixed boundary creates no gap, overlap, or mid-date split; the
+retrospective report replays only durable archived Evidence under its Protocol;
+the report is its own `ProbabilitySourcePerformanceReport`;
+and prospective opportunities and every attempted disposition begin visibly at
+the boundary.
+
+### PR17D — Prospective Observation Close and Separate Report
+
+**Purpose:** close the prospective observation period after the final 2026 MLB
+regular-season games and publish its separate standalone report.
+
+**Scope:** deterministic Outcome replay; complete prospective schedule-derived
+Coverage including failures and unresolved dispositions; valid Measurements;
+cumulative and time-bounded performance; uncertainty; limitations; and the
+prospective report plus an optional non-authoritative side-by-side Product
+summary.
+
+**Dependencies:** PR17C activation and completed prospective collection period.
+
+**Exclusions:** no retrospective extension or repair, pooled 2026 metric,
+causal attribution to capture method, postseason, paired analysis, standalone
+Drift, scientific conclusion, Current Scientific Applicability, Policy,
+Governance, wagering, Opportunity Analysis, or production authority.
+
+**Gate:** the prospective report is independently reproducible, truthfully
+represents valid empty or insufficient populations, and neither rewrites nor
+acquires authority from the retrospective report. It is a distinct
+`ProbabilitySourcePerformanceReport` under the prospective Protocol.
+
+### PR19 — Current Scientific Applicability and Policy Recommendation
 
 **Purpose:** derive current scientific applicability and advisory Policy Recommendations from immutable research history.
 
 **Scope:** deterministic Current Scientific Applicability projection at an explicit timezone-aware `as_of` boundary; complete scheduled and material-event obligation replay; and non-authoritative Policy Recommendation aligned with the legacy `PolicyProposal` precursor.
 
-**Dependencies:** PR13 contracts, PR15 canonical Comparative Performance Reports, PR16B standalone report integration, and PR17 prospective findings.
+**Dependencies:** PR13 contracts, PR15 canonical Comparative Performance Reports,
+PR16B standalone report integration, and separate PR17C/PR17D findings.
 
 **Exclusions:** mutable applicability state, Policy Hypothesis alignment, Product Owner Governance decisions, Forecast Policy, Workspace, or operational authority.
 
 **Gate:** replay preserves historical Reviews and Market Edges, fails closed on unresolved obligations or incompatibility, and creates neither Governance nor production authority.
 
-### PR19 — Policy Hypothesis Alignment
+### PR20 — Policy Hypothesis Alignment
 
 **Purpose:** align the implemented `PolicyHypothesis` with the finalized Product definition: a proposed operational strategy for exploiting one or more empirically supported Market Edges.
 
 **Scope:** explicit linkage to supporting Market Edges and Forecast Intelligence; deterministic identity and provenance; multiple competing hypotheses over the same empirical foundation; and alignment of existing candidate-strategy semantics.
 
-**Dependencies:** PR13 Edge Claim and Market Edge contracts and PR18 applicability and recommendation outputs.
+**Dependencies:** PR13 Edge Claim and Market Edge contracts and PR19 applicability and recommendation outputs.
 
 **Exclusions:** a Policy Hypothesis remains non-authoritative, is not Evidence or a Forecast Policy, and does not redesign Product Owner Governance.
 
 **Gate:** aligned Policy Hypotheses remain reproducible and non-executable, and no hypothesis grants itself production authority or mutates Governance.
 
-### PR20 — Forecast Intelligence Workspace
+### PR21 — Forecast Intelligence Workspace
 
 **Purpose:** implement the first deterministic, read-only Forecast Intelligence Workspace as a surface over existing Forecast Intelligence and Governance context.
 
 **Scope:** one locally generated workspace; shared explicit research and governance context; Comparative Performance and Reports; Edge Claims, Market Edges, Research Reviews, and Drift Surveillance; Policy Recommendations and Policy Hypotheses; Product Owner Governance context; diagnostics; and provenance.
 
-**Dependencies:** PR13–PR19 canonical research, Forecast Intelligence, applicability, recommendation, and Policy Hypothesis contracts, plus completed Governance replay.
+**Dependencies:** PR13–PR20 canonical research, Forecast Intelligence,
+applicability, recommendation, and Policy Hypothesis contracts, plus completed
+Governance replay.
 
 **Exclusions:** database, browser persistence, execution, governance authority, mutable business state, or independent analytical rules.
 
 **Gate:** identical immutable inputs and context produce substantively identical projections; the Workspace cannot create Governance Records or production behavior.
 
-### PR21 — Policy Forecast Opportunity Integration
+### PR22 — Policy Forecast Opportunity Integration
 
 **Purpose:** complete the migration from direct-provider Opportunity Analysis to governance-authorized Policy Forecast consumption.
 
@@ -691,13 +812,16 @@ Opportunity Analysis
 - preserve existing position semantics and Opportunity Board behavior; and
 - preserve complete provenance and fail-closed validation.
 
-**Dependencies:** completed PR11 Forecast Policy and Policy Forecast, completed PR12 Governance, and aligned PR13–PR19 research-to-policy contracts. The Workspace is not an operational dependency, but PR20 precedes this work in the release sequence.
+**Dependencies:** completed PR11 Forecast Policy and Policy Forecast, completed
+PR12 Governance, and aligned PR13–PR20 research-to-policy contracts. The
+Workspace is not an operational dependency, but PR21 precedes this work in the
+release sequence.
 
 **Exclusions:** do not introduce historical Policy Forecast evaluation, automated Shadow measurement, new sizing Policy, or automated Execution.
 
 **Gate:** Opportunity Analysis consumes only a compatible Policy Forecast produced by the Governance-authorized Forecast Policy; the legacy direct-provider path is removed or explicitly isolated without changing World Cup behavior.
 
-### PR22 — v1.1.0 Integration and Release Readiness
+### PR23 — v1.1.0 Integration and Release Readiness
 
 **Purpose:** complete integration and release validation without introducing new analytical capabilities.
 
@@ -711,7 +835,7 @@ Opportunity Analysis
 - known-limitations and rollback review; and
 - release readiness.
 
-**Dependencies:** PR13–PR21 complete and their acceptance gates satisfied.
+**Dependencies:** PR13–PR22 complete and their acceptance gates satisfied.
 
 **Exclusions:** no new research, analytical, governance, policy, or operational capability.
 
@@ -734,7 +858,7 @@ Evidence → Measurement → cumulative Comparative Performance
         ↓
 Time-bounded surveillance, Drift analysis, and canonical reporting
         ↓
-Standalone source methodology, implementation, and prospective operation
+Standalone source methodology, implementation, retrospective reporting, and prospective operation
         ↓
 Current applicability and Policy Recommendation
         ↓
@@ -747,7 +871,7 @@ Operational integration
 Release validation
 ```
 
-PR20 precedes PR21 as a release-sequencing choice. The Forecast Intelligence
+PR21 precedes PR22 as a release-sequencing choice. The Forecast Intelligence
 Workspace is not an architectural runtime dependency of Policy Forecast
 Opportunity Integration.
 
