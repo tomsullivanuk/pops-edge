@@ -622,6 +622,10 @@ Policy, Governance, Opportunity Analysis, wagering, or production authority.
 
 **Gate:** deterministic compatible inputs reproduce reconciled standalone Measurements, exact Coverage, cumulative and `(start, end]` time-bounded performance, uncertainty edge cases, historical replay, and report references without challenger state changing standalone membership.
 
+The PR17B1 gate additionally requires schedule-derived opportunity completeness, deterministic standalone eligibility and per-opportunity Coverage classification, exact Protocol-governed scoring, Calibration, bootstrap, and report windows, candle-to-archive-page provenance, and explicit successor-registry delegation for reused legacy authority. These remain synthetic offline contract and replay capabilities; acquisition and activation remain downstream.
+
+The gate preserves cross-activation reschedules as independently partitioned opportunities, requires boundary-effective event-classification Evidence for eligibility, applies valid-capture-first prospective Coverage precedence with pure no-call missed-window semantics, and selects derivation/Outcome/Measurement authority without input-order dependence.
+
 ### PR17 feasibility spike — Kalshi historical API feasibility
 
 **Implementation state:** completed as a bounded read-only investigation.
@@ -677,21 +681,42 @@ cannot backdate or catch up; prospective failures cannot be repaired; storage,
 backup, scheduling, Outcome, replay, and reporting boundaries are deterministic;
 and release sequencing is consistent through PR23.
 
-### PR17B — Acquisition, Persistence, Validation, Replay, and Operations Tooling
+### PR17B1 — Standalone Scientific Contracts and Deterministic Replay
+
+**Purpose:** implement the complete offline scientific-contract and replay
+foundation without activation, provider I/O, persistence, or empirical results.
+
+**Scope:** `forecast_standalone_research.py`; closed tagged retrospective and
+prospective designs sharing one activation-boundary identity; historical query
+manifest/correction lineage; candle Evidence and derivation; typed five-slot
+attempts and terminal Snapshots; standalone market derivation; V3 Measurement,
+Coverage, performance, reports, registry dispatch, replay, graph validation;
+synthetic two-study fixture, inspector, and tests.
+
+**Gate:** deterministic offline replay produces exactly two separate report
+roots, rejects incomplete/ambiguous/cross-study authority, preserves v1/v2
+serialization and identities, and passes the full suite.
+
+The two roots are a canonical-fixture gate, not a universal validator
+requirement. Reusable replay accepts retrospective-only, prospective pre-report,
+prospective-only, and combined graphs; reconstructs downstream artifacts;
+preserves cursor-linked page/archive authority; binds Measurements to
+Schedule-derived opportunities; applies the deterministic bootstrap; and gives
+each cumulative or `(start, end]` bounded performance matching Coverage.
+
+### PR17B2 — Acquisition, Persistence, Validation, and Operations Tooling
 
 **Purpose:** implement and dry-run validate the acquisition boundary without
 activating either Protocol or creating research Evidence.
 
 **Scope:** provider and schedule acquisition; deterministic opportunity and
-five-slot attempt calculation; positive-depth order-book and historical-candle
-validation; standalone Protocol, candle Evidence/derivation, V3 Measurement and
-required successor analytical/registry/graph contracts;
+five-slot invocation; positive-depth order-book and historical-candle validation;
 atomic content-addressed archive and append-only manifest; duplicate/conflict
 handling; correction-aware replay; rebuildable index; secondary-copy integrity;
 idempotent application CLI; thin `launchd` wrapper; Outcome reconciliation;
 fixtures, tests, inspectors; and status/preflight diagnostics.
 
-**Dependencies:** PR17A authority and PR16B analytical contracts.
+**Dependencies:** PR17A authority, PR16B analytical contracts, and PR17B1.
 
 **Exclusions:** no activation approval, durable research Evidence, empirical
 analysis or report, machine wake automation, cloud selection, Policy,
@@ -714,7 +739,7 @@ archive population under the retrospective Protocol; deterministic retrospective
 Coverage, Measurement, performance, uncertainty, limitations, and report; and
 prospective collection beginning at the boundary.
 
-**Dependencies:** successful PR17B dry-run validation and explicit Product Owner
+**Dependencies:** successful PR17B2 dry-run validation and explicit Product Owner
 activation approval.
 
 **Exclusions:** no pooled report, historical repair of prospective Evidence,

@@ -402,7 +402,9 @@ unchanged. They are not renamed or reinterpreted.
 `StandaloneProbabilitySourceProtocol` is a new sibling authority for exactly
 one Probability Source investigation. It is not a mode, wrapper,
 empty-challenger instance, or optional-field variant of a comparative Protocol.
-PR17B owns its implementation. Its identity-material authority includes:
+PR17B1 owns its offline scientific-contract and deterministic-replay
+implementation. PR17B2 owns later operational acquisition and persistence. Its
+identity-material authority includes:
 
 - standalone Protocol identity and version;
 - scientific or descriptive question and Research Domain;
@@ -420,6 +422,24 @@ PR17B owns its implementation. Its identity-material authority includes:
 - analysis and report boundaries;
 - material limitations; and
 - deterministic identity and provenance.
+
+The PR17B1 envelope contains exactly one closed, versioned tagged
+`RetrospectiveStandaloneDesign` or `ProspectiveStandaloneDesign`. Both Protocols
+reference one immutable `StandaloneResearchActivationBoundary` identity but
+remain separate. Historical query manifests require complete pagination and
+append-only, non-branching correction replay. Prospective attempts are separate
+immutable Evidence and reconcile into exactly one terminal five-slot Snapshot.
+V3 Measurement, Coverage, performance, report, registry, replay, and graph
+validation resolve complete typed upstream authority. PR17B1 fixtures are
+unmistakably synthetic and offline; they are not research Evidence or reports.
+
+Replay binds every V3 Measurement to one exact opportunity and Schedule
+Observation. Historical targets derive from complete Schedule/status history
+and the terminal manifest at the explicit boundary; prospective terminal
+Snapshots derive from complete attempt and correction registries. Cumulative
+and bounded performance use their own Coverage, with bounded Schedule membership
+defined by `(start, end]`. V3 uncertainty preserves the governed deterministic
+one-sample bootstrap seed, rule, confidence, resample, scope, and window authority.
 
 It has no challenger, Edge Claim, Protocol Claim Set, or paired population. It
 defines no comparative Practical Significance, Burden of Proof, Drift, or
@@ -2560,6 +2580,10 @@ The versioned deterministic one-sample bootstrap applies to both cumulative and 
 
 Standalone Coverage owns complete, failure-inclusive accounting across the schedule-derived Coverage universe and the eligible standalone denominator. Capture-not-yet-due and protocol-ineligible opportunities reconcile the broader universe but never enter the eligible standalone denominator or its Coverage-rate calculations. Within that denominator, source capture missing, source capture invalid, outside capture tolerance, probability derivation unavailable or invalid, outcome unresolved or ineligible, and successfully measured are the complete disjoint partition. Missing Evidence is never reconstructed retrospectively or removed from the eligible standalone denominator, and challenger state is irrelevant. Corrections are append-only and correction-aware replay selects authoritative Snapshot and outcome lineage at explicit boundaries; ambiguous, branched, incomplete, or conflicting lineage fails closed without incidental ordering as a tie-breaker.
 
+Coverage categories and opportunity membership are derived outputs, never caller-authored inputs. At the explicit boundary, replay begins with complete authoritative Schedule/status histories, derives every expected capture opportunity and deterministic eligibility result, and then classifies each member through the applicable manifest/candle or attempt/Snapshot/Market authority, Outcome, and Measurement. Omitted or invented opportunities, false eligibility, and relabeled failures fail closed. Protocol identity also fixes the exact scoring rule, complete fixed-bin Calibration partition and WACE semantics, deterministic bootstrap rule, and immutable required report-window durations; a matching window count alone is not authority. Each historical candle resolves to exactly one ordered retrieval page and agrees with that page's raw-response archive reference, SHA-256 digest, and retrieval chronology.
+
+Each genuine Schedule Observation that establishes a changed scheduled start owns a distinct opportunity and is partitioned independently at activation; a cross-boundary reschedule therefore preserves the original retrospective-side identity and the later prospective-side identity. Status-only observations create no duplicate opportunity. Eligibility consumes boundary-effective provider-neutral event-classification Evidence rather than Protocol-authored facts, including season, phase, game type, ordinary/doubleheader status, participant mapping, validation, and correction lineage. For unsuccessful prospective windows, opportunity-level precedence is explicit: a later valid capture outranks every earlier failure; without valid success, acquired-invalid outranks provider-call failure, which outranks pure no-call missed-window. Derivation, Outcome, and Measurement authority is selected only from material effective at the analysis boundary, with ambiguity failing closed and no input-order tie-breaker.
+
 Standalone performance cannot support or reject an Edge Claim, establish or invalidate a Market Edge, determine Practical Significance, create a Research Review conclusion or Current Scientific Applicability, or establish profitability, efficiency, actionable opportunity, Policy, Governance, or production authority. Time-bounded standalone performance is descriptive and creates no standalone Drift or review obligation.
 
 ### 2026 Kalshi MLB retrospective and prospective studies
@@ -2674,7 +2698,7 @@ succeeded, one idempotent terminal missed-window disposition is appended. No
 late or historical quote repairs it, and price and Outcome never influence
 attempt or slot selection.
 
-PR17A defines but does not activate the boundary. After PR17B implements and
+PR17A defines but does not activate the boundary. After PR17B2 implements and
 dry-run validates acquisition, persistence, validation, and replay, the Product
 Owner approves a future `America/New_York` calendar date before that date
 begins. `activation_at` is midnight at the start of that Eastern date serialized
@@ -2756,7 +2780,7 @@ authority.
 
 Existing PR16B `ProbabilitySourceMeasurement` v1/v2 contracts, serialization,
 identities, registries, graph behavior, and historical artifacts remain
-unchanged. PR17B introduces an explicit version-dispatched successor,
+unchanged. PR17B1 introduces an explicit version-dispatched successor,
 `ProbabilitySourceMeasurementV3`, rather than adding optional fields or
 reinterpreting an old contract. It accepts exactly one typed derivation reference
 authorized by its `StandaloneProbabilitySourceProtocol`:
@@ -2773,7 +2797,7 @@ semantics, together with exact source, event, proposition, schedule, Outcome,
 derivation, algorithm, limitation, identity, and provenance lineage. A Protocol
 population authorizes exactly one derivation kind and cannot mix kinds.
 
-PR17B must implement version-dispatched successor Coverage, cumulative and
+PR17B1 implements version-dispatched successor Coverage, cumulative and
 time-bounded performance, uncertainty, references, registry, replay, and graph
 validation wherever the existing typed v1/v2 registries cannot accept V3
 without reinterpretation. Reuse is permitted only when the existing contract's

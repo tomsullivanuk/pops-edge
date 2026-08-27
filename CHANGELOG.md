@@ -1,5 +1,30 @@
 # Changelog
 
+## PR17B1 — standalone scientific contracts and deterministic replay
+
+- Added the offline-only `forecast_standalone_research.py` successor family for
+  closed tagged retrospective/prospective Protocols sharing one immutable
+  activation-boundary identity without pooling study authority.
+- Added historical query-manifest/correction replay, immutable candle Evidence
+  and derivation, typed five-slot prospective attempts and terminal Snapshots,
+  standalone market derivation, V3 analytics/reporting, serialization, and
+  upstream-first graph validation.
+- Added one synthetic two-study fixture and deterministic non-authoritative
+  inspector. Acquisition, persistence, scheduling, backup, CLI, and dry-run
+  operations remain PR17B2; PR17C/PR17D and downstream numbering are unchanged.
+- Independent-review amendments add the governed bootstrap, exact
+  Measurement-to-opportunity replay, upstream-first graph reconstruction,
+  separate cumulative and `(start, end]` bounded Coverage, composable graph
+  roots, and typed cursor-linked archive-page pagination.
+- Latest review amendments derive the complete schedule universe, eligibility,
+  and Coverage categories upstream-first; enforce exact analytical and report-
+  window rules; reconcile each candle to one archived retrieval page; and add
+  explicit successor-registry delegation for approved legacy graph authority.
+- Latest amendments preserve cross-activation reschedule opportunities, add
+  immutable boundary-aware event-classification Evidence, correct prospective
+  valid-capture and no-call precedence, and make derivation/Outcome/Measurement
+  selection boundary-aware and order-independent.
+
 All notable Pops' Edge releases are recorded here. Dates and release status
 must not imply that an untagged release has shipped.
 
