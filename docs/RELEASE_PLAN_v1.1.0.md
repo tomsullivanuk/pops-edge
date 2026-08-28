@@ -989,3 +989,24 @@ Other deferred capabilities:
 - Hosted services, multi-user accounts, and generalized deployment.
 - Repository and local-directory rename unless separately authorized.
 - Data-source additions not approved by the PR2 research decision.
+## PR17C sequence
+
+- **PR17C1 — Activation Authority and Prospective Collection Start:** reviewed merge deadline September 3; proposes `2026-09-05T00:00:00-04:00` `America/New_York` / `2026-09-05T04:00:00Z`. Merge-time explicit Product Owner authorization makes it immutable; installation and live access are separate actions.
+- **PR17C2 — Retrospective Acquisition and Evidence Closure.**
+- **PR17C3 — Retrospective Analysis and Report.**
+- **PR17D — Prospective Observation Close and Separate Report.**
+
+PR17C1 prepares local-Mac, Keychain-backed, read-only operations: 30-second prospective invocation; hourly complete MLB schedule/classification refresh followed by independent zero/one/ambiguous Kalshi mapping per opportunity; daily outcomes, archive/index maintenance, same-drive secondary synchronization, and morning health reporting. Pre-staging does not permit calls before the boundary, dry-run data cannot be promoted, and same-device redundancy is not independent backup. Until reviewed merge and deployment, no Protocol is active and no real Evidence exists.
+
+The reviewed implementation renders six absolute-path launchd jobs without installing them, fails closed on missing live composition, and records sanitized non-scientific heartbeats. Health readiness derives from actual heartbeat, archive, index, secondary, and disk state. The deterministic rehearsal executes these offline boundaries with injected fixtures only.
+
+PR17C1 additionally provides canonical activated-authority initialization, provider-native MLB and Kalshi decoding, raw-preserving fixed-point order-book adaptation, independently evaluated cadence health, and fail-closed daily inspect/rebuild maintenance. Fixture rehearsal runs the activated CLI and all rendered jobs without network, Keychain, or launchctl access.
+PR17C1 correction scope includes the complete prospective regular-season scheduled-state population, MLB-first opportunity construction independent of Kalshi availability, append-only correction replay, bounded complete Kalshi cursor pagination, New York obligation-driven multi-date MLB acquisition, and two-sided complementary bid-book normalization. Doubleheaders remain distinct; missing or ambiguous markets and cancelled or invalid events remain visible rather than being removed. This is proposed local activation machinery only and does not assert deployment or Evidence collection.
+
+Supporting and outcome acquisitions preserve exact pages and admit contracts only through a replay-verified typed manifest and explicitly derived canonical union. All unresolved non-terminal games remain outcome obligations; the correction lookback bounds resolved games only. One command-start clock fixes requested dates, and opaque cursors use standard query encoding.
+
+PR17C1 also records actual per-request trusted chronology and integrates acquisition-group completion with archive reconciliation. Interrupted groups are unhealthy partial authority excluded from replay, indexes, secondary synchronization, and maintenance until deterministic create-only completion.
+
+Replay independently reconstructs normalized unions and complete contract sets from verified pages and boundary-effective predecessor authority, requiring exact canonical equality with stored serialization.
+
+`reconcile-acquisitions` records immutable, exact-page abandonment for unambiguous interrupted groups; fresh replacement attempts retain later truthful chronology and distinct identity. Abandoned pages remain auditable but scientifically non-authoritative.

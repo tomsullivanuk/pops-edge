@@ -11,7 +11,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from forecast_standalone_operations import (
-    COMMAND_CAPABILITIES, DesignAuthority, DeploymentConfig, Disposition,
+    APPROVED_ACTIVATION_AT, COMMAND_CAPABILITIES, DesignAuthority, DeploymentConfig, Disposition,
     HTTPResponse, NamespaceArchive, OperatingMode, OperationsError, RetryPolicy,
     acquire_prospective_once, acquire_with_retries, capture_prospective,
     archive_pr17_authority,discover_and_capture_prospective,discover_and_acquire_retrospective,
@@ -107,10 +107,12 @@ class OperationsTest(unittest.TestCase):
         with self.assertRaises(OperationsError):replace(self.config,primary_root=bad,secondary_root=bad)
         with self.assertRaises(OperationsError):replace(self.config,primary_root=Path(self.temp.name)/"primary")
 
-    def test_02_activated_mutation_is_prohibited(self):
+    def test_02_activated_configuration_requires_approved_boundary(self):
         root=Path(self.temp.name)
-        active=replace(self.config,mode=OperatingMode.ACTIVATED,primary_root=root/"activated"/"fixture"/"primary",secondary_root=root/"activated"/"fixture"/"secondary")
-        with self.assertRaisesRegex(OperationsError,"activation-prohibited"):NamespaceArchive(active).commit(raw_body=b"x",normalized={"x":1},entry_values=self.entry_values())
+        with self.assertRaisesRegex(OperationsError,"activation-authority-invalid"):
+            replace(self.config,mode=OperatingMode.ACTIVATED,primary_root=root/"activated"/"fixture"/"primary",secondary_root=root/"activated"/"fixture"/"secondary")
+        active=replace(self.config,mode=OperatingMode.ACTIVATED,primary_root=root/"activated"/"fixture"/"primary",secondary_root=root/"activated"/"fixture"/"secondary",activation_at=APPROVED_ACTIVATION_AT)
+        self.assertEqual(active.activation_at,APPROVED_ACTIVATION_AT)
 
     def test_03_promotion_and_cross_namespace_rejected(self):
         other=replace(self.config,namespace="other",primary_root=Path(self.temp.name)/"dry-run"/"other"/"primary",secondary_root=Path(self.temp.name)/"dry-run"/"other"/"secondary")
@@ -235,7 +237,7 @@ class OperationsTest(unittest.TestCase):
         self.assertIsNone(result.raw_body)
 
     def test_24_cli_capabilities_are_explicit(self):
-        self.assertEqual(set(COMMAND_CAPABILITIES),{"acquire-schedule","acquire-classification","acquire-retrospective","capture-prospective","reconcile-outcomes","sync-secondary","rebuild-index","status","preflight","inspect"})
+        self.assertEqual(set(COMMAND_CAPABILITIES),{"acquire-schedule","acquire-classification","acquire-retrospective","capture-prospective","reconcile-outcomes","reconcile-acquisitions","sync-secondary","rebuild-index","status","preflight","inspect"})
         self.assertEqual(COMMAND_CAPABILITIES["status"],"read-only")
 
     def test_25_launchd_and_shell_templates_parse(self):
