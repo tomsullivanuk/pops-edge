@@ -33,6 +33,7 @@ APPROVED_TIMEZONE="America/New_York"
 ACTIVATION_DECISION_REFERENCE="product-owner:pr17c1:2026-09-05"
 MAX_RESPONSE_BYTES=2_000_000
 MAX_CATALOG_PAGES=100
+KALSHI_CATALOG_PAGE_LIMIT=100
 MLB_DATE_RULE_VERSION="eastern-unresolved-obligations-lookback-2"
 MLB_CORRECTION_LOOKBACK_DAYS=7
 ACQUISITION_UNION_RULE_VERSION="provider-pages-canonical-union-1"
@@ -287,7 +288,7 @@ def merge_mlb_schedule_responses(responses:Iterable[bytes])->bytes:
 
 def encoded_kalshi_catalog_path(cursor:str)->str:
     if not isinstance(cursor,str):raise OperationsError("pagination-cursor-invalid","catalog cursor must be text")
-    return "/markets?"+urlencode({"status":"open","limit":"1000",**({"cursor":cursor} if cursor else {})})
+    return "/markets?"+urlencode({"status":"open","limit":str(KALSHI_CATALOG_PAGE_LIMIT),**({"cursor":cursor} if cursor else {})})
 
 
 def _canonical_json_digest(raw:bytes)->str:
