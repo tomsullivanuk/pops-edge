@@ -768,6 +768,13 @@ the report is its own `ProbabilitySourcePerformanceReport`;
 and prospective opportunities and every attempted disposition begin visibly at
 the boundary.
 
+PR17C2 retrospective acquisition is incremental and explicitly bounded. Manual
+supporting batches cover no more than 31 completed Eastern dates; manual candle
+batches cover no more than 100 pending eligible opportunities. Exact MLB pages,
+both Kalshi live/historical catalog partitions, and exact candle responses
+remain auditable. No retrospective command is part of the prospective
+scheduler, and no acquisition calculates performance.
+
 ### PR17D — Prospective Observation Close and Separate Report
 
 **Purpose:** close the prospective observation period after the final 2026 MLB

@@ -35,6 +35,8 @@ MAX_RESPONSE_BYTES=2_000_000
 MAX_CATALOG_PAGES=100
 KALSHI_CATALOG_PAGE_LIMIT=100
 KALSHI_MLB_SERIES_TICKER="KXMLBGAME"
+RETROSPECTIVE_WINDOW_START=datetime(2026,3,25,0,0,tzinfo=ZoneInfo("America/New_York"))
+RETROSPECTIVE_WINDOW_SECONDS=14_169_600
 MLB_DATE_RULE_VERSION="eastern-unresolved-obligations-lookback-2"
 MLB_CORRECTION_LOOKBACK_DAYS=7
 ACQUISITION_UNION_RULE_VERSION="provider-pages-canonical-union-1"
@@ -72,22 +74,42 @@ def canonical_prospective_authority()->tuple[Any,Any]:
     return activation,protocol
 
 
+def canonical_retrospective_authority()->tuple[Any,Any]:
+    """Construct the precommitted PR17C2 retrospective sibling authority."""
+    from forecast_research_contracts import ResearchContractProvenance
+    from forecast_standalone_research import RetrospectiveStandaloneDesign,StandaloneDesignTag,StandaloneProbabilitySourceProtocol,StandaloneRule
+    activation,prospective=canonical_prospective_authority()
+    provenance=ResearchContractProvenance("pops-edge:pr17c2","1",notes=("reviewed retrospective acquisition authority","164-day precommitted report window"),generated_at=datetime(2026,8,28,18,tzinfo=timezone.utc))
+    scope=StandaloneRule("scope","2026-mlb-regular-season-retrospective","1",(("competition","mlb"),("event_phase","regular-season"),("ordinary_game","required"),("schedule_provider_id","mlb-stats-api"),("season","2026"),("sport","baseball"),("target_offset_minutes","-360"),("window_start","2026-03-25T00:00:00-04:00")))
+    protocol=StandaloneProbabilitySourceProtocol.create(design_tag=StandaloneDesignTag.RETROSPECTIVE,design=RetrospectiveStandaloneDesign(activation.standalone_research_activation_boundary_id,StandaloneRule("selection","latest-real-one-minute-candle-before-target","1"),StandaloneRule("manifest","complete-archive-query-manifest","1"),("historical archive availability and provider revision limitations","same-candle aggregates are not simultaneous executable quotes")),source=prospective.source,scope_rule=scope,representation_rule=prospective.representation_rule,scoring_rule=prospective.scoring_rule,calibration_rule=prospective.calibration_rule,uncertainty_rule=prospective.uncertainty_rule,report_rule=StandaloneRule("report","separate-standalone-report","1",(("bounded_window_durations",str(RETROSPECTIVE_WINDOW_SECONDS)),)),provenance=provenance)
+    return activation,protocol
+
+
+def canonical_activation_authorities()->tuple[Any,Any,Any]:
+    activation,prospective=canonical_prospective_authority();retro_activation,retrospective=canonical_retrospective_authority()
+    if activation!=retro_activation:raise OperationsError("activation-authority-conflict","retrospective and prospective boundaries differ")
+    return activation,retrospective,prospective
+
+
 def initialize_activation(archive:NamespaceArchive,at:datetime)->tuple[str,str]:
     from forecast_standalone_operations import DesignAuthority,Disposition,_entry_values,pr17_contract_bundle,replay_pr17_archive,request_identity
-    activation,protocol=canonical_prospective_authority()
+    activation,retrospective,protocol=canonical_activation_authorities()
     if archive.config.mode is not OperatingMode.ACTIVATED or archive.config.activation_at.isoformat()!=APPROVED_ACTIVATION_AT.isoformat():raise OperationsError("activation-authority-invalid","initialization requires exact activated namespace")
-    if tuple(archive.config.research_protocol_ids)!=(protocol.standalone_probability_source_protocol_id,):raise OperationsError("activation-authority-invalid","configuration does not name canonical prospective Protocol")
+    configured_ids=set(archive.config.research_protocol_ids);prospective_id=protocol.standalone_probability_source_protocol_id;retrospective_id=retrospective.standalone_probability_source_protocol_id
+    if configured_ids not in ({prospective_id},{prospective_id,retrospective_id}):raise OperationsError("activation-authority-invalid","configuration names noncanonical Protocol authority")
     if archive.entries():
         state=replay_pr17_archive(archive,analysis_boundary=at);existing=state.bucket("activation_boundaries")+state.bucket("protocols")
     else:existing=()
-    if existing and set(existing)!={activation,protocol}:raise OperationsError("activation-authority-conflict","initialized authority conflicts")
+    if existing and not set(existing).issubset({activation,retrospective,protocol}):raise OperationsError("activation-authority-conflict","initialized authority conflicts")
     with archive.mutation_lock():
-        for contract in (activation,protocol):
-            normalized=pr17_contract_bundle(contract);raw=canonical_bytes(normalized);values=_entry_values(archive=archive,command="initialize-activation",request_id=request_identity({"contract_type":type(contract).__name__,"contract_sha256":hashlib.sha256(contract.to_json().encode()).hexdigest()}),invoked_at=at,endpoint="local://canonical-pr17c1-authority",disposition=Disposition.SUCCESS,protocol_id=getattr(contract,"standalone_probability_source_protocol_id",None),design=DesignAuthority.PROSPECTIVE if contract is protocol else DesignAuthority.SUPPORTING,diagnostics=("canonical reviewed PR17C1 authority",),provider_effective_at=getattr(contract,"decision_effective_at",None));values["provider_id"]="canonical-pr17c1-authority";archive._commit_locked(raw_body=raw,normalized=normalized,entry_values=values)
+        contracts=(activation,protocol) if configured_ids=={prospective_id} else (activation,retrospective,protocol)
+        for contract in contracts:
+            if contract in existing:continue
+            normalized=pr17_contract_bundle(contract);raw=canonical_bytes(normalized);design=DesignAuthority.PROSPECTIVE if contract is protocol else DesignAuthority.RETROSPECTIVE if contract is retrospective else DesignAuthority.SUPPORTING;values=_entry_values(archive=archive,command="initialize-activation",request_id=request_identity({"contract_type":type(contract).__name__,"contract_sha256":hashlib.sha256(contract.to_json().encode()).hexdigest()}),invoked_at=at,endpoint="local://canonical-pr17c1-authority",disposition=Disposition.SUCCESS,protocol_id=getattr(contract,"standalone_probability_source_protocol_id",None),design=design,diagnostics=("canonical reviewed PR17C authority",),provider_effective_at=getattr(contract,"decision_effective_at",None));values["provider_id"]="canonical-pr17c-authority";archive._commit_locked(raw_body=raw,normalized=normalized,entry_values=values)
     return activation.standalone_research_activation_boundary_id,protocol.standalone_probability_source_protocol_id
 
 
-def refresh_supporting_from_raw(*,archive:NamespaceArchive|None,mlb_raw:bytes,kalshi_raw:bytes,collected_at:datetime,catalog_pages:Iterable[KalshiCatalogPage]=(),mlb_pages:Iterable[bytes]=(),prior_state:Any=None,derive_only:bool=False)->Mapping[str,Any]|tuple[Any,...]:
+def refresh_supporting_from_raw(*,archive:NamespaceArchive|None,mlb_raw:bytes,kalshi_raw:bytes,collected_at:datetime,catalog_pages:Iterable[KalshiCatalogPage]=(),mlb_pages:Iterable[bytes]=(),prior_state:Any=None,derive_only:bool=False,acquisition_command:str="refresh-supporting")->Mapping[str,Any]|tuple[Any,...]:
     """Decode live-shaped MLB/Kalshi material into established PR17 authority."""
     from event_contracts import ValidationStatus
     from forecast_comparative_research import ResearchCaptureOpportunity
@@ -146,7 +168,7 @@ def refresh_supporting_from_raw(*,archive:NamespaceArchive|None,mlb_raw:bytes,ka
     complete=tuple(x for x in market_results if x.series and x.observation and x.series.yes_semantic.participant_id==next(g.home_team.canonical_team_id for g in games if g.event.canonical_event_id==x.observation.canonical_event_id))
     by_event={}
     for item in complete:by_event.setdefault(item.observation.canonical_event_id,[]).append(item)
-    activation,protocol=canonical_prospective_authority();contracts=list(changed_histories)+list(changed_classifications);opportunities=[];mapped=[];missing=[];ambiguous=[];prior_opportunity_ids={x.research_capture_opportunity_id for x in state.bucket("opportunities")};prior_series={x.series_id:x for x in state.bucket("market_series")}
+    activation,canonical_retrospective,canonical_prospective=canonical_activation_authorities();archived_protocols={x.standalone_probability_source_protocol_id:x for x in state.bucket("protocols")};protocols=tuple(x for x in (canonical_retrospective,canonical_prospective) if x.standalone_probability_source_protocol_id in archived_protocols);contracts=list(changed_histories)+list(changed_classifications);opportunities=[];mapped=[];missing=[];ambiguous=[];prior_opportunity_ids={x.research_capture_opportunity_id for x in state.bucket("opportunities")};prior_series={x.series_id:x for x in state.bucket("market_series")}
     all_classifications=prior_classifications+tuple(changed_classifications)
     for event_id,history in sorted(histories.items()):
         classification=classifications[event_id]
@@ -154,11 +176,14 @@ def refresh_supporting_from_raw(*,archive:NamespaceArchive|None,mlb_raw:bytes,ka
         for observation in history.observations:
             if not schedule_states or observation.scheduled_start!=schedule_states[-1].scheduled_start:schedule_states.append(observation)
         for observation in schedule_states:
-            if observation.scheduled_start<activation.activation_at:continue
-            opportunity=ResearchCaptureOpportunity.create(protocol.standalone_probability_source_protocol_id,observation.observation_id,"winner")
-            if opportunity.research_capture_opportunity_id in prior_opportunity_ids:continue
-            context,eligibility=create_standalone_eligibility_authority(protocol=protocol,opportunity=opportunity,outcome_history=history,classification=classification,classifications=all_classifications,analysis_boundary=collected_at,provenance=provenance)
-            opportunities.append(opportunity);contracts.extend((opportunity,context,eligibility))
+            for protocol in protocols:
+                retrospective=protocol.design_tag.value=="retrospective"
+                if retrospective and not (RETROSPECTIVE_WINDOW_START<=observation.scheduled_start<activation.activation_at):continue
+                if not retrospective and observation.scheduled_start<activation.activation_at:continue
+                opportunity=ResearchCaptureOpportunity.create(protocol.standalone_probability_source_protocol_id,observation.observation_id,"winner")
+                if opportunity.research_capture_opportunity_id in prior_opportunity_ids:continue
+                context,eligibility=create_standalone_eligibility_authority(protocol=protocol,opportunity=opportunity,outcome_history=history,classification=classification,classifications=all_classifications,analysis_boundary=collected_at,provenance=provenance)
+                opportunities.append(opportunity);contracts.extend((opportunity,context,eligibility))
         items=by_event.get(event_id,())
         if len(items)==1:
             mapped.append(event_id);candidate=items[0].series;prior=prior_series.get(candidate.series_id)
@@ -174,8 +199,9 @@ def refresh_supporting_from_raw(*,archive:NamespaceArchive|None,mlb_raw:bytes,ka
     raw_mlb_pages=tuple(mlb_pages) or (mlb_raw,);mlb_page_values=tuple(_mlb_page_tuple(item,index) for index,item in enumerate(raw_mlb_pages))
     kalshi_page_values=page_values
     with archive.mutation_lock():
-        mlb_acquisition=publish_verified_acquisition(archive=archive,provider="mlb-stats-api",union_raw=mlb_raw,pages=mlb_page_values,contracts=mlb_contracts,collected_at=collected_at,protocol_id=protocol.standalone_probability_source_protocol_id,command="refresh-supporting")
-        kalshi_acquisition=publish_verified_acquisition(archive=archive,provider="kalshi",union_raw=kalshi_raw,pages=kalshi_page_values,contracts=market_contracts,collected_at=collected_at,protocol_id=protocol.standalone_probability_source_protocol_id,command="refresh-supporting",dependencies=(mlb_acquisition["acquisition_id"],))
+        protocol_id=protocols[0].standalone_probability_source_protocol_id if len(protocols)==1 else None
+        mlb_acquisition=publish_verified_acquisition(archive=archive,provider="mlb-stats-api",union_raw=mlb_raw,pages=mlb_page_values,contracts=mlb_contracts,collected_at=collected_at,protocol_id=protocol_id,command=acquisition_command)
+        kalshi_acquisition=publish_verified_acquisition(archive=archive,provider="kalshi",union_raw=kalshi_raw,pages=kalshi_page_values,contracts=market_contracts,collected_at=collected_at,protocol_id=protocol_id,command=acquisition_command,dependencies=(mlb_acquisition["acquisition_id"],))
     return {"mlb_manifest_id":mlb_acquisition["manifest_entry_id"],"kalshi_manifest_id":kalshi_acquisition["manifest_entry_id"],"events":len(games),"contracts":len(contracts),"mapped":len(mapped),"missing":len(missing),"ambiguous":len(ambiguous),"catalog_pages":len(page_values),"mlb_pages":len(mlb_page_values),"disposition":"success" if contracts else "unchanged"}
 
 
@@ -203,7 +229,7 @@ class ProviderPageAcquisition:
         if any(value.tzinfo is None or value.utcoffset() is None for value in (self.started_at,self.completed_at)) or self.completed_at<self.started_at:raise OperationsError("trusted-clock-reversed","typed provider page chronology is invalid")
 
 
-def acquire_kalshi_catalog_pages(fetch:Callable[[str],bytes],*,maximum_pages:int=MAX_CATALOG_PAGES,clock:Callable[[],datetime]|None=None,command_start:datetime|None=None)->tuple[KalshiCatalogPage,...]:
+def acquire_kalshi_catalog_pages(fetch:Callable[[str],bytes],*,maximum_pages:int=MAX_CATALOG_PAGES,clock:Callable[[],datetime]|None=None,command_start:datetime|None=None,path_builder:Callable[[str],str]|None=None,identity_prefix:str="")->tuple[KalshiCatalogPage,...]:
     """Follow and validate the complete documented cursor chain."""
     if maximum_pages<1 or maximum_pages>MAX_CATALOG_PAGES:raise OperationsError("pagination-bound","catalog page bound is invalid")
     pages=[];cursor="";requested=set()
@@ -219,7 +245,7 @@ def acquire_kalshi_catalog_pages(fetch:Callable[[str],bytes],*,maximum_pages:int
         if not isinstance(value,dict) or set(value)!={"markets","cursor"} or not isinstance(value["markets"],list) or not isinstance(value["cursor"],str):raise OperationsError("incomplete-response","catalog page shape is incomplete")
         next_cursor=value["cursor"]
         if next_cursor and next_cursor in requested:raise OperationsError("pagination-loop","catalog cursor repeats")
-        pages.append(KalshiCatalogPage(position,cursor,next_cursor,raw,tuple(value["markets"]),started,completed,encoded_kalshi_catalog_path(cursor)))
+        pages.append(KalshiCatalogPage(position,identity_prefix+cursor,next_cursor,raw,tuple(value["markets"]),started,completed,(path_builder or encoded_kalshi_catalog_path)(cursor)))
         if not next_cursor:return tuple(pages)
         cursor=next_cursor
     raise OperationsError("pagination-bound","catalog did not terminate within its page bound")
@@ -290,6 +316,54 @@ def merge_mlb_schedule_responses(responses:Iterable[bytes])->bytes:
 def encoded_kalshi_catalog_path(cursor:str)->str:
     if not isinstance(cursor,str):raise OperationsError("pagination-cursor-invalid","catalog cursor must be text")
     return "/markets?"+urlencode({"series_ticker":KALSHI_MLB_SERIES_TICKER,"status":"open","limit":str(KALSHI_CATALOG_PAGE_LIMIT),**({"cursor":cursor} if cursor else {})})
+
+
+def encoded_kalshi_retrospective_catalog_path(cursor:str,*,historical:bool)->str:
+    if not isinstance(cursor,str):raise OperationsError("pagination-cursor-invalid","catalog cursor must be text")
+    route="/historical/markets" if historical else "/markets"
+    return route+"?"+urlencode({"series_ticker":KALSHI_MLB_SERIES_TICKER,"limit":str(KALSHI_CATALOG_PAGE_LIMIT),**({"cursor":cursor} if cursor else {})})
+
+
+def acquire_retrospective_catalog_pages(fetch:Callable[[str],bytes],*,clock:Callable[[],datetime],command_start:datetime)->tuple[KalshiCatalogPage,...]:
+    """Acquire both moving Kalshi catalog partitions within independent caps."""
+    combined=[]
+    for historical,label in ((True,"historical:"),(False,"live:")):
+        builder=lambda cursor,historical=historical:encoded_kalshi_retrospective_catalog_path(cursor,historical=historical)
+        pages=acquire_kalshi_catalog_pages(lambda cursor,builder=builder:fetch(builder(cursor)),clock=clock,command_start=command_start,path_builder=builder,identity_prefix=label)
+        for page in pages:combined.append(KalshiCatalogPage(len(combined),page.request_cursor,page.next_cursor,page.raw,page.markets,page.started_at,page.completed_at,page.endpoint))
+    return tuple(combined)
+
+
+def canonical_kalshi_candle_path(market_ticker:str,target_at:datetime,*,historical:bool)->str:
+    """Return the exact real-candle query for the strict five-minute window."""
+    if target_at.tzinfo is None or target_at.utcoffset() is None:raise OperationsError("trusted-clock-invalid","retrospective target must be aware")
+    if not market_ticker or any(ch not in "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-" for ch in market_ticker):raise OperationsError("transport-configuration","provider market identity is invalid")
+    start_ts=int((target_at.astimezone(timezone.utc)-timedelta(minutes=5)).timestamp())+1
+    end_ts=int(target_at.astimezone(timezone.utc).timestamp())
+    prefix="/historical/markets" if historical else f"/series/{KALSHI_MLB_SERIES_TICKER}/markets"
+    return f"{prefix}/{market_ticker}/candlesticks?"+urlencode((("start_ts",start_ts),("end_ts",end_ts),("period_interval",1)))
+
+
+def adapt_kalshi_candles(payload:Mapping[str,Any],*,market_ticker:str,target_at:datetime)->Mapping[str,Any]:
+    """Normalize either documented Kalshi candle shape without synthesizing data."""
+    if not isinstance(payload,dict) or set(payload)!={"ticker","candlesticks"} or payload.get("ticker")!=market_ticker or not isinstance(payload.get("candlesticks"),list):raise OperationsError("incomplete-response","historical candle response shape conflicts")
+    candles=[]
+    for value in payload["candlesticks"]:
+        if not isinstance(value,dict) or not isinstance(value.get("end_period_ts"),int):raise OperationsError("provider-data-invalid","candle timestamp is invalid")
+        ended=datetime.fromtimestamp(value["end_period_ts"],timezone.utc)
+        if not target_at-timedelta(minutes=5)<ended<=target_at:raise OperationsError("provider-data-invalid","candle falls outside the authorized strict window")
+        def close(side):
+            item=value.get(side)
+            if not isinstance(item,dict):return None
+            raw=item.get("close_dollars",item.get("close"))
+            if raw is None:return None
+            try:result=Decimal(str(raw))
+            except InvalidOperation as exc:raise OperationsError("provider-data-invalid","candle close is not decimal") from exc
+            if not Decimal(0)<=result<=Decimal(1):raise OperationsError("provider-data-invalid","candle close is outside probability bounds")
+            return str(result)
+        candles.append({"candle_end_at":ended.isoformat(),"close_yes_bid":close("yes_bid"),"close_yes_ask":close("yes_ask")})
+    candles.sort(key=lambda x:x["candle_end_at"])
+    return {"pages":[{"position":0,"cursor":"initial","next_cursor":None,"terminal":True,"candles":candles}]}
 
 
 def canonical_mlb_schedule_request(query_date:date|str)->tuple[str,str]:
@@ -368,7 +442,12 @@ def verify_acquisition_bundle(archive:NamespaceArchive,value:Mapping[str,Any],*,
     if len({page.get("request_identity") for page in pages if isinstance(page,dict)})!=len(pages):raise OperationsError("acquisition-page-conflict","duplicate page request identity")
     for position,page in enumerate(pages):
         if not isinstance(page,dict) or page.get("position")!=position or page.get("manifest_entry_id") not in entries:raise OperationsError("acquisition-page-conflict","page ordering or reference conflicts")
-        if provider=="kalshi" and page.get("endpoint")!=encoded_kalshi_catalog_path(page.get("request_identity")):raise OperationsError("acquisition-page-conflict","Kalshi page endpoint conflicts with canonical discovery authority")
+        if provider=="kalshi":
+            identity=page.get("request_identity");family=value.get("family")
+            if family=="refresh-retrospective-supporting" and isinstance(identity,str) and identity.startswith(("historical:","live:")):
+                historical=identity.startswith("historical:");cursor=identity.split(":",1)[1];expected=encoded_kalshi_retrospective_catalog_path(cursor,historical=historical)
+            else:expected=encoded_kalshi_catalog_path(identity)
+            if page.get("endpoint")!=expected:raise OperationsError("acquisition-page-conflict","Kalshi page endpoint conflicts with canonical discovery authority")
         if provider=="mlb-stats-api":
             try:expected_endpoint=canonical_mlb_schedule_request(page.get("request_identity"))[1]
             except (TypeError,ValueError):raise OperationsError("acquisition-page-conflict","MLB page request identity is not a canonical date") from None

@@ -257,6 +257,7 @@ class OperationsTest(unittest.TestCase):
         with self.assertRaises(OperationsError):replay_pr17_archive(self.archive,analysis_boundary=at)
 
     def test_27_retrospective_archive_acquisition_reconstructs_manifest_and_candle(self):
+        from forecast_standalone_activation import adapt_kalshi_candles,canonical_kalshi_candle_path
         from inspect_forecast_standalone_research import build_synthetic_bundle
         from market_contracts import ProviderMarketSeries,SideSemantic,MarketSide
         g=build_synthetic_bundle();at=g["retro_eligibility"].analysis_boundary;proposition=g["retro_schedule"].canonical_event_id
@@ -265,11 +266,14 @@ class OperationsTest(unittest.TestCase):
             SideSemantic(MarketSide.YES,prop,g["retro_schedule"].home_participant_id,True,"home"),SideSemantic(MarketSide.NO,prop,g["retro_schedule"].away_participant_id,False,"away"),"fixture",None,None,None,None,(),g["series"].provenance)
         self.config=replace(self.config,research_protocol_ids=(g["retrospective"].standalone_probability_source_protocol_id,));self.archive=NamespaceArchive(self.config)
         archive_pr17_authority(self.archive,(g["activation"],g["retrospective"],g["retro_opportunity"],g["retro_classification"],g["retro_context"],g["retro_eligibility"],g["retro_history"],series),recorded_at=at)
-        body=json.dumps({"pages":[{"position":0,"cursor":"initial","next_cursor":None,"terminal":True,"candles":[{"candle_end_at":g["candle"].candle_end_at.isoformat(),"close_yes_bid":"0.48","close_yes_ask":"0.52"}]}]},sort_keys=True).encode();transport=SequenceTransport(HTTPResponse(200,body,{}))
-        created=discover_and_acquire_retrospective(archive=self.archive,transport_factory=lambda _o,_s:transport,clock=lambda:at,sleeper=lambda _:None)
+        body=json.dumps({"ticker":market_id,"candlesticks":[{"end_period_ts":int(g["candle"].candle_end_at.timestamp()),"yes_bid":{"close":"0.48"},"yes_ask":{"close":"0.52"},"price":{},"volume":"1.00","open_interest":"1.00"}]},sort_keys=True).encode();transport=SequenceTransport(HTTPResponse(200,body,{}))
+        def request_builder(_opportunity,_series,target):return "https://fixture.invalid"+canonical_kalshi_candle_path(market_id,target,historical=True),{}
+        def response_adapter(value,_raw,_opportunity,_series,target):return adapt_kalshi_candles(value,market_ticker=market_id,target_at=target)
+        created=discover_and_acquire_retrospective(archive=self.archive,transport_factory=lambda _o,_s:transport,clock=lambda:at,sleeper=lambda _:None,request_builder=request_builder,response_adapter=response_adapter,maximum_opportunities=1)
         state=replay_pr17_archive(self.archive,analysis_boundary=at);self.assertEqual(len(created),1);self.assertEqual(len(state.bucket("manifests")),1);self.assertEqual(len(state.bucket("candles")),1)
         candle=state.bucket("candles")[0];entry=next(item for item in authoritative_entries(self.archive) if item["command"]=="acquire-retrospective")
         self.assertEqual((candle.raw_archive_sha256,candle.raw_archive_reference),(entry["raw_object_sha256"],f"raw:{entry['raw_object_sha256']}"))
+        self.assertEqual(entry["endpoint"],"https://fixture.invalid"+canonical_kalshi_candle_path(market_id,g["candle"].candle_end_at,historical=True))
 
     def test_28_prospective_archive_response_creates_attempt_and_terminal_snapshot(self):
         g,at=self.seed_prospective();transport=SequenceTransport(HTTPResponse(200,json.dumps({"contract_json":g["observation"].to_json()}).encode(),{}))

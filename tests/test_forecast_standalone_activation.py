@@ -30,8 +30,20 @@ class ActivationTests(unittest.TestCase):
     def test_activated_config_example_names_canonical_protocol(self):
         example=Path(__file__).resolve().parents[1]/"operations/pr17c1.activated.config.example.json"
         config=DeploymentConfig.from_json(example)
-        _,protocol=canonical_prospective_authority()
-        self.assertEqual(config.research_protocol_ids,(protocol.standalone_probability_source_protocol_id,))
+        _,retrospective,prospective=canonical_activation_authorities()
+        self.assertEqual(set(config.research_protocol_ids),{retrospective.standalone_probability_source_protocol_id,prospective.standalone_probability_source_protocol_id})
+        self.assertEqual(dict(retrospective.report_rule.parameters)["bounded_window_durations"],"14169600")
+        self.assertEqual(dict(retrospective.scope_rule.parameters)["window_start"],"2026-03-25T00:00:00-04:00")
+
+    def test_canonical_retrospective_candle_request_and_adapter(self):
+        target=datetime(2026,4,1,18,tzinfo=timezone.utc);path=canonical_kalshi_candle_path("KXMLBGAME-TEST",target,historical=True);query=parse_qs(urlparse(path).query)
+        self.assertEqual(urlparse(path).path,"/historical/markets/KXMLBGAME-TEST/candlesticks")
+        self.assertEqual(query,{"start_ts":[str(int((target-timedelta(minutes=5)).timestamp())+1)],"end_ts":[str(int(target.timestamp()))],"period_interval":["1"]})
+        raw={"ticker":"KXMLBGAME-TEST","candlesticks":[{"end_period_ts":int(target.timestamp()),"yes_bid":{"close":"0.4500"},"yes_ask":{"close":"0.5500"},"price":{},"volume":"1.00","open_interest":"2.00"}]}
+        normalized=adapt_kalshi_candles(raw,market_ticker="KXMLBGAME-TEST",target_at=target)
+        self.assertEqual(normalized["pages"][0]["candles"][0]["close_yes_bid"],"0.4500")
+        for changed in ({**raw,"ticker":"FOREIGN"},{**raw,"candlesticks":[{**raw["candlesticks"][0],"end_period_ts":int((target-timedelta(minutes=5)).timestamp())}]}):
+            with self.assertRaises(OperationsError):adapt_kalshi_candles(changed,market_ticker="KXMLBGAME-TEST",target_at=target)
 
     def test_credential_provider_is_injected_and_sanitized(self):
         seen = []
@@ -162,7 +174,10 @@ class ActivationTests(unittest.TestCase):
             root=Path(directory);activation,protocol=canonical_prospective_authority();config=DeploymentConfig("init","init",OperatingMode.ACTIVATED,root/"activated/init/primary",root/"activated/init/secondary","https://fixture.invalid",RetryPolicy(1,1,1,(),0),1,root/"logs",research_protocol_ids=(protocol.standalone_probability_source_protocol_id,),activation_at=APPROVED_ACTIVATION_AT);archive=NamespaceArchive(config);at=datetime(2026,8,28,tzinfo=timezone.utc)
             one=initialize_activation(archive,at);two=initialize_activation(archive,at)
             self.assertEqual(one,two);self.assertEqual(len(archive.entries()),2)
-            with self.assertRaisesRegex(OperationsError,"configuration does not name canonical"):initialize_activation(NamespaceArchive(replace(config,research_protocol_ids=("foreign",))),at)
+            with self.assertRaisesRegex(OperationsError,"noncanonical Protocol authority"):initialize_activation(NamespaceArchive(replace(config,research_protocol_ids=("foreign",))),at)
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);activation,retrospective,prospective=canonical_activation_authorities();config=DeploymentConfig("siblings","siblings",OperatingMode.ACTIVATED,root/"activated/siblings/primary",root/"activated/siblings/secondary","https://fixture.invalid",RetryPolicy(1,1,1,(),0),1,root/"logs",research_protocol_ids=(retrospective.standalone_probability_source_protocol_id,prospective.standalone_probability_source_protocol_id),activation_at=APPROVED_ACTIVATION_AT);archive=NamespaceArchive(config);initialize_activation(archive,datetime(2026,8,28,tzinfo=timezone.utc));state=__import__('forecast_standalone_operations').replay_pr17_archive(archive,analysis_boundary=datetime(2026,8,28,19,tzinfo=timezone.utc))
+            self.assertEqual(set(state.bucket("protocols")),{retrospective,prospective});self.assertEqual(state.bucket("activation_boundaries"),(activation,))
 
     def test_live_shaped_orderbook_raw_to_canonical(self):
         from market_contracts import MarketSide,ProviderMarketSeries,SideSemantic
@@ -182,6 +197,14 @@ class ActivationTests(unittest.TestCase):
         with self.assertRaisesRegex(OperationsError,"loop"):acquire_kalshi_catalog_pages(lambda cursor:b'{"markets":[],"cursor":"x"}' if not cursor else b'{"markets":[],"cursor":"x"}')
         conflict=(KalshiCatalogPage(0,"","x",b"",({"ticker":"A","title":"one"},)),KalshiCatalogPage(1,"x","",b"",({"ticker":"A","title":"two"},)))
         with self.assertRaisesRegex(OperationsError,"conflict"):merge_kalshi_catalog_pages(conflict)
+
+    def test_retrospective_catalog_traverses_both_bounded_partitions(self):
+        at=datetime(2026,8,28,18,tzinfo=timezone.utc);calls=[]
+        def fetch(path):calls.append(path);return b'{"markets":[],"cursor":""}'
+        pages=acquire_retrospective_catalog_pages(fetch,clock=lambda:at,command_start=at)
+        self.assertEqual(len(pages),2);self.assertEqual([x.request_cursor for x in pages],["historical:","live:"])
+        self.assertEqual(calls,[encoded_kalshi_retrospective_catalog_path("",historical=True),encoded_kalshi_retrospective_catalog_path("",historical=False)])
+        self.assertTrue(all("series_ticker=KXMLBGAME" in x and "limit=100" in x for x in calls));self.assertTrue(all("status=" not in x for x in calls))
 
     def test_live_mlb_loaders_share_canonical_hydrated_request(self):
         from inspect_forecast_standalone_activation import fixtures

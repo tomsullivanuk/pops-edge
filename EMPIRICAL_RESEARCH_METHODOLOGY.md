@@ -2649,6 +2649,16 @@ corroboration does not transfer authority to Kalshi, and post-game schedule
 retrieval does not prove what schedule information was visible at the historical
 capture boundary. Reports preserve that limitation.
 
+The precommitted retrospective report window is exactly the 164-day Eastern
+calendar interval ending at `2026-09-05T00:00:00-04:00`, with window start
+`2026-03-25T00:00:00-04:00`: `14,169,600` seconds. Standard `(start, end]`
+time-bounded semantics apply, while the retrospective Protocol's strict
+pre-activation population rule independently excludes starts at the end. Its date boundary ensures
+the complete official opening date is available to the schedule-derived
+population; it does not invent event membership.  The cumulative and bounded
+results remain distinct scientific artifacts even when their initial
+populations coincide.
+
 For each eligible retrospectively Kalshi-offered game:
 
 ```text

@@ -96,7 +96,8 @@ def _settlement_evidence(market):
     elif isinstance(raw,list): evidence=tuple(str(x) for x in raw)
     else: evidence=()
     notional=market.get("notional_value_dollars")
-    return evidence + ((f"notional_value_dollars={notional}",) if notional not in (None,"") else ())
+    settlement_ts=market.get("settlement_ts")
+    return evidence + ((f"notional_value_dollars={notional}",) if notional not in (None,"") else ()) + ((f"settlement_ts={settlement_ts}",) if settlement_ts else ())
 
 def adapt_market(market:dict,*,games:tuple[MLBGame,...],schedules:tuple[ScheduleObservation,...],collected_at:datetime,orderbook_payload:dict|None=None,orderbook_collected_at:datetime|None=None,metadata_collected_at:datetime|None=None)->MarketAdapterResult:
     raw=_digest(market); market_id=str(market.get("ticker") or market.get("id") or "unknown")
