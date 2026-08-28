@@ -8,7 +8,7 @@
   "namespace": "kalshi-mlb-prospective",
   "primary_root": "./var/activated/kalshi-mlb-prospective/primary",
   "provider_base_url": "https://external-api.kalshi.com/trade-api/v2",
-  "research_protocol_ids": ["standalone-probability-source-protocol:6615ee618bac0335dee1b13cfc7e18b6509d801d60255ad6ba5a3e073915ac42"],
+  "research_protocol_ids": ["standalone-probability-source-protocol:f5303a5af20a0478e6192c4e6bdc9d133c85700fae3a410b48c81d6c6f0af2ec"],
   "retry_policy": {"backoff_seconds": [], "maximum_attempts": 1, "maximum_retry_after_seconds": 0, "request_timeout_seconds": 5, "total_timeout_seconds": 5},
   "schedule_parameters": {"kalshi_key_id": "CONFIGURE_PUBLIC_ID_LOCALLY", "kalshi_private_key_account": "CONFIGURE_LOCALLY", "kalshi_private_key_service": "CONFIGURE_LOCALLY"},
   "secondary_root": "./var/activated/kalshi-mlb-prospective/secondary",

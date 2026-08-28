@@ -27,6 +27,12 @@ class ActivationTests(unittest.TestCase):
         with self.assertRaises(OperationsError): replace(APPROVED_ACTIVATION, activation_at=datetime(2026, 9, 5))
         with self.assertRaises(OperationsError): replace(APPROVED_ACTIVATION, activation_at=APPROVED_ACTIVATION.activation_at.astimezone(timezone.utc))
 
+    def test_activated_config_example_names_canonical_protocol(self):
+        example=Path(__file__).resolve().parents[1]/"operations/pr17c1.activated.config.example.json"
+        config=DeploymentConfig.from_json(example)
+        _,protocol=canonical_prospective_authority()
+        self.assertEqual(config.research_protocol_ids,(protocol.standalone_probability_source_protocol_id,))
+
     def test_credential_provider_is_injected_and_sanitized(self):
         seen = []
         def runner(command, **kwargs):
