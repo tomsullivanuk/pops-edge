@@ -178,7 +178,7 @@ class ActivationTests(unittest.TestCase):
     def test_complete_catalog_pagination_and_conflicts(self):
         bodies={"":b'{"markets":[{"ticker":"B"}],"cursor":"next"}',"next":b'{"markets":[{"ticker":"A"}],"cursor":""}'};calls=[]
         pages=acquire_kalshi_catalog_pages(lambda cursor:(calls.append(cursor) or bodies[cursor]))
-        self.assertEqual(calls,["","next"]);self.assertEqual([x["ticker"] for x in json.loads(merge_kalshi_catalog_pages(reversed(pages)))["markets"]],["A","B"])
+        self.assertEqual(calls,["","next"]);self.assertEqual([x.endpoint for x in pages],[encoded_kalshi_catalog_path(""),encoded_kalshi_catalog_path("next")]);self.assertEqual([x["ticker"] for x in json.loads(merge_kalshi_catalog_pages(reversed(pages)))["markets"]],["A","B"])
         with self.assertRaisesRegex(OperationsError,"loop"):acquire_kalshi_catalog_pages(lambda cursor:b'{"markets":[],"cursor":"x"}' if not cursor else b'{"markets":[],"cursor":"x"}')
         conflict=(KalshiCatalogPage(0,"","x",b"",({"ticker":"A","title":"one"},)),KalshiCatalogPage(1,"x","",b"",({"ticker":"A","title":"two"},)))
         with self.assertRaisesRegex(OperationsError,"conflict"):merge_kalshi_catalog_pages(conflict)
@@ -198,9 +198,9 @@ class ActivationTests(unittest.TestCase):
     def test_opaque_cursor_is_encoded_without_query_injection(self):
         for cursor in ("a+b=c%&/ two","雪 +&="):
             path=encoded_kalshi_catalog_path(cursor);query=parse_qs(urlparse(path).query,keep_blank_values=True)
-            self.assertEqual(query,{"status":["open"],"limit":[str(KALSHI_CATALOG_PAGE_LIMIT)],"cursor":[cursor]});self.assertEqual(path.count("status="),1);self.assertEqual(path.count("limit="),1)
-        self.assertEqual(KALSHI_CATALOG_PAGE_LIMIT,100)
-        self.assertEqual(parse_qs(urlparse(encoded_kalshi_catalog_path("")).query),{"status":["open"],"limit":[str(KALSHI_CATALOG_PAGE_LIMIT)]})
+            self.assertEqual(query,{"series_ticker":[KALSHI_MLB_SERIES_TICKER],"status":["open"],"limit":[str(KALSHI_CATALOG_PAGE_LIMIT)],"cursor":[cursor]});self.assertEqual(path.count("series_ticker="),1);self.assertEqual(path.count("status="),1);self.assertEqual(path.count("limit="),1);self.assertEqual(path.count("cursor="),1)
+        self.assertEqual((KALSHI_MLB_SERIES_TICKER,KALSHI_CATALOG_PAGE_LIMIT),("KXMLBGAME",100))
+        self.assertEqual(parse_qs(urlparse(encoded_kalshi_catalog_path("")).query),{"series_ticker":[KALSHI_MLB_SERIES_TICKER],"status":["open"],"limit":[str(KALSHI_CATALOG_PAGE_LIMIT)]})
 
     def test_acquisition_manifest_replay_rejects_page_and_union_conflicts(self):
         from inspect_forecast_standalone_activation import fixtures
@@ -220,6 +220,15 @@ class ActivationTests(unittest.TestCase):
             duplicate=copy.deepcopy(bundle);duplicate["pages"].append(copy.deepcopy(duplicate["pages"][-1]))
             for value in (missing,altered,foreign,duplicate):
                 with self.assertRaises(OperationsError):verify_acquisition_bundle(archive,value)
+
+    def test_acquisition_replay_requires_canonical_kalshi_endpoint(self):
+        from inspect_forecast_standalone_activation import fixtures
+        variants=("/markets?status=open&limit=100","/markets?series_ticker=FOREIGN&status=open&limit=100","/markets?series_ticker=KXMLBGAME&status=open&limit=99","/markets?series_ticker=KXMLBGAME&status=closed&limit=100",encoded_kalshi_catalog_path("foreign"),encoded_kalshi_catalog_path("")+"&extra=1","/markets?status=open&series_ticker=KXMLBGAME&limit=100")
+        for endpoint in variants:
+            with self.subTest(endpoint=endpoint),tempfile.TemporaryDirectory() as directory:
+                root=Path(directory);catalog=fixtures()[1];at=datetime(2026,9,5,3,59,tzinfo=timezone.utc);config=DeploymentConfig("endpoint","endpoint",OperatingMode.ACTIVATED,root/"activated/endpoint/primary",root/"activated/endpoint/secondary","https://fixture.invalid",RetryPolicy(1,1,1,(),0),1,root/"logs",activation_at=APPROVED_ACTIVATION_AT);archive=NamespaceArchive(config);page=ProviderPageAcquisition("",endpoint,catalog,at,at,0,"kalshi")
+                bundle_id=publish_verified_acquisition(archive=archive,provider="kalshi",union_raw=catalog,pages=(page,),contracts=(),collected_at=at,protocol_id=None,command="refresh-supporting")["manifest_entry_id"];bundle=json.loads(archive.read_verified("normalized",next(x["normalized_object_id"] for x in archive.entries() if x["manifest_entry_id"]==bundle_id)))
+                with self.assertRaisesRegex(OperationsError,"canonical discovery authority"):verify_acquisition_bundle(archive,bundle)
 
     def test_execute_passes_one_trusted_start_to_loaders(self):
         from inspect_forecast_standalone_activation import fixtures

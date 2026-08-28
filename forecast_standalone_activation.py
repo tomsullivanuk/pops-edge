@@ -34,6 +34,7 @@ ACTIVATION_DECISION_REFERENCE="product-owner:pr17c1:2026-09-05"
 MAX_RESPONSE_BYTES=2_000_000
 MAX_CATALOG_PAGES=100
 KALSHI_CATALOG_PAGE_LIMIT=100
+KALSHI_MLB_SERIES_TICKER="KXMLBGAME"
 MLB_DATE_RULE_VERSION="eastern-unresolved-obligations-lookback-2"
 MLB_CORRECTION_LOOKBACK_DAYS=7
 ACQUISITION_UNION_RULE_VERSION="provider-pages-canonical-union-1"
@@ -288,7 +289,7 @@ def merge_mlb_schedule_responses(responses:Iterable[bytes])->bytes:
 
 def encoded_kalshi_catalog_path(cursor:str)->str:
     if not isinstance(cursor,str):raise OperationsError("pagination-cursor-invalid","catalog cursor must be text")
-    return "/markets?"+urlencode({"status":"open","limit":str(KALSHI_CATALOG_PAGE_LIMIT),**({"cursor":cursor} if cursor else {})})
+    return "/markets?"+urlencode({"series_ticker":KALSHI_MLB_SERIES_TICKER,"status":"open","limit":str(KALSHI_CATALOG_PAGE_LIMIT),**({"cursor":cursor} if cursor else {})})
 
 
 def _canonical_json_digest(raw:bytes)->str:
@@ -355,6 +356,7 @@ def verify_acquisition_bundle(archive:NamespaceArchive,value:Mapping[str,Any],*,
     if len({page.get("request_identity") for page in pages if isinstance(page,dict)})!=len(pages):raise OperationsError("acquisition-page-conflict","duplicate page request identity")
     for position,page in enumerate(pages):
         if not isinstance(page,dict) or page.get("position")!=position or page.get("manifest_entry_id") not in entries:raise OperationsError("acquisition-page-conflict","page ordering or reference conflicts")
+        if provider=="kalshi" and page.get("endpoint")!=encoded_kalshi_catalog_path(page.get("request_identity")):raise OperationsError("acquisition-page-conflict","Kalshi page endpoint conflicts with canonical discovery authority")
         entry=entries[page["manifest_entry_id"]]
         if entry.get("provider_id")!=provider or entry.get("raw_object_sha256")!=page.get("raw_sha256") or entry.get("endpoint")!=page.get("endpoint"):raise OperationsError("acquisition-page-conflict","foreign or altered page authority")
         raw=archive.read_verified("raw",page["raw_sha256"])
