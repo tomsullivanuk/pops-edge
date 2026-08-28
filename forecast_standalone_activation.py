@@ -292,6 +292,18 @@ def encoded_kalshi_catalog_path(cursor:str)->str:
     return "/markets?"+urlencode({"series_ticker":KALSHI_MLB_SERIES_TICKER,"status":"open","limit":str(KALSHI_CATALOG_PAGE_LIMIT),**({"cursor":cursor} if cursor else {})})
 
 
+def canonical_mlb_schedule_request(query_date:date|str)->tuple[str,str]:
+    """Return the canonical bounded-transport path and absolute MLB endpoint."""
+    from mlb_stats_api import MLBStatsAPIClient
+    if isinstance(query_date,str):
+        parsed=date.fromisoformat(query_date)
+        if parsed.isoformat()!=query_date:raise ValueError("MLB request date is not canonical ISO")
+    elif isinstance(query_date,date):parsed=query_date
+    else:raise TypeError("MLB request date must be a date or canonical ISO text")
+    endpoint,parameters=MLBStatsAPIClient.schedule_request(parsed);query=urlencode(parameters)
+    return urlparse(endpoint).path+"?"+query,endpoint+"?"+query
+
+
 def _canonical_json_digest(raw:bytes)->str:
     try:return hashlib.sha256(canonical_bytes(json.loads(raw,object_pairs_hook=lambda pairs:_unique_object(pairs,"provider")))).hexdigest()
     except (UnicodeDecodeError,json.JSONDecodeError) as exc:raise OperationsError("malformed-response","acquisition material is malformed") from exc
@@ -302,7 +314,7 @@ def _mlb_page_tuple(item:Any,index:int)->tuple[str,str,bytes]:
     if not isinstance(item,bytes):return item
     payload=json.loads(item);dates=tuple(str(x.get("date")) for x in payload.get("dates",()) if isinstance(x,dict) and x.get("date"))
     identity=dates[0] if len(set(dates))==1 else f"page-{index}"
-    return identity,f"https://statsapi.mlb.com/api/v1/schedule?sportId=1&date={identity}",item
+    return identity,canonical_mlb_schedule_request(identity)[1],item
 
 
 def _page_material(item:Any,index:int,collected_at:datetime)->tuple[str,str,bytes,datetime,datetime]:
@@ -357,6 +369,10 @@ def verify_acquisition_bundle(archive:NamespaceArchive,value:Mapping[str,Any],*,
     for position,page in enumerate(pages):
         if not isinstance(page,dict) or page.get("position")!=position or page.get("manifest_entry_id") not in entries:raise OperationsError("acquisition-page-conflict","page ordering or reference conflicts")
         if provider=="kalshi" and page.get("endpoint")!=encoded_kalshi_catalog_path(page.get("request_identity")):raise OperationsError("acquisition-page-conflict","Kalshi page endpoint conflicts with canonical discovery authority")
+        if provider=="mlb-stats-api":
+            try:expected_endpoint=canonical_mlb_schedule_request(page.get("request_identity"))[1]
+            except (TypeError,ValueError):raise OperationsError("acquisition-page-conflict","MLB page request identity is not a canonical date") from None
+            if page.get("endpoint")!=expected_endpoint:raise OperationsError("acquisition-page-conflict","MLB page endpoint conflicts with canonical schedule authority")
         entry=entries[page["manifest_entry_id"]]
         if entry.get("provider_id")!=provider or entry.get("raw_object_sha256")!=page.get("raw_sha256") or entry.get("endpoint")!=page.get("endpoint"):raise OperationsError("acquisition-page-conflict","foreign or altered page authority")
         raw=archive.read_verified("raw",page["raw_sha256"])
