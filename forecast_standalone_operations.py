@@ -31,6 +31,7 @@ OPERATIONS_SCHEMA_VERSION = "1"
 INDEX_SCHEMA_VERSION = "1"
 INDEX_BUILDER_VERSION = "1"
 PROVIDER_ID = "kalshi"
+APPROVED_ACTIVATION_AT = datetime.fromisoformat("2026-09-05T00:00:00-04:00")
 PROHIBITED_KEYS = frozenset({"authorization", "cookie", "password", "secret", "token", "api_key", "private_key"})
 
 
@@ -81,6 +82,7 @@ def _utc(value: datetime, label: str) -> str:
 
 def _plain(value: Any) -> Any:
     if isinstance(value, datetime): return {"datetime_utc": _utc(value, "canonical datetime")}
+    if isinstance(value, date): return {"date": value.isoformat()}
     if isinstance(value, Enum): return value.value
     if is_dataclass(value): return _plain(asdict(value))
     if isinstance(value, Mapping): return {str(k): _plain(v) for k, v in sorted(value.items())}
@@ -138,6 +140,7 @@ class DeploymentConfig:
     schedule_parameters: tuple[tuple[str, str], ...] = ()
     research_protocol_ids: tuple[str,...] = ()
     fixture_response_path: Path | None = None
+    activation_at: datetime | None = None
     schema_version: str = OPERATIONS_SCHEMA_VERSION
     def __post_init__(self) -> None:
         if self.schema_version != OPERATIONS_SCHEMA_VERSION or not self.config_id or not self.namespace:
@@ -153,6 +156,10 @@ class DeploymentConfig:
                 raise OperationsError("namespace-overlap", "archive paths must include mode and namespace")
         _reject_secrets(dict(self.schedule_parameters), "schedule_parameters")
         object.__setattr__(self,"research_protocol_ids",tuple(sorted(set(self.research_protocol_ids))))
+        if self.mode is OperatingMode.ACTIVATED:
+            if self.activation_at is None or self.activation_at.isoformat() != APPROVED_ACTIVATION_AT.isoformat() or self.timezone_name != "America/New_York":
+                raise OperationsError("activation-authority-invalid","activated configuration requires the exact approved Eastern boundary")
+        elif self.activation_at is not None:raise OperationsError("activation-authority-invalid","dry-run configuration cannot carry activation authority")
 
     @classmethod
     def from_json(cls, path: Path) -> "DeploymentConfig":
@@ -160,6 +167,7 @@ class DeploymentConfig:
         retry = RetryPolicy(**raw.pop("retry_policy"))
         for key in ("primary_root", "secondary_root", "log_root"): raw[key] = Path(raw[key])
         if raw.get("fixture_response_path") is not None:raw["fixture_response_path"]=Path(raw["fixture_response_path"])
+        if raw.get("activation_at") is not None:raw["activation_at"]=datetime.fromisoformat(raw["activation_at"])
         raw["mode"] = OperatingMode(raw["mode"]); raw["retry_policy"] = retry
         raw["schedule_parameters"] = tuple(sorted((str(k), str(v)) for k, v in raw.get("schedule_parameters", {}).items()))
         return cls(**raw)
@@ -172,6 +180,9 @@ class DeploymentConfig:
                     "lock_timeout_seconds": str(self.lock_timeout_seconds), "log_root": str(self.log_root.resolve()),
                     "timezone_name": self.timezone_name, "schedule_parameters": self.schedule_parameters,
                     "research_protocol_ids":self.research_protocol_ids,"fixture_response_path":str(self.fixture_response_path) if self.fixture_response_path else None}
+        # Preserve every historical PR17B2 dry-run configuration identity.  The
+        # activation field participates only in the new activated schema shape.
+        if self.activation_at is not None: material["activation_at"] = self.activation_at
         return f"operations-config:{sha256_bytes(canonical_bytes(material))}"
 
 
@@ -264,7 +275,7 @@ def classify_response(response: HTTPResponse) -> Disposition:
 
 
 def _decode_json(body: bytes) -> Mapping[str, Any]:
-    try: value = json.loads(body)
+    try: value = json.loads(body,object_pairs_hook=_provider_object)
     except (UnicodeDecodeError, json.JSONDecodeError) as exc: raise OperationsError("malformed-response", str(exc)) from exc
     if not isinstance(value, dict): raise OperationsError("incomplete-response", "top-level object required")
     _reject_secrets(value, "provider_response")
@@ -412,7 +423,8 @@ def acquire_prospective_once(*, transport: Transport, endpoint: str, request: Ma
                              timeout_seconds: int, now: Callable[[], datetime],
                              validator: Callable[[Mapping[str, Any]], Mapping[str, Any]],
                              started_at: datetime | None = None,
-                             chronology_validator: Callable[[Mapping[str,Any],datetime,datetime],None] | None = None) -> AcquisitionResult:
+                             chronology_validator: Callable[[Mapping[str,Any],datetime,datetime],None] | None = None,
+                             raw_validator:Callable[[Mapping[str,Any],bytes,datetime,datetime],Mapping[str,Any]]|None=None) -> AcquisitionResult:
     """Issue exactly one request. Redirects and transport-level retries are disabled by contract."""
     started = started_at if started_at is not None else now();_utc(started,"request start")
     def finish()->datetime:
@@ -434,7 +446,7 @@ def acquire_prospective_once(*, transport: Transport, endpoint: str, request: Ma
         preserved=None if exc.code=="secret-material" else response.body
         return AcquisitionResult(disp, preserved, None, (AttemptRecord(1, started, completed, disp, 200, None),), exc.detail)
     try:
-        normalized = validator(decoded)
+        normalized = raw_validator(decoded,response.body,started,completed) if raw_validator is not None else validator(decoded)
         if chronology_validator is not None:chronology_validator(normalized,started,completed)
     except OperationsError as exc:
         disp = Disposition.MALFORMED_RESPONSE if exc.code == "malformed-response" else (Disposition.INCOMPLETE_RESPONSE if exc.code == "incomplete-response" else Disposition.VALIDATION_FAILURE)
@@ -550,8 +562,8 @@ class NamespaceArchive:
         self.lock_path = self.root / "mutation.lock"; self.index_path = self.root / "index.sqlite3"
 
     def _ensure_mutable(self) -> None:
-        if self.config.mode is not OperatingMode.DRY_RUN:
-            raise OperationsError("activation-prohibited", "PR17B2 cannot mutate an activated namespace")
+        if self.config.mode is OperatingMode.ACTIVATED and self.config.activation_at!=APPROVED_ACTIVATION_AT:
+            raise OperationsError("activation-prohibited", "activated mutation requires exact PR17C1 authority")
         for path in (self.raw_root, self.normalized_root, self.manifest_root, self.temporary_root): path.mkdir(parents=True, exist_ok=True)
 
     @contextmanager
@@ -706,7 +718,7 @@ class ArchiveIntegrityResult:
     @property
     def healthy(self)->bool:return not any((self.referenced_missing,self.referenced_corrupt,self.orphaned,self.malformed,self.incompatible,self.partial))
     @property
-    def blocking(self)->bool:return bool(self.referenced_missing or self.referenced_corrupt or self.malformed or self.incompatible)
+    def blocking(self)->bool:return bool(self.referenced_missing or self.referenced_corrupt or self.malformed or self.incompatible or self.partial)
 
 
 def reconcile_archive(archive:NamespaceArchive)->ArchiveIntegrityResult:
@@ -736,6 +748,41 @@ def reconcile_archive(archive:NamespaceArchive)->ArchiveIntegrityResult:
             name=path.name[:-len(suffix)] if suffix and path.name.endswith(suffix) else path.name
             if len(name)!=64 or any(ch not in "0123456789abcdef" for ch in name) or path.parent.name!=name[:2] or (suffix and not path.name.endswith(suffix)):
                 malformed_paths.append(f"{family}:{path.relative_to(root)}")
+    acquisition_pages={};acquisition_envelopes={};acquisition_reconciliations={};acquisition_entry_ids={};acquisition_partial=[]
+    for item in valid:
+        identity=item.get("normalized_object_id")
+        if not identity or identity.split(":")[-1] not in actual_normalized:continue
+        try:value=json.loads(actual_normalized[identity.split(":")[-1]].read_bytes())
+        except (OSError,json.JSONDecodeError):continue
+        group=value.get("acquisition_id");kind=value.get("record_kind")
+        if not isinstance(group,str):continue
+        acquisition_entry_ids.setdefault(group,set()).add(item["manifest_entry_id"])
+        if kind=="pr17c1-provider-page":acquisition_pages.setdefault(group,set()).add(item["manifest_entry_id"])
+        elif kind=="pr17c1-acquisition-bundle":acquisition_envelopes.setdefault(group,[]).append((item["manifest_entry_id"],value))
+        elif kind=="pr17c1-acquisition-reconciliation":acquisition_reconciliations.setdefault(group,[]).append((item["manifest_entry_id"],value,item))
+    for group in sorted(set(acquisition_pages)|set(acquisition_envelopes)|set(acquisition_reconciliations)):
+        pages=acquisition_pages.get(group,set());envelopes=acquisition_envelopes.get(group,[])
+        reconciliations=acquisition_reconciliations.get(group,[])
+        if len(envelopes)>1:acquisition_partial.append(f"acquisition:{group}:competing-envelopes");continue
+        if envelopes and reconciliations:acquisition_partial.append(f"acquisition:{group}:reconciliation-targets-complete-group");continue
+        if not envelopes:
+            if not reconciliations:acquisition_partial.append(f"acquisition:{group}:missing-envelope");continue
+            if len(reconciliations)!=1:acquisition_partial.append(f"acquisition:{group}:competing-reconciliations");continue
+            _,reconciliation,manifest=reconciliations[0]
+            covered=set(reconciliation.get("page_manifest_ids",()))
+            page_values=[]
+            for item in valid:
+                if item["manifest_entry_id"] not in pages:continue
+                page_values.append((item,json.loads(actual_normalized[item["normalized_object_id"].split(":")[-1]].read_bytes())))
+            providers={value.get("provider") for _,value in page_values};families={item.get("command","")[:-5] for item,_ in page_values if item.get("command","").endswith("-page")}
+            expected_authority=[{"position":value.get("position"),"request_identity":value.get("request_identity"),"endpoint":value.get("endpoint"),"raw_sha256":value.get("raw_sha256"),"started_at":value.get("started_at"),"completed_at":value.get("completed_at")} for _,value in sorted(page_values,key=lambda pair:pair[1].get("position",-1))]
+            latest=max((datetime.fromisoformat(item["acquired_at"]["datetime_utc"]) for item,_ in page_values),default=None)
+            reconciled_at_raw=reconciliation.get("reconciled_at");reconciled_at=datetime.fromisoformat(reconciled_at_raw["datetime_utc"]) if isinstance(reconciled_at_raw,dict) else None
+            valid_reconciliation=(reconciliation.get("schema_version")=="1" and reconciliation.get("recovery_rule")=="abandon-incomplete-acquisition-1" and reconciliation.get("disposition")=="abandoned-non-authoritative" and covered==pages and reconciliation.get("request_authority")==expected_authority and len(providers)==1 and reconciliation.get("provider") in providers and len(families)==1 and reconciliation.get("family") in families and latest is not None and reconciled_at is not None and reconciled_at>=latest and manifest.get("acquired_at",{}).get("datetime_utc")==reconciled_at_raw.get("datetime_utc"))
+            if not valid_reconciliation:acquisition_partial.append(f"acquisition:{group}:invalid-reconciliation")
+            continue
+        referenced_pages={x.get("manifest_entry_id") for x in envelopes[0][1].get("pages",()) if isinstance(x,dict)}
+        if referenced_pages!=pages:acquisition_partial.append(f"acquisition:{group}:page-set-conflict")
     authoritative=[]
     bad=set(missing)|set(corrupt)
     for item in valid:
@@ -744,7 +791,31 @@ def reconcile_archive(archive:NamespaceArchive)->ArchiveIntegrityResult:
         if item.get("normalized_object_id"):labels.add(item["normalized_object_id"])
         if not labels&bad:authoritative.append(item["manifest_entry_id"])
     return ArchiveIntegrityResult(tuple(referenced),tuple(missing),tuple(corrupt),orphaned,
-        tuple(sorted(set(malformed+malformed_paths))),tuple(sorted(incompatible)),archive.temporary_files(),tuple(sorted(authoritative)))
+        tuple(sorted(set(malformed+malformed_paths))),tuple(sorted(incompatible)),tuple(sorted(set(archive.temporary_files())|set(acquisition_partial))),tuple(sorted(authoritative)))
+
+
+def reconcile_incomplete_acquisitions(archive:NamespaceArchive,*,reconciled_at:datetime)->tuple[str,...]:
+    """Immutably abandon every unambiguous page-only acquisition after restart."""
+    _utc(reconciled_at,"acquisition reconciliation")
+    entries=archive.entries();groups={};existing=set()
+    for entry in entries:
+        identity=entry.get("normalized_object_id")
+        if not identity:continue
+        value=json.loads(archive.read_verified("normalized",identity));kind=value.get("record_kind");group=value.get("acquisition_id")
+        if kind=="pr17c1-provider-page" and isinstance(group,str):groups.setdefault(group,[]).append((entry,value))
+        elif kind in {"pr17c1-acquisition-bundle","pr17c1-acquisition-reconciliation"} and isinstance(group,str):existing.add(group)
+    created=[]
+    for group,page_values in sorted(groups.items()):
+        if group in existing:continue
+        ordered=tuple(sorted(page_values,key=lambda pair:pair[1].get("position",-1)));providers={value.get("provider") for _,value in ordered};families={entry.get("command","")[:-5] for entry,_ in ordered if entry.get("command","").endswith("-page")}
+        positions=tuple(value.get("position") for _,value in ordered);latest=max(datetime.fromisoformat(entry["acquired_at"]["datetime_utc"]) for entry,_ in ordered)
+        if len(providers)!=1 or len(families)!=1 or positions!=tuple(range(len(ordered))) or reconciled_at<latest:raise OperationsError("acquisition-reconciliation-ambiguous",group)
+        provider=next(iter(providers));family=next(iter(families));page_ids=tuple(entry["manifest_entry_id"] for entry,_ in ordered)
+        request_authority=tuple({"position":value.get("position"),"request_identity":value.get("request_identity"),"endpoint":value.get("endpoint"),"raw_sha256":value.get("raw_sha256"),"started_at":value.get("started_at"),"completed_at":value.get("completed_at")} for _,value in ordered)
+        normalized={"schema_version":"1","record_kind":"pr17c1-acquisition-reconciliation","acquisition_id":group,"provider":provider,"family":family,"page_manifest_ids":page_ids,"request_authority":request_authority,"detected_incompleteness":"missing-envelope","disposition":"abandoned-non-authoritative","reason":"fresh-process retry requires truthful new chronology","recovery_rule":"abandon-incomplete-acquisition-1","reconciled_at":reconciled_at}
+        values=_entry_values(archive=archive,command="reconcile-acquisition",request_id=request_identity({"acquisition_id":group,"pages":page_ids,"recovery_rule":"abandon-incomplete-acquisition-1"}),invoked_at=reconciled_at,endpoint="local://archive/acquisition-reconciliation",disposition=Disposition.SUCCESS,protocol_id=ordered[0][0].get("protocol_id"),design=DesignAuthority.SUPPORTING,diagnostics=("immutable non-authoritative acquisition abandonment",),provider_effective_at=reconciled_at);values["provider_id"]="archive-reconciliation"
+        entry=archive.commit(raw_body=canonical_bytes(normalized),normalized=normalized,entry_values=values);created.append(entry.manifest_entry_id)
+    return tuple(created)
 
 
 def authoritative_entries(archive:NamespaceArchive)->tuple[Mapping[str,Any],...]:
@@ -901,7 +972,12 @@ def inspect_archive(archive: NamespaceArchive) -> DiagnosticResult:
     except OperationsError:entries=()
     for entry in entries: _verify_entry_objects(archive,entry)
     by_design={tag.value:sum(1 for item in entries if item["design_authority"]==tag.value) for tag in DesignAuthority}
-    facts=(("verified_entries",len(entries)),("orphaned_objects",len(integrity.orphaned)),("missing_objects",len(integrity.referenced_missing)),("corrupt_objects",len(integrity.referenced_corrupt)))+tuple((f"{key}_entries",value) for key,value in sorted(by_design.items()))
+    kinds=[]
+    for entry in archive.entries():
+        if entry.get("normalized_object_id"):
+            kinds.append(json.loads(archive.read_verified("normalized",entry["normalized_object_id"])).get("record_kind"))
+    unresolved=sum(1 for item in integrity.partial if item.endswith(":missing-envelope"));abandoned=kinds.count("pr17c1-acquisition-reconciliation");complete=kinds.count("pr17c1-acquisition-bundle")
+    facts=(("verified_entries",len(entries)),("orphaned_objects",len(integrity.orphaned)),("missing_objects",len(integrity.referenced_missing)),("corrupt_objects",len(integrity.referenced_corrupt)),("unresolved_partial_acquisitions",unresolved),("reconciled_abandoned_acquisitions",abandoned),("complete_authoritative_acquisitions",complete))+tuple((f"{key}_entries",value) for key,value in sorted(by_design.items()))
     issues=tuple(f"archive orphaned: {item}" for item in integrity.orphaned)+tuple(f"archive missing: {item}" for item in integrity.referenced_missing)+tuple(f"archive corrupt: {item}" for item in integrity.referenced_corrupt)+tuple(f"archive malformed: {item}" for item in integrity.malformed)+tuple(f"archive incompatible: {item}" for item in integrity.incompatible)+tuple(f"archive partial: {item}" for item in integrity.partial)
     return DiagnosticResult(OPERATIONS_SCHEMA_VERSION,"inspect",archive.config.identity,archive.config.namespace,archive.config.mode,integrity.healthy,"verified" if integrity.healthy else "attention",facts,issues)
 
@@ -909,7 +985,7 @@ def inspect_archive(archive: NamespaceArchive) -> DiagnosticResult:
 COMMAND_CAPABILITIES={
     "acquire-schedule":"provider+primary", "acquire-classification":"provider+primary", "acquire-retrospective":"provider+primary",
     "capture-prospective":"single-provider-request+primary", "reconcile-outcomes":"provider+primary", "sync-secondary":"secondary-only",
-    "rebuild-index":"derived-index-only", "status":"read-only", "preflight":"read-only", "inspect":"read-only",
+    "reconcile-acquisitions":"primary-operational-integrity", "rebuild-index":"derived-index-only", "status":"read-only", "preflight":"read-only", "inspect":"read-only",
 }
 
 
@@ -966,10 +1042,46 @@ def archive_pr17_authority(archive:NamespaceArchive,contracts:Iterable[Any],*,re
     return tuple(entries)
 
 
-def _contracts_from_entry(archive:NamespaceArchive,entry:Mapping[str,Any])->tuple[Any,...]:
+def _contracts_from_entry(archive:NamespaceArchive,entry:Mapping[str,Any],prior_objects:Iterable[Any]=())->tuple[Any,...]:
     identity=entry.get("normalized_object_id")
     if not identity:return ()
     value=json.loads(archive.read_verified("normalized",identity))
+    if value.get("record_kind")=="pr17c1-acquisition-bundle":
+        from forecast_standalone_activation import refresh_supporting_from_raw,reconcile_outcomes_from_raw,verify_acquisition_bundle
+        union,payloads=verify_acquisition_bundle(archive,value,include_union=True)
+        from forecast_standalone_research import deserialize_v3
+        stored=tuple(deserialize_v3(payload) for payload in payloads)
+        if len(payloads)!=len(set(payloads)):raise OperationsError("acquisition-contract-conflict","acquisition contains duplicate contracts")
+        class PriorState:
+            def bucket(self,name):return tuple(x for x in prior_objects if PR17_GRAPH_BUCKETS.get(type(x).__name__)==name)
+        prior=PriorState();started=datetime.fromisoformat(value["command_started_at_iso"]);family=value.get("family");provider=value.get("provider")
+        if family=="reconcile-outcomes" and provider=="mlb-stats-api":expected=reconcile_outcomes_from_raw(archive=None,mlb_raw=union,collected_at=started,prior_state=prior,derive_only=True)
+        elif family=="refresh-supporting" and provider=="mlb-stats-api":expected=tuple(x for x in refresh_supporting_from_raw(archive=None,mlb_raw=union,kalshi_raw=b'{"cursor":"","markets":[]}',collected_at=started,prior_state=prior,derive_only=True) if type(x).__name__!="ProviderMarketSeries")
+        elif family=="refresh-supporting" and provider=="kalshi":
+            dependencies=value.get("dependencies",())
+            if not isinstance(dependencies,list) or len(dependencies)!=1:raise OperationsError("acquisition-dependency-conflict","Kalshi acquisition requires one MLB dependency")
+            mlb_union=None
+            for candidate_entry in authoritative_entries(archive):
+                normalized_id=candidate_entry.get("normalized_object_id")
+                if not normalized_id:continue
+                candidate=json.loads(archive.read_verified("normalized",normalized_id))
+                if candidate.get("record_kind")=="pr17c1-acquisition-bundle" and candidate.get("acquisition_id")==dependencies[0] and candidate.get("provider")=="mlb-stats-api":mlb_union,_=verify_acquisition_bundle(archive,candidate,include_union=True);break
+            if mlb_union is None:raise OperationsError("acquisition-dependency-conflict","MLB dependency is absent")
+            expected=tuple(x for x in refresh_supporting_from_raw(archive=None,mlb_raw=mlb_union,kalshi_raw=union,collected_at=started,prior_state=prior,derive_only=True) if type(x).__name__=="ProviderMarketSeries")
+        else:raise OperationsError("acquisition-incompatible","unsupported PR17C1 acquisition family")
+        expected_payloads=tuple(sorted(x.to_json() for x in expected))
+        if tuple(sorted(payloads))!=expected_payloads:
+            stored_set=set(payloads);expected_set=set(expected_payloads)
+            def contract_type(payload):
+                try:
+                    value=json.loads(payload)
+                    return value.get("__type__","unknown")
+                except json.JSONDecodeError:return "invalid"
+            detail=f"{family}/{provider}: stored-only {tuple(sorted(contract_type(x) for x in stored_set-expected_set))}; page-derived-only {tuple(sorted(contract_type(x) for x in expected_set-stored_set))}"
+            raise OperationsError("acquisition-contract-reconstruction-conflict",detail)
+        return tuple(expected)
+    if entry.get("command") in {"refresh-supporting","reconcile-outcomes"}:
+        raise OperationsError("acquisition-page-authority-missing","PR17C1 provider contracts require a verified acquisition envelope")
     if value.get("record_kind")!="pr17b1-contract-bundle" or value.get("schema_version")!=OPERATIONS_SCHEMA_VERSION:return ()
     from forecast_standalone_research import deserialize_v3
     contracts=tuple(deserialize_v3(payload) for payload in value.get("contracts",()))
@@ -980,7 +1092,7 @@ def _contracts_from_entry(archive:NamespaceArchive,entry:Mapping[str,Any])->tupl
 def replay_pr17_archive(archive:NamespaceArchive,*,analysis_boundary:datetime)->ScientificArchiveState:
     _utc(analysis_boundary,"archive replay boundary")
     entries=authoritative_entries(archive);objects=[]
-    for entry in entries:objects.extend(_contracts_from_entry(archive,entry))
+    for entry in entries:objects.extend(_contracts_from_entry(archive,entry,objects))
     keyed={}
     for item in objects:
         key=(type(item).__name__,item.to_json())
@@ -1063,7 +1175,8 @@ class ProspectiveDiscoveryResult:
 
 
 def discover_and_capture_prospective(*,archive:NamespaceArchive,
-        transport_factory:Callable[[Any,Any],Transport],clock:Callable[[],datetime])->ProspectiveDiscoveryResult:
+        transport_factory:Callable[[Any,Any],Transport],clock:Callable[[],datetime],
+        observation_adapter:Callable[[Mapping[str,Any],bytes,datetime,datetime,Any,Any],Any]|None=None)->ProspectiveDiscoveryResult:
     """Discover PR17B1-authorized work from archive state using only a trusted clock."""
     from forecast_comparative_research import PopulationEligibilityDisposition,PopulationEligibilityValidationStatus
     from forecast_standalone_research import (AcquisitionFailed,AttemptFailureCategory,AttemptValidationFailure,CapturedInvalid,
@@ -1093,8 +1206,10 @@ def discover_and_capture_prospective(*,archive:NamespaceArchive,
                 eligibility_context=context,eligibility_result=result,outcome_history=history,analysis_boundary=now)
             proposition=f"winner:{schedule.canonical_event_id}:{schedule.home_participant_id}"
             matching_series=tuple(item for item in series_values if item.provider==PROVIDER_ID and item.proposition_id==proposition)
-            if len(matching_series)!=1:raise OperationsError("prospective-authority-invalid","provider Market Series does not resolve exactly")
-            series=matching_series[0];owned=[item for item in existing if item.opportunity_id==opportunity.research_capture_opportunity_id]
+            series=matching_series[0] if len(matching_series)==1 else None
+            provider_market_id=series.provider_market_id if series is not None else f"unmapped-kalshi:{schedule.canonical_event_id}"
+            mapping_diagnostic="unique-market" if series is not None else ("no-unambiguous-market" if not matching_series else "ambiguous-market")
+            owned=[item for item in existing if item.opportunity_id==opportunity.research_capture_opportunity_id]
             if any(item.effective_at>now for item in owned):raise OperationsError("prospective-authority-invalid","future-effective attempt authority")
             by_slot={item.slot:item for item in owned};success=next((item for item in owned if isinstance(item.result,CapturedValid)),None)
             if existing_snapshots and any(item.opportunity_id==opportunity.research_capture_opportunity_id for item in existing_snapshots):continue
@@ -1117,8 +1232,8 @@ def discover_and_capture_prospective(*,archive:NamespaceArchive,
                 invocation=max(at,target+timedelta(minutes=slot));attempt_result=SkippedAfterSuccess(success.prospective_capture_attempt_id) if success else Missed()
                 attempt=ProspectiveCaptureAttempt.create(protocol_id=protocol.standalone_probability_source_protocol_id,opportunity_id=opportunity.research_capture_opportunity_id,
                     schedule_observation_id=schedule.observation_id,canonical_event_id=schedule.canonical_event_id,proposition_id=proposition,home_participant_id=schedule.home_participant_id,
-                    provider_market_id=series.provider_market_id,target_at=target,slot=slot,invocation_at=invocation,provider_call_occurred=False,result=attempt_result,
-                    effective_at=invocation,diagnostics=("authority-derived no-call disposition",),provenance=result.provenance)
+                    provider_market_id=provider_market_id,target_at=target,slot=slot,invocation_at=invocation,provider_call_occurred=False,result=attempt_result,
+                    effective_at=invocation,diagnostics=("authority-derived no-call disposition",mapping_diagnostic),provenance=result.provenance)
                 values=_entry_values(archive=archive,command="capture-prospective",request_id=request_identity({"opportunity_id":opportunity.research_capture_opportunity_id,"slot":slot,"no_call":type(attempt_result).__name__}),invoked_at=invocation,
                     endpoint=archive.config.provider_base_url,disposition=Disposition.SKIPPED_AFTER_SUCCESS if success else Disposition.MISSED,protocol_id=protocol.standalone_probability_source_protocol_id,
                     design=DesignAuthority.PROSPECTIVE,diagnostics=(f"opportunity:{opportunity.research_capture_opportunity_id}",f"slot:{slot}","canonical no-call"))
@@ -1129,7 +1244,7 @@ def discover_and_capture_prospective(*,archive:NamespaceArchive,
             completion_time=decision_time
             for slot in range(upper+1):
                 if slot in by_slot:continue
-                if slot==current and success is None:
+                if slot==current and success is None and series is not None:
                     transport=transport_factory(opportunity,series)
                     decoded_observation:dict[str,MarketObservation]={}
                     def validate(value:Mapping[str,Any])->Mapping[str,Any]:
@@ -1140,10 +1255,15 @@ def discover_and_capture_prospective(*,archive:NamespaceArchive,
                         if (observation.series_id,observation.provider_market_id,observation.canonical_event_id,observation.proposition_id)!=(series.series_id,series.provider_market_id,schedule.canonical_event_id,proposition):raise OperationsError("validation-failure","MarketObservation conflicts with archived authority")
                         decoded_observation["value"]=observation
                         return {"schema_version":OPERATIONS_SCHEMA_VERSION,"contract_json":payload,"record_kind":"prospective-provider-observation"}
+                    def adapt_live(value:Mapping[str,Any],raw:bytes,started:datetime,completed:datetime)->Mapping[str,Any]:
+                        if observation_adapter is None:return validate(value)
+                        observation=observation_adapter(value,raw,started,completed,series,schedule)
+                        decoded_observation["value"]=observation
+                        return {"schema_version":OPERATIONS_SCHEMA_VERSION,"contract_json":observation.to_json(),"record_kind":"prospective-provider-observation"}
                     def validate_chronology(normalized:Mapping[str,Any],started:datetime,completed:datetime)->None:
                         observation=decoded_observation["value"]
                         if observation.collected_at<started or observation.collected_at>completed:raise OperationsError("validation-failure","MarketObservation collected_at is outside the inclusive trusted request interval")
-                    acquired=acquire_prospective_once(transport=transport,endpoint=archive.config.provider_base_url,request={"market_id":series.provider_market_id},timeout_seconds=archive.config.retry_policy.request_timeout_seconds,now=clock,validator=validate,started_at=decision_time,chronology_validator=validate_chronology);calls+=len(acquired.attempts)
+                    acquired=acquire_prospective_once(transport=transport,endpoint=archive.config.provider_base_url,request={"market_id":series.provider_market_id},timeout_seconds=archive.config.retry_policy.request_timeout_seconds,now=clock,validator=validate,started_at=decision_time,chronology_validator=validate_chronology,raw_validator=adapt_live if observation_adapter is not None else None);calls+=len(acquired.attempts)
                     started=acquired.attempts[0].started_at;completed=acquired.attempts[-1].completed_at;completion_time=completed
                     if started!=decision_time or completed<started:raise OperationsError("trusted-clock-reversed","provider chronology conflicts with authorization")
                     raw_digest=sha256_bytes(acquired.raw_body) if acquired.raw_body is not None else None
@@ -1167,7 +1287,7 @@ def discover_and_capture_prospective(*,archive:NamespaceArchive,
                     if acquired.raw_body is None:archive._commit_normalized_locked(normalized=normalized,entry_values=values)
                     else:archive._commit_locked(raw_body=acquired.raw_body,normalized=normalized,entry_values=values)
                 else:attempt=persist_no_call(slot,decision_time)
-                if slot==current and success is None:
+                if slot==current and success is None and series is not None:
                     existing.append(attempt);owned.append(attempt);by_slot[slot]=attempt;created.append(attempt.prospective_capture_attempt_id)
                 if isinstance(attempt.result,CapturedValid):success=attempt
 

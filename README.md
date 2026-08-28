@@ -238,3 +238,21 @@ python3 -m unittest discover -s tests
 Use the validation and handoff process in
 [docs/CODEX_WORKFLOW.md](docs/CODEX_WORKFLOW.md). Do not mix changes to
 v1.0.0 calculations or reports into documentation-only foundation work.
+## PR17C1 status
+
+PR17C1 locally prepares—but does not activate—the proposed Kalshi MLB prospective boundary at `2026-09-05T00:00:00-04:00` (`America/New_York`; `2026-09-05T04:00:00Z`). It requires explicit Product Owner authorization and reviewed merge by September 3. The offline implementation includes deterministic exact-one home-team YES market discovery, replaceable macOS Keychain and bounded read-only transport seams, external immutable Evidence storage, 30-second prospective invocation, hourly supporting refresh, and daily outcomes, maintenance, same-drive secondary sync, and health reporting. It neither promotes dry-run material nor claims active Protocols or real Evidence.
+
+The sequence is PR17C1 activation/start, PR17C2 retrospective closure, PR17C3 retrospective report, then unchanged PR17D prospective close/separate report. Scientific, operational, reporting, Policy, Governance, and production authority remain separate.
+
+PR17C1 commands no longer treat an unwired adapter as successful: missing authority, credentials, adapters, or readiness returns a typed failure. An inert renderer creates absolute-path launchd plists, while append-only sanitized operational heartbeats provide real inputs to health readiness. The repeatable rehearsal executes those local boundaries using injected fixture transport and credentials only.
+
+The committed initializer admits only the canonical prospective activation bundle. Supporting and outcome commands decode provider-native MLB responses and Kalshi catalogs; capture preserves raw fixed-point order books and separately publishes typed observations. Public market-data GETs do not access Keychain. Health tracks each approved cadence independently, and `maintain` will not rebuild the derived index over an unsafe archive.
+PR17C1 proposes local prospective collection over the complete 2026 MLB regular-season scheduled-state universe. MLB opportunities are created independently of Kalshi availability, supporting corrections are append-only, catalog reads are completely paginated within explicit bounds, and MLB date selection follows New York capture/outcome obligations rather than the current UTC date alone. Kalshi YES and NO resting bids are complemented into canonical NO and YES executable offers. No activation, deployment, live access, or real Evidence collection is claimed by this repository change.
+
+Exact provider pages remain separate from deterministic derived unions. A typed acquisition manifest binds page requests, chronology, digests, archive references, union rule, and contracts, and replay verifies the chain. Unresolved non-terminal games remain outcome obligations regardless of age; one trusted command-start time fixes dates, and opaque catalog cursors are safely URL-encoded.
+
+Every request preserves its real trusted start/completion interval. Incomplete or competing acquisition groups are reported as blocking partial authority; they cannot enter scientific replay or operational copies and are recovered only through create-only deterministic completion.
+
+Replay independently reconstructs the complete scientific contract set from verified pages and boundary-effective predecessor authority, requiring exact canonical equality rather than trusting the envelope serialization.
+
+After a restart, `reconcile-acquisitions` can immutably abandon an unambiguous incomplete group. Its pages remain visible in primary and secondary audit storage but never become scientific inputs; the replacement is a fresh acquisition with later truthful chronology and a distinct identity.

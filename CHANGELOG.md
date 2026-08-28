@@ -401,3 +401,15 @@ This designation records the baseline; PR1 does not create or backfill a tag.
   into the existing World Cup workflows.
 - Add bounded retry handling for transient Kalshi API failures without
   advancing the pagination cursor.
+## Unreleased — PR17C1
+
+- Prepared exact typed prospective activation authority for September 5, 2026 midnight `America/New_York` (`04:00:00Z`), contingent on explicit Product Owner authorization and reviewed merge by September 3.
+- Added injected, bounded, TLS-only read paths; macOS Keychain credential boundary; deterministic Kalshi home-team YES discovery; refresh deduplication; activated/dry-run isolation; health reporting; offline rehearsal; and inert local-Mac `launchd` templates.
+- Documented PR17C1/PR17C2/PR17C3 with downstream PR17D unchanged. No Protocol was activated, no scheduler installed, no provider contacted, and no real Evidence created.
+- Replaced successful placeholder commands with fail-closed typed composition, corrected fresh-clock request chronology, implemented documented Kalshi RSA-PSS signing seams, append-only operational heartbeat health inputs, absolute-path launchd rendering, and an artifact-derived offline rehearsal.
+- Added canonical activated-authority initialization, provider-native MLB/catalog composition, strict raw-preserving `orderbook_fp` adaptation, independently aged health cadences, fail-closed inspect/index maintenance, and an activated all-rendered-job fixture rehearsal.
+- Corrected proposed PR17C1 prospective scope to include the complete 2026 MLB regular-season scheduled-state universe; decoupled MLB opportunities from Kalshi mapping; added correction-aware supporting replay, bounded cursor-complete catalogs, New York obligation-driven MLB dates, and correct two-sided `orderbook_fp` bid complements. Missing, ambiguous, doubleheader, reschedule, cancellation, and invalid states remain visible. No live activation or Evidence collection occurred.
+- Bound PR17C1 supporting and Outcome contracts to replay-verified acquisition manifests over exact raw pages and explicitly derived unions; retained unresolved non-terminal Outcome dates without an age cutoff; unified loaders on one trusted command start; and safely encoded opaque Kalshi cursors.
+- Added real monotonic per-request chronology and acquisition-group crash reconciliation: incomplete or competing page groups are blocking partial authority excluded from replay, health, maintenance, indexes, and secondary synchronization until deterministic create-only recovery.
+- Replaced trust in envelope contract serialization with independent, correction-aware reconstruction from verified provider pages and exact canonical comparison during ordinary replay.
+- Added durable fresh-process recovery: `reconcile-acquisitions` immutably abandons exact unambiguous page-only groups without deleting Evidence, allowing later independently acquired replacements with truthful chronology while retaining the audit trail.
