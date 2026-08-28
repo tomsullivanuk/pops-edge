@@ -198,8 +198,9 @@ class ActivationTests(unittest.TestCase):
     def test_opaque_cursor_is_encoded_without_query_injection(self):
         for cursor in ("a+b=c%&/ two","雪 +&="):
             path=encoded_kalshi_catalog_path(cursor);query=parse_qs(urlparse(path).query,keep_blank_values=True)
-            self.assertEqual(query,{"status":["open"],"limit":["1000"],"cursor":[cursor]});self.assertEqual(path.count("status="),1);self.assertEqual(path.count("limit="),1)
-        self.assertEqual(parse_qs(urlparse(encoded_kalshi_catalog_path("")).query),{"status":["open"],"limit":["1000"]})
+            self.assertEqual(query,{"status":["open"],"limit":[str(KALSHI_CATALOG_PAGE_LIMIT)],"cursor":[cursor]});self.assertEqual(path.count("status="),1);self.assertEqual(path.count("limit="),1)
+        self.assertEqual(KALSHI_CATALOG_PAGE_LIMIT,100)
+        self.assertEqual(parse_qs(urlparse(encoded_kalshi_catalog_path("")).query),{"status":["open"],"limit":[str(KALSHI_CATALOG_PAGE_LIMIT)]})
 
     def test_acquisition_manifest_replay_rejects_page_and_union_conflicts(self):
         from inspect_forecast_standalone_activation import fixtures
@@ -235,7 +236,7 @@ class ActivationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             from forecast_standalone_activation import ProviderPageAcquisition
             root=Path(directory);mlb,catalog,_=fixtures();_,protocol=canonical_prospective_authority();start=datetime(2026,9,5,3,59,59,tzinfo=timezone.utc);end=start+timedelta(seconds=2)
-            config=DeploymentConfig("crash","crash",OperatingMode.ACTIVATED,root/"activated/crash/primary",root/"activated/crash/secondary","https://fixture.invalid",RetryPolicy(1,1,1,(),0),1,root/"logs",research_protocol_ids=(protocol.standalone_probability_source_protocol_id,),activation_at=APPROVED_ACTIVATION_AT);archive=NamespaceArchive(config);initialize_activation(archive,datetime(2026,8,28,tzinfo=timezone.utc));page=ProviderPageAcquisition("","/markets?status=open&limit=1000",catalog,start,end,0,"kalshi")
+            config=DeploymentConfig("crash","crash",OperatingMode.ACTIVATED,root/"activated/crash/primary",root/"activated/crash/secondary","https://fixture.invalid",RetryPolicy(1,1,1,(),0),1,root/"logs",research_protocol_ids=(protocol.standalone_probability_source_protocol_id,),activation_at=APPROVED_ACTIVATION_AT);archive=NamespaceArchive(config);initialize_activation(archive,datetime(2026,8,28,tzinfo=timezone.utc));page=ProviderPageAcquisition("",encoded_kalshi_catalog_path(""),catalog,start,end,0,"kalshi")
             with archive.mutation_lock():
                 with self.assertRaisesRegex(OperationsError,"injected-acquisition-interruption"):publish_verified_acquisition(archive=archive,provider="kalshi",union_raw=catalog,pages=(page,),contracts=(),collected_at=start,protocol_id=protocol.standalone_probability_source_protocol_id,command="refresh-supporting",fail_after_pages=1)
             integrity=reconcile_archive(archive);self.assertFalse(integrity.healthy);self.assertTrue(integrity.partial)
@@ -244,10 +245,10 @@ class ActivationTests(unittest.TestCase):
             with self.assertRaisesRegex(OperationsError,"archive-integrity-failure"):rebuild_index(archive)
             artifact_ids=reconcile_incomplete_acquisitions(archive,reconciled_at=end+timedelta(seconds=1));self.assertEqual(len(artifact_ids),1)
             self.assertTrue(reconcile_archive(archive).healthy);self.assertEqual(reconcile_incomplete_acquisitions(archive,reconciled_at=end+timedelta(seconds=2)),())
-            later_start=end+timedelta(seconds=3);mlb_end=later_start+timedelta(seconds=1);later_end=mlb_end+timedelta(seconds=1);replacement=ProviderPageAcquisition("2026-09-05","https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=2026-09-05",mlb,later_start,mlb_end);catalog_page=KalshiCatalogPage(0,"","",catalog,tuple(json.loads(catalog)["markets"]),mlb_end,later_end,"/markets?status=open&limit=1000")
+            later_start=end+timedelta(seconds=3);mlb_end=later_start+timedelta(seconds=1);later_end=mlb_end+timedelta(seconds=1);replacement=ProviderPageAcquisition("2026-09-05","https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=2026-09-05",mlb,later_start,mlb_end);catalog_page=KalshiCatalogPage(0,"","",catalog,tuple(json.loads(catalog)["markets"]),mlb_end,later_end,encoded_kalshi_catalog_path(""))
             result=refresh_supporting_from_raw(archive=archive,mlb_raw=mlb,kalshi_raw=catalog,collected_at=later_start,mlb_pages=(replacement,),catalog_pages=(catalog_page,));self.assertNotEqual(result["mlb_manifest_id"],artifact_ids[0]);self.assertTrue(reconcile_archive(archive).healthy)
             state=replay_pr17_archive(archive,analysis_boundary=later_end);self.assertTrue(state.bucket("outcome_histories"));rebuild_index(archive);self.assertEqual(sync_secondary(archive)["conflicts"],0)
-            with self.assertRaisesRegex(OperationsError,"chronology"):ProviderPageAcquisition("","/markets?status=open&limit=1000",catalog,end,start)
+            with self.assertRaisesRegex(OperationsError,"chronology"):ProviderPageAcquisition("",encoded_kalshi_catalog_path(""),catalog,end,start)
 
     def test_prospective_scope_is_not_ordinary_game_gated(self):
         _,protocol=canonical_prospective_authority();scope=dict(protocol.scope_rule.parameters)
