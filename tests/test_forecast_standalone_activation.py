@@ -16,7 +16,7 @@ from decimal import Decimal
 from forecast_standalone_activation import *
 from forecast_standalone_operations import DeploymentConfig, NamespaceArchive, OperatingMode, OperationsError, RetryPolicy, rebuild_index, sync_secondary
 from inspect_forecast_standalone_activation import run
-from operate_forecast_standalone_activation import execute
+from operate_forecast_standalone_activation import execute,live_mlb_material
 
 
 class ActivationTests(unittest.TestCase):
@@ -183,6 +183,24 @@ class ActivationTests(unittest.TestCase):
         conflict=(KalshiCatalogPage(0,"","x",b"",({"ticker":"A","title":"one"},)),KalshiCatalogPage(1,"x","",b"",({"ticker":"A","title":"two"},)))
         with self.assertRaisesRegex(OperationsError,"conflict"):merge_kalshi_catalog_pages(conflict)
 
+    def test_live_mlb_loaders_share_canonical_hydrated_request(self):
+        from inspect_forecast_standalone_activation import fixtures
+        from mlb_stats_api import MLBStatsAPIAdapter,MLBStatsAPIResponse
+        path,endpoint=canonical_mlb_schedule_request("2026-09-05");self.assertEqual(path,"/api/v1/schedule?date=2026-09-05&hydrate=probablePitcher%2Cteam%2Cvenue&sportId=1");self.assertEqual(endpoint,"https://statsapi.mlb.com"+path)
+        at=datetime(2026,9,5,16,tzinfo=timezone.utc);calls=[]
+        def get(base,request_path):
+            calls.append((base,request_path));day=parse_qs(urlparse(request_path).query)["date"][0];return json.dumps({"dates":[{"date":day,"games":[]}]},separators=(",",":")).encode()
+        for purpose in ("schedule","outcomes"):
+            _,pages=live_mlb_material(purpose,at,histories=(),public_get=get,clock=lambda:at);self.assertTrue(pages);self.assertTrue(all(page.endpoint==canonical_mlb_schedule_request(page.request_identity)[1] for page in pages))
+        for base,request_path in calls:
+            query=parse_qs(urlparse(request_path).query);self.assertEqual(base,"https://statsapi.mlb.com");self.assertEqual(query,{"date":[query["date"][0]],"hydrate":["probablePitcher,team,venue"],"sportId":["1"]})
+        hydrated=fixtures()[0];payload=json.loads(hydrated);response=MLBStatsAPIResponse(endpoint,(),at,200,endpoint,payload,hydrated);facts=MLBStatsAPIAdapter().parse_response(response);self.assertTrue(facts.games);self.assertTrue(all(x.game and x.schedule_observation for x in facts.games))
+        unhydrated=copy.deepcopy(payload)
+        for item in unhydrated["dates"]:
+            for game in item["games"]:
+                for side in ("away","home"):game["teams"][side]["team"].pop("abbreviation",None);game["teams"][side]["team"].pop("teamCode",None)
+        rejected=MLBStatsAPIAdapter().parse_response(MLBStatsAPIResponse(endpoint,(),at,200,endpoint,unhydrated,json.dumps(unhydrated).encode()));self.assertTrue(rejected.games);self.assertTrue(all(x.game is None and any(issue.code.value=="malformed-team" for issue in x.issues) for x in rejected.games))
+
     def test_eastern_obligation_date_rule(self):
         instant=datetime(2026,9,6,2,tzinfo=timezone.utc) # September 5 in New York
         self.assertEqual(required_mlb_query_dates(trusted_at=instant,purpose="schedule"),(datetime(2026,9,5).date(),datetime(2026,9,6).date()))
@@ -230,6 +248,18 @@ class ActivationTests(unittest.TestCase):
                 bundle_id=publish_verified_acquisition(archive=archive,provider="kalshi",union_raw=catalog,pages=(page,),contracts=(),collected_at=at,protocol_id=None,command="refresh-supporting")["manifest_entry_id"];bundle=json.loads(archive.read_verified("normalized",next(x["normalized_object_id"] for x in archive.entries() if x["manifest_entry_id"]==bundle_id)))
                 with self.assertRaisesRegex(OperationsError,"canonical discovery authority"):verify_acquisition_bundle(archive,bundle)
 
+    def test_acquisition_replay_requires_canonical_mlb_endpoint(self):
+        variants=(("2026-09-05","https://statsapi.mlb.com/api/v1/schedule?date=2026-09-05&sportId=1"),("2026-09-05","https://statsapi.mlb.com/api/v1/schedule?date=2026-09-05&hydrate=team&sportId=1"),("2026-09-05","https://statsapi.mlb.com/api/v1/schedule?date=2026-09-05&hydrate=probablePitcher%2Cteam%2Cvenue&sportId=2"),("2026-09-05","https://statsapi.mlb.com/api/v1/schedule?date=2026-09-05&hydrate=probablePitcher%2Cteam%2Cvenue"),("2026-09-05",canonical_mlb_schedule_request("2026-09-06")[1]),("2026-09-05",canonical_mlb_schedule_request("2026-09-05")[1]+"&extra=1"),("2026-09-05",canonical_mlb_schedule_request("2026-09-05")[1]+"&sportId=1"),("2026-09-05","https://statsapi.mlb.com/api/v1/schedule?hydrate=probablePitcher%2Cteam%2Cvenue&date=2026-09-05&sportId=1"),("2026-09-05","http://foreign.invalid/api/v1/schedule?date=2026-09-05&hydrate=probablePitcher%2Cteam%2Cvenue&sportId=1"),("not-a-date","https://statsapi.mlb.com/api/v1/schedule"))
+        for identity,endpoint in variants:
+            with self.subTest(identity=identity,endpoint=endpoint),tempfile.TemporaryDirectory() as directory:
+                root=Path(directory);at=datetime(2026,9,5,16,tzinfo=timezone.utc);raw=b'{"dates":[]}';config=DeploymentConfig("mlb-endpoint","mlb-endpoint",OperatingMode.ACTIVATED,root/"activated/mlb-endpoint/primary",root/"activated/mlb-endpoint/secondary","https://fixture.invalid",RetryPolicy(1,1,1,(),0),1,root/"logs",activation_at=APPROVED_ACTIVATION_AT);archive=NamespaceArchive(config);page=ProviderPageAcquisition(identity,endpoint,raw,at,at,0,"mlb-stats-api")
+                bundle_id=publish_verified_acquisition(archive=archive,provider="mlb-stats-api",union_raw=raw,pages=(page,),contracts=(),collected_at=at,protocol_id=None,command="refresh-supporting")["manifest_entry_id"];bundle=json.loads(archive.read_verified("normalized",next(x["normalized_object_id"] for x in archive.entries() if x["manifest_entry_id"]==bundle_id)))
+                with self.assertRaises(OperationsError):verify_acquisition_bundle(archive,bundle)
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);at=datetime(2026,9,5,16,tzinfo=timezone.utc);raw=b'{"dates":[{"date":"2026-09-06","games":[]}]}';config=DeploymentConfig("mlb-date","mlb-date",OperatingMode.ACTIVATED,root/"activated/mlb-date/primary",root/"activated/mlb-date/secondary","https://fixture.invalid",RetryPolicy(1,1,1,(),0),1,root/"logs",activation_at=APPROVED_ACTIVATION_AT);archive=NamespaceArchive(config);page=ProviderPageAcquisition("2026-09-05",canonical_mlb_schedule_request("2026-09-05")[1],raw,at,at,0,"mlb-stats-api")
+            bundle_id=publish_verified_acquisition(archive=archive,provider="mlb-stats-api",union_raw=raw,pages=(page,),contracts=(),collected_at=at,protocol_id=None,command="refresh-supporting")["manifest_entry_id"];bundle=json.loads(archive.read_verified("normalized",next(x["normalized_object_id"] for x in archive.entries() if x["manifest_entry_id"]==bundle_id)))
+            with self.assertRaisesRegex(OperationsError,"requested date conflicts"):verify_acquisition_bundle(archive,bundle)
+
     def test_execute_passes_one_trusted_start_to_loaders(self):
         from inspect_forecast_standalone_activation import fixtures
         with tempfile.TemporaryDirectory() as directory:
@@ -254,7 +284,7 @@ class ActivationTests(unittest.TestCase):
             with self.assertRaisesRegex(OperationsError,"archive-integrity-failure"):rebuild_index(archive)
             artifact_ids=reconcile_incomplete_acquisitions(archive,reconciled_at=end+timedelta(seconds=1));self.assertEqual(len(artifact_ids),1)
             self.assertTrue(reconcile_archive(archive).healthy);self.assertEqual(reconcile_incomplete_acquisitions(archive,reconciled_at=end+timedelta(seconds=2)),())
-            later_start=end+timedelta(seconds=3);mlb_end=later_start+timedelta(seconds=1);later_end=mlb_end+timedelta(seconds=1);replacement=ProviderPageAcquisition("2026-09-05","https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=2026-09-05",mlb,later_start,mlb_end);catalog_page=KalshiCatalogPage(0,"","",catalog,tuple(json.loads(catalog)["markets"]),mlb_end,later_end,encoded_kalshi_catalog_path(""))
+            later_start=end+timedelta(seconds=3);mlb_end=later_start+timedelta(seconds=1);later_end=mlb_end+timedelta(seconds=1);replacement=ProviderPageAcquisition("2026-09-05",canonical_mlb_schedule_request("2026-09-05")[1],mlb,later_start,mlb_end);catalog_page=KalshiCatalogPage(0,"","",catalog,tuple(json.loads(catalog)["markets"]),mlb_end,later_end,encoded_kalshi_catalog_path(""))
             result=refresh_supporting_from_raw(archive=archive,mlb_raw=mlb,kalshi_raw=catalog,collected_at=later_start,mlb_pages=(replacement,),catalog_pages=(catalog_page,));self.assertNotEqual(result["mlb_manifest_id"],artifact_ids[0]);self.assertTrue(reconcile_archive(archive).healthy)
             state=replay_pr17_archive(archive,analysis_boundary=later_end);self.assertTrue(state.bucket("outcome_histories"));rebuild_index(archive);self.assertEqual(sync_secondary(archive)["conflicts"],0)
             with self.assertRaisesRegex(OperationsError,"chronology"):ProviderPageAcquisition("",encoded_kalshi_catalog_path(""),catalog,end,start)

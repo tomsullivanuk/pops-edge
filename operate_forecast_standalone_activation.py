@@ -4,7 +4,7 @@ from __future__ import annotations
 import argparse,json,shutil,sys
 from datetime import datetime,timezone
 from pathlib import Path
-from forecast_standalone_activation import BoundedLiveReadOnlyTransport,KalshiRequestSigner,MacOSKeychainCredentialProvider,OperationalHeartbeat,OperationalState,ProviderPageAcquisition,acquire_kalshi_catalog_pages,adapt_kalshi_orderbook,encoded_kalshi_catalog_path,health_from_operational_state,initialize_activation,invoke_activated_prospective,merge_kalshi_catalog_pages,merge_mlb_schedule_responses,reconcile_outcomes_from_raw,refresh_supporting_from_raw,render_launchd_jobs,required_mlb_query_dates,rsa_pss_sha256_sign
+from forecast_standalone_activation import BoundedLiveReadOnlyTransport,KalshiRequestSigner,MacOSKeychainCredentialProvider,OperationalHeartbeat,OperationalState,ProviderPageAcquisition,acquire_kalshi_catalog_pages,adapt_kalshi_orderbook,canonical_mlb_schedule_request,encoded_kalshi_catalog_path,health_from_operational_state,initialize_activation,invoke_activated_prospective,merge_kalshi_catalog_pages,merge_mlb_schedule_responses,reconcile_outcomes_from_raw,refresh_supporting_from_raw,render_launchd_jobs,required_mlb_query_dates,rsa_pss_sha256_sign
 from forecast_standalone_operations import DeploymentConfig,ExitCode,NamespaceArchive,OperatingMode,OperationsError,acquire_typed_supporting_fixture,index_health,inspect_archive,rebuild_index,reconcile_incomplete_acquisitions,replay_pr17_archive,sync_secondary
 
 class FixtureTransport:
@@ -25,6 +25,14 @@ def configured_kalshi_transport(config,clock):
             with urllib.request.build_opener(NoRedirect).open(request,timeout=timeout) as response:return response.status,response.read(2_000_001),dict(response.headers)
         except urllib.error.HTTPError as exc:return exc.code,exc.read(2_000_001),dict(exc.headers)
     return BoundedLiveReadOnlyTransport(config.provider_base_url,requester,timeout_seconds=config.retry_policy.request_timeout_seconds)
+
+def live_mlb_material(purpose,at,*,histories,public_get,clock):
+    """Acquire obligation dates through the established MLB request contract."""
+    dates=required_mlb_query_dates(trusted_at=at,histories=histories,purpose=purpose);pages=[]
+    for day in dates:
+        path,endpoint=canonical_mlb_schedule_request(day);started=clock();raw=public_get("https://statsapi.mlb.com",path);completed=clock();pages.append(ProviderPageAcquisition(day.isoformat(),endpoint,raw,started,completed,len(pages),"mlb-stats-api",at.isoformat(),day.isoformat()))
+    pages=tuple(pages)
+    return merge_mlb_schedule_responses(tuple(x.raw for x in pages)),pages
 
 def execute(command,config,*,clock=lambda:datetime.now(timezone.utc),transport_factory=None,supporting_loader=None,outcome_loader=None,free_disk=None):
     archive=NamespaceArchive(config);state=OperationalState(config.log_root/"operational-state");started=clock()
@@ -91,12 +99,7 @@ def main(argv=None)->int:
                 def public_get(base,path):return BoundedLiveReadOnlyTransport(base,configured_kalshi_transport(config,clock).requester).get(path)
                 def histories(at):return replay_pr17_archive(NamespaceArchive(config),analysis_boundary=at).bucket("outcome_histories")
                 def mlb_material(purpose,at):
-                    dates=required_mlb_query_dates(trusted_at=at,histories=histories(at),purpose=purpose)
-                    pages=[]
-                    for day in dates:
-                        started=clock();raw=public_get("https://statsapi.mlb.com","/api/v1/schedule?sportId=1&date="+day.isoformat());completed=clock();pages.append(ProviderPageAcquisition(day.isoformat(),"https://statsapi.mlb.com/api/v1/schedule?sportId=1&date="+day.isoformat(),raw,started,completed,len(pages),"mlb-stats-api",at.isoformat(),day.isoformat()))
-                    pages=tuple(pages)
-                    return merge_mlb_schedule_responses(tuple(x.raw for x in pages)),pages
+                    return live_mlb_material(purpose,at,histories=histories(at),public_get=public_get,clock=clock)
                 def catalog_material(at):
                     pages=acquire_kalshi_catalog_pages(lambda cursor:public_get(config.provider_base_url,encoded_kalshi_catalog_path(cursor)),clock=clock,command_start=at)
                     return merge_kalshi_catalog_pages(pages),pages
