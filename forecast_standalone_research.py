@@ -370,7 +370,7 @@ def create_standalone_eligibility_authority(*,protocol:StandaloneProbabilitySour
         if phase is EventPhase.POSTSEASON:reasons.append("postseason")
         if season!=scope.get("season","2026"):reasons.append("wrong-season")
         if classification.doubleheader_id is not None:reasons.append("doubleheader")
-        if not classification.ordinary_game or classification.game_type!="regular":reasons.append("non-ordinary-game")
+        if not classification.ordinary_game:reasons.append("non-ordinary-game")
         if classification.mapping_validation_status is not EventClassificationValidationStatus.VALID:reasons.append("ambiguous-mapping")
         if OutcomeStatus.CANCELLED in statuses:reasons.append("cancelled")
         if OutcomeStatus.POSTPONED in statuses:reasons.append("postponed")

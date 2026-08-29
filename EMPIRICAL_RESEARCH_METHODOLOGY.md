@@ -2642,12 +2642,25 @@ postponed, cancelled, suspended, resumed, rescheduled, doubleheader, ambiguous,
 and otherwise non-ordinary games. Eligibility is never selected according to
 Kalshi availability, price, or outcome. MLB's retrospectively retrieved
 scheduled start remains authoritative. A semantically compatible Kalshi
-scheduled-game time must agree exactly to the UTC minute after explicit timezone
-normalization; absent compatible timing, material mismatch, rescheduling
+scheduled-game identity must come from the provider's narrow settlement-rule
+template: explicit winner, opponent, two-participant professional baseball
+matchup, and original local date, time, and supported New York timezone. That
+rule-derived aware instant must equal the authoritative scheduled start.
+Structured YES semantics must agree with the rule-derived winner; a repeated NO
+proposition label resolves as the binary complement only after the rules have
+independently established both participants. Expiration and close times remain
+provider metadata, not event identity. Present but conflicting evidence never
+falls back to participant coincidence. Absent or malformed rules, contradictory
+sides, unsupported or DST-inconsistent timezone, material mismatch, rescheduling
 evidence, or ambiguous chronology makes the event ineligible. This
 corroboration does not transfer authority to Kalshi, and post-game schedule
 retrieval does not prove what schedule information was visible at the historical
 capture boundary. Reports preserve that limitation.
+
+Provider-native MLB game-type codes remain preserved classification Evidence.
+Retrospective ordinary-game eligibility is governed by valid classification,
+regular-season phase, and `ordinary_game == true`; a redundant spelling check
+cannot contradict that canonical authority.
 
 The precommitted retrospective report window is exactly the 164-day Eastern
 calendar interval ending at `2026-09-05T00:00:00-04:00`, with window start

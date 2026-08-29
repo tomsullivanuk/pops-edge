@@ -40,6 +40,8 @@ RETROSPECTIVE_WINDOW_SECONDS=14_169_600
 MLB_DATE_RULE_VERSION="eastern-unresolved-obligations-lookback-2"
 MLB_CORRECTION_LOOKBACK_DAYS=7
 ACQUISITION_UNION_RULE_VERSION="provider-pages-canonical-union-1"
+SUPPORTING_DERIVATION_RULE_VERSION="kalshi-mlb-explicit-rules-schedule-instant-2"
+APPROVED_SUPPORTING_CORRECTION_REASON="pr17c2-settlement-rule-reconciliation-eligibility-v2"
 HEARTBEAT_SCHEMA_VERSION="1"
 
 
@@ -109,7 +111,7 @@ def initialize_activation(archive:NamespaceArchive,at:datetime)->tuple[str,str]:
     return activation.standalone_research_activation_boundary_id,protocol.standalone_probability_source_protocol_id
 
 
-def refresh_supporting_from_raw(*,archive:NamespaceArchive|None,mlb_raw:bytes,kalshi_raw:bytes,collected_at:datetime,catalog_pages:Iterable[KalshiCatalogPage]=(),mlb_pages:Iterable[bytes]=(),prior_state:Any=None,derive_only:bool=False,acquisition_command:str="refresh-supporting",retrospective_cutoff_at:datetime|None=None,supporting_session_id:str|None=None,supporting_provider_calls:int|None=None,requested_date_window:tuple[str,str]|None=None)->Mapping[str,Any]|tuple[Any,...]:
+def refresh_supporting_from_raw(*,archive:NamespaceArchive|None,mlb_raw:bytes,kalshi_raw:bytes,collected_at:datetime,catalog_pages:Iterable[KalshiCatalogPage]=(),mlb_pages:Iterable[bytes]=(),prior_state:Any=None,derive_only:bool=False,acquisition_command:str="refresh-supporting",retrospective_cutoff_at:datetime|None=None,supporting_session_id:str|None=None,supporting_provider_calls:int|None=None,requested_date_window:tuple[str,str]|None=None,supporting_correction_reason:str|None=None,predecessor_completion_manifest_id:str|None=None)->Mapping[str,Any]|tuple[Any,...]:
     """Decode live-shaped MLB/Kalshi material into established PR17 authority."""
     from event_contracts import ValidationStatus
     from forecast_comparative_research import ResearchCaptureOpportunity
@@ -200,12 +202,15 @@ def refresh_supporting_from_raw(*,archive:NamespaceArchive|None,mlb_raw:bytes,ka
     kalshi_page_values=page_values
     with archive.mutation_lock():
         protocol_id=protocols[0].standalone_probability_source_protocol_id if len(protocols)==1 else None
-        mlb_acquisition=publish_verified_acquisition(archive=archive,provider="mlb-stats-api",union_raw=mlb_raw,pages=mlb_page_values,contracts=mlb_contracts,collected_at=collected_at,protocol_id=protocol_id,command=acquisition_command,supporting_session_id=supporting_session_id)
-        kalshi_acquisition=publish_verified_acquisition(archive=archive,provider="kalshi",union_raw=kalshi_raw,pages=kalshi_page_values,contracts=market_contracts,collected_at=collected_at,protocol_id=protocol_id,command=acquisition_command,dependencies=(mlb_acquisition["acquisition_id"],),retrospective_cutoff_at=retrospective_cutoff_at,supporting_session_id=supporting_session_id)
+        mlb_acquisition=publish_verified_acquisition(archive=archive,provider="mlb-stats-api",union_raw=mlb_raw,pages=mlb_page_values,contracts=mlb_contracts,collected_at=collected_at,protocol_id=protocol_id,command=acquisition_command,supporting_session_id=supporting_session_id,correction_reason=supporting_correction_reason)
+        kalshi_acquisition=publish_verified_acquisition(archive=archive,provider="kalshi",union_raw=kalshi_raw,pages=kalshi_page_values,contracts=market_contracts,collected_at=collected_at,protocol_id=protocol_id,command=acquisition_command,dependencies=(mlb_acquisition["acquisition_id"],),retrospective_cutoff_at=retrospective_cutoff_at,supporting_session_id=supporting_session_id,correction_reason=supporting_correction_reason)
         session_manifest_id=None
         if acquisition_command=="refresh-retrospective-supporting":
             if supporting_session_id is None or supporting_provider_calls is None or requested_date_window is None or retrospective_cutoff_at is None:raise OperationsError("supporting-session-incomplete","retrospective supporting completion authority is absent")
-            session_manifest_id=publish_supporting_session_completion(archive=archive,session_id=supporting_session_id,requested_date_window=requested_date_window,command_started_at=collected_at,provider_calls=supporting_provider_calls,cutoff_at=retrospective_cutoff_at,mlb_acquisition=mlb_acquisition,kalshi_acquisition=kalshi_acquisition)
+            if supporting_correction_reason:
+                if not predecessor_completion_manifest_id:raise OperationsError("supporting-session-correction-conflict","correction predecessor is absent")
+                session_manifest_id=publish_supporting_session_correction(archive=archive,session_id=supporting_session_id,reason=supporting_correction_reason,predecessor_completion_manifest_id=predecessor_completion_manifest_id,requested_date_window=requested_date_window,provider_calls=supporting_provider_calls,cutoff_at=retrospective_cutoff_at,mlb_acquisition=mlb_acquisition,kalshi_acquisition=kalshi_acquisition)
+            else:session_manifest_id=publish_supporting_session_completion(archive=archive,session_id=supporting_session_id,requested_date_window=requested_date_window,command_started_at=collected_at,provider_calls=supporting_provider_calls,cutoff_at=retrospective_cutoff_at,mlb_acquisition=mlb_acquisition,kalshi_acquisition=kalshi_acquisition)
     return {"mlb_manifest_id":mlb_acquisition["manifest_entry_id"],"kalshi_manifest_id":kalshi_acquisition["manifest_entry_id"],"supporting_session_manifest_id":session_manifest_id,"events":len(games),"contracts":len(contracts),"mapped":len(mapped),"missing":len(missing),"ambiguous":len(ambiguous),"catalog_pages":len(page_values),"mlb_pages":len(mlb_page_values),"disposition":"success" if contracts else "unchanged"}
 
 
@@ -466,7 +471,7 @@ def preserve_supporting_response(*,archive:NamespaceArchive,session_id:str,provi
     return entry.manifest_entry_id
 
 
-def publish_verified_acquisition(*,archive:NamespaceArchive,provider:str,union_raw:bytes,pages:Iterable[Any],contracts:Iterable[Any],collected_at:datetime,protocol_id:str|None,command:str,dependencies:Iterable[str]=(),fail_after_pages:int|None=None,retrospective_cutoff_at:datetime|None=None,supporting_session_id:str|None=None)->Mapping[str,Any]:
+def publish_verified_acquisition(*,archive:NamespaceArchive,provider:str,union_raw:bytes,pages:Iterable[Any],contracts:Iterable[Any],collected_at:datetime,protocol_id:str|None,command:str,dependencies:Iterable[str]=(),fail_after_pages:int|None=None,retrospective_cutoff_at:datetime|None=None,supporting_session_id:str|None=None,correction_reason:str|None=None)->Mapping[str,Any]:
     """Preserve exact pages, then bind contracts to their verified derived union."""
     from forecast_standalone_operations import DesignAuthority,Disposition,_entry_values,pr17_contract_bundle,request_identity
     page_items=tuple(pages);page_values=tuple(_page_material(item,index,collected_at) for index,item in enumerate(page_items))
@@ -480,7 +485,8 @@ def publish_verified_acquisition(*,archive:NamespaceArchive,provider:str,union_r
         prior_completion=completed
     partitions=tuple((item.partition,item.partition_position) if isinstance(item,KalshiCatalogPage) else (None,None) for item in page_items)
     group_material={"provider":provider,"command":command,"collected_at":collected_at,"pages":tuple((identity,endpoint,started,completed,hashlib.sha256(raw).hexdigest(),*partitions[index]) for index,(identity,endpoint,raw,started,completed) in enumerate(page_values)),"union_rule":ACQUISITION_UNION_RULE_VERSION}
-    group_id=(supporting_session_id+":"+provider if supporting_session_id else "provider-acquisition:"+hashlib.sha256(canonical_bytes(group_material)).hexdigest());descriptors=[]
+    correction_suffix=(":correction:"+hashlib.sha256(correction_reason.encode()).hexdigest() if correction_reason else "")
+    group_id=(supporting_session_id+":"+provider+correction_suffix if supporting_session_id else "provider-acquisition:"+hashlib.sha256(canonical_bytes(group_material)).hexdigest());descriptors=[]
     contract_values=tuple(contracts);serialized=tuple(sorted(x.to_json() for x in contract_values));union_digest=_canonical_json_digest(union_raw)
     if supporting_session_id:
         existing_bundles=[]
@@ -523,6 +529,8 @@ def publish_verified_acquisition(*,archive:NamespaceArchive,provider:str,union_r
     if retrospective_cutoff_at is not None:normalized["retrospective_cutoff_at"]=retrospective_cutoff_at
     if supporting_session_id:
         normalized["page_record_kind"]="pr17c2-supporting-session-page"
+        normalized["supporting_session_id"]=supporting_session_id;normalized["derivation_rule"]=SUPPORTING_DERIVATION_RULE_VERSION
+        if correction_reason:normalized["correction_reason"]=correction_reason
         if provider=="kalshi" and retrospective_cutoff_at is not None:
             cutoff_pages=tuple((entry,page) for entry,page in session_pages if page.get("purpose")=="historical-cutoff")
             if len(cutoff_pages)!=1 or not cutoff_pages[0][0].get("raw_object_sha256"):raise OperationsError("acquisition-incomplete","preserved cutoff response does not resolve exactly once")
@@ -534,7 +542,7 @@ def publish_verified_acquisition(*,archive:NamespaceArchive,provider:str,union_r
     return {"manifest_entry_id":entry.manifest_entry_id,"acquisition_id":group_id,"page_count":len(page_values),"contract_count":len(contract_values)}
 
 
-def publish_supporting_session_completion(*,archive:NamespaceArchive,session_id:str,requested_date_window:tuple[str,str],command_started_at:datetime,provider_calls:int,cutoff_at:datetime,mlb_acquisition:Mapping[str,Any],kalshi_acquisition:Mapping[str,Any])->str:
+def publish_supporting_session_completion(*,archive:NamespaceArchive,session_id:str,requested_date_window:tuple[str,str],command_started_at:datetime,provider_calls:int,cutoff_at:datetime,mlb_acquisition:Mapping[str,Any],kalshi_acquisition:Mapping[str,Any],derivation_rule:str|None=SUPPORTING_DERIVATION_RULE_VERSION)->str:
     """Publish the sole manifest-last authority gate for retrospective supporting."""
     from forecast_standalone_operations import DesignAuthority,Disposition,_entry_values,request_identity
     if provider_calls<3 or len(requested_date_window)!=2:raise OperationsError("supporting-session-incomplete","supporting session completion metadata is invalid")
@@ -552,6 +560,7 @@ def publish_supporting_session_completion(*,archive:NamespaceArchive,session_id:
     if bundles[1][1].get("command_started_at")!=original_start:raise OperationsError("supporting-session-conflict","provider acquisition command starts conflict")
     contract_sha256s=tuple(sorted(hashlib.sha256(payload.encode()).hexdigest() for payload in bundles[0][1]["contracts"]+kalshi_value["contracts"]))
     normalized={"schema_version":"1","record_kind":"pr17c2-supporting-session-completion","session_id":session_id,"requested_date_window":requested_date_window,"command_started_at":original_start,"completed_at":completed_at,"provider_calls":provider_calls,"mlb_acquisition_manifest_id":bundles[0][0]["manifest_entry_id"],"kalshi_acquisition_manifest_id":bundles[1][0]["manifest_entry_id"],"mlb_acquisition_id":bundles[0][1]["acquisition_id"],"kalshi_acquisition_id":kalshi_value["acquisition_id"],"cutoff_manifest_entry_id":kalshi_value["cutoff_manifest_entry_id"],"cutoff_raw_sha256":kalshi_value["cutoff_raw_sha256"],"cutoff_at":cutoff_at,"catalog_pages":pages,"mlb_union_sha256":bundles[0][1]["normalized_union_sha256"],"kalshi_union_sha256":kalshi_value["normalized_union_sha256"],"contract_sha256s":contract_sha256s,"union_rule":ACQUISITION_UNION_RULE_VERSION,"reconciliation_rule":"kalshi-historical-cutoff-settlement-ts-1"}
+    if derivation_rule is not None:normalized["derivation_rule"]=derivation_rule
     values=_entry_values(archive=archive,command="complete-retrospective-supporting-session",request_id=request_identity({"session_id":session_id,"completion":hashlib.sha256(canonical_bytes(normalized)).hexdigest()}),invoked_at=completed_at,endpoint="local://retrospective-supporting-session-completion",disposition=Disposition.SUCCESS,protocol_id=None,design=DesignAuthority.SUPPORTING,diagnostics=(f"session:{session_id}","complete manifest-last retrospective supporting authority"),provider_effective_at=completed_at);values["provider_id"]="pops-edge-supporting-session"
     return archive._commit_locked(raw_body=canonical_bytes(normalized),normalized=normalized,entry_values=values).manifest_entry_id
 
@@ -563,7 +572,29 @@ def _archived_datetime(raw:Any,field:str)->datetime:
     return value
 
 
-def verify_supporting_session_completion(archive:NamespaceArchive,session_id:str)->Mapping[str,Any]:
+def publish_supporting_session_correction(*,archive:NamespaceArchive,session_id:str,reason:str,predecessor_completion_manifest_id:str,requested_date_window:tuple[str,str],provider_calls:int,cutoff_at:datetime,mlb_acquisition:Mapping[str,Any],kalshi_acquisition:Mapping[str,Any])->str:
+    """Publish one narrowly versioned, manifest-last supersession authority."""
+    from forecast_standalone_operations import DesignAuthority,Disposition,_entry_values,request_identity
+    if reason!=APPROVED_SUPPORTING_CORRECTION_REASON:raise OperationsError("supporting-session-correction-conflict","correction reason is not approved")
+    entries={entry["manifest_entry_id"]:entry for entry in archive.entries()};bundles=[]
+    for provider,acquisition in (("mlb-stats-api",mlb_acquisition),("kalshi",kalshi_acquisition)):
+        entry=entries.get(acquisition.get("manifest_entry_id"))
+        if entry is None or not entry.get("normalized_object_id"):raise OperationsError("supporting-session-correction-conflict",f"corrected {provider} bundle is absent")
+        value=json.loads(archive.read_verified("normalized",entry["normalized_object_id"]));verify_acquisition_bundle(archive,value)
+        if value.get("supporting_session_id")!=session_id or value.get("correction_reason")!=reason or value.get("derivation_rule")!=SUPPORTING_DERIVATION_RULE_VERSION:raise OperationsError("supporting-session-correction-conflict",f"corrected {provider} bundle lineage conflicts")
+        bundles.append((entry,value))
+    mlb_entry,mlb=bundles[0];kalshi_entry,kalshi=bundles[1]
+    if kalshi.get("dependencies")!=[mlb["acquisition_id"]]:raise OperationsError("supporting-session-correction-conflict","corrected Kalshi dependency conflicts")
+    pages=tuple({key:page[key] for key in ("manifest_entry_id","partition","partition_position","request_identity","endpoint","raw_sha256") if key in page} for page in kalshi["pages"])
+    completed_at=max(_archived_datetime(item.get("acquisition_completed_at"),"corrected provider completion") for item in (mlb,kalshi));command_started=_archived_datetime(mlb.get("command_started_at"),"corrected command start")
+    if _archived_datetime(kalshi.get("command_started_at"),"corrected command start")!=command_started:raise OperationsError("supporting-session-correction-conflict","corrected command starts conflict")
+    contract_sha256s=tuple(sorted(hashlib.sha256(payload.encode()).hexdigest() for payload in mlb["contracts"]+kalshi["contracts"]))
+    normalized={"schema_version":"1","record_kind":"pr17c2-supporting-session-correction","session_id":session_id,"reason":reason,"derivation_rule":SUPPORTING_DERIVATION_RULE_VERSION,"predecessor_completion_manifest_id":predecessor_completion_manifest_id,"requested_date_window":requested_date_window,"command_started_at":command_started,"completed_at":completed_at,"provider_calls":provider_calls,"mlb_acquisition_manifest_id":mlb_entry["manifest_entry_id"],"kalshi_acquisition_manifest_id":kalshi_entry["manifest_entry_id"],"mlb_acquisition_id":mlb["acquisition_id"],"kalshi_acquisition_id":kalshi["acquisition_id"],"cutoff_manifest_entry_id":kalshi["cutoff_manifest_entry_id"],"cutoff_raw_sha256":kalshi["cutoff_raw_sha256"],"cutoff_at":cutoff_at,"catalog_pages":pages,"mlb_union_sha256":mlb["normalized_union_sha256"],"kalshi_union_sha256":kalshi["normalized_union_sha256"],"contract_sha256s":contract_sha256s,"union_rule":ACQUISITION_UNION_RULE_VERSION,"reconciliation_rule":"kalshi-historical-cutoff-settlement-ts-1"}
+    values=_entry_values(archive=archive,command="correct-retrospective-supporting-session",request_id=request_identity({"session_id":session_id,"reason":reason,"predecessor":predecessor_completion_manifest_id,"correction":hashlib.sha256(canonical_bytes(normalized)).hexdigest()}),invoked_at=completed_at,endpoint="local://retrospective-supporting-session-correction",disposition=Disposition.SUCCESS,protocol_id=None,design=DesignAuthority.SUPPORTING,diagnostics=(f"session:{session_id}",f"correction:{reason}","append-only corrected retrospective supporting authority"),provider_effective_at=completed_at);values["provider_id"]="pops-edge-supporting-session"
+    return archive._commit_locked(raw_body=canonical_bytes(normalized),normalized=normalized,entry_values=values).manifest_entry_id
+
+
+def verify_supporting_session_completion(archive:NamespaceArchive,session_id:str,*,allow_legacy:bool=False)->Mapping[str,Any]:
     """Fully verify the sole manifest-last authority for one supporting session."""
     entries=tuple(archive.entries());by_id={entry["manifest_entry_id"]:entry for entry in entries};normalized=[]
     for entry in entries:
@@ -572,12 +603,15 @@ def verify_supporting_session_completion(archive:NamespaceArchive,session_id:str
         try:value=json.loads(archive.read_verified("normalized",identity))
         except (UnicodeDecodeError,json.JSONDecodeError,TypeError) as exc:raise OperationsError("supporting-session-conflict","archived normalized material is malformed") from exc
         normalized.append((entry,value))
-    completions=tuple((entry,value) for entry,value in normalized if value.get("record_kind")=="pr17c2-supporting-session-completion" and value.get("session_id")==session_id)
+    completions=tuple((entry,value) for entry,value in normalized if value.get("record_kind")=="pr17c2-supporting-session-completion" and value.get("session_id")==session_id);corrections=tuple((entry,value) for entry,value in normalized if value.get("record_kind")=="pr17c2-supporting-session-correction" and value.get("session_id")==session_id)
     if not completions:raise OperationsError("supporting-session-incomplete","supporting session completion is absent")
     if len(completions)!=1:raise OperationsError("supporting-session-conflict","supporting session completion is duplicated")
     completion_entry,completion=completions[0]
-    required={"schema_version","record_kind","session_id","requested_date_window","command_started_at","completed_at","provider_calls","mlb_acquisition_manifest_id","kalshi_acquisition_manifest_id","mlb_acquisition_id","kalshi_acquisition_id","cutoff_manifest_entry_id","cutoff_raw_sha256","cutoff_at","catalog_pages","mlb_union_sha256","kalshi_union_sha256","contract_sha256s","union_rule","reconciliation_rule"}
-    if set(completion)!=required or completion.get("schema_version")!="1" or completion.get("record_kind")!="pr17c2-supporting-session-completion" or completion.get("session_id")!=session_id:raise OperationsError("supporting-session-conflict","completion schema or identity conflicts")
+    if corrections and not allow_legacy:return verify_supporting_session_correction(archive,session_id)
+    legacy=completion.get("derivation_rule") is None
+    if legacy and not allow_legacy:raise OperationsError("supporting-session-correction-required","completed session uses superseded derivation semantics")
+    required={"schema_version","record_kind","session_id","requested_date_window","command_started_at","completed_at","provider_calls","mlb_acquisition_manifest_id","kalshi_acquisition_manifest_id","mlb_acquisition_id","kalshi_acquisition_id","cutoff_manifest_entry_id","cutoff_raw_sha256","cutoff_at","catalog_pages","mlb_union_sha256","kalshi_union_sha256","contract_sha256s","union_rule","reconciliation_rule"}|({"derivation_rule"} if not legacy else set())
+    if set(completion)!=required or completion.get("schema_version")!="1" or completion.get("record_kind")!="pr17c2-supporting-session-completion" or completion.get("session_id")!=session_id or (not legacy and completion.get("derivation_rule")!=SUPPORTING_DERIVATION_RULE_VERSION):raise OperationsError("supporting-session-conflict","completion schema or identity conflicts")
     if completion.get("union_rule")!=ACQUISITION_UNION_RULE_VERSION or completion.get("reconciliation_rule")!="kalshi-historical-cutoff-settlement-ts-1":raise OperationsError("supporting-session-conflict","completion reconciliation authority is unsupported")
     wanted_ids={"mlb-stats-api":f"{session_id}:mlb-stats-api","kalshi":f"{session_id}:kalshi"};bundles={}
     for provider,manifest_field in (("mlb-stats-api","mlb_acquisition_manifest_id"),("kalshi","kalshi_acquisition_manifest_id")):
@@ -626,19 +660,60 @@ def verify_supporting_session_completion(archive:NamespaceArchive,session_id:str
     session_bundles=tuple((entry,value) for entry,value in normalized if value.get("record_kind")=="pr17c1-acquisition-bundle" and value.get("acquisition_id") in set(wanted_ids.values()))
     if {entry["manifest_entry_id"] for entry,_ in session_bundles}!={mlb_entry["manifest_entry_id"],kalshi_entry["manifest_entry_id"]}:raise OperationsError("supporting-session-conflict","completed session has foreign or duplicate provider bundles")
     if completion.get("provider_calls")!=len(session_pages):raise OperationsError("supporting-session-conflict","provider-call count conflicts with preserved session")
-    return {"session_id":session_id,"completion_manifest_id":completion_entry["manifest_entry_id"],"mlb_manifest_id":mlb_entry["manifest_entry_id"],"kalshi_manifest_id":kalshi_entry["manifest_entry_id"],"provider_calls":0,"contracts":len(mlb_contracts)+len(kalshi_contracts)}
+    return {"session_id":session_id,"completion_manifest_id":completion_entry["manifest_entry_id"],"mlb_manifest_id":mlb_entry["manifest_entry_id"],"kalshi_manifest_id":kalshi_entry["manifest_entry_id"],"provider_calls":0,"contracts":len(mlb_contracts)+len(kalshi_contracts),"derivation_rule":completion.get("derivation_rule") or "legacy-kalshi-mlb-v1"}
 
 
-def complete_supporting_session_from_archive(*,archive:NamespaceArchive,session_id:str)->Mapping[str,Any]:
+def verify_supporting_session_correction(archive:NamespaceArchive,session_id:str)->Mapping[str,Any]:
+    """Verify one unbranched correction and its immutable predecessor lineage."""
+    entries=tuple(archive.entries());by_id={entry["manifest_entry_id"]:entry for entry in entries};values=[]
+    for entry in entries:
+        identity=entry.get("normalized_object_id")
+        if identity:values.append((entry,json.loads(archive.read_verified("normalized",identity))))
+    roots=tuple((entry,value) for entry,value in values if value.get("record_kind")=="pr17c2-supporting-session-completion" and value.get("session_id")==session_id)
+    corrections=tuple((entry,value) for entry,value in values if value.get("record_kind")=="pr17c2-supporting-session-correction" and value.get("session_id")==session_id)
+    if len(roots)!=1 or len(corrections)!=1:raise OperationsError("supporting-session-correction-conflict","correction lineage is missing, duplicated, or branched")
+    root_entry,root_value=roots[0];correction_entry,correction=corrections[0]
+    legacy=verify_supporting_session_completion(archive,session_id,allow_legacy=True)
+    required={"schema_version","record_kind","session_id","reason","derivation_rule","predecessor_completion_manifest_id","requested_date_window","command_started_at","completed_at","provider_calls","mlb_acquisition_manifest_id","kalshi_acquisition_manifest_id","mlb_acquisition_id","kalshi_acquisition_id","cutoff_manifest_entry_id","cutoff_raw_sha256","cutoff_at","catalog_pages","mlb_union_sha256","kalshi_union_sha256","contract_sha256s","union_rule","reconciliation_rule"}
+    if root_value.get("derivation_rule") is not None or set(correction)!=required or correction.get("schema_version")!="1" or correction.get("record_kind")!="pr17c2-supporting-session-correction" or correction.get("reason")!=APPROVED_SUPPORTING_CORRECTION_REASON or correction.get("derivation_rule")!=SUPPORTING_DERIVATION_RULE_VERSION or correction.get("predecessor_completion_manifest_id")!=root_entry["manifest_entry_id"]:raise OperationsError("supporting-session-correction-conflict","correction schema, version, or predecessor conflicts")
+    suffix=":correction:"+hashlib.sha256(APPROVED_SUPPORTING_CORRECTION_REASON.encode()).hexdigest();bundles={}
+    for provider,field in (("mlb-stats-api","mlb_acquisition_manifest_id"),("kalshi","kalshi_acquisition_manifest_id")):
+        entry=by_id.get(correction.get(field))
+        if entry is None or not entry.get("normalized_object_id"):raise OperationsError("supporting-session-correction-conflict",f"corrected {provider} manifest is absent")
+        value=json.loads(archive.read_verified("normalized",entry["normalized_object_id"]));expected_id=f"{session_id}:{provider}{suffix}"
+        id_field="mlb_acquisition_id" if provider=="mlb-stats-api" else "kalshi_acquisition_id"
+        if value.get("acquisition_id")!=expected_id or correction.get(id_field)!=expected_id or value.get("supporting_session_id")!=session_id or value.get("correction_reason")!=APPROVED_SUPPORTING_CORRECTION_REASON or value.get("derivation_rule")!=SUPPORTING_DERIVATION_RULE_VERSION:raise OperationsError("supporting-session-correction-conflict",f"corrected {provider} identity conflicts")
+        union,contracts=verify_acquisition_bundle(archive,value,include_union=True);bundles[provider]=(entry,value,union,contracts)
+    mlb_entry,mlb,mlb_union,mlb_contracts=bundles["mlb-stats-api"];kalshi_entry,kalshi,kalshi_union,kalshi_contracts=bundles["kalshi"]
+    if kalshi.get("dependencies")!=[mlb["acquisition_id"]]:raise OperationsError("supporting-session-correction-conflict","corrected dependency conflicts")
+    for field in ("requested_date_window","command_started_at","provider_calls","cutoff_manifest_entry_id","cutoff_raw_sha256","cutoff_at"):
+        if correction.get(field)!=root_value.get(field):raise OperationsError("supporting-session-correction-conflict",f"correction changes preserved {field}")
+    descriptors=tuple({key:page[key] for key in ("manifest_entry_id","partition","partition_position","request_identity","endpoint","raw_sha256") if key in page} for page in kalshi["pages"])
+    if correction.get("catalog_pages")!=list(descriptors) or correction.get("mlb_union_sha256")!=_canonical_json_digest(mlb_union) or correction.get("kalshi_union_sha256")!=_canonical_json_digest(kalshi_union):raise OperationsError("supporting-session-correction-conflict","corrected pages or unions conflict")
+    expected_contracts=tuple(sorted(hashlib.sha256(payload.encode()).hexdigest() for payload in mlb_contracts+kalshi_contracts))
+    if correction.get("contract_sha256s")!=list(expected_contracts) or correction.get("union_rule")!=ACQUISITION_UNION_RULE_VERSION or correction.get("reconciliation_rule")!="kalshi-historical-cutoff-settlement-ts-1":raise OperationsError("supporting-session-correction-conflict","corrected contracts or rules conflict")
+    return {"session_id":session_id,"completion_manifest_id":correction_entry["manifest_entry_id"],"predecessor_completion_manifest_id":root_entry["manifest_entry_id"],"mlb_manifest_id":mlb_entry["manifest_entry_id"],"kalshi_manifest_id":kalshi_entry["manifest_entry_id"],"provider_calls":0,"contracts":len(mlb_contracts)+len(kalshi_contracts),"derivation_rule":SUPPORTING_DERIVATION_RULE_VERSION,"correction_reason":APPROVED_SUPPORTING_CORRECTION_REASON}
+
+
+def complete_supporting_session_from_archive(*,archive:NamespaceArchive,session_id:str,correction_reason:str|None=None)->Mapping[str,Any]:
     """Complete one preserved session with zero provider contact and original chronology."""
-    completion_count=0
+    completion_count=0;correction_count=0;predecessor_completion_manifest_id=None;predecessor_derivation_rule=None
     for entry in archive.entries():
         identity=entry.get("normalized_object_id")
         if not identity:continue
         try:value=json.loads(archive.read_verified("normalized",identity))
         except (UnicodeDecodeError,json.JSONDecodeError,TypeError) as exc:raise OperationsError("supporting-session-conflict","archived normalized material is malformed") from exc
-        if value.get("record_kind")=="pr17c2-supporting-session-completion" and value.get("session_id")==session_id:completion_count+=1
-    if completion_count:
+        if value.get("record_kind")=="pr17c2-supporting-session-completion" and value.get("session_id")==session_id:completion_count+=1;predecessor_completion_manifest_id=entry["manifest_entry_id"];predecessor_derivation_rule=value.get("derivation_rule")
+        if value.get("record_kind")=="pr17c2-supporting-session-correction" and value.get("session_id")==session_id:correction_count+=1
+    if correction_reason is not None:
+        if correction_reason!=APPROVED_SUPPORTING_CORRECTION_REASON:raise OperationsError("supporting-session-correction-conflict","correction reason is not approved")
+        if correction_count:
+            result=verify_supporting_session_correction(archive,session_id)
+            return {**result,"completed_session_id":session_id,"disposition":"unchanged","mapped":1,"missing":0,"ambiguous":0}
+        if completion_count!=1:raise OperationsError("supporting-session-correction-conflict","correction requires exactly one predecessor completion")
+        if predecessor_derivation_rule is not None:raise OperationsError("supporting-session-correction-conflict","correction is only approved for the superseded legacy derivation")
+        verify_supporting_session_completion(archive,session_id,allow_legacy=True)
+    elif completion_count:
         result=verify_supporting_session_completion(archive,session_id)
         return {**result,"completed_session_id":session_id,"disposition":"unchanged"}
     pages=[]
@@ -683,9 +758,13 @@ def complete_supporting_session_from_archive(*,archive:NamespaceArchive,session_
     for position,(entry,value) in enumerate(mlb):
         raw=archive.read_verified("raw",entry["raw_object_sha256"]);mlb_pages.append(ProviderPageAcquisition(value["request_identity"],value["endpoint"],raw,page_dt(value,"started_at"),page_dt(value,"completed_at"),position,"mlb-stats-api",command_started.isoformat(),value["request_identity"]))
     mlb_union=merge_mlb_schedule_responses(tuple(page.raw for page in mlb_pages));kalshi_union=merge_retrospective_catalog_pages(typed_catalog,cutoff)
-    result=refresh_supporting_from_raw(archive=archive,mlb_raw=mlb_union,kalshi_raw=kalshi_union,collected_at=command_started,catalog_pages=typed_catalog,mlb_pages=mlb_pages,acquisition_command="refresh-retrospective-supporting",retrospective_cutoff_at=cutoff,supporting_session_id=session_id,supporting_provider_calls=len(pages),requested_date_window=(dates[0].isoformat(),dates[-1].isoformat()))
+    prior_state=None
+    if correction_reason:
+        from forecast_standalone_operations import replay_pr17_archive
+        prior_state=replay_pr17_archive(archive,analysis_boundary=command_started,excluded_supporting_sessions=(session_id,))
+    result=refresh_supporting_from_raw(archive=archive,mlb_raw=mlb_union,kalshi_raw=kalshi_union,collected_at=command_started,catalog_pages=typed_catalog,mlb_pages=mlb_pages,prior_state=prior_state,acquisition_command="refresh-retrospective-supporting",retrospective_cutoff_at=cutoff,supporting_session_id=session_id,supporting_provider_calls=len(pages),requested_date_window=(dates[0].isoformat(),dates[-1].isoformat()),supporting_correction_reason=correction_reason,predecessor_completion_manifest_id=predecessor_completion_manifest_id)
     verified=verify_supporting_session_completion(archive,session_id)
-    return {**result,**verified,"provider_calls":0,"completed_session_id":session_id}
+    return {**result,**verified,"provider_calls":0,"completed_session_id":session_id,"original_completion_manifest_id":predecessor_completion_manifest_id}
 
 
 def verify_acquisition_bundle(archive:NamespaceArchive,value:Mapping[str,Any],*,include_union:bool=False)->Any:

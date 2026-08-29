@@ -569,4 +569,14 @@ Provider requests retain distinct trusted start/completion times even across Eas
 
 Replay independently reconstructs each complete correction-aware contract set from verified pages and boundary-effective predecessor authority and requires exact canonical stored-set equality; derived unions and serialized contracts are not Evidence.
 
+Retrospective market mapping requires an explicit binary market whose narrow
+settlement rules establish the winner, opponent, and original New York schedule
+instant in exact agreement with MLB authority. Structured YES must agree; a
+repeated NO proposition label becomes the complement only after that proof.
+Expiration and close times remain metadata, and an explicit mismatch cannot
+fall back to team-name coincidence. Regular-season eligibility follows canonical phase and
+ordinary-game authority rather than provider-code spelling. A versioned,
+append-only supporting-session correction preserves the original derivation for
+audit while selecting exactly one verified corrected lineage for current replay.
+
 Fresh-process recovery never backdates or reuses interrupted responses. `reconcile-acquisitions` preserves an exact immutable abandonment record, after which a separately complete replacement may proceed with new chronology; inspection continues to expose abandoned material while scientific outputs exclude it.
