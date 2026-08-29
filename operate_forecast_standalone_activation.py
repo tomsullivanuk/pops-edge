@@ -5,8 +5,8 @@ import argparse,json,shutil,sys,time
 from datetime import date,datetime,timedelta,timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
-from forecast_standalone_activation import APPROVED_EASTERN_DATE,APPROVED_TIMEZONE,RETROSPECTIVE_WINDOW_START,BoundedLiveReadOnlyTransport,KalshiRequestSigner,MacOSKeychainCredentialProvider,OperationalHeartbeat,OperationalState,ProviderPageAcquisition,acquire_kalshi_catalog_pages,acquire_retrospective_catalog_pages,adapt_kalshi_candles,adapt_kalshi_orderbook,canonical_kalshi_candle_path,canonical_mlb_schedule_request,encoded_kalshi_catalog_path,health_from_operational_state,initialize_activation,invoke_activated_prospective,merge_kalshi_catalog_pages,merge_retrospective_catalog_pages,merge_mlb_schedule_responses,reconcile_outcomes_from_raw,refresh_supporting_from_raw,render_launchd_jobs,required_mlb_query_dates,rsa_pss_sha256_sign
-from forecast_standalone_operations import DeploymentConfig,DesignAuthority,Disposition,ExitCode,HTTPResponse,NamespaceArchive,OperatingMode,OperationsError,RetrospectiveAcquisitionError,_entry_values,acquire_prospective_once,acquire_typed_supporting_fixture,discover_and_acquire_retrospective,index_health,inspect_archive,rebuild_index,reconcile_incomplete_acquisitions,replay_pr17_archive,request_identity,sync_secondary
+from forecast_standalone_activation import APPROVED_EASTERN_DATE,APPROVED_TIMEZONE,RETROSPECTIVE_WINDOW_START,BoundedLiveReadOnlyTransport,KalshiCatalogPage,KalshiRequestSigner,MacOSKeychainCredentialProvider,OperationalHeartbeat,OperationalState,ProviderPageAcquisition,acquire_kalshi_catalog_pages,acquire_retrospective_catalog_pages,adapt_kalshi_candles,adapt_kalshi_orderbook,canonical_kalshi_candle_path,canonical_mlb_schedule_request,encoded_kalshi_catalog_path,encoded_kalshi_retrospective_catalog_path,health_from_operational_state,initialize_activation,invoke_activated_prospective,merge_kalshi_catalog_pages,merge_retrospective_catalog_pages,merge_mlb_schedule_responses,preserve_supporting_response,reconcile_outcomes_from_raw,refresh_supporting_from_raw,render_launchd_jobs,required_mlb_query_dates,rsa_pss_sha256_sign
+from forecast_standalone_operations import DeploymentConfig,DesignAuthority,Disposition,ExitCode,HTTPResponse,NamespaceArchive,OperatingMode,OperationsError,RetrospectiveAcquisitionError,SupportingAcquisitionError,_entry_values,acquire_prospective_once,acquire_typed_supporting_fixture,discover_and_acquire_retrospective,index_health,inspect_archive,rebuild_index,reconcile_incomplete_acquisitions,replay_pr17_archive,request_identity,sync_secondary
 
 class FixtureTransport:
     def __init__(self,path:Path):self.path=path;self.calls=0
@@ -66,7 +66,12 @@ def execute(command,config,*,clock=lambda:datetime.now(timezone.utc),transport_f
             output={"configuration_id":result.configuration_id,"namespace":result.namespace,"trusted_now":result.trusted_now,"provider_calls":calls,"typed_dispositions":typed,"due_opportunities":due,"disposition":disposition}
         elif command in {"refresh-supporting","refresh-retrospective-supporting"}:
             if supporting_loader is None:raise OperationsError("adapter-unavailable","configured MLB/Kalshi supporting adapters are absent")
-            loaded=supporting_loader(started);mlb_raw,kalshi_raw=loaded[:2];pages=loaded[2] if len(loaded)>2 else ();mlb_pages=loaded[3] if len(loaded)>3 else ();result=refresh_supporting_from_raw(archive=archive,mlb_raw=mlb_raw,kalshi_raw=kalshi_raw,collected_at=started,catalog_pages=pages,mlb_pages=mlb_pages,acquisition_command=command);calls=(len(mlb_pages) if mlb_pages else 1)+(len(pages) if pages else 1);typed=result["contracts"];disposition=result["disposition"];output={"configuration_id":config.identity,"provider_calls":calls,**result}
+            loaded=supporting_loader(started);mlb_raw,kalshi_raw=loaded[:2];pages=loaded[2] if len(loaded)>2 else ();mlb_pages=loaded[3] if len(loaded)>3 else ();cutoff_at=loaded[5] if len(loaded)>5 else None;session_id=loaded[6] if len(loaded)>6 else None;calls=loaded[4] if len(loaded)>4 else (len(mlb_pages) if mlb_pages else 1)+(len(pages) if pages else 1)
+            try:result=refresh_supporting_from_raw(archive=archive,mlb_raw=mlb_raw,kalshi_raw=kalshi_raw,collected_at=started,catalog_pages=pages,mlb_pages=mlb_pages,acquisition_command=command,retrospective_cutoff_at=cutoff_at,supporting_session_id=session_id)
+            except OperationsError as exc:
+                if not hasattr(exc,"provider_calls"):exc.provider_calls=calls
+                raise
+            typed=result["contracts"];disposition=result["disposition"];output={"configuration_id":config.identity,"provider_calls":calls,**result}
         elif command=="reconcile-outcomes":
             if outcome_loader is None:raise OperationsError("adapter-unavailable","configured MLB outcome adapter is absent")
             loaded=outcome_loader(started);mlb_raw,mlb_pages=(loaded if isinstance(loaded,tuple) and len(loaded)==2 else (loaded,()))
@@ -134,11 +139,29 @@ def main(argv=None)->int:
                     if start_day.isoformat()!=args.start_date or end_day.isoformat()!=args.end_date or end_day<start_day or (end_day-start_day).days>=31 or start_day<RETROSPECTIVE_WINDOW_START.date() or end_day>=APPROVED_EASTERN_DATE:raise OperationsError("retrospective-bound-invalid","retrospective supporting batch must contain 1 to 31 in-window dates")
                     def retrospective_supporting(at):
                         if end_day>=at.astimezone(ZoneInfo(APPROVED_TIMEZONE)).date():raise OperationsError("retrospective-bound-invalid","retrospective supporting dates must be complete at command start")
-                        mlb_pages=[]
-                        for offset in range((end_day-start_day).days+1):
-                            day=start_day+timedelta(days=offset);path,endpoint=canonical_mlb_schedule_request(day);began=clock();raw=public_get("https://statsapi.mlb.com",path);completed=clock();mlb_pages.append(ProviderPageAcquisition(day.isoformat(),endpoint,raw,began,completed,len(mlb_pages),"mlb-stats-api",at.isoformat(),day.isoformat()))
-                        catalog_pages=acquire_retrospective_catalog_pages(lambda path:public_get(config.provider_base_url,path),clock=clock,command_start=at)
-                        return merge_mlb_schedule_responses(tuple(x.raw for x in mlb_pages)),merge_retrospective_catalog_pages(catalog_pages),catalog_pages,tuple(mlb_pages)
+                        session="supporting-session:"+request_identity({"configuration_id":config.identity,"command_started_at":at,"start_date":start_day,"end_date":end_day}).split(":",1)[1];session_archive=NamespaceArchive(config);calls=0;mlb_pages=[];catalog_pages=[]
+                        requester=configured_kalshi_transport(config,clock).requester
+                        def bounded_get(provider,purpose,base,path,identity,*,partition=None,partition_position=None,validator=lambda value:value):
+                            nonlocal calls
+                            endpoint=base.rstrip("/")+path;transport=LiveRetrospectiveTransport(BoundedLiveReadOnlyTransport(base,requester,timeout_seconds=config.retry_policy.request_timeout_seconds),base)
+                            result=acquire_prospective_once(transport=transport,endpoint=endpoint,request={},timeout_seconds=config.retry_policy.request_timeout_seconds,now=clock,validator=validator);calls+=transport.calls
+                            attempt=result.attempts[-1];preserve_supporting_response(archive=session_archive,session_id=session,provider=provider,purpose=purpose,endpoint=endpoint,request_identity_value=identity,started_at=result.attempts[0].started_at,completed_at=attempt.completed_at,disposition=result.disposition,raw=result.raw_body,partition=partition,partition_position=partition_position)
+                            if result.disposition is not Disposition.SUCCESS or result.raw_body is None:raise SupportingAcquisitionError("supporting-acquisition-failed",f"{purpose} acquisition failed",calls)
+                            return result.raw_body,result.attempts[0].started_at,attempt.completed_at,result.normalized
+                        try:
+                            for offset in range((end_day-start_day).days+1):
+                                day=start_day+timedelta(days=offset);path,endpoint=canonical_mlb_schedule_request(day);raw,began,completed,_=bounded_get("mlb-stats-api","schedule","https://statsapi.mlb.com",path,day.isoformat());mlb_pages.append(ProviderPageAcquisition(day.isoformat(),endpoint,raw,began,completed,len(mlb_pages),"mlb-stats-api",at.isoformat(),day.isoformat()))
+                            cutoff_path="/historical/cutoff";cutoff_raw,_,_,cutoff_value=bounded_get("kalshi","historical-cutoff",config.provider_base_url,cutoff_path,"historical-cutoff",validator=adapt_kalshi_historical_cutoff);cutoff=cutoff_value["market_settled_at"]
+                            for historical,partition in ((True,"historical"),(False,"live")):
+                                position=[0];timings={}
+                                builder=lambda cursor,historical=historical:encoded_kalshi_retrospective_catalog_path(cursor,historical=historical)
+                                def fetch_cursor(cursor,partition=partition,builder=builder):
+                                    raw,began,completed,_=bounded_get("kalshi","catalog",config.provider_base_url,builder(cursor),cursor,partition=partition,partition_position=position[0]);timings[cursor]=(began,completed);position[0]+=1;return raw
+                                acquired=acquire_kalshi_catalog_pages(fetch_cursor,clock=clock,command_start=at,path_builder=builder)
+                                for page in acquired:catalog_pages.append(KalshiCatalogPage(len(catalog_pages),page.request_cursor,page.next_cursor,page.raw,page.markets,*timings[page.request_cursor],page.endpoint,partition,page.position))
+                            return merge_mlb_schedule_responses(tuple(x.raw for x in mlb_pages)),merge_retrospective_catalog_pages(catalog_pages,cutoff),tuple(catalog_pages),tuple(mlb_pages),calls,cutoff,session
+                        except SupportingAcquisitionError:raise
+                        except OperationsError as exc:raise SupportingAcquisitionError(exc.code,"retrospective supporting validation failed",calls) from exc
                     supporting_loader=retrospective_supporting
             retrospective_runner=None
             if args.command=="acquire-retrospective":
@@ -178,7 +201,9 @@ def main(argv=None)->int:
         print(json.dumps(result,sort_keys=True,separators=(",",":"),default=lambda x:x.isoformat()))
         return int(ExitCode.SUCCESS if result.get("disposition")!="not-ready" else ExitCode.NOT_READY)
     except OperationsError as exc:
-        print(json.dumps({"code":exc.code,"detail":exc.detail,"state":"failed"},sort_keys=True,separators=(",",":")),file=sys.stderr)
+        failure={"code":exc.code,"detail":exc.detail,"state":"failed"}
+        if hasattr(exc,"provider_calls"):failure["provider_calls"]=exc.provider_calls
+        print(json.dumps(failure,sort_keys=True,separators=(",",":")),file=sys.stderr)
         return int(ExitCode.INTEGRITY_FAILURE if any(x in exc.code for x in ("integrity","corrupt","archive")) else ExitCode.OPERATIONAL_FAILURE)
     except Exception as exc:
         print(json.dumps({"code":"internal-error","detail":f"unexpected internal failure ({type(exc).__name__})","state":"failed"},sort_keys=True,separators=(",",":")),file=sys.stderr);return int(ExitCode.OPERATIONAL_FAILURE)

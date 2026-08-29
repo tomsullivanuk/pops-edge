@@ -775,6 +775,13 @@ both Kalshi live/historical catalog partitions, and exact candle responses
 remain auditable. No retrospective command is part of the prospective
 scheduler, and no acquisition calculates performance.
 
+Each supporting invocation first preserves received pages as non-authoritative
+session material and publishes scientific authority manifest-last. The exact
+historical cutoff governs differing cross-partition duplicates: markets settled
+before it are historical, while equality is live. Partial and failed sessions
+remain visible without becoming Evidence, and provider-call accounting includes
+every attempted call before success or failure.
+
 ### PR17D — Prospective Observation Close and Separate Report
 
 **Purpose:** close the prospective observation period after the final 2026 MLB
