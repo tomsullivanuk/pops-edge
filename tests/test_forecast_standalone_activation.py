@@ -16,7 +16,7 @@ from decimal import Decimal
 from forecast_standalone_activation import *
 from forecast_standalone_operations import DeploymentConfig, NamespaceArchive, OperatingMode, OperationsError, RetryPolicy, rebuild_index, sync_secondary
 from inspect_forecast_standalone_activation import run
-from operate_forecast_standalone_activation import execute,live_mlb_material
+from operate_forecast_standalone_activation import LiveRetrospectiveTransport,adapt_kalshi_historical_cutoff,execute,live_mlb_material
 
 
 class ActivationTests(unittest.TestCase):
@@ -42,8 +42,34 @@ class ActivationTests(unittest.TestCase):
         raw={"ticker":"KXMLBGAME-TEST","candlesticks":[{"end_period_ts":int(target.timestamp()),"yes_bid":{"close":"0.4500"},"yes_ask":{"close":"0.5500"},"price":{},"volume":"1.00","open_interest":"2.00"}]}
         normalized=adapt_kalshi_candles(raw,market_ticker="KXMLBGAME-TEST",target_at=target)
         self.assertEqual(normalized["pages"][0]["candles"][0]["close_yes_bid"],"0.4500")
-        for changed in ({**raw,"ticker":"FOREIGN"},{**raw,"candlesticks":[{**raw["candlesticks"][0],"end_period_ts":int((target-timedelta(minutes=5)).timestamp())}]}):
+        for changed in ({**raw,"ticker":"FOREIGN"},{**raw,"candlesticks":[{**raw["candlesticks"][0],"end_period_ts":int((target-timedelta(minutes=5)).timestamp())}]},{**raw,"candlesticks":[{**raw["candlesticks"][0],"yes_bid":{"close":"1.1"}}]}):
             with self.assertRaises(OperationsError):adapt_kalshi_candles(changed,market_ticker="KXMLBGAME-TEST",target_at=target)
+
+    def test_live_retrospective_adapter_returns_bounded_failure_results(self):
+        from forecast_standalone_operations import Disposition,acquire_prospective_once
+        at=datetime(2026,8,28,18,tzinfo=timezone.utc);endpoint="https://fixture.invalid/historical/cutoff"
+        cases=((lambda *_:(_ for _ in ()).throw(TimeoutError()),Disposition.TIMEOUT,None),(lambda *_:(_ for _ in ()).throw(ConnectionError()),Disposition.CONNECTION_FAILURE,None),(lambda *_:(429,b'{"error":"limited"}',{"Retry-After":"1"}),Disposition.RATE_LIMITED,b'{"error":"limited"}'),(lambda *_:(500,b'{"error":"provider"}',{}),Disposition.PROVIDER_ERROR,b'{"error":"provider"}'),(lambda *_:(302,b'{"redirect":true}',{}),Disposition.VALIDATION_FAILURE,b'{"redirect":true}'),(lambda *_:(200,b"x"*(MAX_RESPONSE_BYTES+1),{}),Disposition.VALIDATION_FAILURE,None),(lambda *_:(200,b"{",{}),Disposition.MALFORMED_RESPONSE,b"{"),(lambda *_:(200,b"[]",{}),Disposition.INCOMPLETE_RESPONSE,b"[]"))
+        for requester,expected,raw in cases:
+            with self.subTest(expected=expected,raw=raw):
+                bounded=BoundedLiveReadOnlyTransport("https://fixture.invalid",requester);transport=LiveRetrospectiveTransport(bounded,"https://fixture.invalid")
+                result=acquire_prospective_once(transport=transport,endpoint=endpoint,request={},timeout_seconds=5,now=lambda:at,validator=adapt_kalshi_historical_cutoff)
+                self.assertEqual((result.disposition,result.raw_body,transport.calls),(expected,raw,1));self.assertEqual((result.attempts[0].started_at,result.attempts[0].completed_at),(at,at))
+        success=LiveRetrospectiveTransport(BoundedLiveReadOnlyTransport("https://fixture.invalid",lambda *_:(200,b'{"market_settled_ts":"2026-08-01T00:00:00Z"}',{})),"https://fixture.invalid")
+        result=acquire_prospective_once(transport=success,endpoint=endpoint,request={},timeout_seconds=5,now=lambda:at,validator=adapt_kalshi_historical_cutoff)
+        self.assertEqual((result.disposition,success.calls),(Disposition.SUCCESS,1))
+
+    def test_live_retrospective_candle_validation_uses_structured_result_boundary(self):
+        from forecast_standalone_operations import Disposition,acquire_with_retries
+        target=datetime(2026,4,1,18,tzinfo=timezone.utc);market="KXMLBGAME-TEST";endpoint="https://fixture.invalid"+canonical_kalshi_candle_path(market,target,historical=True);policy=RetryPolicy(1,5,5,(),0)
+        valid={"ticker":market,"candlesticks":[{"end_period_ts":int(target.timestamp()),"yes_bid":{"close":"0.45"},"yes_ask":{"close":"0.55"}}]}
+        cases=({**valid,"ticker":"FOREIGN"},{**valid,"candlesticks":[{**valid["candlesticks"][0],"end_period_ts":int((target-timedelta(minutes=5)).timestamp())}]},{**valid,"candlesticks":[{**valid["candlesticks"][0],"yes_bid":{"close":"1.1"}}]})
+        for payload in cases:
+            body=json.dumps(payload).encode();transport=LiveRetrospectiveTransport(BoundedLiveReadOnlyTransport("https://fixture.invalid",lambda *_:(200,body,{})),"https://fixture.invalid")
+            result=acquire_with_retries(transport=transport,endpoint=endpoint,request={},policy=policy,now=lambda:target,sleeper=lambda _:None,validator=lambda value:adapt_kalshi_candles(value,market_ticker=market,target_at=target))
+            self.assertEqual((result.disposition,result.raw_body,transport.calls),(Disposition.VALIDATION_FAILURE,body,1))
+        body=json.dumps(valid).encode();transport=LiveRetrospectiveTransport(BoundedLiveReadOnlyTransport("https://fixture.invalid",lambda *_:(200,body,{})),"https://fixture.invalid")
+        result=acquire_with_retries(transport=transport,endpoint=endpoint,request={},policy=policy,now=lambda:target,sleeper=lambda _:None,validator=lambda value:adapt_kalshi_candles(value,market_ticker=market,target_at=target))
+        self.assertEqual((result.disposition,transport.calls),(Disposition.SUCCESS,1))
 
     def test_credential_provider_is_injected_and_sanitized(self):
         seen = []

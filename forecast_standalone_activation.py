@@ -365,7 +365,8 @@ def canonical_kalshi_candle_path(market_ticker:str,target_at:datetime,*,historic
 
 def adapt_kalshi_candles(payload:Mapping[str,Any],*,market_ticker:str,target_at:datetime)->Mapping[str,Any]:
     """Normalize either documented Kalshi candle shape without synthesizing data."""
-    if not isinstance(payload,dict) or set(payload)!={"ticker","candlesticks"} or payload.get("ticker")!=market_ticker or not isinstance(payload.get("candlesticks"),list):raise OperationsError("incomplete-response","historical candle response shape conflicts")
+    if not isinstance(payload,dict) or set(payload)!={"ticker","candlesticks"} or not isinstance(payload.get("candlesticks"),list):raise OperationsError("incomplete-response","historical candle response shape conflicts")
+    if payload.get("ticker")!=market_ticker:raise OperationsError("validation-failure","historical candle market identity conflicts")
     candles=[]
     for value in payload["candlesticks"]:
         if not isinstance(value,dict) or not isinstance(value.get("end_period_ts"),int):raise OperationsError("provider-data-invalid","candle timestamp is invalid")

@@ -6,7 +6,7 @@ from datetime import date,datetime,timedelta,timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 from forecast_standalone_activation import APPROVED_EASTERN_DATE,APPROVED_TIMEZONE,RETROSPECTIVE_WINDOW_START,BoundedLiveReadOnlyTransport,KalshiRequestSigner,MacOSKeychainCredentialProvider,OperationalHeartbeat,OperationalState,ProviderPageAcquisition,acquire_kalshi_catalog_pages,acquire_retrospective_catalog_pages,adapt_kalshi_candles,adapt_kalshi_orderbook,canonical_kalshi_candle_path,canonical_mlb_schedule_request,encoded_kalshi_catalog_path,health_from_operational_state,initialize_activation,invoke_activated_prospective,merge_kalshi_catalog_pages,merge_retrospective_catalog_pages,merge_mlb_schedule_responses,reconcile_outcomes_from_raw,refresh_supporting_from_raw,render_launchd_jobs,required_mlb_query_dates,rsa_pss_sha256_sign
-from forecast_standalone_operations import DeploymentConfig,DesignAuthority,Disposition,ExitCode,HTTPResponse,NamespaceArchive,OperatingMode,OperationsError,_entry_values,acquire_typed_supporting_fixture,discover_and_acquire_retrospective,index_health,inspect_archive,rebuild_index,reconcile_incomplete_acquisitions,replay_pr17_archive,request_identity,sync_secondary
+from forecast_standalone_operations import DeploymentConfig,DesignAuthority,Disposition,ExitCode,HTTPResponse,NamespaceArchive,OperatingMode,OperationsError,RetrospectiveAcquisitionError,_entry_values,acquire_prospective_once,acquire_typed_supporting_fixture,discover_and_acquire_retrospective,index_health,inspect_archive,rebuild_index,reconcile_incomplete_acquisitions,replay_pr17_archive,request_identity,sync_secondary
 
 class FixtureTransport:
     def __init__(self,path:Path):self.path=path;self.calls=0
@@ -29,11 +29,20 @@ def configured_kalshi_transport(config,clock):
 
 
 class LiveRetrospectiveTransport:
-    """Bounded GET-only adapter for one already-authorized candle endpoint."""
+    """Return bounded GET results so the acquisition layer owns disposition handling."""
     def __init__(self,bounded,base_url):self.bounded,self.base_url,self.calls=bounded,base_url.rstrip("/"),0
     def request(self,method,url,*,params,timeout,allow_redirects):
         if method!="GET" or params or allow_redirects or timeout>self.bounded.timeout_seconds or not url.startswith(self.base_url+"/"):raise OperationsError("transport-configuration","retrospective request is noncanonical")
-        self.calls+=1;return HTTPResponse(200,self.bounded.get(url[len(self.base_url):]),{})
+        self.calls+=1
+        status,body,headers=self.bounded.requester(url,{"Accept":"application/json"},timeout,False)
+        if len(body)>self.bounded.maximum_bytes:return HTTPResponse(413,b"",{})
+        return HTTPResponse(status,body,headers)
+
+def adapt_kalshi_historical_cutoff(value):
+    try:cutoff=datetime.fromisoformat(value["market_settled_ts"].replace("Z","+00:00"))
+    except (KeyError,TypeError,ValueError) as exc:raise OperationsError("validation-failure","Kalshi historical cutoff is malformed") from exc
+    if cutoff.tzinfo is None:raise OperationsError("validation-failure","Kalshi historical cutoff is naive")
+    return {"market_settled_at":cutoff}
 
 def live_mlb_material(purpose,at,*,histories,public_get,clock):
     """Acquire obligation dates through the established MLB request contract."""
@@ -141,10 +150,15 @@ def main(argv=None)->int:
                 def retrospective_runner(archive):
                     state=replay_pr17_archive(archive,analysis_boundary=clock())
                     if not any(x.design_tag.value=="retrospective" for x in state.bucket("protocols")):raise OperationsError("retrospective-authority-invalid","canonical retrospective Protocol is not initialized")
-                    cutoff_started=clock();cutoff_raw=(args.fixture/"cutoff.json").read_bytes() if args.fixture else bounded.get("/historical/cutoff");cutoff_completed=clock()
-                    try:cutoff=datetime.fromisoformat(json.loads(cutoff_raw)["market_settled_ts"].replace("Z","+00:00"))
-                    except (KeyError,TypeError,ValueError,json.JSONDecodeError) as exc:raise OperationsError("provider-data-invalid","Kalshi historical cutoff is malformed") from exc
-                    if cutoff.tzinfo is None:raise OperationsError("provider-data-invalid","Kalshi historical cutoff is naive")
+                    cutoff_transport=FixtureTransport(args.fixture/"cutoff.json") if args.fixture else retro_transport
+                    cutoff_endpoint=config.provider_base_url.rstrip("/")+"/historical/cutoff"
+                    acquired_cutoff=acquire_prospective_once(transport=cutoff_transport,endpoint=cutoff_endpoint,request={},timeout_seconds=config.retry_policy.request_timeout_seconds,now=clock,validator=adapt_kalshi_historical_cutoff)
+                    cutoff_started=acquired_cutoff.attempts[0].started_at;cutoff_completed=acquired_cutoff.attempts[-1].completed_at
+                    if acquired_cutoff.disposition is not Disposition.SUCCESS or acquired_cutoff.raw_body is None or acquired_cutoff.normalized is None:
+                        values=_entry_values(archive=archive,command="acquire-retrospective-cutoff",request_id=request_identity({"endpoint":cutoff_endpoint,"started_at":cutoff_started}),invoked_at=cutoff_completed,endpoint=cutoff_endpoint,disposition=acquired_cutoff.disposition,protocol_id=None,design=DesignAuthority.SUPPORTING,diagnostics=("historical-cutoff",f"attempt-1:{acquired_cutoff.disposition.value}"),provider_effective_at=None);values["provider_id"]="kalshi"
+                        with archive.mutation_lock():archive._record_failure_locked(entry_values=values,raw_body=acquired_cutoff.raw_body)
+                        raise RetrospectiveAcquisitionError("bounded historical cutoff acquisition failed",0 if args.fixture else 1)
+                    cutoff_raw=acquired_cutoff.raw_body;cutoff=acquired_cutoff.normalized["market_settled_at"]
                     cutoff_digest=__import__('hashlib').sha256(cutoff_raw).hexdigest();normalized={"schema_version":"1","record_kind":"pr17c2-historical-cutoff","provider":"kalshi","endpoint":"/historical/cutoff","market_settled_at":cutoff,"raw_sha256":cutoff_digest,"started_at":cutoff_started,"completed_at":cutoff_completed}
                     values=_entry_values(archive=archive,command="acquire-retrospective-cutoff",request_id=request_identity({"raw_sha256":cutoff_digest,"started_at":cutoff_started}),invoked_at=cutoff_completed,endpoint=config.provider_base_url.rstrip("/")+"/historical/cutoff",disposition=Disposition.SUCCESS,protocol_id=None,design=DesignAuthority.SUPPORTING,diagnostics=("exact Kalshi historical partition cutoff",),provider_effective_at=cutoff);values["provider_id"]="kalshi"
                     with archive.mutation_lock():archive._commit_locked(raw_body=cutoff_raw,normalized=normalized,entry_values=values)
@@ -159,7 +173,7 @@ def main(argv=None)->int:
                     except OperationsError as exc:
                         if hasattr(exc,"provider_calls"):exc.provider_calls+=0 if args.fixture else 1
                         raise
-                    return created,retro_transport.calls+(0 if args.fixture else 1)
+                    return created,retro_transport.calls
             result=execute(args.command,config,clock=clock,transport_factory=factory,supporting_loader=supporting_loader,outcome_loader=outcome_loader,retrospective_runner=retrospective_runner)
         print(json.dumps(result,sort_keys=True,separators=(",",":"),default=lambda x:x.isoformat()))
         return int(ExitCode.SUCCESS if result.get("disposition")!="not-ready" else ExitCode.NOT_READY)

@@ -425,6 +425,11 @@ def _safe_raw(body: bytes) -> bytes | None:
     return body
 
 
+def _permitted_response_raw(response: HTTPResponse) -> bytes | None:
+    if response.status_code==413 and response.body==b"":return None
+    return _safe_raw(response.body)
+
+
 def acquire_prospective_once(*, transport: Transport, endpoint: str, request: Mapping[str, str],
                              timeout_seconds: int, now: Callable[[], datetime],
                              validator: Callable[[Mapping[str, Any]], Mapping[str, Any]],
@@ -445,7 +450,7 @@ def acquire_prospective_once(*, transport: Transport, endpoint: str, request: Ma
         completed = finish(); return AcquisitionResult(Disposition.CONNECTION_FAILURE, None, None, (AttemptRecord(1, started, completed, Disposition.CONNECTION_FAILURE, None, None),), "connection failed")
     disposition = classify_response(response); completed = finish()
     if disposition is not Disposition.SUCCESS:
-        return AcquisitionResult(disposition, _safe_raw(response.body), None, (AttemptRecord(1, started, completed, disposition, response.status_code, None),), "provider response rejected")
+        return AcquisitionResult(disposition, _permitted_response_raw(response), None, (AttemptRecord(1, started, completed, disposition, response.status_code, None),), "provider response rejected")
     try: decoded = _decode_json(response.body)
     except OperationsError as exc:
         disp = Disposition.MALFORMED_RESPONSE if exc.code == "malformed-response" else Disposition.INCOMPLETE_RESPONSE
@@ -468,7 +473,7 @@ def acquire_with_retries(*, transport: Transport, endpoint: str, request: Mappin
         started = now(); status = None; retry_after = None
         try:
             response = transport.request("GET", endpoint, params=request, timeout=policy.request_timeout_seconds, allow_redirects=False)
-            last_body = _safe_raw(response.body); status = response.status_code; disposition = classify_response(response)
+            last_body = _permitted_response_raw(response); status = response.status_code; disposition = classify_response(response)
         except TimeoutError: disposition = Disposition.TIMEOUT; response = None
         except (ConnectionError, OSError): disposition = Disposition.CONNECTION_FAILURE; response = None
         completed = now()
