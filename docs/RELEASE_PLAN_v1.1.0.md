@@ -793,14 +793,17 @@ malformed, duplicate, incomplete, foreign, failed, or unreferenced material
 cannot be counted as a completed authoritative session.
 
 PR17C2 correction replay versions market reconciliation as
-`kalshi-mlb-explicit-sides-schedule-instant-2`: structured YES and NO semantics
-must resolve to the event's two participants, and aware provider time must equal
-the MLB scheduled instant or explicit three-hour expiration instant. There is no
-participant-only fallback. Retrospective eligibility uses valid regular-season
+`kalshi-mlb-explicit-rules-schedule-instant-2`: an explicitly binary market's
+narrow settlement-rule template must identify the winner, opponent, matchup,
+and original New York schedule instant in exact agreement with MLB authority.
+Structured YES must agree, and a repeated NO label becomes the complement only
+after that independent proof. Expiration and close times remain metadata. There
+is no participant-only fallback. Retrospective eligibility uses valid regular-season
 phase plus ordinary-game authority without contradicting provider code `R`.
 `correct-retrospective-supporting-session` reuses the immutable page set with
 zero provider calls and publishes a single-predecessor supersession manifest;
-missing or branched lineage fails closed and repeat correction is a no-op.
+missing or branched lineage fails closed and repeat correction is a no-op. The
+approved reason is `pr17c2-settlement-rule-reconciliation-eligibility-v2`.
 
 ### PR17D — Prospective Observation Close and Separate Report
 

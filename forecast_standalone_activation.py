@@ -40,8 +40,8 @@ RETROSPECTIVE_WINDOW_SECONDS=14_169_600
 MLB_DATE_RULE_VERSION="eastern-unresolved-obligations-lookback-2"
 MLB_CORRECTION_LOOKBACK_DAYS=7
 ACQUISITION_UNION_RULE_VERSION="provider-pages-canonical-union-1"
-SUPPORTING_DERIVATION_RULE_VERSION="kalshi-mlb-explicit-sides-schedule-instant-2"
-APPROVED_SUPPORTING_CORRECTION_REASON="pr17c2-market-reconciliation-eligibility-v2"
+SUPPORTING_DERIVATION_RULE_VERSION="kalshi-mlb-explicit-rules-schedule-instant-2"
+APPROVED_SUPPORTING_CORRECTION_REASON="pr17c2-settlement-rule-reconciliation-eligibility-v2"
 HEARTBEAT_SCHEMA_VERSION="1"
 
 

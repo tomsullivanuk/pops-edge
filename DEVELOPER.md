@@ -619,14 +619,17 @@ session is a zero-write no-op that returns the existing manifest identities;
 an invalid or duplicate completion fails closed.
 
 The approved retrospective derivation rule is
-`kalshi-mlb-explicit-sides-schedule-instant-2`. Reconciliation requires an
-explicit YES label, an explicit binary NO label resolving to the complementary
-event participant, and an aware provider instant equal to the MLB scheduled
-instant or its explicit three-hour expiration instant. Never fall back to
-participant-only matching. Retrospective ordinary-game eligibility uses valid
+`kalshi-mlb-explicit-rules-schedule-instant-2`. Reconciliation requires an
+explicitly binary market, structured YES, and a narrow settlement-rule template
+that names the winner, opponent, professional-baseball matchup, original local
+date/time, and supported New York timezone. Rule participants and the aware
+instant must exactly equal MLB authority. A repeated NO label is a proposition
+label and becomes the complement only after that proof. Expiration and close
+times remain metadata. Never fall back to participant-only matching.
+Retrospective ordinary-game eligibility uses valid
 classification, regular-season phase, and `ordinary_game`; preserve `game_type`
 as provider evidence without imposing a second spelling gate. The only approved
-archive correction reason is `pr17c2-market-reconciliation-eligibility-v2`.
+archive correction reason is `pr17c2-settlement-rule-reconciliation-eligibility-v2`.
 Correction is zero-network and append-only: preserve the root completion, reuse
 its pages, publish new versioned bundles, then publish exactly one unbranched
 manifest-last supersession.

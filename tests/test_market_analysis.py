@@ -20,9 +20,15 @@ def facts(game_pk=777):
     schedule=ScheduleObservation(f"schedule:{game_pk}",game.event.canonical_event_id,START,Provenance("mlb",f"schedule:{game_pk}",game.event.canonical_event_id,AT))
     return game,schedule
 
+def settlement_rules(yes_label="Home Club",away="Away Club",home="Home Club",day="Jul 31, 2026",clock="7:00 PM",zone="EDT"):
+    primary=f"If {yes_label} wins the {away} vs {home} professional baseball game originally scheduled for {day} at {clock} {zone}, then the market resolves to Yes."
+    secondary=f"The following market refers to the {away} vs {home} professional baseball game originally scheduled for {day} at {clock} {zone}. If this game is postponed or delayed, the market will remain open."
+    return primary,secondary
+
 def market_payload(*,yes="home",ticker="KXMLB-20260731-AWYHME-HME",status="open",**changes):
     yes_label,no_label=("Home Club","Away Club") if yes=="home" else ("Away Club","Home Club")
-    value={"ticker":ticker,"event_ticker":"KXMLB-20260731-AWYHME","title":"Away Club at Home Club winner?","yes_sub_title":yes_label,"no_sub_title":no_label,"status":status,"close_time":"2026-07-31T23:00:00Z","yes_bid_dollars":"0.54","yes_ask_dollars":"0.56","no_bid_dollars":"0.44","no_ask_dollars":"0.46","last_price_dollars":"0.55","volume_fp":"100","open_interest_fp":"50","rules_primary":f"Pays $1 if {yes_label} wins."}
+    primary,secondary=settlement_rules(yes_label)
+    value={"ticker":ticker,"event_ticker":"KXMLB-20260731-AWYHME","market_type":"binary","title":"Away Club at Home Club winner?","yes_sub_title":yes_label,"no_sub_title":no_label,"status":status,"close_time":"2026-07-31T23:00:00Z","yes_bid_dollars":"0.54","yes_ask_dollars":"0.56","no_bid_dollars":"0.44","no_ask_dollars":"0.46","last_price_dollars":"0.55","volume_fp":"100","open_interest_fp":"50","notional_value_dollars":"1.0000","rules_primary":primary,"rules_secondary":secondary}
     value.update(changes); return value
 
 def bid_book(*,ticker=None,yes=(("0.5400","5.00"),),no=(("0.4400","2.00"),("0.4000","3.00"))):
@@ -73,7 +79,8 @@ class MarketIdentityAndAdapterTests(unittest.TestCase):
         self.assertEqual(away.series.yes_semantic.participant_id,"team:away"); self.assertEqual(away.series.no_semantic.participant_id,"team:home")
 
     def test_current_kalshi_mlb_binary_no_label_resolves_explicit_complement(self):
-        payload=market_payload(ticker="KXMLBGAME-26JUL311905PHIBAL-PHI",title="Philadelphia vs Baltimore Winner?",yes_sub_title="Philadelphia",no_sub_title="Philadelphia",rules_primary="If Philadelphia wins, then the market resolves to Yes.",notional_value_dollars="1.0000")
+        primary,secondary=settlement_rules("Philadelphia","Philadelphia","Baltimore")
+        payload=market_payload(ticker="KXMLBGAME-26JUL311905PHIBAL-PHI",title="Philadelphia vs Baltimore Winner?",yes_sub_title="Philadelphia",no_sub_title="Philadelphia",rules_primary=primary,rules_secondary=secondary,notional_value_dollars="1.0000")
         game,schedule=facts(); game=replace(game,away_team=replace(game.away_team,display_name="Philadelphia Phillies"),home_team=replace(game.home_team,display_name="Baltimore Orioles"))
         result=adapt_market(payload,games=(game,),schedules=(schedule,),collected_at=AT,orderbook_payload=bid_book(ticker=payload["ticker"]))
         self.assertEqual(result.outcome,MarketAdapterOutcome.COMPLETE);self.assertEqual(result.series.yes_semantic.provider_label,"Philadelphia");self.assertEqual(result.series.no_semantic.participant_id,"team:home")
@@ -92,21 +99,37 @@ class MarketIdentityAndAdapterTests(unittest.TestCase):
         self.assertEqual(result.outcome,MarketAdapterOutcome.AMBIGUOUS); self.assertIsNone(result.series); self.assertEqual(len(result.candidate_event_ids),2)
 
     def test_explicit_nonmatching_date_never_falls_back_to_participant(self):
-        result=adapted(payload=market_payload(close_time="2026-08-01T23:00:00Z"));self.assertEqual(result.outcome,MarketAdapterOutcome.REJECTED);self.assertIsNone(result.series);self.assertEqual(result.issues[0].code,"no-matching-event")
+        primary,secondary=settlement_rules(day="Aug 1, 2026");result=adapted(payload=market_payload(rules_primary=primary,rules_secondary=secondary));self.assertEqual(result.outcome,MarketAdapterOutcome.REJECTED);self.assertIsNone(result.series);self.assertEqual(result.issues[0].code,"no-matching-event")
 
-    def test_both_structured_sides_and_aware_time_are_mandatory(self):
-        missing_no=adapted(payload=market_payload(no_sub_title=None));foreign_no=adapted(payload=market_payload(no_sub_title="Third Club"));missing_time=adapted(payload=market_payload(close_time=None));malformed=adapted(payload=market_payload(close_time="not-a-time"))
-        self.assertTrue(all(item.series is None for item in (missing_no,foreign_no,missing_time,malformed)));self.assertEqual([item.issues[0].code for item in (missing_no,foreign_no,missing_time,malformed)],["missing-no-side","no-matching-event","missing-market-time","malformed-market-time"])
+    def test_structured_sides_and_settlement_identity_are_mandatory(self):
+        missing_no=adapted(payload=market_payload(no_sub_title=None));foreign_no=adapted(payload=market_payload(no_sub_title="Third Club"));expiration_only=adapted(payload=market_payload(rules_primary=None,rules_secondary=None));close_only=adapted(payload=market_payload(rules_primary=None,rules_secondary=None,expected_expiration_time=None))
+        self.assertTrue(all(item.series is None for item in (missing_no,foreign_no,expiration_only,close_only)));self.assertEqual([item.issues[0].code for item in (missing_no,foreign_no,expiration_only,close_only)],["missing-no-side","no-matching-event","missing-settlement-identity","missing-settlement-identity"])
 
     def test_schedule_instant_rule_is_timezone_safe_and_catalog_order_independent(self):
-        game,schedule=facts();same_instant=market_payload(close_time="2026-07-31T19:00:00-04:00");other_date=market_payload(ticker="OTHER",close_time="2026-07-30T19:00:00-04:00")
+        game,schedule=facts();same_instant=market_payload();wrong_primary,wrong_secondary=settlement_rules(day="Jul 30, 2026");other_date=market_payload(ticker="OTHER",rules_primary=wrong_primary,rules_secondary=wrong_secondary)
         matched=adapt_market(same_instant,games=(game,),schedules=(schedule,),collected_at=AT);self.assertIsNotNone(matched.series)
         forward=adapt_markets((other_date,same_instant),games=(game,),schedules=(schedule,),collected_at=AT);reverse=adapt_markets((same_instant,other_date),games=(game,),schedules=(schedule,),collected_at=AT)
         self.assertEqual({item.provider_market_id:item.outcome for item in forward},{item.provider_market_id:item.outcome for item in reverse})
 
-    def test_three_hour_expiration_rule_maps_exact_march_market_uniquely(self):
-        game,schedule=facts();schedule=replace(schedule,scheduled_start=datetime(2026,3,26,0,5,tzinfo=UTC));payload=market_payload(ticker="KXMLBGAME-26MAR252005NYYSF-SF",close_time="2026-03-26T03:05:00Z",expected_expiration_time="2026-03-26T03:05:00Z")
+    def test_settlement_rule_maps_exact_march_market_uniquely(self):
+        away=MLBTeamRef("mlb-team:147",147,"New York Yankees","NYY");home=MLBTeamRef("mlb-team:137",137,"San Francisco Giants","SF");game=make_mlb_game(game_pk=823244,away_team=away,home_team=home,season="2026");schedule=ScheduleObservation("schedule:823244",game.event.canonical_event_id,datetime(2026,3,26,0,5,tzinfo=UTC),Provenance("mlb","schedule:823244",game.event.canonical_event_id,AT))
+        primary="If San Francisco wins the New York Y vs San Francisco professional baseball game originally scheduled for Mar 25, 2026 at 8:05 PM EDT, then the market resolves to Yes.";secondary="The following market refers to the New York Y vs San Francisco professional baseball game originally scheduled for Mar 25, 2026 at 8:05 PM EDT. If this game is postponed or delayed, the market will remain open."
+        payload=market_payload(ticker="KXMLBGAME-26MAR252005NYYSF-SF",yes_sub_title="San Francisco",no_sub_title="San Francisco",rules_primary=primary,rules_secondary=secondary,close_time="2026-03-26T03:10:00Z",expected_expiration_time="2026-03-26T03:05:00Z")
         result=adapt_market(payload,games=(game,),schedules=(schedule,),collected_at=AT);self.assertIsNotNone(result.series);self.assertEqual(result.series.ticker,"KXMLBGAME-26MAR252005NYYSF-SF")
+
+    def test_settlement_rules_reject_disagreement_winner_opponent_and_timezone_conflicts(self):
+        primary,_=settlement_rules();_,different_time=settlement_rules(day="Aug 1, 2026");disagreement=adapted(payload=market_payload(rules_primary=primary,rules_secondary=different_time))
+        away_primary,away_secondary=settlement_rules("Away Club");winner_conflict=adapted(payload=market_payload(rules_primary=away_primary,rules_secondary=away_secondary))
+        third_primary,third_secondary=settlement_rules("Home Club","Third Club","Home Club");opponent_conflict=adapted(payload=market_payload(rules_primary=third_primary,rules_secondary=third_secondary))
+        unsupported_primary,unsupported_secondary=settlement_rules(zone="PDT");unsupported=adapted(payload=market_payload(rules_primary=unsupported_primary,rules_secondary=unsupported_secondary))
+        winter_primary,winter_secondary=settlement_rules(zone="EST");dst_conflict=adapted(payload=market_payload(rules_primary=winter_primary,rules_secondary=winter_secondary))
+        self.assertTrue(all(item.series is None for item in (disagreement,winner_conflict,opponent_conflict,unsupported,dst_conflict)))
+        self.assertEqual([item.issues[0].code for item in (disagreement,winner_conflict,opponent_conflict,unsupported,dst_conflict)],["conflicting-settlement-identity","settlement-yes-conflict","no-matching-event","malformed-settlement-identity","malformed-settlement-identity"])
+
+    def test_malformed_settlement_date_and_exact_three_hour_metadata_do_not_match(self):
+        malformed=adapted(payload=market_payload(rules_primary="If Home Club wins the Away Club vs Home Club professional baseball game originally scheduled for nonsense at 7:00 PM EDT, then the market resolves to Yes."))
+        wrong_primary,wrong_secondary=settlement_rules("Home Club","Third Club","Home Club");coincidental=adapted(payload=market_payload(rules_primary=wrong_primary,rules_secondary=wrong_secondary,expected_expiration_time=(START+timedelta(hours=3)).isoformat()))
+        self.assertIsNone(malformed.series);self.assertIsNone(coincidental.series)
 
     def test_fixed_point_bids_preserve_raw_side_price_and_exact_derived_offer(self):
         obs=adapted(bid_book()).observation; yes=[x for x in obs.order_book if x.acquisition_side is MarketSide.YES]

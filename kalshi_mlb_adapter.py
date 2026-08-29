@@ -1,16 +1,20 @@
 """Bounded read-only Kalshi MLB winner-market adapter."""
 from __future__ import annotations
-import hashlib, json, time
-from datetime import datetime, timedelta
+import hashlib, json, re, time
+from datetime import datetime
 from decimal import Decimal, InvalidOperation
 from typing import Callable
+from zoneinfo import ZoneInfo
 import requests
 from event_contracts import ContractError, Provenance
 from market_contracts import *
 from mlb_contracts import MLBGame, ScheduleObservation
 
 BASE="https://external-api.kalshi.com/trade-api/v2"; ADAPTER_VERSION="kalshi-mlb-v2"; RETRY_CODES={429,500,502,503,504}
-MARKET_SCHEDULE_RULE_VERSION="explicit-complementary-sides-scheduled-or-three-hour-expiration-1"
+MARKET_SCHEDULE_RULE_VERSION="kalshi-mlb-explicit-rules-schedule-instant-2"
+_RULE_TAIL=r"(?P<away>[A-Za-z .'-]+?) vs (?P<home>[A-Za-z .'-]+?) professional baseball game originally scheduled for (?P<day>[A-Z][a-z]{2} [0-9]{1,2}, [0-9]{4}) at (?P<clock>[0-9]{1,2}:[0-9]{2} [AP]M) (?P<zone>[A-Z]{3,4})"
+_PRIMARY_RULE=re.compile(r"^If (?P<winner>[A-Za-z .'-]+?) wins the "+_RULE_TAIL)
+_SECONDARY_RULE=re.compile(r"(?:^|[.] )The following market refers to the "+_RULE_TAIL)
 ALIASES={
     "arizona":"arizona diamondbacks","d-backs":"arizona diamondbacks","diamondbacks":"arizona diamondbacks",
     "a's":"athletics","oakland athletics":"athletics","atlanta":"atlanta braves","baltimore":"baltimore orioles",
@@ -36,6 +40,18 @@ def _price(m,key):
     value=_dec(m.get(key)); return value/Decimal(100) if value is not None else None
 def _digest(value): return hashlib.sha256(json.dumps(value,sort_keys=True,separators=(",",":"),default=str).encode()).hexdigest()
 
+def _settlement_identity(text,*,require_winner):
+    if not isinstance(text,str) or not text.strip():raise ValueError("settlement rule is absent")
+    matchup=(_PRIMARY_RULE if require_winner else _SECONDARY_RULE).search(text)
+    if matchup is None:raise ValueError("settlement rule does not match the supported MLB winner template")
+    zone=matchup.group("zone")
+    if zone not in {"EDT","EST"}:raise ValueError("settlement rule timezone is unsupported")
+    naive=datetime.strptime(matchup.group("day")+" "+matchup.group("clock"),"%b %d, %Y %I:%M %p");eastern=naive.replace(tzinfo=ZoneInfo("America/New_York"))
+    if eastern.tzname()!=zone:raise ValueError("settlement rule timezone abbreviation conflicts with New York calendar authority")
+    away,home=_canon(matchup.group("away")),_canon(matchup.group("home"));winner_name=_canon(matchup.group("winner")) if require_winner else None
+    if away==home or (winner_name is not None and winner_name not in {away,home}):raise ValueError("settlement rule participant identity is contradictory")
+    return winner_name,frozenset((away,home)),eastern
+
 class KalshiReadOnlyClient:
     def __init__(self,transport:Callable=requests.get,timeout=15,retries=2): self.transport=transport; self.timeout=timeout; self.retries=retries
     def get(self,route,params=None):
@@ -51,28 +67,33 @@ class KalshiReadOnlyClient:
     def orderbook(self,ticker): return self.get(f"/markets/{ticker}/orderbook",{"depth":100})
 
 def reconcile_market(market:dict,games:tuple[MLBGame,...],schedules:tuple[ScheduleObservation,...]):
+    if market.get("market_type")!="binary":return None,(),(MarketIssue("unsupported-market-type","MLB winner market must be explicitly binary"),)
     yes_label=market.get("yes_sub_title") or market.get("yes_label")
     if not yes_label: return None,(),(MarketIssue("ambiguous-side","YES participant is not explicitly identified"),)
     no_label=market.get("no_sub_title") or market.get("no_label")
-    if not no_label:return None,(),(MarketIssue("missing-no-side","NO participant is not explicitly identified"),)
-    yes_name,no_name=_canon(yes_label),_canon(no_label)
-    raw_time=market.get("expected_expiration_time") or market.get("close_time")
-    if not raw_time:return None,(),(MarketIssue("missing-market-time","market lacks explicit expiration or close time"),)
-    try:market_time=_dt(raw_time)
-    except (TypeError,ValueError):return None,(),(MarketIssue("malformed-market-time","market date/time evidence is malformed"),)
-    if market_time.tzinfo is None or market_time.utcoffset() is None:return None,(),(MarketIssue("malformed-market-time","market date/time evidence is timezone-naive"),)
-    expiration_semantics=bool(market.get("expected_expiration_time"))
+    if not no_label:return None,(),(MarketIssue("missing-no-side","binary NO proposition label is absent"),)
+    yes_name,no_name=_canon(yes_label),_canon(no_label);primary=market.get("rules_primary");secondary=market.get("rules_secondary")
+    if not primary and not secondary:return None,(),(MarketIssue("missing-settlement-identity","settlement rules do not establish event identity"),)
+    try:
+        identities=[]
+        if primary:identities.append(_settlement_identity(primary,require_winner=True))
+        if secondary:identities.append(_settlement_identity(secondary,require_winner=False))
+    except (TypeError,ValueError) as exc:return None,(),(MarketIssue("malformed-settlement-identity",str(exc)),)
+    rule_winner=next((item[0] for item in identities if item[0] is not None),None)
+    if rule_winner is None or any((item[1],item[2])!=(identities[0][1],identities[0][2]) for item in identities[1:]):return None,(),(MarketIssue("conflicting-settlement-identity","primary and secondary settlement identity evidence conflicts"),)
+    if yes_name!=rule_winner:return None,(),(MarketIssue("settlement-yes-conflict","structured YES label conflicts with settlement-rule winner"),)
+    rule_participants,rule_instant=identities[0][1],identities[0][2]
     schedule_by_event={x.canonical_event_id:x for x in schedules}; candidates=[];side_matches=False
     for game in games:
         home_name,away_name=_canon(game.home_team.display_name),_canon(game.away_team.display_name);participant=None
+        if frozenset((home_name,away_name))!=rule_participants:continue
         if yes_name==home_name and no_name in {away_name,yes_name}:participant=game.home_team.canonical_team_id
         elif yes_name==away_name and no_name in {home_name,yes_name}:participant=game.away_team.canonical_team_id
         schedule=schedule_by_event.get(game.event.canonical_event_id)
         if participant:
             side_matches=True
             if schedule is None:continue
-            instants=(schedule.scheduled_start,schedule.scheduled_start+timedelta(hours=3)) if expiration_semantics else (schedule.scheduled_start,)
-            if any(market_time.astimezone(expected.tzinfo)==expected for expected in instants):candidates.append((game,participant))
+            if rule_instant.astimezone(schedule.scheduled_start.tzinfo)==schedule.scheduled_start:candidates.append((game,participant))
     if len(candidates)==1: return candidates[0],(candidates[0][0].event.canonical_event_id,),()
     code="ambiguous-event" if len(candidates)>1 else "no-matching-event"
     detail="market cannot be uniquely reconciled from explicit complementary participants and canonical schedule instant" if side_matches else "structured YES/NO participants do not exactly equal an MLB event's two participants"

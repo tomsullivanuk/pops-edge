@@ -1561,10 +1561,13 @@ Kalshi authentication follows its documented read-only RSA-PSS/SHA-256 boundary:
 Current Kalshi catalog and order-book routes are public read-only market-data GETs, so the signing/Keychain seam is retained but not invoked for them. The order-book successor seam archives exact provider bytes separately from canonical `MarketObservation` material and strictly accepts `orderbook_fp` fixed-point bids. The `maintain` command verifies authoritative integrity, rebuilds only the derived SQLite index, then verifies index health. The activated rehearsal uses these same initialization, adapter, CLI, heartbeat, rendering, and archive paths with fixtures.
 PR17C1 keeps schedule authority upstream of market discovery. Complete MLB responses produce correction-aware histories, classifications, eligibility, and scheduled-state opportunities before independent per-event Kalshi reconciliation; a missing or ambiguous market cannot discard another event or the MLB universe. Catalog acquisition follows a bounded validated cursor chain and preserves page raw material, while MLB requests use the versioned New York obligation/lookback date rule and expose incomplete multi-date acquisition. Kalshi `orderbook_fp` resting YES bids complement to canonical NO offers and resting NO bids complement to canonical YES offers. Refreshes append genuine corrections, suppress semantic no-change, and preserve earlier-boundary replay.
 
-Retrospective MLB winner-market reconciliation requires explicit binary sides
-that resolve to exactly the scheduled event's two participants and aware
-provider timing equal to the scheduled instant or explicit three-hour
-expiration instant. It has no participant-only fallback. Regular-season
+Retrospective MLB winner-market reconciliation requires an explicitly binary
+market and a narrow provider settlement-rule template that identifies the YES
+participant, opponent, two-participant matchup, and original New York local
+schedule instant. The rule-derived aware instant and participants must exactly
+equal MLB authority. A repeated NO proposition label becomes the complement
+only after that independent proof; expiration and close metadata grant no event
+identity. It has no participant-only fallback. Regular-season
 eligibility consumes canonical phase and ordinary-game classification; the
 provider-native game-type code is retained but is not a second population gate.
 Versioned supporting-session corrections reuse immutable pages, name one exact
