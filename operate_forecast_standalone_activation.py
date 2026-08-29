@@ -82,7 +82,7 @@ def execute(command,config,*,clock=lambda:datetime.now(timezone.utc),transport_f
             created,calls=retrospective_runner(archive);typed=len(created);output={"configuration_id":config.identity,"namespace":config.namespace,"provider_calls":calls,"created_manifest_ids":created,"disposition":"completed"}
         elif command=="complete-retrospective-supporting-session":
             if not session_completion_id:raise OperationsError("configuration-error","explicit --session-id is required")
-            result=complete_supporting_session_from_archive(archive=archive,session_id=session_completion_id);calls=0;typed=result.get("contracts",0);output={"configuration_id":config.identity,"namespace":config.namespace,**result,"disposition":"completed"}
+            result=complete_supporting_session_from_archive(archive=archive,session_id=session_completion_id);calls=0;typed=result.get("contracts",0);output={"configuration_id":config.identity,"namespace":config.namespace,**result};output.setdefault("disposition","completed")
         elif command=="inspect":output=json.loads(inspect_archive(archive).to_json());disposition="success" if output["ready"] else "not-ready"
         elif command=="reconcile-acquisitions":
             artifacts=reconcile_incomplete_acquisitions(archive,reconciled_at=started);output={"configuration_id":config.identity,"disposition":"success","reconciliation_artifacts":artifacts,"artifact_count":len(artifacts)};typed=len(artifacts)

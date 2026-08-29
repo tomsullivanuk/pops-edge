@@ -786,7 +786,11 @@ The authority boundary is the complete supporting session, not either provider
 bundle independently. MLB and Kalshi bundles from an incomplete session cannot
 satisfy replay or Coverage. Verified preserved pages may be completed later by
 an explicit zero-provider-call, append-only command, but only a final envelope
-that validates the entire session grants scientific authority.
+that validates the entire session grants scientific authority. Replay,
+inspection, and archive-only completion use the same strict verifier. A valid
+existing completion makes a repeated recovery an identity-preserving no-op;
+malformed, duplicate, incomplete, foreign, failed, or unreferenced material
+cannot be counted as a completed authoritative session.
 
 ### PR17D — Prospective Observation Close and Separate Report
 
