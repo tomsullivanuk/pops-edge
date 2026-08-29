@@ -41,6 +41,12 @@ class OperationsError(RuntimeError):
         super().__init__(f"{code}: {detail}")
 
 
+class RetrospectiveAcquisitionError(OperationsError):
+    def __init__(self, detail: str, provider_calls: int):
+        self.provider_calls=provider_calls
+        super().__init__("retrospective-acquisition-failed",detail)
+
+
 class OperatingMode(str, Enum):
     DRY_RUN = "dry-run"
     ACTIVATED = "activated"
@@ -419,6 +425,11 @@ def _safe_raw(body: bytes) -> bytes | None:
     return body
 
 
+def _permitted_response_raw(response: HTTPResponse) -> bytes | None:
+    if response.status_code==413 and response.body==b"":return None
+    return _safe_raw(response.body)
+
+
 def acquire_prospective_once(*, transport: Transport, endpoint: str, request: Mapping[str, str],
                              timeout_seconds: int, now: Callable[[], datetime],
                              validator: Callable[[Mapping[str, Any]], Mapping[str, Any]],
@@ -439,7 +450,7 @@ def acquire_prospective_once(*, transport: Transport, endpoint: str, request: Ma
         completed = finish(); return AcquisitionResult(Disposition.CONNECTION_FAILURE, None, None, (AttemptRecord(1, started, completed, Disposition.CONNECTION_FAILURE, None, None),), "connection failed")
     disposition = classify_response(response); completed = finish()
     if disposition is not Disposition.SUCCESS:
-        return AcquisitionResult(disposition, _safe_raw(response.body), None, (AttemptRecord(1, started, completed, disposition, response.status_code, None),), "provider response rejected")
+        return AcquisitionResult(disposition, _permitted_response_raw(response), None, (AttemptRecord(1, started, completed, disposition, response.status_code, None),), "provider response rejected")
     try: decoded = _decode_json(response.body)
     except OperationsError as exc:
         disp = Disposition.MALFORMED_RESPONSE if exc.code == "malformed-response" else Disposition.INCOMPLETE_RESPONSE
@@ -462,7 +473,7 @@ def acquire_with_retries(*, transport: Transport, endpoint: str, request: Mappin
         started = now(); status = None; retry_after = None
         try:
             response = transport.request("GET", endpoint, params=request, timeout=policy.request_timeout_seconds, allow_redirects=False)
-            last_body = _safe_raw(response.body); status = response.status_code; disposition = classify_response(response)
+            last_body = _permitted_response_raw(response); status = response.status_code; disposition = classify_response(response)
         except TimeoutError: disposition = Disposition.TIMEOUT; response = None
         except (ConnectionError, OSError): disposition = Disposition.CONNECTION_FAILURE; response = None
         completed = now()
@@ -646,10 +657,12 @@ class NamespaceArchive:
 
     def _record_failure_locked(self, *, entry_values: Mapping[str, Any], raw_body: bytes | None = None) -> ManifestEntry:
         digest = sha256_bytes(raw_body) if raw_body is not None else None
-        if raw_body is not None: self._publish(self._path("raw", f"raw:{digest}"), raw_body)
         entry = ManifestEntry.create(**dict(entry_values), namespace=self.config.namespace,
             operating_mode=self.config.mode, raw_object_sha256=digest, normalized_object_id=None,
             normalized_schema_version=None)
+        for prior in self.entries():
+            if prior["invocation_id"]==entry.invocation_id and prior["manifest_entry_id"]!=entry.manifest_entry_id:raise OperationsError("immutable-conflict","failure invocation identity conflicts with archived evidence")
+        if raw_body is not None: self._publish(self._path("raw", f"raw:{digest}"), raw_body)
         self._publish(self._path("manifest", entry.manifest_entry_id), canonical_bytes(entry)); return entry
 
     def read_verified(self, family: str, identity: str) -> bytes:
@@ -1056,8 +1069,8 @@ def _contracts_from_entry(archive:NamespaceArchive,entry:Mapping[str,Any],prior_
             def bucket(self,name):return tuple(x for x in prior_objects if PR17_GRAPH_BUCKETS.get(type(x).__name__)==name)
         prior=PriorState();started=datetime.fromisoformat(value["command_started_at_iso"]);family=value.get("family");provider=value.get("provider")
         if family=="reconcile-outcomes" and provider=="mlb-stats-api":expected=reconcile_outcomes_from_raw(archive=None,mlb_raw=union,collected_at=started,prior_state=prior,derive_only=True)
-        elif family=="refresh-supporting" and provider=="mlb-stats-api":expected=tuple(x for x in refresh_supporting_from_raw(archive=None,mlb_raw=union,kalshi_raw=b'{"cursor":"","markets":[]}',collected_at=started,prior_state=prior,derive_only=True) if type(x).__name__!="ProviderMarketSeries")
-        elif family=="refresh-supporting" and provider=="kalshi":
+        elif family in {"refresh-supporting","refresh-retrospective-supporting"} and provider=="mlb-stats-api":expected=tuple(x for x in refresh_supporting_from_raw(archive=None,mlb_raw=union,kalshi_raw=b'{"cursor":"","markets":[]}',collected_at=started,prior_state=prior,derive_only=True,acquisition_command=family) if type(x).__name__!="ProviderMarketSeries")
+        elif family in {"refresh-supporting","refresh-retrospective-supporting"} and provider=="kalshi":
             dependencies=value.get("dependencies",())
             if not isinstance(dependencies,list) or len(dependencies)!=1:raise OperationsError("acquisition-dependency-conflict","Kalshi acquisition requires one MLB dependency")
             mlb_union=None
@@ -1067,7 +1080,7 @@ def _contracts_from_entry(archive:NamespaceArchive,entry:Mapping[str,Any],prior_
                 candidate=json.loads(archive.read_verified("normalized",normalized_id))
                 if candidate.get("record_kind")=="pr17c1-acquisition-bundle" and candidate.get("acquisition_id")==dependencies[0] and candidate.get("provider")=="mlb-stats-api":mlb_union,_=verify_acquisition_bundle(archive,candidate,include_union=True);break
             if mlb_union is None:raise OperationsError("acquisition-dependency-conflict","MLB dependency is absent")
-            expected=tuple(x for x in refresh_supporting_from_raw(archive=None,mlb_raw=mlb_union,kalshi_raw=union,collected_at=started,prior_state=prior,derive_only=True) if type(x).__name__=="ProviderMarketSeries")
+            expected=tuple(x for x in refresh_supporting_from_raw(archive=None,mlb_raw=mlb_union,kalshi_raw=union,collected_at=started,prior_state=prior,derive_only=True,acquisition_command=family) if type(x).__name__=="ProviderMarketSeries")
         else:raise OperationsError("acquisition-incompatible","unsupported PR17C1 acquisition family")
         expected_payloads=tuple(sorted(x.to_json() for x in expected))
         if tuple(sorted(payloads))!=expected_payloads:
@@ -1308,7 +1321,10 @@ def discover_and_capture_prospective(*,archive:NamespaceArchive,
 
 
 def discover_and_acquire_retrospective(*,archive:NamespaceArchive,
-        transport_factory:Callable[[Any,Any],Transport],clock:Callable[[],datetime],sleeper:Callable[[float],None])->tuple[str,...]:
+        transport_factory:Callable[[Any,Any],Transport],clock:Callable[[],datetime],sleeper:Callable[[float],None],
+        request_builder:Callable[[Any,Any,datetime],tuple[str,Mapping[str,str]]]|None=None,
+        response_adapter:Callable[[Mapping[str,Any],bytes,Any,Any,datetime],Mapping[str,Any]]|None=None,
+        maximum_opportunities:int|None=None)->tuple[str,...]:
     """Acquire historical pages and construct the exact PR17B1 manifest/candle chain."""
     from decimal import Decimal
     from forecast_comparative_research import PopulationEligibilityDisposition,PopulationEligibilityValidationStatus
@@ -1323,18 +1339,32 @@ def discover_and_acquire_retrospective(*,archive:NamespaceArchive,
         if activation is None:raise OperationsError("retrospective-authority-invalid","activation boundary does not resolve")
         histories={x.canonical_event_id:x for x in state.bucket("outcome_histories")};contexts={x.research_capture_opportunity_id:x for x in state.bucket("eligibility_contexts")};results={x.research_capture_opportunity_id:x for x in state.bucket("eligibility_results")};existing={x.opportunity_id for x in state.bucket("manifests")}
         series_values=state.bucket("market_series")
-        for opportunity in sorted((x for x in state.bucket("opportunities") if x.protocol_id==protocol.standalone_probability_source_protocol_id),key=lambda x:x.research_capture_opportunity_id):
+        pending=sorted((x for x in state.bucket("opportunities") if x.protocol_id==protocol.standalone_probability_source_protocol_id),key=lambda x:x.research_capture_opportunity_id)
+        if maximum_opportunities is not None:
+            if maximum_opportunities<1 or maximum_opportunities>100:raise OperationsError("retrospective-bound-invalid","maximum opportunities must be between 1 and 100")
+        provider_calls=0
+        retrospective_limitations=("later-acquired retrospective archive Evidence","historical provider availability, survivorship, and revision limitations","post-event schedule-history limitations","one-minute provider aggregation","bid and ask closes are same-candle aggregates, not documented simultaneous quotes","no quote quantity, positive depth, or executable spread is established","acquisition time differs from historical effective time","no synthetic continuity, fallback, or prospective repair")
+        for opportunity in pending:
             if opportunity.research_capture_opportunity_id in existing:continue
             context=contexts.get(opportunity.research_capture_opportunity_id);result=results.get(opportunity.research_capture_opportunity_id);history=histories.get(context.canonical_event_id) if context else None
             if context is None or result is None or history is None or result.analysis_boundary>now:raise OperationsError("retrospective-authority-invalid","complete boundary-visible eligibility authority is required")
             if result.disposition is not PopulationEligibilityDisposition.ELIGIBLE or result.validation_status is not PopulationEligibilityValidationStatus.VALID:continue
             schedule,target=resolve_standalone_schedule_authority(protocol=protocol,activation=activation,opportunity=opportunity,eligibility_context=context,eligibility_result=result,outcome_history=history,analysis_boundary=now)
             proposition=f"winner:{schedule.canonical_event_id}:{schedule.home_participant_id}";series=tuple(x for x in series_values if x.provider==PROVIDER_ID and x.proposition_id==proposition)
-            if len(series)!=1:raise OperationsError("retrospective-authority-invalid","provider Market Series does not resolve exactly")
-            acquired=acquire_with_retries(transport=transport_factory(opportunity,series[0]),endpoint=archive.config.provider_base_url,request={"market_id":series[0].provider_market_id},policy=archive.config.retry_policy,now=clock,sleeper=sleeper,validator=lambda value:value)
+            if not series:continue
+            if len(series)!=1:raise OperationsError("retrospective-authority-invalid","provider Market Series is ambiguous")
+            if maximum_opportunities is not None and provider_calls>=maximum_opportunities:break
+            endpoint,request=(request_builder(opportunity,series[0],target) if request_builder is not None else (archive.config.provider_base_url,{"market_id":series[0].provider_market_id}))
+            def validate(value):return response_adapter(value,b"",opportunity,series[0],target) if response_adapter is not None else value
+            acquired=acquire_with_retries(transport=transport_factory(opportunity,series[0]),endpoint=endpoint,request=request,policy=archive.config.retry_policy,now=clock,sleeper=sleeper,validator=validate)
+            provider_calls+=len(acquired.attempts)
             completed=acquired.attempts[-1].completed_at
             if acquired.disposition is not Disposition.SUCCESS or acquired.raw_body is None or acquired.normalized is None:
-                raise OperationsError("retrospective-acquisition-failed",acquired.detail)
+                diagnostics=(f"opportunity:{opportunity.research_capture_opportunity_id}",f"market:{series[0].provider_market_id}",f"attempts:{len(acquired.attempts)}",*(f"attempt-{index+1}:{attempt.disposition.value}" for index,attempt in enumerate(acquired.attempts)))
+                values=_entry_values(archive=archive,command="acquire-retrospective",request_id=request_identity({"opportunity_id":opportunity.research_capture_opportunity_id,"market_id":series[0].provider_market_id,"target_at":_utc(target,"target")}),invoked_at=completed,
+                    endpoint=endpoint,disposition=acquired.disposition,protocol_id=protocol.standalone_probability_source_protocol_id,design=DesignAuthority.RETROSPECTIVE,diagnostics=diagnostics,provider_effective_at=None)
+                archive._record_failure_locked(entry_values=values,raw_body=acquired.raw_body)
+                raise RetrospectiveAcquisitionError("bounded retrospective provider acquisition failed",provider_calls)
             raw_digest=sha256_bytes(acquired.raw_body);raw_reference=f"raw:{raw_digest}"
             supplied_pages=tuple({**page,"candle_ids":[str(item.get("candle_end_at")) for item in page.get("candles",())]} for page in acquired.normalized.get("pages",()))
             page_values=validate_pagination(supplied_pages)
@@ -1348,18 +1378,18 @@ def discover_and_acquire_retrospective(*,archive:NamespaceArchive,
                         close_yes_bid=Decimal(str(candle_value["close_yes_bid"])) if candle_value.get("close_yes_bid") is not None else None,
                         close_yes_ask=Decimal(str(candle_value["close_yes_ask"])) if candle_value.get("close_yes_ask") is not None else None,
                         is_real=True,is_synthetic=False,is_repaired=False,retrieval_page_position=page_value["position"],raw_archive_reference=raw_reference,raw_archive_sha256=raw_digest,
-                        limitations=("fixture-only historical acquisition",),provenance=result.provenance)
+                        limitations=retrospective_limitations,provenance=result.provenance)
                     page_candles.append(candle);candles.append(candle)
                 pages.append(HistoricalCandleRetrievalPage(page_value["cursor"],page_value["position"],page_value.get("next_cursor"),page_value["terminal"],raw_reference,raw_digest,completed,
-                    tuple(x.historical_market_candle_observation_id for x in page_candles),ManifestValidationStatus.COMPLETE,("fixture-only page",)))
+                    tuple(x.historical_market_candle_observation_id for x in page_candles),ManifestValidationStatus.COMPLETE,retrospective_limitations))
             manifest=HistoricalCandleQueryManifest.create(protocol_id=protocol.standalone_probability_source_protocol_id,opportunity_id=opportunity.research_capture_opportunity_id,
-                canonical_event_id=schedule.canonical_event_id,proposition_id=proposition,provider_id=PROVIDER_ID,endpoint=archive.config.provider_base_url,provider_market_id=series[0].provider_market_id,
+                canonical_event_id=schedule.canonical_event_id,proposition_id=proposition,provider_id=PROVIDER_ID,endpoint=endpoint,provider_market_id=series[0].provider_market_id,
                 interval="1m",requested_start_at=target-timedelta(minutes=5),requested_end_at=target,retrieval_started_at=acquired.attempts[0].started_at,retrieval_completed_at=completed,pages=tuple(pages),
-                returned_candle_evidence_ids=tuple(x.historical_market_candle_observation_id for x in candles),validation_status=ManifestValidationStatus.COMPLETE,limitations=("fixture-only historical acquisition",),
+                returned_candle_evidence_ids=tuple(x.historical_market_candle_observation_id for x in candles),validation_status=ManifestValidationStatus.COMPLETE,limitations=retrospective_limitations,
                 effective_at=completed,supersedes_manifest_id=None,correction_reason=None,provenance=result.provenance)
             candles=tuple(HistoricalMarketCandleObservation.create(**{name:getattr(item,name) for name in item.__dataclass_fields__ if name not in ("historical_market_candle_observation_id","schema_version","identity_algorithm_version","input_digest","manifest_id")},manifest_id=manifest.historical_candle_query_manifest_id) for item in candles)
             normalized=pr17_contract_bundle(manifest,*candles);values=_entry_values(archive=archive,command="acquire-retrospective",request_id=request_identity({"opportunity_id":opportunity.research_capture_opportunity_id,"target_at":_utc(target,"target")}),invoked_at=completed,
-                endpoint=archive.config.provider_base_url,disposition=Disposition.SUCCESS,protocol_id=protocol.standalone_probability_source_protocol_id,design=DesignAuthority.RETROSPECTIVE,
+                endpoint=endpoint,disposition=Disposition.SUCCESS,protocol_id=protocol.standalone_probability_source_protocol_id,design=DesignAuthority.RETROSPECTIVE,
                 diagnostics=(f"opportunity:{opportunity.research_capture_opportunity_id}","authority-derived historical acquisition"),provider_effective_at=completed)
             archive._commit_locked(raw_body=acquired.raw_body,normalized=normalized,entry_values=values);created.append(manifest.historical_candle_query_manifest_id)
     return tuple(sorted(created))

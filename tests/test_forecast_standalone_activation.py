@@ -16,7 +16,7 @@ from decimal import Decimal
 from forecast_standalone_activation import *
 from forecast_standalone_operations import DeploymentConfig, NamespaceArchive, OperatingMode, OperationsError, RetryPolicy, rebuild_index, sync_secondary
 from inspect_forecast_standalone_activation import run
-from operate_forecast_standalone_activation import execute,live_mlb_material
+from operate_forecast_standalone_activation import LiveRetrospectiveTransport,adapt_kalshi_historical_cutoff,execute,live_mlb_material
 
 
 class ActivationTests(unittest.TestCase):
@@ -30,8 +30,46 @@ class ActivationTests(unittest.TestCase):
     def test_activated_config_example_names_canonical_protocol(self):
         example=Path(__file__).resolve().parents[1]/"operations/pr17c1.activated.config.example.json"
         config=DeploymentConfig.from_json(example)
-        _,protocol=canonical_prospective_authority()
-        self.assertEqual(config.research_protocol_ids,(protocol.standalone_probability_source_protocol_id,))
+        _,retrospective,prospective=canonical_activation_authorities()
+        self.assertEqual(set(config.research_protocol_ids),{retrospective.standalone_probability_source_protocol_id,prospective.standalone_probability_source_protocol_id})
+        self.assertEqual(dict(retrospective.report_rule.parameters)["bounded_window_durations"],"14169600")
+        self.assertEqual(dict(retrospective.scope_rule.parameters)["window_start"],"2026-03-25T00:00:00-04:00")
+
+    def test_canonical_retrospective_candle_request_and_adapter(self):
+        target=datetime(2026,4,1,18,tzinfo=timezone.utc);path=canonical_kalshi_candle_path("KXMLBGAME-TEST",target,historical=True);query=parse_qs(urlparse(path).query)
+        self.assertEqual(urlparse(path).path,"/historical/markets/KXMLBGAME-TEST/candlesticks")
+        self.assertEqual(query,{"start_ts":[str(int((target-timedelta(minutes=5)).timestamp())+1)],"end_ts":[str(int(target.timestamp()))],"period_interval":["1"]})
+        raw={"ticker":"KXMLBGAME-TEST","candlesticks":[{"end_period_ts":int(target.timestamp()),"yes_bid":{"close":"0.4500"},"yes_ask":{"close":"0.5500"},"price":{},"volume":"1.00","open_interest":"2.00"}]}
+        normalized=adapt_kalshi_candles(raw,market_ticker="KXMLBGAME-TEST",target_at=target)
+        self.assertEqual(normalized["pages"][0]["candles"][0]["close_yes_bid"],"0.4500")
+        for changed in ({**raw,"ticker":"FOREIGN"},{**raw,"candlesticks":[{**raw["candlesticks"][0],"end_period_ts":int((target-timedelta(minutes=5)).timestamp())}]},{**raw,"candlesticks":[{**raw["candlesticks"][0],"yes_bid":{"close":"1.1"}}]}):
+            with self.assertRaises(OperationsError):adapt_kalshi_candles(changed,market_ticker="KXMLBGAME-TEST",target_at=target)
+
+    def test_live_retrospective_adapter_returns_bounded_failure_results(self):
+        from forecast_standalone_operations import Disposition,acquire_prospective_once
+        at=datetime(2026,8,28,18,tzinfo=timezone.utc);endpoint="https://fixture.invalid/historical/cutoff"
+        cases=((lambda *_:(_ for _ in ()).throw(TimeoutError()),Disposition.TIMEOUT,None),(lambda *_:(_ for _ in ()).throw(ConnectionError()),Disposition.CONNECTION_FAILURE,None),(lambda *_:(429,b'{"error":"limited"}',{"Retry-After":"1"}),Disposition.RATE_LIMITED,b'{"error":"limited"}'),(lambda *_:(500,b'{"error":"provider"}',{}),Disposition.PROVIDER_ERROR,b'{"error":"provider"}'),(lambda *_:(302,b'{"redirect":true}',{}),Disposition.VALIDATION_FAILURE,b'{"redirect":true}'),(lambda *_:(200,b"x"*(MAX_RESPONSE_BYTES+1),{}),Disposition.VALIDATION_FAILURE,None),(lambda *_:(200,b"{",{}),Disposition.MALFORMED_RESPONSE,b"{"),(lambda *_:(200,b"[]",{}),Disposition.INCOMPLETE_RESPONSE,b"[]"))
+        for requester,expected,raw in cases:
+            with self.subTest(expected=expected,raw=raw):
+                bounded=BoundedLiveReadOnlyTransport("https://fixture.invalid",requester);transport=LiveRetrospectiveTransport(bounded,"https://fixture.invalid")
+                result=acquire_prospective_once(transport=transport,endpoint=endpoint,request={},timeout_seconds=5,now=lambda:at,validator=adapt_kalshi_historical_cutoff)
+                self.assertEqual((result.disposition,result.raw_body,transport.calls),(expected,raw,1));self.assertEqual((result.attempts[0].started_at,result.attempts[0].completed_at),(at,at))
+        success=LiveRetrospectiveTransport(BoundedLiveReadOnlyTransport("https://fixture.invalid",lambda *_:(200,b'{"market_settled_ts":"2026-08-01T00:00:00Z"}',{})),"https://fixture.invalid")
+        result=acquire_prospective_once(transport=success,endpoint=endpoint,request={},timeout_seconds=5,now=lambda:at,validator=adapt_kalshi_historical_cutoff)
+        self.assertEqual((result.disposition,success.calls),(Disposition.SUCCESS,1))
+
+    def test_live_retrospective_candle_validation_uses_structured_result_boundary(self):
+        from forecast_standalone_operations import Disposition,acquire_with_retries
+        target=datetime(2026,4,1,18,tzinfo=timezone.utc);market="KXMLBGAME-TEST";endpoint="https://fixture.invalid"+canonical_kalshi_candle_path(market,target,historical=True);policy=RetryPolicy(1,5,5,(),0)
+        valid={"ticker":market,"candlesticks":[{"end_period_ts":int(target.timestamp()),"yes_bid":{"close":"0.45"},"yes_ask":{"close":"0.55"}}]}
+        cases=({**valid,"ticker":"FOREIGN"},{**valid,"candlesticks":[{**valid["candlesticks"][0],"end_period_ts":int((target-timedelta(minutes=5)).timestamp())}]},{**valid,"candlesticks":[{**valid["candlesticks"][0],"yes_bid":{"close":"1.1"}}]})
+        for payload in cases:
+            body=json.dumps(payload).encode();transport=LiveRetrospectiveTransport(BoundedLiveReadOnlyTransport("https://fixture.invalid",lambda *_:(200,body,{})),"https://fixture.invalid")
+            result=acquire_with_retries(transport=transport,endpoint=endpoint,request={},policy=policy,now=lambda:target,sleeper=lambda _:None,validator=lambda value:adapt_kalshi_candles(value,market_ticker=market,target_at=target))
+            self.assertEqual((result.disposition,result.raw_body,transport.calls),(Disposition.VALIDATION_FAILURE,body,1))
+        body=json.dumps(valid).encode();transport=LiveRetrospectiveTransport(BoundedLiveReadOnlyTransport("https://fixture.invalid",lambda *_:(200,body,{})),"https://fixture.invalid")
+        result=acquire_with_retries(transport=transport,endpoint=endpoint,request={},policy=policy,now=lambda:target,sleeper=lambda _:None,validator=lambda value:adapt_kalshi_candles(value,market_ticker=market,target_at=target))
+        self.assertEqual((result.disposition,transport.calls),(Disposition.SUCCESS,1))
 
     def test_credential_provider_is_injected_and_sanitized(self):
         seen = []
@@ -162,7 +200,10 @@ class ActivationTests(unittest.TestCase):
             root=Path(directory);activation,protocol=canonical_prospective_authority();config=DeploymentConfig("init","init",OperatingMode.ACTIVATED,root/"activated/init/primary",root/"activated/init/secondary","https://fixture.invalid",RetryPolicy(1,1,1,(),0),1,root/"logs",research_protocol_ids=(protocol.standalone_probability_source_protocol_id,),activation_at=APPROVED_ACTIVATION_AT);archive=NamespaceArchive(config);at=datetime(2026,8,28,tzinfo=timezone.utc)
             one=initialize_activation(archive,at);two=initialize_activation(archive,at)
             self.assertEqual(one,two);self.assertEqual(len(archive.entries()),2)
-            with self.assertRaisesRegex(OperationsError,"configuration does not name canonical"):initialize_activation(NamespaceArchive(replace(config,research_protocol_ids=("foreign",))),at)
+            with self.assertRaisesRegex(OperationsError,"noncanonical Protocol authority"):initialize_activation(NamespaceArchive(replace(config,research_protocol_ids=("foreign",))),at)
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);activation,retrospective,prospective=canonical_activation_authorities();config=DeploymentConfig("siblings","siblings",OperatingMode.ACTIVATED,root/"activated/siblings/primary",root/"activated/siblings/secondary","https://fixture.invalid",RetryPolicy(1,1,1,(),0),1,root/"logs",research_protocol_ids=(retrospective.standalone_probability_source_protocol_id,prospective.standalone_probability_source_protocol_id),activation_at=APPROVED_ACTIVATION_AT);archive=NamespaceArchive(config);initialize_activation(archive,datetime(2026,8,28,tzinfo=timezone.utc));state=__import__('forecast_standalone_operations').replay_pr17_archive(archive,analysis_boundary=datetime(2026,8,28,19,tzinfo=timezone.utc))
+            self.assertEqual(set(state.bucket("protocols")),{retrospective,prospective});self.assertEqual(state.bucket("activation_boundaries"),(activation,))
 
     def test_live_shaped_orderbook_raw_to_canonical(self):
         from market_contracts import MarketSide,ProviderMarketSeries,SideSemantic
@@ -182,6 +223,29 @@ class ActivationTests(unittest.TestCase):
         with self.assertRaisesRegex(OperationsError,"loop"):acquire_kalshi_catalog_pages(lambda cursor:b'{"markets":[],"cursor":"x"}' if not cursor else b'{"markets":[],"cursor":"x"}')
         conflict=(KalshiCatalogPage(0,"","x",b"",({"ticker":"A","title":"one"},)),KalshiCatalogPage(1,"x","",b"",({"ticker":"A","title":"two"},)))
         with self.assertRaisesRegex(OperationsError,"conflict"):merge_kalshi_catalog_pages(conflict)
+
+    def test_retrospective_catalog_traverses_both_bounded_partitions(self):
+        at=datetime(2026,8,28,18,tzinfo=timezone.utc);calls=[]
+        def fetch(path):calls.append(path);return b'{"markets":[],"cursor":""}'
+        pages=acquire_retrospective_catalog_pages(fetch,clock=lambda:at,command_start=at)
+        self.assertEqual(len(pages),2);self.assertEqual([x.request_cursor for x in pages],["",""])
+        self.assertEqual([(x.partition,x.partition_position) for x in pages],[("historical",0),("live",0)])
+        self.assertEqual(calls,[encoded_kalshi_retrospective_catalog_path("",historical=True),encoded_kalshi_retrospective_catalog_path("",historical=False)])
+        self.assertTrue(all("series_ticker=KXMLBGAME" in x and "limit=100" in x for x in calls));self.assertTrue(all("status=" not in x for x in calls))
+
+    def test_retrospective_catalog_partitions_validate_and_union_independently(self):
+        def page(global_position,partition,partition_position,cursor,next_cursor,markets):
+            raw=canonical_bytes({"markets":markets,"cursor":next_cursor})
+            return KalshiCatalogPage(global_position,cursor,next_cursor,raw,tuple(markets),partition=partition,partition_position=partition_position)
+        shared={"ticker":"KXMLBGAME-SHARED","title":"same"}
+        values=(page(0,"historical",0,"","opaque /?=",[]),page(1,"historical",1,"opaque /?=","",[shared]),page(2,"live",0,"","live+opaque",[]),page(3,"live",1,"live+opaque","",[shared,{"ticker":"KXMLBGAME-LIVE"}]))
+        union=merge_retrospective_catalog_pages(values)
+        self.assertEqual([x["ticker"] for x in json.loads(union)["markets"]],["KXMLBGAME-LIVE","KXMLBGAME-SHARED"])
+        self.assertEqual(union,merge_retrospective_catalog_pages(reversed(values)))
+        with self.assertRaisesRegex(OperationsError,"incomplete"):merge_retrospective_catalog_pages(values[:-1])
+        with self.assertRaisesRegex(OperationsError,"incomplete"):merge_retrospective_catalog_pages((replace(values[1],partition_position=2),*values[2:]))
+        conflict=replace(values[3],markets=({"ticker":"KXMLBGAME-SHARED","title":"different"},))
+        with self.assertRaisesRegex(OperationsError,"conflict"):merge_retrospective_catalog_pages((*values[:3],conflict))
 
     def test_live_mlb_loaders_share_canonical_hydrated_request(self):
         from inspect_forecast_standalone_activation import fixtures

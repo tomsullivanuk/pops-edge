@@ -585,6 +585,16 @@ error, and 5 operational failure. JSON and terminal diagnostics derive from the
 same typed result. Configuration may set deployment paths, endpoint selection,
 bounded retries/timeouts, lock wait, logs, and scheduling only.
 
+PR17C2 adds the activated CLI commands `refresh-retrospective-supporting` and
+`acquire-retrospective`. Supporting batches require explicit inclusive ISO date
+bounds, contain at most 31 completed Eastern dates, and preserve every exact MLB
+page plus both completely paginated Kalshi MLB catalog partitions. Candle
+acquisition requires an explicit maximum of 1–100 pending opportunities. It
+retrieves the current public historical cutoff once, routes each settled market
+by its preserved settlement timestamp, requests only the strict five-minute
+one-minute-candle interval, and performs no fallback or synthetic continuity.
+These commands are manual and are not added to the PR17C1 scheduler group.
+
 Each primary and secondary path must include `dry-run/<namespace>` (or, after a
 future authorized activation, `activated/<namespace>`). Mutation is prohibited
 for activated mode in PR17B2. Every mutation first takes the namespace advisory
