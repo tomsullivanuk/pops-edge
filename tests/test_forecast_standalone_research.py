@@ -331,6 +331,9 @@ class StandaloneResearchV3Tests(unittest.TestCase):
 
     def test_46_classification_drives_retrospective_and_prospective_eligibility(self):
         g=self.g
+        provider_native=classification_variant(g["retro_classification"],game_type="R",event_phase=EventPhase.REGULAR_SEASON,ordinary_game=True)
+        _,eligible=create_standalone_eligibility_authority(protocol=g["retrospective"],opportunity=g["retro_opportunity"],outcome_history=g["retro_history"],classification=provider_native,classifications=(provider_native,),analysis_boundary=g["retro_context"].analysis_boundary,provenance=g["provenance"])
+        self.assertIs(eligible.disposition,PopulationEligibilityDisposition.ELIGIBLE);self.assertNotIn("non-ordinary-game",eligible.reason_codes)
         cases=((dict(season="2025"),"wrong-season"),(dict(event_phase=EventPhase.POSTSEASON),"postseason"),(dict(doubleheader_id="dh-1",game_number=1,ordinary_game=False),"doubleheader"),(dict(mapping_validation_status=EventClassificationValidationStatus.AMBIGUOUS,validation_reasons=("ambiguous-home-away",)),"ambiguous-mapping"))
         for change,reason in cases:
             classification=classification_variant(g["retro_classification"],**change)

@@ -1,7 +1,7 @@
 """Bounded read-only Kalshi MLB winner-market adapter."""
 from __future__ import annotations
 import hashlib, json, time
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from typing import Callable
 import requests
@@ -9,7 +9,8 @@ from event_contracts import ContractError, Provenance
 from market_contracts import *
 from mlb_contracts import MLBGame, ScheduleObservation
 
-BASE="https://external-api.kalshi.com/trade-api/v2"; ADAPTER_VERSION="kalshi-mlb-v1"; RETRY_CODES={429,500,502,503,504}
+BASE="https://external-api.kalshi.com/trade-api/v2"; ADAPTER_VERSION="kalshi-mlb-v2"; RETRY_CODES={429,500,502,503,504}
+MARKET_SCHEDULE_RULE_VERSION="explicit-complementary-sides-scheduled-or-three-hour-expiration-1"
 ALIASES={
     "arizona":"arizona diamondbacks","d-backs":"arizona diamondbacks","diamondbacks":"arizona diamondbacks",
     "a's":"athletics","oakland athletics":"athletics","atlanta":"atlanta braves","baltimore":"baltimore orioles",
@@ -52,21 +53,30 @@ class KalshiReadOnlyClient:
 def reconcile_market(market:dict,games:tuple[MLBGame,...],schedules:tuple[ScheduleObservation,...]):
     yes_label=market.get("yes_sub_title") or market.get("yes_label")
     if not yes_label: return None,(),(MarketIssue("ambiguous-side","YES participant is not explicitly identified"),)
-    yes_name=_canon(yes_label); date_text=(market.get("expected_expiration_time") or market.get("close_time") or "")[:10]
-    schedule_by_event={x.canonical_event_id:x for x in schedules}; participant_candidates=[]; dated_candidates=[]
+    no_label=market.get("no_sub_title") or market.get("no_label")
+    if not no_label:return None,(),(MarketIssue("missing-no-side","NO participant is not explicitly identified"),)
+    yes_name,no_name=_canon(yes_label),_canon(no_label)
+    raw_time=market.get("expected_expiration_time") or market.get("close_time")
+    if not raw_time:return None,(),(MarketIssue("missing-market-time","market lacks explicit expiration or close time"),)
+    try:market_time=_dt(raw_time)
+    except (TypeError,ValueError):return None,(),(MarketIssue("malformed-market-time","market date/time evidence is malformed"),)
+    if market_time.tzinfo is None or market_time.utcoffset() is None:return None,(),(MarketIssue("malformed-market-time","market date/time evidence is timezone-naive"),)
+    expiration_semantics=bool(market.get("expected_expiration_time"))
+    schedule_by_event={x.canonical_event_id:x for x in schedules}; candidates=[];side_matches=False
     for game in games:
-        names={_canon(game.home_team.display_name),_canon(game.away_team.display_name)}
-        participant=None
-        if yes_name==_canon(game.home_team.display_name): participant=game.home_team.canonical_team_id
-        elif yes_name==_canon(game.away_team.display_name): participant=game.away_team.canonical_team_id
+        home_name,away_name=_canon(game.home_team.display_name),_canon(game.away_team.display_name);participant=None
+        if yes_name==home_name and no_name in {away_name,yes_name}:participant=game.home_team.canonical_team_id
+        elif yes_name==away_name and no_name in {home_name,yes_name}:participant=game.away_team.canonical_team_id
         schedule=schedule_by_event.get(game.event.canonical_event_id)
         if participant:
-            participant_candidates.append((game,participant))
-            if not date_text or (schedule and schedule.scheduled_start.date().isoformat()==date_text): dated_candidates.append((game,participant))
-    candidates=dated_candidates or participant_candidates
+            side_matches=True
+            if schedule is None:continue
+            instants=(schedule.scheduled_start,schedule.scheduled_start+timedelta(hours=3)) if expiration_semantics else (schedule.scheduled_start,)
+            if any(market_time.astimezone(expected.tzinfo)==expected for expected in instants):candidates.append((game,participant))
     if len(candidates)==1: return candidates[0],(candidates[0][0].event.canonical_event_id,),()
     code="ambiguous-event" if len(candidates)>1 else "no-matching-event"
-    return None,tuple(x[0].event.canonical_event_id for x in candidates),(MarketIssue(code,"market cannot be uniquely reconciled from explicit participant/date evidence"),)
+    detail="market cannot be uniquely reconciled from explicit complementary participants and canonical schedule instant" if side_matches else "structured YES/NO participants do not exactly equal an MLB event's two participants"
+    return None,tuple(x[0].event.canonical_event_id for x in candidates),(MarketIssue(code,detail),)
 
 def _book_levels(payload,at,endpoint):
     book=payload.get("orderbook_fp",payload.get("orderbook",payload)); levels=[]
@@ -113,7 +123,7 @@ def adapt_market(market:dict,*,games:tuple[MLBGame,...],schedules:tuple[Schedule
     no_label=market.get("no_sub_title") or market.get("no_label")
     settlement=_settlement_evidence(market)
     no_name=_canon(no_label) if no_label else None
-    if no_name not in (_canon(yes_label),_canon(other.display_name)):
+    if no_name not in {_canon(yes_label),_canon(other.display_name)}:
         return MarketAdapterResult(MarketAdapterOutcome.AMBIGUOUS,market_id,None,None,None,(MarketIssue("ambiguous-no-side","NO participant is not the explicit complementary event participant"),),candidates,raw)
     if not settlement:
         return MarketAdapterResult(MarketAdapterOutcome.REJECTED,market_id,None,None,None,(MarketIssue("missing-settlement-evidence","winner payout semantics require settlement evidence"),),candidates,raw)

@@ -52,7 +52,7 @@ def live_mlb_material(purpose,at,*,histories,public_get,clock):
     pages=tuple(pages)
     return merge_mlb_schedule_responses(tuple(x.raw for x in pages)),pages
 
-def execute(command,config,*,clock=lambda:datetime.now(timezone.utc),transport_factory=None,supporting_loader=None,outcome_loader=None,retrospective_runner=None,free_disk=None,session_completion_id=None):
+def execute(command,config,*,clock=lambda:datetime.now(timezone.utc),transport_factory=None,supporting_loader=None,outcome_loader=None,retrospective_runner=None,free_disk=None,session_completion_id=None,session_correction_reason=None):
     archive=NamespaceArchive(config);state=OperationalState(config.log_root/"operational-state");started=clock()
     calls=typed=due=None;disposition="success";failure=None
     try:
@@ -83,6 +83,9 @@ def execute(command,config,*,clock=lambda:datetime.now(timezone.utc),transport_f
         elif command=="complete-retrospective-supporting-session":
             if not session_completion_id:raise OperationsError("configuration-error","explicit --session-id is required")
             result=complete_supporting_session_from_archive(archive=archive,session_id=session_completion_id);calls=0;typed=result.get("contracts",0);output={"configuration_id":config.identity,"namespace":config.namespace,**result};output.setdefault("disposition","completed")
+        elif command=="correct-retrospective-supporting-session":
+            if not session_completion_id or not session_correction_reason:raise OperationsError("configuration-error","explicit --session-id and --reason are required")
+            result=complete_supporting_session_from_archive(archive=archive,session_id=session_completion_id,correction_reason=session_correction_reason);calls=0;typed=result.get("contracts",0);output={"configuration_id":config.identity,"namespace":config.namespace,**result};output.setdefault("disposition","corrected")
         elif command=="inspect":output=json.loads(inspect_archive(archive).to_json());disposition="success" if output["ready"] else "not-ready"
         elif command=="reconcile-acquisitions":
             artifacts=reconcile_incomplete_acquisitions(archive,reconciled_at=started);output={"configuration_id":config.identity,"disposition":"success","reconciliation_artifacts":artifacts,"artifact_count":len(artifacts)};typed=len(artifacts)
@@ -109,7 +112,7 @@ def execute(command,config,*,clock=lambda:datetime.now(timezone.utc),transport_f
 
 def main(argv=None)->int:
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument("--config",type=Path);parser.add_argument("--fixture",type=Path);parser.add_argument("--trusted-at")
-    parser.add_argument("command",choices=("initialize-activation","capture-prospective","refresh-supporting","refresh-retrospective-supporting","complete-retrospective-supporting-session","acquire-retrospective","reconcile-outcomes","reconcile-acquisitions","inspect","maintain","rebuild-index","sync-secondary","health-report","render-launchd"));parser.add_argument("--output",type=Path);parser.add_argument("--maximum-opportunities",type=int);parser.add_argument("--start-date");parser.add_argument("--end-date");parser.add_argument("--session-id")
+    parser.add_argument("command",choices=("initialize-activation","capture-prospective","refresh-supporting","refresh-retrospective-supporting","complete-retrospective-supporting-session","correct-retrospective-supporting-session","acquire-retrospective","reconcile-outcomes","reconcile-acquisitions","inspect","maintain","rebuild-index","sync-secondary","health-report","render-launchd"));parser.add_argument("--output",type=Path);parser.add_argument("--maximum-opportunities",type=int);parser.add_argument("--start-date");parser.add_argument("--end-date");parser.add_argument("--session-id");parser.add_argument("--reason")
     args=parser.parse_args(argv)
     try:
         if args.config is None:raise OperationsError("configuration-error","--config is required")
@@ -201,7 +204,7 @@ def main(argv=None)->int:
                         if hasattr(exc,"provider_calls"):exc.provider_calls+=0 if args.fixture else 1
                         raise
                     return created,retro_transport.calls
-            result=execute(args.command,config,clock=clock,transport_factory=factory,supporting_loader=supporting_loader,outcome_loader=outcome_loader,retrospective_runner=retrospective_runner,session_completion_id=args.session_id)
+            result=execute(args.command,config,clock=clock,transport_factory=factory,supporting_loader=supporting_loader,outcome_loader=outcome_loader,retrospective_runner=retrospective_runner,session_completion_id=args.session_id,session_correction_reason=args.reason)
         print(json.dumps(result,sort_keys=True,separators=(",",":"),default=lambda x:x.isoformat()))
         return int(ExitCode.SUCCESS if result.get("disposition")!="not-ready" else ExitCode.NOT_READY)
     except OperationsError as exc:

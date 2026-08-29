@@ -999,13 +999,15 @@ def inspect_archive(archive: NamespaceArchive) -> DiagnosticResult:
             if value.get("record_kind")=="pr17c2-supporting-session-completion":completion_sessions.add(value.get("session_id"))
             if value.get("record_kind")=="pr17c1-acquisition-bundle" and value.get("family")=="refresh-retrospective-supporting":retrospective_bundles.append(value)
     failed_session_pages=sum(1 for item in archive.entries() if item.get("command")=="refresh-retrospective-supporting-page" and item.get("disposition")!="success")
-    session_ids={value.get("session_id") for value in session_pages};valid_sessions=set();completion_issues=[]
+    session_ids={value.get("session_id") for value in session_pages};valid_sessions=set();authoritative_bundle_manifests=set();completion_issues=[]
     from forecast_standalone_activation import verify_supporting_session_completion
     for session_id in sorted(completion_sessions):
-        try:verify_supporting_session_completion(archive,session_id);valid_sessions.add(session_id)
+        try:
+            verified=verify_supporting_session_completion(archive,session_id);valid_sessions.add(session_id);authoritative_bundle_manifests.update((verified["mlb_manifest_id"],verified["kalshi_manifest_id"]))
         except OperationsError as exc:completion_issues.append(f"supporting session completion invalid: {session_id}: {exc.code}")
     unresolved=sum(1 for item in integrity.partial if item.endswith(":missing-envelope"));abandoned=kinds.count("pr17c1-acquisition-reconciliation");complete=kinds.count("pr17c1-acquisition-bundle")
-    non_authoritative=sum(1 for value in retrospective_bundles if value.get("acquisition_id","").rsplit(":",1)[0] not in valid_sessions)
+    retrospective_manifest_ids={entry["manifest_entry_id"] for entry in entries if entry.get("normalized_object_id") and json.loads(archive.read_verified("normalized",entry["normalized_object_id"])).get("record_kind")=="pr17c1-acquisition-bundle" and json.loads(archive.read_verified("normalized",entry["normalized_object_id"])).get("family")=="refresh-retrospective-supporting"}
+    non_authoritative=len(retrospective_manifest_ids-authoritative_bundle_manifests)
     facts=(("verified_entries",len(entries)),("orphaned_objects",len(integrity.orphaned)),("missing_objects",len(integrity.referenced_missing)),("corrupt_objects",len(integrity.referenced_corrupt)),("unresolved_partial_acquisitions",unresolved),("preserved_supporting_session_pages",len(session_pages)),("supporting_session_pages",len(session_pages)),("incomplete_supporting_sessions",len(session_ids-valid_sessions)),("valid_complete_supporting_sessions",len(valid_sessions)),("complete_supporting_sessions",len(valid_sessions)),("non_authoritative_retrospective_provider_bundles",non_authoritative),("authoritative_completed_retrospective_sessions",len(valid_sessions)),("failed_supporting_pages",failed_session_pages),("reconciled_abandoned_acquisitions",abandoned),("complete_authoritative_acquisitions",complete-len(retrospective_bundles)+2*len(valid_sessions)))+tuple((f"{key}_entries",value) for key,value in sorted(by_design.items()))
     issues=tuple(f"archive orphaned: {item}" for item in integrity.orphaned)+tuple(f"archive missing: {item}" for item in integrity.referenced_missing)+tuple(f"archive corrupt: {item}" for item in integrity.referenced_corrupt)+tuple(f"archive malformed: {item}" for item in integrity.malformed)+tuple(f"archive incompatible: {item}" for item in integrity.incompatible)+tuple(f"archive partial: {item}" for item in integrity.partial)+tuple(completion_issues)
     ready=integrity.healthy and not completion_issues
@@ -1072,19 +1074,20 @@ def archive_pr17_authority(archive:NamespaceArchive,contracts:Iterable[Any],*,re
     return tuple(entries)
 
 
-def _contracts_from_entry(archive:NamespaceArchive,entry:Mapping[str,Any],prior_objects:Iterable[Any]=())->tuple[Any,...]:
+def _contracts_from_entry(archive:NamespaceArchive,entry:Mapping[str,Any],prior_objects:Iterable[Any]=(),excluded_supporting_sessions:Iterable[str]=())->tuple[Any,...]:
     identity=entry.get("normalized_object_id")
     if not identity:return ()
     value=json.loads(archive.read_verified("normalized",identity))
     if value.get("record_kind")=="pr17c1-acquisition-bundle":
         if value.get("family")=="refresh-retrospective-supporting" and value.get("page_record_kind")=="pr17c2-supporting-session-page":
-            session=value.get("acquisition_id","").rsplit(":",1)[0]
+            session=value.get("supporting_session_id") or value.get("acquisition_id","").rsplit(":",1)[0]
+            if session in set(excluded_supporting_sessions):return ()
             from forecast_standalone_activation import verify_supporting_session_completion
             try:verified=verify_supporting_session_completion(archive,session)
             except OperationsError as exc:
                 if exc.code=="supporting-session-incomplete":return ()
                 raise
-            if entry.get("manifest_entry_id") not in {verified["mlb_manifest_id"],verified["kalshi_manifest_id"]}:raise OperationsError("supporting-session-conflict","retrospective provider bundle is not referenced by the verified completion")
+            if entry.get("manifest_entry_id") not in {verified["mlb_manifest_id"],verified["kalshi_manifest_id"]}:return ()
         from forecast_standalone_activation import refresh_supporting_from_raw,reconcile_outcomes_from_raw,verify_acquisition_bundle
         union,payloads=verify_acquisition_bundle(archive,value,include_union=True)
         from forecast_standalone_research import deserialize_v3
@@ -1127,10 +1130,10 @@ def _contracts_from_entry(archive:NamespaceArchive,entry:Mapping[str,Any],prior_
     return contracts
 
 
-def replay_pr17_archive(archive:NamespaceArchive,*,analysis_boundary:datetime)->ScientificArchiveState:
+def replay_pr17_archive(archive:NamespaceArchive,*,analysis_boundary:datetime,excluded_supporting_sessions:Iterable[str]=())->ScientificArchiveState:
     _utc(analysis_boundary,"archive replay boundary")
     entries=authoritative_entries(archive);objects=[]
-    for entry in entries:objects.extend(_contracts_from_entry(archive,entry,objects))
+    for entry in entries:objects.extend(_contracts_from_entry(archive,entry,objects,excluded_supporting_sessions))
     keyed={}
     for item in objects:
         key=(type(item).__name__,item.to_json())

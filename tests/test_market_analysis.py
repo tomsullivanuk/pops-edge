@@ -6,7 +6,7 @@ from decimal import Decimal
 
 from event_contracts import ContractError, Evidence, NativeIdentifier, Provenance, ReasonCode, ReconciliationResult, ValidationReason
 from forecast_contracts import AssumptionDisclosure, ForecastDistribution, ForecastObservation, ForecastOutcome, ProbabilityScale, ProviderReportedAssumptions, PublishedProbability
-from kalshi_mlb_adapter import adapt_market
+from kalshi_mlb_adapter import adapt_market,adapt_markets
 from collect_kalshi_mlb_orderbooks import collect_orderbooks
 from market_contracts import ComponentEvidence, MarketAdapterOutcome, MarketProposition, MarketSide, MarketStatus, PriceEvidenceKind
 from market_valuation import ExecutionStatus, FlatPerContractFeeModel, ZeroFeeModel, executable_acquisition, value_market
@@ -72,17 +72,15 @@ class MarketIdentityAndAdapterTests(unittest.TestCase):
         self.assertEqual(home.series.yes_semantic.participant_id,"team:home"); self.assertEqual(home.series.no_semantic.participant_id,"team:away")
         self.assertEqual(away.series.yes_semantic.participant_id,"team:away"); self.assertEqual(away.series.no_semantic.participant_id,"team:home")
 
-    def test_current_kalshi_mlb_labels_and_notional_preserve_binary_semantics(self):
+    def test_current_kalshi_mlb_binary_no_label_resolves_explicit_complement(self):
         payload=market_payload(ticker="KXMLBGAME-26JUL311905PHIBAL-PHI",title="Philadelphia vs Baltimore Winner?",yes_sub_title="Philadelphia",no_sub_title="Philadelphia",rules_primary="If Philadelphia wins, then the market resolves to Yes.",notional_value_dollars="1.0000")
         game,schedule=facts(); game=replace(game,away_team=replace(game.away_team,display_name="Philadelphia Phillies"),home_team=replace(game.home_team,display_name="Baltimore Orioles"))
         result=adapt_market(payload,games=(game,),schedules=(schedule,),collected_at=AT,orderbook_payload=bid_book(ticker=payload["ticker"]))
-        self.assertEqual(result.outcome,MarketAdapterOutcome.COMPLETE)
-        self.assertEqual(result.series.yes_semantic.provider_label,"Philadelphia")
-        self.assertEqual(result.series.no_semantic.provider_label,"Baltimore Orioles")
+        self.assertEqual(result.outcome,MarketAdapterOutcome.COMPLETE);self.assertEqual(result.series.yes_semantic.provider_label,"Philadelphia");self.assertEqual(result.series.no_semantic.participant_id,"team:home")
 
     def test_missing_or_incompatible_side_evidence_emits_no_series(self):
         missing=adapted(payload=market_payload(yes_sub_title=None)); bad_no=adapted(payload=market_payload(no_sub_title="Another Club"))
-        self.assertEqual(missing.outcome,MarketAdapterOutcome.AMBIGUOUS); self.assertIsNone(missing.series); self.assertEqual(bad_no.outcome,MarketAdapterOutcome.AMBIGUOUS); self.assertIsNone(bad_no.series)
+        self.assertEqual(missing.outcome,MarketAdapterOutcome.AMBIGUOUS); self.assertIsNone(missing.series); self.assertEqual(bad_no.outcome,MarketAdapterOutcome.REJECTED); self.assertIsNone(bad_no.series)
 
     def test_settlement_disagreement_and_missing_rules_fail_closed(self):
         conflict=adapted(payload=market_payload(rules_primary="Pays $1 if Away Club wins.")); missing=adapted(payload=market_payload(rules_primary=None))
@@ -92,6 +90,23 @@ class MarketIdentityAndAdapterTests(unittest.TestCase):
         game,schedule=facts(); other,other_schedule=facts(778); other_schedule=replace(other_schedule,scheduled_start=schedule.scheduled_start)
         result=adapt_market(market_payload(),games=(game,other),schedules=(schedule,other_schedule),collected_at=AT)
         self.assertEqual(result.outcome,MarketAdapterOutcome.AMBIGUOUS); self.assertIsNone(result.series); self.assertEqual(len(result.candidate_event_ids),2)
+
+    def test_explicit_nonmatching_date_never_falls_back_to_participant(self):
+        result=adapted(payload=market_payload(close_time="2026-08-01T23:00:00Z"));self.assertEqual(result.outcome,MarketAdapterOutcome.REJECTED);self.assertIsNone(result.series);self.assertEqual(result.issues[0].code,"no-matching-event")
+
+    def test_both_structured_sides_and_aware_time_are_mandatory(self):
+        missing_no=adapted(payload=market_payload(no_sub_title=None));foreign_no=adapted(payload=market_payload(no_sub_title="Third Club"));missing_time=adapted(payload=market_payload(close_time=None));malformed=adapted(payload=market_payload(close_time="not-a-time"))
+        self.assertTrue(all(item.series is None for item in (missing_no,foreign_no,missing_time,malformed)));self.assertEqual([item.issues[0].code for item in (missing_no,foreign_no,missing_time,malformed)],["missing-no-side","no-matching-event","missing-market-time","malformed-market-time"])
+
+    def test_schedule_instant_rule_is_timezone_safe_and_catalog_order_independent(self):
+        game,schedule=facts();same_instant=market_payload(close_time="2026-07-31T19:00:00-04:00");other_date=market_payload(ticker="OTHER",close_time="2026-07-30T19:00:00-04:00")
+        matched=adapt_market(same_instant,games=(game,),schedules=(schedule,),collected_at=AT);self.assertIsNotNone(matched.series)
+        forward=adapt_markets((other_date,same_instant),games=(game,),schedules=(schedule,),collected_at=AT);reverse=adapt_markets((same_instant,other_date),games=(game,),schedules=(schedule,),collected_at=AT)
+        self.assertEqual({item.provider_market_id:item.outcome for item in forward},{item.provider_market_id:item.outcome for item in reverse})
+
+    def test_three_hour_expiration_rule_maps_exact_march_market_uniquely(self):
+        game,schedule=facts();schedule=replace(schedule,scheduled_start=datetime(2026,3,26,0,5,tzinfo=UTC));payload=market_payload(ticker="KXMLBGAME-26MAR252005NYYSF-SF",close_time="2026-03-26T03:05:00Z",expected_expiration_time="2026-03-26T03:05:00Z")
+        result=adapt_market(payload,games=(game,),schedules=(schedule,),collected_at=AT);self.assertIsNotNone(result.series);self.assertEqual(result.series.ticker,"KXMLBGAME-26MAR252005NYYSF-SF")
 
     def test_fixed_point_bids_preserve_raw_side_price_and_exact_derived_offer(self):
         obs=adapted(bid_book()).observation; yes=[x for x in obs.order_book if x.acquisition_side is MarketSide.YES]

@@ -792,6 +792,16 @@ existing completion makes a repeated recovery an identity-preserving no-op;
 malformed, duplicate, incomplete, foreign, failed, or unreferenced material
 cannot be counted as a completed authoritative session.
 
+PR17C2 correction replay versions market reconciliation as
+`kalshi-mlb-explicit-sides-schedule-instant-2`: structured YES and NO semantics
+must resolve to the event's two participants, and aware provider time must equal
+the MLB scheduled instant or explicit three-hour expiration instant. There is no
+participant-only fallback. Retrospective eligibility uses valid regular-season
+phase plus ordinary-game authority without contradicting provider code `R`.
+`correct-retrospective-supporting-session` reuses the immutable page set with
+zero provider calls and publishes a single-predecessor supersession manifest;
+missing or branched lineage fails closed and repeat correction is a no-op.
+
 ### PR17D — Prospective Observation Close and Separate Report
 
 **Purpose:** close the prospective observation period after the final 2026 MLB
