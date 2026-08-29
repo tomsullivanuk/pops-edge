@@ -604,6 +604,20 @@ equality and later settlement are live. Failure output and heartbeats count all
 calls attempted through the failure point; partial sessions remain inspectable
 but cannot satisfy replay or Coverage.
 
+Scientific authority is atomic at the complete retrospective supporting-session
+boundary. Provider acquisition bundles inside a session remain non-authoritative
+until exactly one valid session-completion envelope references both providers,
+the cutoff, every page, the derived unions and contracts, chronology, and call
+count. `complete-retrospective-supporting-session --session-id ...` performs a
+zero-network, append-only completion from verified archived session pages; it
+never rewrites, deletes, or promotes an incomplete or conflicting session. One
+authoritative completion verifier is shared by replay, inspection, and archive
+completion. It validates the exact session/provider identities, complete page
+sets and chronology, cutoff lineage and reconciliation, union and contract
+digests, and exact call accounting. Repeating completion for an already valid
+session is a zero-write no-op that returns the existing manifest identities;
+an invalid or duplicate completion fails closed.
+
 Each primary and secondary path must include `dry-run/<namespace>` (or, after a
 future authorized activation, `activated/<namespace>`). Mutation is prohibited
 for activated mode in PR17B2. Every mutation first takes the namespace advisory

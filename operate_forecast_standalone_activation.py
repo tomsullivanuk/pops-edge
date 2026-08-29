@@ -5,7 +5,7 @@ import argparse,json,shutil,sys,time
 from datetime import date,datetime,timedelta,timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
-from forecast_standalone_activation import APPROVED_EASTERN_DATE,APPROVED_TIMEZONE,RETROSPECTIVE_WINDOW_START,BoundedLiveReadOnlyTransport,KalshiCatalogPage,KalshiRequestSigner,MacOSKeychainCredentialProvider,OperationalHeartbeat,OperationalState,ProviderPageAcquisition,acquire_kalshi_catalog_pages,acquire_retrospective_catalog_pages,adapt_kalshi_candles,adapt_kalshi_orderbook,canonical_kalshi_candle_path,canonical_mlb_schedule_request,encoded_kalshi_catalog_path,encoded_kalshi_retrospective_catalog_path,health_from_operational_state,initialize_activation,invoke_activated_prospective,merge_kalshi_catalog_pages,merge_retrospective_catalog_pages,merge_mlb_schedule_responses,preserve_supporting_response,reconcile_outcomes_from_raw,refresh_supporting_from_raw,render_launchd_jobs,required_mlb_query_dates,rsa_pss_sha256_sign
+from forecast_standalone_activation import APPROVED_EASTERN_DATE,APPROVED_TIMEZONE,RETROSPECTIVE_WINDOW_START,BoundedLiveReadOnlyTransport,KalshiCatalogPage,KalshiRequestSigner,MacOSKeychainCredentialProvider,OperationalHeartbeat,OperationalState,ProviderPageAcquisition,acquire_kalshi_catalog_pages,acquire_retrospective_catalog_pages,adapt_kalshi_candles,adapt_kalshi_orderbook,canonical_kalshi_candle_path,canonical_mlb_schedule_request,complete_supporting_session_from_archive,encoded_kalshi_catalog_path,encoded_kalshi_retrospective_catalog_path,health_from_operational_state,initialize_activation,invoke_activated_prospective,merge_kalshi_catalog_pages,merge_retrospective_catalog_pages,merge_mlb_schedule_responses,preserve_supporting_response,reconcile_outcomes_from_raw,refresh_supporting_from_raw,render_launchd_jobs,required_mlb_query_dates,rsa_pss_sha256_sign
 from forecast_standalone_operations import DeploymentConfig,DesignAuthority,Disposition,ExitCode,HTTPResponse,NamespaceArchive,OperatingMode,OperationsError,RetrospectiveAcquisitionError,SupportingAcquisitionError,_entry_values,acquire_prospective_once,acquire_typed_supporting_fixture,discover_and_acquire_retrospective,index_health,inspect_archive,rebuild_index,reconcile_incomplete_acquisitions,replay_pr17_archive,request_identity,sync_secondary
 
 class FixtureTransport:
@@ -52,7 +52,7 @@ def live_mlb_material(purpose,at,*,histories,public_get,clock):
     pages=tuple(pages)
     return merge_mlb_schedule_responses(tuple(x.raw for x in pages)),pages
 
-def execute(command,config,*,clock=lambda:datetime.now(timezone.utc),transport_factory=None,supporting_loader=None,outcome_loader=None,retrospective_runner=None,free_disk=None):
+def execute(command,config,*,clock=lambda:datetime.now(timezone.utc),transport_factory=None,supporting_loader=None,outcome_loader=None,retrospective_runner=None,free_disk=None,session_completion_id=None):
     archive=NamespaceArchive(config);state=OperationalState(config.log_root/"operational-state");started=clock()
     calls=typed=due=None;disposition="success";failure=None
     try:
@@ -67,7 +67,8 @@ def execute(command,config,*,clock=lambda:datetime.now(timezone.utc),transport_f
         elif command in {"refresh-supporting","refresh-retrospective-supporting"}:
             if supporting_loader is None:raise OperationsError("adapter-unavailable","configured MLB/Kalshi supporting adapters are absent")
             loaded=supporting_loader(started);mlb_raw,kalshi_raw=loaded[:2];pages=loaded[2] if len(loaded)>2 else ();mlb_pages=loaded[3] if len(loaded)>3 else ();cutoff_at=loaded[5] if len(loaded)>5 else None;session_id=loaded[6] if len(loaded)>6 else None;calls=loaded[4] if len(loaded)>4 else (len(mlb_pages) if mlb_pages else 1)+(len(pages) if pages else 1)
-            try:result=refresh_supporting_from_raw(archive=archive,mlb_raw=mlb_raw,kalshi_raw=kalshi_raw,collected_at=started,catalog_pages=pages,mlb_pages=mlb_pages,acquisition_command=command,retrospective_cutoff_at=cutoff_at,supporting_session_id=session_id)
+            requested_window=((mlb_pages[0].request_identity,mlb_pages[-1].request_identity) if command=="refresh-retrospective-supporting" and mlb_pages else None)
+            try:result=refresh_supporting_from_raw(archive=archive,mlb_raw=mlb_raw,kalshi_raw=kalshi_raw,collected_at=started,catalog_pages=pages,mlb_pages=mlb_pages,acquisition_command=command,retrospective_cutoff_at=cutoff_at,supporting_session_id=session_id,supporting_provider_calls=calls,requested_date_window=requested_window)
             except OperationsError as exc:
                 if not hasattr(exc,"provider_calls"):exc.provider_calls=calls
                 raise
@@ -79,6 +80,9 @@ def execute(command,config,*,clock=lambda:datetime.now(timezone.utc),transport_f
         elif command=="acquire-retrospective":
             if retrospective_runner is None:raise OperationsError("adapter-unavailable","bounded retrospective adapter is absent")
             created,calls=retrospective_runner(archive);typed=len(created);output={"configuration_id":config.identity,"namespace":config.namespace,"provider_calls":calls,"created_manifest_ids":created,"disposition":"completed"}
+        elif command=="complete-retrospective-supporting-session":
+            if not session_completion_id:raise OperationsError("configuration-error","explicit --session-id is required")
+            result=complete_supporting_session_from_archive(archive=archive,session_id=session_completion_id);calls=0;typed=result.get("contracts",0);output={"configuration_id":config.identity,"namespace":config.namespace,**result};output.setdefault("disposition","completed")
         elif command=="inspect":output=json.loads(inspect_archive(archive).to_json());disposition="success" if output["ready"] else "not-ready"
         elif command=="reconcile-acquisitions":
             artifacts=reconcile_incomplete_acquisitions(archive,reconciled_at=started);output={"configuration_id":config.identity,"disposition":"success","reconciliation_artifacts":artifacts,"artifact_count":len(artifacts)};typed=len(artifacts)
@@ -105,7 +109,7 @@ def execute(command,config,*,clock=lambda:datetime.now(timezone.utc),transport_f
 
 def main(argv=None)->int:
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument("--config",type=Path);parser.add_argument("--fixture",type=Path);parser.add_argument("--trusted-at")
-    parser.add_argument("command",choices=("initialize-activation","capture-prospective","refresh-supporting","refresh-retrospective-supporting","acquire-retrospective","reconcile-outcomes","reconcile-acquisitions","inspect","maintain","rebuild-index","sync-secondary","health-report","render-launchd"));parser.add_argument("--output",type=Path);parser.add_argument("--maximum-opportunities",type=int);parser.add_argument("--start-date");parser.add_argument("--end-date")
+    parser.add_argument("command",choices=("initialize-activation","capture-prospective","refresh-supporting","refresh-retrospective-supporting","complete-retrospective-supporting-session","acquire-retrospective","reconcile-outcomes","reconcile-acquisitions","inspect","maintain","rebuild-index","sync-secondary","health-report","render-launchd"));parser.add_argument("--output",type=Path);parser.add_argument("--maximum-opportunities",type=int);parser.add_argument("--start-date");parser.add_argument("--end-date");parser.add_argument("--session-id")
     args=parser.parse_args(argv)
     try:
         if args.config is None:raise OperationsError("configuration-error","--config is required")
@@ -158,7 +162,7 @@ def main(argv=None)->int:
                                 def fetch_cursor(cursor,partition=partition,builder=builder):
                                     raw,began,completed,_=bounded_get("kalshi","catalog",config.provider_base_url,builder(cursor),cursor,partition=partition,partition_position=position[0]);timings[cursor]=(began,completed);position[0]+=1;return raw
                                 acquired=acquire_kalshi_catalog_pages(fetch_cursor,clock=clock,command_start=at,path_builder=builder)
-                                for page in acquired:catalog_pages.append(KalshiCatalogPage(len(catalog_pages),page.request_cursor,page.next_cursor,page.raw,page.markets,*timings[page.request_cursor],page.endpoint,partition,page.position))
+                                for page in acquired:catalog_pages.append(KalshiCatalogPage(len(catalog_pages),page.request_cursor,page.next_cursor,page.raw,page.markets,*timings[page.request_cursor],config.provider_base_url.rstrip("/")+(page.endpoint or builder(page.request_cursor)),partition,page.position))
                             return merge_mlb_schedule_responses(tuple(x.raw for x in mlb_pages)),merge_retrospective_catalog_pages(catalog_pages,cutoff),tuple(catalog_pages),tuple(mlb_pages),calls,cutoff,session
                         except SupportingAcquisitionError:raise
                         except OperationsError as exc:raise SupportingAcquisitionError(exc.code,"retrospective supporting validation failed",calls) from exc
@@ -197,7 +201,7 @@ def main(argv=None)->int:
                         if hasattr(exc,"provider_calls"):exc.provider_calls+=0 if args.fixture else 1
                         raise
                     return created,retro_transport.calls
-            result=execute(args.command,config,clock=clock,transport_factory=factory,supporting_loader=supporting_loader,outcome_loader=outcome_loader,retrospective_runner=retrospective_runner)
+            result=execute(args.command,config,clock=clock,transport_factory=factory,supporting_loader=supporting_loader,outcome_loader=outcome_loader,retrospective_runner=retrospective_runner,session_completion_id=args.session_id)
         print(json.dumps(result,sort_keys=True,separators=(",",":"),default=lambda x:x.isoformat()))
         return int(ExitCode.SUCCESS if result.get("disposition")!="not-ready" else ExitCode.NOT_READY)
     except OperationsError as exc:
