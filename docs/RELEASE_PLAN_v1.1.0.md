@@ -782,6 +782,12 @@ before it are historical, while equality is live. Partial and failed sessions
 remain visible without becoming Evidence, and provider-call accounting includes
 every attempted call before success or failure.
 
+The authority boundary is the complete supporting session, not either provider
+bundle independently. MLB and Kalshi bundles from an incomplete session cannot
+satisfy replay or Coverage. Verified preserved pages may be completed later by
+an explicit zero-provider-call, append-only command, but only a final envelope
+that validates the entire session grants scientific authority.
+
 ### PR17D — Prospective Observation Close and Separate Report
 
 **Purpose:** close the prospective observation period after the final 2026 MLB

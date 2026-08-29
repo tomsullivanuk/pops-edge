@@ -991,14 +991,16 @@ def inspect_archive(archive: NamespaceArchive) -> DiagnosticResult:
     except OperationsError:entries=()
     for entry in entries: _verify_entry_objects(archive,entry)
     by_design={tag.value:sum(1 for item in entries if item["design_authority"]==tag.value) for tag in DesignAuthority}
-    kinds=[];session_pages=[]
+    kinds=[];session_pages=[];completed_sessions=set()
     for entry in archive.entries():
         if entry.get("normalized_object_id"):
             value=json.loads(archive.read_verified("normalized",entry["normalized_object_id"]));kinds.append(value.get("record_kind"))
             if value.get("record_kind")=="pr17c2-supporting-session-page":session_pages.append(value)
+            if value.get("record_kind")=="pr17c2-supporting-session-completion":completed_sessions.add(value.get("session_id"))
     failed_session_pages=sum(1 for item in archive.entries() if item.get("command")=="refresh-retrospective-supporting-page" and item.get("disposition")!="success")
+    session_ids={value.get("session_id") for value in session_pages}
     unresolved=sum(1 for item in integrity.partial if item.endswith(":missing-envelope"));abandoned=kinds.count("pr17c1-acquisition-reconciliation");complete=kinds.count("pr17c1-acquisition-bundle")
-    facts=(("verified_entries",len(entries)),("orphaned_objects",len(integrity.orphaned)),("missing_objects",len(integrity.referenced_missing)),("corrupt_objects",len(integrity.referenced_corrupt)),("unresolved_partial_acquisitions",unresolved),("supporting_session_pages",len(session_pages)),("failed_supporting_pages",failed_session_pages),("reconciled_abandoned_acquisitions",abandoned),("complete_authoritative_acquisitions",complete))+tuple((f"{key}_entries",value) for key,value in sorted(by_design.items()))
+    facts=(("verified_entries",len(entries)),("orphaned_objects",len(integrity.orphaned)),("missing_objects",len(integrity.referenced_missing)),("corrupt_objects",len(integrity.referenced_corrupt)),("unresolved_partial_acquisitions",unresolved),("supporting_session_pages",len(session_pages)),("incomplete_supporting_sessions",len(session_ids-completed_sessions)),("complete_supporting_sessions",len(session_ids&completed_sessions)),("failed_supporting_pages",failed_session_pages),("reconciled_abandoned_acquisitions",abandoned),("complete_authoritative_acquisitions",complete))+tuple((f"{key}_entries",value) for key,value in sorted(by_design.items()))
     issues=tuple(f"archive orphaned: {item}" for item in integrity.orphaned)+tuple(f"archive missing: {item}" for item in integrity.referenced_missing)+tuple(f"archive corrupt: {item}" for item in integrity.referenced_corrupt)+tuple(f"archive malformed: {item}" for item in integrity.malformed)+tuple(f"archive incompatible: {item}" for item in integrity.incompatible)+tuple(f"archive partial: {item}" for item in integrity.partial)
     return DiagnosticResult(OPERATIONS_SCHEMA_VERSION,"inspect",archive.config.identity,archive.config.namespace,archive.config.mode,integrity.healthy,"verified" if integrity.healthy else "attention",facts,issues)
 
@@ -1068,6 +1070,25 @@ def _contracts_from_entry(archive:NamespaceArchive,entry:Mapping[str,Any],prior_
     if not identity:return ()
     value=json.loads(archive.read_verified("normalized",identity))
     if value.get("record_kind")=="pr17c1-acquisition-bundle":
+        if value.get("family")=="refresh-retrospective-supporting" and value.get("page_record_kind")=="pr17c2-supporting-session-page":
+            session=value.get("acquisition_id","").rsplit(":",1)[0];completions=[]
+            for candidate_entry in archive.entries():
+                normalized_id=candidate_entry.get("normalized_object_id")
+                if not normalized_id:continue
+                candidate=json.loads(archive.read_verified("normalized",normalized_id))
+                if candidate.get("record_kind")=="pr17c2-supporting-session-completion" and candidate.get("session_id")==session:completions.append(candidate)
+            if not completions:return ()
+            if len(completions)!=1:raise OperationsError("supporting-session-conflict","retrospective supporting session completion is ambiguous")
+            completion=completions[0];referenced={completion.get("mlb_acquisition_manifest_id"),completion.get("kalshi_acquisition_manifest_id")}
+            if entry.get("manifest_entry_id") not in referenced or completion.get("union_rule")!="provider-pages-canonical-union-1" or completion.get("provider_calls",0)<3:raise OperationsError("supporting-session-conflict","retrospective provider bundle lacks valid session authority")
+            referenced_values={}
+            for referenced_entry in archive.entries():
+                if referenced_entry["manifest_entry_id"] not in referenced:continue
+                normalized_id=referenced_entry.get("normalized_object_id")
+                if normalized_id:referenced_values[referenced_entry["manifest_entry_id"]]=json.loads(archive.read_verified("normalized",normalized_id))
+            if set(referenced_values)!=referenced:raise OperationsError("supporting-session-conflict","supporting session provider envelope is absent")
+            mlb=referenced_values[completion["mlb_acquisition_manifest_id"]];kalshi=referenced_values[completion["kalshi_acquisition_manifest_id"]]
+            if mlb.get("provider")!="mlb-stats-api" or kalshi.get("provider")!="kalshi" or any(not item.get("acquisition_id","").startswith(session+":") for item in (mlb,kalshi)) or completion.get("mlb_union_sha256")!=mlb.get("normalized_union_sha256") or completion.get("kalshi_union_sha256")!=kalshi.get("normalized_union_sha256") or completion.get("cutoff_raw_sha256")!=kalshi.get("cutoff_raw_sha256"):raise OperationsError("supporting-session-conflict","supporting session completion cross-reference conflicts")
         from forecast_standalone_activation import refresh_supporting_from_raw,reconcile_outcomes_from_raw,verify_acquisition_bundle
         union,payloads=verify_acquisition_bundle(archive,value,include_union=True)
         from forecast_standalone_research import deserialize_v3
