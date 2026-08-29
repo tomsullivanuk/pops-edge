@@ -47,6 +47,12 @@ class RetrospectiveAcquisitionError(OperationsError):
         super().__init__("retrospective-acquisition-failed",detail)
 
 
+class SupportingAcquisitionError(OperationsError):
+    def __init__(self, code: str, detail: str, provider_calls: int):
+        self.provider_calls=provider_calls
+        super().__init__(code,detail)
+
+
 class OperatingMode(str, Enum):
     DRY_RUN = "dry-run"
     ACTIVATED = "activated"
@@ -795,7 +801,7 @@ def reconcile_archive(archive:NamespaceArchive)->ArchiveIntegrityResult:
             if not valid_reconciliation:acquisition_partial.append(f"acquisition:{group}:invalid-reconciliation")
             continue
         referenced_pages={x.get("manifest_entry_id") for x in envelopes[0][1].get("pages",()) if isinstance(x,dict)}
-        if referenced_pages!=pages:acquisition_partial.append(f"acquisition:{group}:page-set-conflict")
+        if envelopes[0][1].get("page_record_kind")!="pr17c2-supporting-session-page" and referenced_pages!=pages:acquisition_partial.append(f"acquisition:{group}:page-set-conflict")
     authoritative=[]
     bad=set(missing)|set(corrupt)
     for item in valid:
@@ -985,12 +991,14 @@ def inspect_archive(archive: NamespaceArchive) -> DiagnosticResult:
     except OperationsError:entries=()
     for entry in entries: _verify_entry_objects(archive,entry)
     by_design={tag.value:sum(1 for item in entries if item["design_authority"]==tag.value) for tag in DesignAuthority}
-    kinds=[]
+    kinds=[];session_pages=[]
     for entry in archive.entries():
         if entry.get("normalized_object_id"):
-            kinds.append(json.loads(archive.read_verified("normalized",entry["normalized_object_id"])).get("record_kind"))
+            value=json.loads(archive.read_verified("normalized",entry["normalized_object_id"]));kinds.append(value.get("record_kind"))
+            if value.get("record_kind")=="pr17c2-supporting-session-page":session_pages.append(value)
+    failed_session_pages=sum(1 for item in archive.entries() if item.get("command")=="refresh-retrospective-supporting-page" and item.get("disposition")!="success")
     unresolved=sum(1 for item in integrity.partial if item.endswith(":missing-envelope"));abandoned=kinds.count("pr17c1-acquisition-reconciliation");complete=kinds.count("pr17c1-acquisition-bundle")
-    facts=(("verified_entries",len(entries)),("orphaned_objects",len(integrity.orphaned)),("missing_objects",len(integrity.referenced_missing)),("corrupt_objects",len(integrity.referenced_corrupt)),("unresolved_partial_acquisitions",unresolved),("reconciled_abandoned_acquisitions",abandoned),("complete_authoritative_acquisitions",complete))+tuple((f"{key}_entries",value) for key,value in sorted(by_design.items()))
+    facts=(("verified_entries",len(entries)),("orphaned_objects",len(integrity.orphaned)),("missing_objects",len(integrity.referenced_missing)),("corrupt_objects",len(integrity.referenced_corrupt)),("unresolved_partial_acquisitions",unresolved),("supporting_session_pages",len(session_pages)),("failed_supporting_pages",failed_session_pages),("reconciled_abandoned_acquisitions",abandoned),("complete_authoritative_acquisitions",complete))+tuple((f"{key}_entries",value) for key,value in sorted(by_design.items()))
     issues=tuple(f"archive orphaned: {item}" for item in integrity.orphaned)+tuple(f"archive missing: {item}" for item in integrity.referenced_missing)+tuple(f"archive corrupt: {item}" for item in integrity.referenced_corrupt)+tuple(f"archive malformed: {item}" for item in integrity.malformed)+tuple(f"archive incompatible: {item}" for item in integrity.incompatible)+tuple(f"archive partial: {item}" for item in integrity.partial)
     return DiagnosticResult(OPERATIONS_SCHEMA_VERSION,"inspect",archive.config.identity,archive.config.namespace,archive.config.mode,integrity.healthy,"verified" if integrity.healthy else "attention",facts,issues)
 

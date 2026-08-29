@@ -595,6 +595,15 @@ by its preserved settlement timestamp, requests only the strict five-minute
 one-minute-candle interval, and performs no fallback or synthetic continuity.
 These commands are manual and are not added to the PR17C1 scheduler group.
 
+Retrospective supporting acquisition persists each bounded MLB response, the
+cutoff response, and every catalog page immediately as non-authoritative
+supporting-session material. Only a complete manifest-last envelope may bind
+those pages to scientific contracts. Cross-partition duplicates are selected
+solely by the preserved cutoff rule: settlement before the cutoff is historical;
+equality and later settlement are live. Failure output and heartbeats count all
+calls attempted through the failure point; partial sessions remain inspectable
+but cannot satisfy replay or Coverage.
+
 Each primary and secondary path must include `dry-run/<namespace>` (or, after a
 future authorized activation, `activated/<namespace>`). Mutation is prohibited
 for activated mode in PR17B2. Every mutation first takes the namespace advisory

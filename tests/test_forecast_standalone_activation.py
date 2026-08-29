@@ -1,3 +1,4 @@
+import hashlib
 import json
 import copy
 import subprocess
@@ -237,15 +238,52 @@ class ActivationTests(unittest.TestCase):
         def page(global_position,partition,partition_position,cursor,next_cursor,markets):
             raw=canonical_bytes({"markets":markets,"cursor":next_cursor})
             return KalshiCatalogPage(global_position,cursor,next_cursor,raw,tuple(markets),partition=partition,partition_position=partition_position)
-        shared={"ticker":"KXMLBGAME-SHARED","title":"same"}
+        cutoff=datetime(2026,8,1,tzinfo=timezone.utc);shared={"ticker":"KXMLBGAME-SHARED","title":"same","settlement_ts":"2026-07-31T23:59:59Z"}
         values=(page(0,"historical",0,"","opaque /?=",[]),page(1,"historical",1,"opaque /?=","",[shared]),page(2,"live",0,"","live+opaque",[]),page(3,"live",1,"live+opaque","",[shared,{"ticker":"KXMLBGAME-LIVE"}]))
-        union=merge_retrospective_catalog_pages(values)
+        union=merge_retrospective_catalog_pages(values,cutoff)
         self.assertEqual([x["ticker"] for x in json.loads(union)["markets"]],["KXMLBGAME-LIVE","KXMLBGAME-SHARED"])
-        self.assertEqual(union,merge_retrospective_catalog_pages(reversed(values)))
-        with self.assertRaisesRegex(OperationsError,"incomplete"):merge_retrospective_catalog_pages(values[:-1])
-        with self.assertRaisesRegex(OperationsError,"incomplete"):merge_retrospective_catalog_pages((replace(values[1],partition_position=2),*values[2:]))
-        conflict=replace(values[3],markets=({"ticker":"KXMLBGAME-SHARED","title":"different"},))
-        with self.assertRaisesRegex(OperationsError,"conflict"):merge_retrospective_catalog_pages((*values[:3],conflict))
+        self.assertEqual(union,merge_retrospective_catalog_pages(reversed(values),cutoff))
+        with self.assertRaisesRegex(OperationsError,"incomplete"):merge_retrospective_catalog_pages(values[:-1],cutoff)
+        with self.assertRaisesRegex(OperationsError,"incomplete"):merge_retrospective_catalog_pages((replace(values[1],partition_position=2),*values[2:]),cutoff)
+        conflict=replace(values[3],markets=({"ticker":"KXMLBGAME-SHARED","title":"different","settlement_ts":"2026-08-02T00:00:00Z"},))
+        with self.assertRaisesRegex(OperationsError,"ambiguous"):merge_retrospective_catalog_pages((*values[:3],conflict),cutoff)
+
+    def test_retrospective_cutoff_resolves_cross_partition_representation(self):
+        cutoff=datetime(2026,8,1,tzinfo=timezone.utc)
+        def pages(settlement,historical_title="historical",live_title="live"):
+            historical={"ticker":"KXMLBGAME-DUP","title":historical_title,"settlement_ts":settlement};live={"ticker":"KXMLBGAME-DUP","title":live_title,"settlement_ts":settlement}
+            return (KalshiCatalogPage(0,"","",canonical_bytes({"markets":[historical],"cursor":""}),(historical,),partition="historical",partition_position=0),KalshiCatalogPage(1,"","",canonical_bytes({"markets":[live],"cursor":""}),(live,),partition="live",partition_position=0))
+        before=json.loads(merge_retrospective_catalog_pages(pages("2026-07-31T23:59:59Z"),cutoff))["markets"][0];self.assertEqual(before["title"],"historical")
+        equal=json.loads(merge_retrospective_catalog_pages(pages("2026-08-01T00:00:00Z"),cutoff))["markets"][0];self.assertEqual(equal["title"],"live")
+        with self.assertRaisesRegex(OperationsError,"lacks settlement"):merge_retrospective_catalog_pages(pages(None),cutoff)
+
+    def test_partial_supporting_pages_are_durable_non_scientific_material(self):
+        from forecast_standalone_operations import Disposition,inspect_archive,reconcile_archive
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);config=DeploymentConfig("partial-supporting","partial-supporting",OperatingMode.DRY_RUN,root/"dry-run/partial-supporting/primary",root/"dry-run/partial-supporting/secondary","https://fixture.invalid",RetryPolicy(1,1,1,(),0),1,root/"logs");archive=NamespaceArchive(config);at=datetime(2026,8,28,tzinfo=timezone.utc);session="supporting-session:test"
+            bodies=(b'{"dates":[]}',b'{"market_settled_ts":"2026-08-01T00:00:00Z"}',b'{"markets":[],"cursor":""}')
+            ids=(preserve_supporting_response(archive=archive,session_id=session,provider="mlb-stats-api",purpose="schedule",endpoint="https://statsapi.mlb.com/api/v1/schedule?date=2026-03-25",request_identity_value="2026-03-25",started_at=at,completed_at=at,disposition=Disposition.SUCCESS,raw=bodies[0]),preserve_supporting_response(archive=archive,session_id=session,provider="kalshi",purpose="historical-cutoff",endpoint="https://fixture.invalid/historical/cutoff",request_identity_value="historical-cutoff",started_at=at,completed_at=at,disposition=Disposition.SUCCESS,raw=bodies[1]),preserve_supporting_response(archive=archive,session_id=session,provider="kalshi",purpose="catalog",endpoint=encoded_kalshi_retrospective_catalog_path("",historical=True),request_identity_value="",started_at=at,completed_at=at,disposition=Disposition.SUCCESS,raw=bodies[2],partition="historical",partition_position=0))
+            self.assertEqual(len(set(ids)),3);self.assertTrue(reconcile_archive(archive).healthy);inspection=inspect_archive(archive);self.assertTrue(inspection.ready);self.assertIn(("supporting_session_pages",3),inspection.facts)
+            self.assertEqual(len(tuple(archive.raw_root.glob("*/*"))),3);rebuild_index(archive);self.assertEqual(sync_secondary(archive)["conflicts"],0)
+
+    def test_supporting_validation_failure_preserves_call_count_in_heartbeat(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);config=DeploymentConfig("supporting-calls","supporting-calls",OperatingMode.ACTIVATED,root/"activated/supporting-calls/primary",root/"activated/supporting-calls/secondary","https://fixture.invalid",RetryPolicy(1,1,1,(),0),1,root/"logs",activation_at=APPROVED_ACTIVATION_AT)
+            with self.assertRaises(OperationsError) as raised:execute("refresh-retrospective-supporting",config,clock=lambda:datetime(2026,8,28,tzinfo=timezone.utc),supporting_loader=lambda _at:(b"{}",b"not-json",(),(),4,None,"supporting-session:test"))
+            self.assertEqual(raised.exception.provider_calls,4);heartbeat=OperationalState(config.log_root/"operational-state").entries()[-1];self.assertEqual((heartbeat.provider_calls,heartbeat.disposition),(4,"failed"))
+
+    def test_reproduced_cross_partition_conflict_preserves_both_pages_and_replays(self):
+        from forecast_standalone_operations import Disposition
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);config=DeploymentConfig("cutoff-union","cutoff-union",OperatingMode.DRY_RUN,root/"dry-run/cutoff-union/primary",root/"dry-run/cutoff-union/secondary","https://fixture.invalid",RetryPolicy(1,1,1,(),0),1,root/"logs");archive=NamespaceArchive(config);at=datetime(2026,8,28,tzinfo=timezone.utc);cutoff=datetime(2026,8,1,tzinfo=timezone.utc);session="supporting-session:conflict"
+            historical={"ticker":"KXMLBGAME-DUP","title":"historical","settlement_ts":"2026-07-31T23:59:59Z"};live={"ticker":"KXMLBGAME-DUP","title":"live","settlement_ts":"2026-07-31T23:59:59Z"};raw_h=canonical_bytes({"markets":[historical],"cursor":""});raw_l=canonical_bytes({"markets":[live],"cursor":""});raw_c=b'{"market_settled_ts":"2026-08-01T00:00:00Z"}'
+            preserve_supporting_response(archive=archive,session_id=session,provider="kalshi",purpose="historical-cutoff",endpoint="https://fixture.invalid/historical/cutoff",request_identity_value="historical-cutoff",started_at=at,completed_at=at,disposition=Disposition.SUCCESS,raw=raw_c)
+            pages=[]
+            for position,(partition,raw,market) in enumerate((("historical",raw_h,historical),("live",raw_l,live))):
+                endpoint=encoded_kalshi_retrospective_catalog_path("",historical=partition=="historical");preserve_supporting_response(archive=archive,session_id=session,provider="kalshi",purpose="catalog",endpoint=endpoint,request_identity_value="",started_at=at,completed_at=at,disposition=Disposition.SUCCESS,raw=raw,partition=partition,partition_position=0);pages.append(KalshiCatalogPage(position,"","",raw,(market,),at,at,endpoint,partition,0))
+            union=merge_retrospective_catalog_pages(pages,cutoff);self.assertEqual(json.loads(union)["markets"][0]["title"],"historical")
+            with archive.mutation_lock():published=publish_verified_acquisition(archive=archive,provider="kalshi",union_raw=union,pages=pages,contracts=(),collected_at=at,protocol_id=None,command="refresh-retrospective-supporting",retrospective_cutoff_at=cutoff,supporting_session_id=session)
+            envelope_entry=next(x for x in archive.entries() if x["manifest_entry_id"]==published["manifest_entry_id"]);envelope=json.loads(archive.read_verified("normalized",envelope_entry["normalized_object_id"]));replayed,_=verify_acquisition_bundle(archive,envelope,include_union=True);self.assertEqual(replayed,union);self.assertEqual({x["raw_object_sha256"] for x in archive.entries() if x["command"]=="refresh-retrospective-supporting-page"},{hashlib.sha256(x).hexdigest() for x in (raw_c,raw_h,raw_l)})
 
     def test_live_mlb_loaders_share_canonical_hydrated_request(self):
         from inspect_forecast_standalone_activation import fixtures

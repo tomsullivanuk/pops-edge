@@ -109,7 +109,7 @@ def initialize_activation(archive:NamespaceArchive,at:datetime)->tuple[str,str]:
     return activation.standalone_research_activation_boundary_id,protocol.standalone_probability_source_protocol_id
 
 
-def refresh_supporting_from_raw(*,archive:NamespaceArchive|None,mlb_raw:bytes,kalshi_raw:bytes,collected_at:datetime,catalog_pages:Iterable[KalshiCatalogPage]=(),mlb_pages:Iterable[bytes]=(),prior_state:Any=None,derive_only:bool=False,acquisition_command:str="refresh-supporting")->Mapping[str,Any]|tuple[Any,...]:
+def refresh_supporting_from_raw(*,archive:NamespaceArchive|None,mlb_raw:bytes,kalshi_raw:bytes,collected_at:datetime,catalog_pages:Iterable[KalshiCatalogPage]=(),mlb_pages:Iterable[bytes]=(),prior_state:Any=None,derive_only:bool=False,acquisition_command:str="refresh-supporting",retrospective_cutoff_at:datetime|None=None,supporting_session_id:str|None=None)->Mapping[str,Any]|tuple[Any,...]:
     """Decode live-shaped MLB/Kalshi material into established PR17 authority."""
     from event_contracts import ValidationStatus
     from forecast_comparative_research import ResearchCaptureOpportunity
@@ -200,8 +200,8 @@ def refresh_supporting_from_raw(*,archive:NamespaceArchive|None,mlb_raw:bytes,ka
     kalshi_page_values=page_values
     with archive.mutation_lock():
         protocol_id=protocols[0].standalone_probability_source_protocol_id if len(protocols)==1 else None
-        mlb_acquisition=publish_verified_acquisition(archive=archive,provider="mlb-stats-api",union_raw=mlb_raw,pages=mlb_page_values,contracts=mlb_contracts,collected_at=collected_at,protocol_id=protocol_id,command=acquisition_command)
-        kalshi_acquisition=publish_verified_acquisition(archive=archive,provider="kalshi",union_raw=kalshi_raw,pages=kalshi_page_values,contracts=market_contracts,collected_at=collected_at,protocol_id=protocol_id,command=acquisition_command,dependencies=(mlb_acquisition["acquisition_id"],))
+        mlb_acquisition=publish_verified_acquisition(archive=archive,provider="mlb-stats-api",union_raw=mlb_raw,pages=mlb_page_values,contracts=mlb_contracts,collected_at=collected_at,protocol_id=protocol_id,command=acquisition_command,supporting_session_id=supporting_session_id)
+        kalshi_acquisition=publish_verified_acquisition(archive=archive,provider="kalshi",union_raw=kalshi_raw,pages=kalshi_page_values,contracts=market_contracts,collected_at=collected_at,protocol_id=protocol_id,command=acquisition_command,dependencies=(mlb_acquisition["acquisition_id"],),retrospective_cutoff_at=retrospective_cutoff_at,supporting_session_id=supporting_session_id)
     return {"mlb_manifest_id":mlb_acquisition["manifest_entry_id"],"kalshi_manifest_id":kalshi_acquisition["manifest_entry_id"],"events":len(games),"contracts":len(contracts),"mapped":len(mapped),"missing":len(missing),"ambiguous":len(ambiguous),"catalog_pages":len(page_values),"mlb_pages":len(mlb_page_values),"disposition":"success" if contracts else "unchanged"}
 
 
@@ -272,21 +272,51 @@ def merge_kalshi_catalog_pages(pages:Iterable[KalshiCatalogPage])->bytes:
     return canonical_bytes({"markets":union,"cursor":""})
 
 
-def merge_retrospective_catalog_pages(pages:Iterable[KalshiCatalogPage])->bytes:
-    """Validate historical and live cursor chains independently, then union them."""
-    values=tuple(pages);unions=[]
+def _market_settlement_at(market:Mapping[str,Any])->datetime|None:
+    raw=market.get("settlement_ts")
+    if raw is None:return None
+    if not isinstance(raw,str):raise OperationsError("partition-integrity","market settlement timestamp is not text")
+    try:value=datetime.fromisoformat(raw.replace("Z","+00:00"))
+    except ValueError as exc:raise OperationsError("partition-integrity","market settlement timestamp is malformed") from exc
+    if value.tzinfo is None or value.utcoffset() is None:raise OperationsError("partition-integrity","market settlement timestamp is naive")
+    return value
+
+
+def merge_retrospective_catalog_pages(pages:Iterable[KalshiCatalogPage],market_settled_at:datetime)->bytes:
+    """Validate independent chains and select cross-partition records by cutoff."""
+    if market_settled_at.tzinfo is None or market_settled_at.utcoffset() is None:raise OperationsError("partition-integrity","historical cutoff is naive")
+    values=tuple(pages);partition_markets={}
     for partition in ("historical","live"):
         selected=tuple(sorted((x for x in values if x.partition==partition),key=lambda x:x.partition_position if x.partition_position is not None else -1))
         if not selected or any(x.partition_position!=position for position,x in enumerate(selected)):raise OperationsError("pagination-incomplete",f"{partition} catalog partition is incomplete")
         chain=tuple(KalshiCatalogPage(x.partition_position,x.request_cursor,x.next_cursor,x.raw,x.markets) for x in selected)
-        unions.append(json.loads(merge_kalshi_catalog_pages(chain))["markets"])
+        partition_markets[partition]={((item.get("ticker") or item.get("id"))):item for item in json.loads(merge_kalshi_catalog_pages(chain))["markets"]}
     if any(x.partition not in {"historical","live"} for x in values):raise OperationsError("pagination-incomplete","retrospective catalog has a foreign partition")
     markets={}
-    for union in unions:
-        for market in union:
-            identity=market.get("ticker") or market.get("id");encoded=canonical_bytes(market);prior=markets.get(identity)
-            if prior is not None and prior!=encoded:raise OperationsError("pagination-conflict","provider market conflicts across catalog partitions")
-            markets[identity]=encoded
+    for identity in sorted(set(partition_markets["historical"])|set(partition_markets["live"])):
+        historical=partition_markets["historical"].get(identity);live=partition_markets["live"].get(identity)
+        if historical is None:
+            settled=_market_settlement_at(live)
+            if settled is not None and settled<market_settled_at:raise OperationsError("partition-integrity","live-only market belongs to historical storage")
+            selected=live
+        elif live is None:
+            settled=_market_settlement_at(historical)
+            if settled is None or settled>=market_settled_at:raise OperationsError("partition-integrity","historical-only market conflicts with cutoff authority")
+            selected=historical
+        elif canonical_bytes(historical)==canonical_bytes(live):
+            settled=_market_settlement_at(historical)
+            if settled is None:raise OperationsError("partition-integrity","duplicated market lacks settlement authority")
+            selected=historical if settled<market_settled_at else live
+        else:
+            historical_settled=_market_settlement_at(historical);live_settled=_market_settlement_at(live)
+            if historical_settled is None or live_settled is None:raise OperationsError("partition-integrity","conflicting duplicate lacks settlement authority")
+            if historical_settled==live_settled:selected=historical if historical_settled<market_settled_at else live
+            else:
+                candidates=((historical,historical_settled<market_settled_at),(live,live_settled>=market_settled_at))
+                valid=tuple(item for item,consistent in candidates if consistent)
+                if len(valid)!=1:raise OperationsError("partition-integrity","conflicting duplicate settlement authority is ambiguous")
+                selected=valid[0]
+        markets[identity]=canonical_bytes(selected)
     return canonical_bytes({"markets":[json.loads(markets[key]) for key in sorted(markets)],"cursor":""})
 
 
@@ -419,7 +449,20 @@ def _page_material(item:Any,index:int,collected_at:datetime)->tuple[str,str,byte
     return values
 
 
-def publish_verified_acquisition(*,archive:NamespaceArchive,provider:str,union_raw:bytes,pages:Iterable[Any],contracts:Iterable[Any],collected_at:datetime,protocol_id:str|None,command:str,dependencies:Iterable[str]=(),fail_after_pages:int|None=None)->Mapping[str,Any]:
+def preserve_supporting_response(*,archive:NamespaceArchive,session_id:str,provider:str,purpose:str,endpoint:str,request_identity_value:str,started_at:datetime,completed_at:datetime,disposition:Any,raw:bytes|None,partition:str|None=None,partition_position:int|None=None)->str:
+    """Persist one received supporting result without granting scientific authority."""
+    from forecast_standalone_operations import DesignAuthority,Disposition,_entry_values,request_identity
+    descriptor={"schema_version":"1","record_kind":"pr17c2-supporting-session-page","session_id":session_id,"provider":provider,"purpose":purpose,"partition":partition,"partition_position":partition_position,"request_identity":request_identity_value,"endpoint":endpoint,"started_at":started_at,"completed_at":completed_at,"disposition":disposition.value}
+    values=_entry_values(archive=archive,command="refresh-retrospective-supporting-page",request_id=request_identity({"session_id":session_id,"provider":provider,"purpose":purpose,"partition":partition,"partition_position":partition_position,"request_identity":request_identity_value}),invoked_at=completed_at,endpoint=endpoint,disposition=disposition,protocol_id=None,design=DesignAuthority.SUPPORTING,diagnostics=(f"session:{session_id}",f"purpose:{purpose}",*( (f"partition:{partition}",) if partition else ()),f"disposition:{disposition.value}"),provider_effective_at=None);values["provider_id"]=provider
+    with archive.mutation_lock():
+        if disposition is Disposition.SUCCESS:
+            if raw is None:raise OperationsError("incomplete-success","successful supporting page lacks raw bytes")
+            entry=archive._commit_locked(raw_body=raw,normalized=descriptor,entry_values=values)
+        else:entry=archive._record_failure_locked(entry_values=values,raw_body=raw)
+    return entry.manifest_entry_id
+
+
+def publish_verified_acquisition(*,archive:NamespaceArchive,provider:str,union_raw:bytes,pages:Iterable[Any],contracts:Iterable[Any],collected_at:datetime,protocol_id:str|None,command:str,dependencies:Iterable[str]=(),fail_after_pages:int|None=None,retrospective_cutoff_at:datetime|None=None,supporting_session_id:str|None=None)->Mapping[str,Any]:
     """Preserve exact pages, then bind contracts to their verified derived union."""
     from forecast_standalone_operations import DesignAuthority,Disposition,_entry_values,pr17_contract_bundle,request_identity
     page_items=tuple(pages);page_values=tuple(_page_material(item,index,collected_at) for index,item in enumerate(page_items))
@@ -433,16 +476,36 @@ def publish_verified_acquisition(*,archive:NamespaceArchive,provider:str,union_r
         prior_completion=completed
     partitions=tuple((item.partition,item.partition_position) if isinstance(item,KalshiCatalogPage) else (None,None) for item in page_items)
     group_material={"provider":provider,"command":command,"collected_at":collected_at,"pages":tuple((identity,endpoint,started,completed,hashlib.sha256(raw).hexdigest(),*partitions[index]) for index,(identity,endpoint,raw,started,completed) in enumerate(page_values)),"union_rule":ACQUISITION_UNION_RULE_VERSION}
-    group_id="provider-acquisition:"+hashlib.sha256(canonical_bytes(group_material)).hexdigest();descriptors=[]
+    group_id=(supporting_session_id+":"+provider if supporting_session_id else "provider-acquisition:"+hashlib.sha256(canonical_bytes(group_material)).hexdigest());descriptors=[]
+    session_pages=[]
+    if supporting_session_id:
+        for existing in archive.entries():
+            normalized_id=existing.get("normalized_object_id")
+            if not normalized_id:continue
+            candidate=json.loads(archive.read_verified("normalized",normalized_id))
+            if candidate.get("record_kind")=="pr17c2-supporting-session-page" and candidate.get("session_id")==supporting_session_id and candidate.get("provider")==provider:session_pages.append((existing,candidate))
     for position,(identity,endpoint,raw,started,completed) in enumerate(page_values):
         digest=hashlib.sha256(raw).hexdigest();descriptor={"position":position,"request_identity":identity,"endpoint":endpoint,"raw_sha256":digest,"raw_ref":f"raw:{digest}","started_at":started,"completed_at":completed}
         if partitions[position][0] is not None:descriptor.update(partition=partitions[position][0],partition_position=partitions[position][1])
-        normalized={"schema_version":"1","record_kind":"pr17c1-provider-page","acquisition_id":group_id,"provider":provider,**descriptor}
-        values=_entry_values(archive=archive,command=command+"-page",request_id=request_identity({"acquisition_id":group_id,"position":position,"request_identity":identity,"raw_sha256":digest}),invoked_at=completed,endpoint=endpoint,disposition=Disposition.SUCCESS,protocol_id=protocol_id,design=DesignAuthority.SUPPORTING,diagnostics=("exact create-only provider response page",),provider_effective_at=completed);values["provider_id"]=provider
-        entry=archive._commit_locked(raw_body=raw,normalized=normalized,entry_values=values);descriptors.append({**descriptor,"manifest_entry_id":entry.manifest_entry_id})
+        if supporting_session_id:
+            matches=tuple((entry,value) for entry,value in session_pages if value.get("purpose")!="historical-cutoff" and value.get("endpoint")==endpoint and value.get("request_identity")==identity and value.get("partition")==descriptor.get("partition") and value.get("partition_position")==descriptor.get("partition_position") and entry.get("raw_object_sha256")==digest)
+            if len(matches)!=1:raise OperationsError("acquisition-page-conflict","preserved supporting page does not resolve exactly once")
+            entry=type("Entry",(),{"manifest_entry_id":matches[0][0]["manifest_entry_id"]})()
+        else:
+            normalized={"schema_version":"1","record_kind":"pr17c1-provider-page","acquisition_id":group_id,"provider":provider,**descriptor}
+            values=_entry_values(archive=archive,command=command+"-page",request_id=request_identity({"acquisition_id":group_id,"position":position,"request_identity":identity,"raw_sha256":digest}),invoked_at=completed,endpoint=endpoint,disposition=Disposition.SUCCESS,protocol_id=protocol_id,design=DesignAuthority.SUPPORTING,diagnostics=("exact create-only provider response page",),provider_effective_at=completed);values["provider_id"]=provider
+            entry=archive._commit_locked(raw_body=raw,normalized=normalized,entry_values=values)
+        descriptors.append({**descriptor,"manifest_entry_id":entry.manifest_entry_id})
         if fail_after_pages==position+1:raise OperationsError("injected-acquisition-interruption",group_id)
     contract_values=tuple(contracts);serialized=tuple(sorted(x.to_json() for x in contract_values))
     acquisition_completed_at=page_values[-1][4];normalized={"schema_version":"1","record_kind":"pr17c1-acquisition-bundle","acquisition_id":group_id,"family":command,"provider":provider,"dependencies":tuple(sorted(set(dependencies))),"command_started_at":collected_at,"command_started_at_iso":collected_at.isoformat(),"acquisition_completed_at":acquisition_completed_at,"pages":tuple(descriptors),"union_rule":ACQUISITION_UNION_RULE_VERSION,"normalized_union_sha256":_canonical_json_digest(union_raw),"contracts":serialized}
+    if retrospective_cutoff_at is not None:normalized["retrospective_cutoff_at"]=retrospective_cutoff_at
+    if supporting_session_id:
+        normalized["page_record_kind"]="pr17c2-supporting-session-page"
+        if provider=="kalshi" and retrospective_cutoff_at is not None:
+            cutoff_pages=tuple((entry,page) for entry,page in session_pages if page.get("purpose")=="historical-cutoff")
+            if len(cutoff_pages)!=1 or not cutoff_pages[0][0].get("raw_object_sha256"):raise OperationsError("acquisition-incomplete","preserved cutoff response does not resolve exactly once")
+            normalized["cutoff_manifest_entry_id"]=cutoff_pages[0][0]["manifest_entry_id"];normalized["cutoff_raw_sha256"]=cutoff_pages[0][0]["raw_object_sha256"]
     values=_entry_values(archive=archive,command=command,request_id=request_identity({"acquisition_id":group_id,"normalized_union_sha256":normalized["normalized_union_sha256"],"contracts_sha256":hashlib.sha256(canonical_bytes(serialized)).hexdigest()}),invoked_at=acquisition_completed_at,endpoint=f"derived://{provider}/{ACQUISITION_UNION_RULE_VERSION}",disposition=Disposition.SUCCESS,protocol_id=protocol_id,design=DesignAuthority.SUPPORTING,diagnostics=("typed authority bound to complete provider-page manifest","normalized union is derived, not provider-native raw"),provider_effective_at=acquisition_completed_at);values["provider_id"]=provider
     # The acquisition entry references an exact contributing provider page as
     # its immutable raw object; the normalized union exists only in the envelope.
@@ -481,7 +544,8 @@ def verify_acquisition_bundle(archive:NamespaceArchive,value:Mapping[str,Any],*,
         raw=archive.read_verified("raw",page["raw_sha256"])
         if hashlib.sha256(raw).hexdigest()!=page["raw_sha256"]:raise OperationsError("acquisition-page-conflict","page digest conflicts")
         page_normalized=json.loads(archive.read_verified("normalized",entry["normalized_object_id"]));
-        if page_normalized.get("acquisition_id")!=group or page_normalized.get("request_identity")!=page.get("request_identity") or page_normalized.get("partition")!=page.get("partition") or page_normalized.get("partition_position")!=page.get("partition_position"):raise OperationsError("acquisition-page-conflict","cross-acquisition page substitution")
+        linked=page_normalized.get("acquisition_id")==group or (value.get("page_record_kind")=="pr17c2-supporting-session-page" and group.startswith(page_normalized.get("session_id","")+":"))
+        if not linked or page_normalized.get("request_identity")!=page.get("request_identity") or page_normalized.get("partition")!=page.get("partition") or page_normalized.get("partition_position")!=page.get("partition_position"):raise OperationsError("acquisition-page-conflict","cross-acquisition page substitution")
         started,completed=dt(page.get("started_at")),dt(page.get("completed_at"))
         if started.tzinfo is None or completed.tzinfo is None or started<prior_completion or completed<started:raise OperationsError("acquisition-chronology-conflict","page chronology is reversed or overlapping")
         manifest_at=datetime.fromisoformat(entry["acquired_at"]["datetime_utc"])
@@ -494,13 +558,25 @@ def verify_acquisition_bundle(archive:NamespaceArchive,value:Mapping[str,Any],*,
         if not normalized_id:continue
         candidate=json.loads(archive.read_verified("normalized",normalized_id))
         if candidate.get("record_kind")=="pr17c1-provider-page" and candidate.get("acquisition_id")==group:group_pages.add(entry_id)
+        if value.get("page_record_kind")=="pr17c2-supporting-session-page" and candidate.get("record_kind")=="pr17c2-supporting-session-page" and group.startswith(candidate.get("session_id","")+":") and candidate.get("provider")==provider and candidate.get("purpose")!="historical-cutoff":group_pages.add(entry_id)
     if group_pages!=referenced:raise OperationsError("acquisition-page-conflict","acquisition has missing or unreferenced pages")
     if acquisition_completed!=prior_completion:raise OperationsError("acquisition-chronology-conflict","acquisition completion conflicts with pages")
     if provider=="kalshi":
         typed_pages=[]
         for i,(page,raw) in enumerate(zip(pages,raw_pages)):
             payload=json.loads(raw);typed_pages.append(KalshiCatalogPage(i,page["request_identity"],payload["cursor"],raw,tuple(payload["markets"]),partition=page.get("partition"),partition_position=page.get("partition_position")))
-        derived=merge_retrospective_catalog_pages(typed_pages) if value.get("family")=="refresh-retrospective-supporting" else merge_kalshi_catalog_pages(typed_pages)
+        if value.get("family")=="refresh-retrospective-supporting":
+            cutoff=dt(value.get("retrospective_cutoff_at"))
+            if not isinstance(cutoff,datetime):raise OperationsError("acquisition-incomplete","retrospective cutoff authority is absent")
+            cutoff_entry=entries.get(value.get("cutoff_manifest_entry_id"))
+            if value.get("page_record_kind")=="pr17c2-supporting-session-page":
+                if cutoff_entry is None or cutoff_entry.get("raw_object_sha256")!=value.get("cutoff_raw_sha256"):raise OperationsError("acquisition-page-conflict","retrospective cutoff page is absent or altered")
+                cutoff_raw=archive.read_verified("raw",value["cutoff_raw_sha256"])
+                try:reported=datetime.fromisoformat(json.loads(cutoff_raw)["market_settled_ts"].replace("Z","+00:00"))
+                except (KeyError,TypeError,ValueError,json.JSONDecodeError) as exc:raise OperationsError("acquisition-page-conflict","retrospective cutoff raw response is malformed") from exc
+                if reported!=cutoff:raise OperationsError("acquisition-page-conflict","retrospective cutoff response conflicts with envelope")
+            derived=merge_retrospective_catalog_pages(typed_pages,cutoff)
+        else:derived=merge_kalshi_catalog_pages(typed_pages)
     else:
         for page,raw in zip(pages,raw_pages):
             payload=json.loads(raw);reported={str(x.get("date")) for x in payload.get("dates",()) if isinstance(x,dict)}
