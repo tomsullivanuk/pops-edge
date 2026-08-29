@@ -217,6 +217,7 @@ def _unique_object(pairs,label):
 class KalshiCatalogPage:
     position:int;request_cursor:str;next_cursor:str;raw:bytes;markets:tuple[Mapping[str,Any],...]
     started_at:datetime|None=None;completed_at:datetime|None=None;endpoint:str|None=None
+    partition:str|None=None;partition_position:int|None=None
 
 
 @dataclass(frozen=True,slots=True)
@@ -229,7 +230,7 @@ class ProviderPageAcquisition:
         if any(value.tzinfo is None or value.utcoffset() is None for value in (self.started_at,self.completed_at)) or self.completed_at<self.started_at:raise OperationsError("trusted-clock-reversed","typed provider page chronology is invalid")
 
 
-def acquire_kalshi_catalog_pages(fetch:Callable[[str],bytes],*,maximum_pages:int=MAX_CATALOG_PAGES,clock:Callable[[],datetime]|None=None,command_start:datetime|None=None,path_builder:Callable[[str],str]|None=None,identity_prefix:str="")->tuple[KalshiCatalogPage,...]:
+def acquire_kalshi_catalog_pages(fetch:Callable[[str],bytes],*,maximum_pages:int=MAX_CATALOG_PAGES,clock:Callable[[],datetime]|None=None,command_start:datetime|None=None,path_builder:Callable[[str],str]|None=None)->tuple[KalshiCatalogPage,...]:
     """Follow and validate the complete documented cursor chain."""
     if maximum_pages<1 or maximum_pages>MAX_CATALOG_PAGES:raise OperationsError("pagination-bound","catalog page bound is invalid")
     pages=[];cursor="";requested=set()
@@ -245,7 +246,7 @@ def acquire_kalshi_catalog_pages(fetch:Callable[[str],bytes],*,maximum_pages:int
         if not isinstance(value,dict) or set(value)!={"markets","cursor"} or not isinstance(value["markets"],list) or not isinstance(value["cursor"],str):raise OperationsError("incomplete-response","catalog page shape is incomplete")
         next_cursor=value["cursor"]
         if next_cursor and next_cursor in requested:raise OperationsError("pagination-loop","catalog cursor repeats")
-        pages.append(KalshiCatalogPage(position,identity_prefix+cursor,next_cursor,raw,tuple(value["markets"]),started,completed,(path_builder or encoded_kalshi_catalog_path)(cursor)))
+        pages.append(KalshiCatalogPage(position,cursor,next_cursor,raw,tuple(value["markets"]),started,completed,(path_builder or encoded_kalshi_catalog_path)(cursor)))
         if not next_cursor:return tuple(pages)
         cursor=next_cursor
     raise OperationsError("pagination-bound","catalog did not terminate within its page bound")
@@ -269,6 +270,24 @@ def merge_kalshi_catalog_pages(pages:Iterable[KalshiCatalogPage])->bytes:
             markets[identity]=encoded
     union=[json.loads(markets[key]) for key in sorted(markets)]
     return canonical_bytes({"markets":union,"cursor":""})
+
+
+def merge_retrospective_catalog_pages(pages:Iterable[KalshiCatalogPage])->bytes:
+    """Validate historical and live cursor chains independently, then union them."""
+    values=tuple(pages);unions=[]
+    for partition in ("historical","live"):
+        selected=tuple(sorted((x for x in values if x.partition==partition),key=lambda x:x.partition_position if x.partition_position is not None else -1))
+        if not selected or any(x.partition_position!=position for position,x in enumerate(selected)):raise OperationsError("pagination-incomplete",f"{partition} catalog partition is incomplete")
+        chain=tuple(KalshiCatalogPage(x.partition_position,x.request_cursor,x.next_cursor,x.raw,x.markets) for x in selected)
+        unions.append(json.loads(merge_kalshi_catalog_pages(chain))["markets"])
+    if any(x.partition not in {"historical","live"} for x in values):raise OperationsError("pagination-incomplete","retrospective catalog has a foreign partition")
+    markets={}
+    for union in unions:
+        for market in union:
+            identity=market.get("ticker") or market.get("id");encoded=canonical_bytes(market);prior=markets.get(identity)
+            if prior is not None and prior!=encoded:raise OperationsError("pagination-conflict","provider market conflicts across catalog partitions")
+            markets[identity]=encoded
+    return canonical_bytes({"markets":[json.loads(markets[key]) for key in sorted(markets)],"cursor":""})
 
 
 def required_mlb_query_dates(*,trusted_at:datetime,histories:Iterable[Any]=(),purpose:str="schedule",lookback_days:int=MLB_CORRECTION_LOOKBACK_DAYS)->tuple[date,...]:
@@ -327,10 +346,10 @@ def encoded_kalshi_retrospective_catalog_path(cursor:str,*,historical:bool)->str
 def acquire_retrospective_catalog_pages(fetch:Callable[[str],bytes],*,clock:Callable[[],datetime],command_start:datetime)->tuple[KalshiCatalogPage,...]:
     """Acquire both moving Kalshi catalog partitions within independent caps."""
     combined=[]
-    for historical,label in ((True,"historical:"),(False,"live:")):
+    for historical,partition in ((True,"historical"),(False,"live")):
         builder=lambda cursor,historical=historical:encoded_kalshi_retrospective_catalog_path(cursor,historical=historical)
-        pages=acquire_kalshi_catalog_pages(lambda cursor,builder=builder:fetch(builder(cursor)),clock=clock,command_start=command_start,path_builder=builder,identity_prefix=label)
-        for page in pages:combined.append(KalshiCatalogPage(len(combined),page.request_cursor,page.next_cursor,page.raw,page.markets,page.started_at,page.completed_at,page.endpoint))
+        pages=acquire_kalshi_catalog_pages(lambda cursor,builder=builder:fetch(builder(cursor)),clock=clock,command_start=command_start,path_builder=builder)
+        for page in pages:combined.append(KalshiCatalogPage(len(combined),page.request_cursor,page.next_cursor,page.raw,page.markets,page.started_at,page.completed_at,page.endpoint,partition,page.position))
     return tuple(combined)
 
 
@@ -411,10 +430,12 @@ def publish_verified_acquisition(*,archive:NamespaceArchive,provider:str,union_r
     for identity,endpoint,raw,started,completed in page_values:
         if started.tzinfo is None or started.utcoffset() is None or completed.tzinfo is None or completed.utcoffset() is None or started<collected_at or completed<started or started<prior_completion:raise OperationsError("trusted-clock-reversed","provider page chronology conflicts with command start")
         prior_completion=completed
-    group_material={"provider":provider,"command":command,"collected_at":collected_at,"pages":tuple((identity,endpoint,started,completed,hashlib.sha256(raw).hexdigest()) for identity,endpoint,raw,started,completed in page_values),"union_rule":ACQUISITION_UNION_RULE_VERSION}
+    partitions=tuple((item.partition,item.partition_position) if isinstance(item,KalshiCatalogPage) else (None,None) for item in page_items)
+    group_material={"provider":provider,"command":command,"collected_at":collected_at,"pages":tuple((identity,endpoint,started,completed,hashlib.sha256(raw).hexdigest(),*partitions[index]) for index,(identity,endpoint,raw,started,completed) in enumerate(page_values)),"union_rule":ACQUISITION_UNION_RULE_VERSION}
     group_id="provider-acquisition:"+hashlib.sha256(canonical_bytes(group_material)).hexdigest();descriptors=[]
     for position,(identity,endpoint,raw,started,completed) in enumerate(page_values):
         digest=hashlib.sha256(raw).hexdigest();descriptor={"position":position,"request_identity":identity,"endpoint":endpoint,"raw_sha256":digest,"raw_ref":f"raw:{digest}","started_at":started,"completed_at":completed}
+        if partitions[position][0] is not None:descriptor.update(partition=partitions[position][0],partition_position=partitions[position][1])
         normalized={"schema_version":"1","record_kind":"pr17c1-provider-page","acquisition_id":group_id,"provider":provider,**descriptor}
         values=_entry_values(archive=archive,command=command+"-page",request_id=request_identity({"acquisition_id":group_id,"position":position,"request_identity":identity,"raw_sha256":digest}),invoked_at=completed,endpoint=endpoint,disposition=Disposition.SUCCESS,protocol_id=protocol_id,design=DesignAuthority.SUPPORTING,diagnostics=("exact create-only provider response page",),provider_effective_at=completed);values["provider_id"]=provider
         entry=archive._commit_locked(raw_body=raw,normalized=normalized,entry_values=values);descriptors.append({**descriptor,"manifest_entry_id":entry.manifest_entry_id})
@@ -439,13 +460,15 @@ def verify_acquisition_bundle(archive:NamespaceArchive,value:Mapping[str,Any],*,
     original_start=datetime.fromisoformat(value.get("command_started_at_iso",""))
     if original_start.tzinfo is None or original_start.astimezone(timezone.utc)!=command_start.astimezone(timezone.utc):raise OperationsError("acquisition-chronology-conflict","command-start offset representation conflicts")
     entries={x["manifest_entry_id"]:x for x in authoritative_entries(archive)};raw_pages=[];prior_completion=command_start
-    if len({page.get("request_identity") for page in pages if isinstance(page,dict)})!=len(pages):raise OperationsError("acquisition-page-conflict","duplicate page request identity")
+    if len({(page.get("partition"),page.get("request_identity")) for page in pages if isinstance(page,dict)})!=len(pages):raise OperationsError("acquisition-page-conflict","duplicate page request identity")
     for position,page in enumerate(pages):
         if not isinstance(page,dict) or page.get("position")!=position or page.get("manifest_entry_id") not in entries:raise OperationsError("acquisition-page-conflict","page ordering or reference conflicts")
         if provider=="kalshi":
             identity=page.get("request_identity");family=value.get("family")
-            if family=="refresh-retrospective-supporting" and isinstance(identity,str) and identity.startswith(("historical:","live:")):
-                historical=identity.startswith("historical:");cursor=identity.split(":",1)[1];expected=encoded_kalshi_retrospective_catalog_path(cursor,historical=historical)
+            if family=="refresh-retrospective-supporting":
+                partition=page.get("partition")
+                if partition not in {"historical","live"} or not isinstance(page.get("partition_position"),int):raise OperationsError("acquisition-page-conflict","retrospective catalog partition identity is invalid")
+                expected=encoded_kalshi_retrospective_catalog_path(identity,historical=partition=="historical")
             else:expected=encoded_kalshi_catalog_path(identity)
             if page.get("endpoint")!=expected:raise OperationsError("acquisition-page-conflict","Kalshi page endpoint conflicts with canonical discovery authority")
         if provider=="mlb-stats-api":
@@ -457,7 +480,7 @@ def verify_acquisition_bundle(archive:NamespaceArchive,value:Mapping[str,Any],*,
         raw=archive.read_verified("raw",page["raw_sha256"])
         if hashlib.sha256(raw).hexdigest()!=page["raw_sha256"]:raise OperationsError("acquisition-page-conflict","page digest conflicts")
         page_normalized=json.loads(archive.read_verified("normalized",entry["normalized_object_id"]));
-        if page_normalized.get("acquisition_id")!=group or page_normalized.get("request_identity")!=page.get("request_identity"):raise OperationsError("acquisition-page-conflict","cross-acquisition page substitution")
+        if page_normalized.get("acquisition_id")!=group or page_normalized.get("request_identity")!=page.get("request_identity") or page_normalized.get("partition")!=page.get("partition") or page_normalized.get("partition_position")!=page.get("partition_position"):raise OperationsError("acquisition-page-conflict","cross-acquisition page substitution")
         started,completed=dt(page.get("started_at")),dt(page.get("completed_at"))
         if started.tzinfo is None or completed.tzinfo is None or started<prior_completion or completed<started:raise OperationsError("acquisition-chronology-conflict","page chronology is reversed or overlapping")
         manifest_at=datetime.fromisoformat(entry["acquired_at"]["datetime_utc"])
@@ -475,8 +498,8 @@ def verify_acquisition_bundle(archive:NamespaceArchive,value:Mapping[str,Any],*,
     if provider=="kalshi":
         typed_pages=[]
         for i,(page,raw) in enumerate(zip(pages,raw_pages)):
-            payload=json.loads(raw);typed_pages.append(KalshiCatalogPage(i,page["request_identity"],payload["cursor"],raw,tuple(payload["markets"])))
-        derived=merge_kalshi_catalog_pages(typed_pages)
+            payload=json.loads(raw);typed_pages.append(KalshiCatalogPage(i,page["request_identity"],payload["cursor"],raw,tuple(payload["markets"]),partition=page.get("partition"),partition_position=page.get("partition_position")))
+        derived=merge_retrospective_catalog_pages(typed_pages) if value.get("family")=="refresh-retrospective-supporting" else merge_kalshi_catalog_pages(typed_pages)
     else:
         for page,raw in zip(pages,raw_pages):
             payload=json.loads(raw);reported={str(x.get("date")) for x in payload.get("dates",()) if isinstance(x,dict)}

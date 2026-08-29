@@ -202,9 +202,24 @@ class ActivationTests(unittest.TestCase):
         at=datetime(2026,8,28,18,tzinfo=timezone.utc);calls=[]
         def fetch(path):calls.append(path);return b'{"markets":[],"cursor":""}'
         pages=acquire_retrospective_catalog_pages(fetch,clock=lambda:at,command_start=at)
-        self.assertEqual(len(pages),2);self.assertEqual([x.request_cursor for x in pages],["historical:","live:"])
+        self.assertEqual(len(pages),2);self.assertEqual([x.request_cursor for x in pages],["",""])
+        self.assertEqual([(x.partition,x.partition_position) for x in pages],[("historical",0),("live",0)])
         self.assertEqual(calls,[encoded_kalshi_retrospective_catalog_path("",historical=True),encoded_kalshi_retrospective_catalog_path("",historical=False)])
         self.assertTrue(all("series_ticker=KXMLBGAME" in x and "limit=100" in x for x in calls));self.assertTrue(all("status=" not in x for x in calls))
+
+    def test_retrospective_catalog_partitions_validate_and_union_independently(self):
+        def page(global_position,partition,partition_position,cursor,next_cursor,markets):
+            raw=canonical_bytes({"markets":markets,"cursor":next_cursor})
+            return KalshiCatalogPage(global_position,cursor,next_cursor,raw,tuple(markets),partition=partition,partition_position=partition_position)
+        shared={"ticker":"KXMLBGAME-SHARED","title":"same"}
+        values=(page(0,"historical",0,"","opaque /?=",[]),page(1,"historical",1,"opaque /?=","",[shared]),page(2,"live",0,"","live+opaque",[]),page(3,"live",1,"live+opaque","",[shared,{"ticker":"KXMLBGAME-LIVE"}]))
+        union=merge_retrospective_catalog_pages(values)
+        self.assertEqual([x["ticker"] for x in json.loads(union)["markets"]],["KXMLBGAME-LIVE","KXMLBGAME-SHARED"])
+        self.assertEqual(union,merge_retrospective_catalog_pages(reversed(values)))
+        with self.assertRaisesRegex(OperationsError,"incomplete"):merge_retrospective_catalog_pages(values[:-1])
+        with self.assertRaisesRegex(OperationsError,"incomplete"):merge_retrospective_catalog_pages((replace(values[1],partition_position=2),*values[2:]))
+        conflict=replace(values[3],markets=({"ticker":"KXMLBGAME-SHARED","title":"different"},))
+        with self.assertRaisesRegex(OperationsError,"conflict"):merge_retrospective_catalog_pages((*values[:3],conflict))
 
     def test_live_mlb_loaders_share_canonical_hydrated_request(self):
         from inspect_forecast_standalone_activation import fixtures

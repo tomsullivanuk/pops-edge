@@ -5,7 +5,7 @@ import argparse,json,shutil,sys,time
 from datetime import date,datetime,timedelta,timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
-from forecast_standalone_activation import APPROVED_EASTERN_DATE,APPROVED_TIMEZONE,RETROSPECTIVE_WINDOW_START,BoundedLiveReadOnlyTransport,KalshiRequestSigner,MacOSKeychainCredentialProvider,OperationalHeartbeat,OperationalState,ProviderPageAcquisition,acquire_kalshi_catalog_pages,acquire_retrospective_catalog_pages,adapt_kalshi_candles,adapt_kalshi_orderbook,canonical_kalshi_candle_path,canonical_mlb_schedule_request,encoded_kalshi_catalog_path,health_from_operational_state,initialize_activation,invoke_activated_prospective,merge_kalshi_catalog_pages,merge_mlb_schedule_responses,reconcile_outcomes_from_raw,refresh_supporting_from_raw,render_launchd_jobs,required_mlb_query_dates,rsa_pss_sha256_sign
+from forecast_standalone_activation import APPROVED_EASTERN_DATE,APPROVED_TIMEZONE,RETROSPECTIVE_WINDOW_START,BoundedLiveReadOnlyTransport,KalshiRequestSigner,MacOSKeychainCredentialProvider,OperationalHeartbeat,OperationalState,ProviderPageAcquisition,acquire_kalshi_catalog_pages,acquire_retrospective_catalog_pages,adapt_kalshi_candles,adapt_kalshi_orderbook,canonical_kalshi_candle_path,canonical_mlb_schedule_request,encoded_kalshi_catalog_path,health_from_operational_state,initialize_activation,invoke_activated_prospective,merge_kalshi_catalog_pages,merge_retrospective_catalog_pages,merge_mlb_schedule_responses,reconcile_outcomes_from_raw,refresh_supporting_from_raw,render_launchd_jobs,required_mlb_query_dates,rsa_pss_sha256_sign
 from forecast_standalone_operations import DeploymentConfig,DesignAuthority,Disposition,ExitCode,HTTPResponse,NamespaceArchive,OperatingMode,OperationsError,_entry_values,acquire_typed_supporting_fixture,discover_and_acquire_retrospective,index_health,inspect_archive,rebuild_index,reconcile_incomplete_acquisitions,replay_pr17_archive,request_identity,sync_secondary
 
 class FixtureTransport:
@@ -82,7 +82,7 @@ def execute(command,config,*,clock=lambda:datetime.now(timezone.utc),transport_f
         else:raise OperationsError("command-boundary",command)
         return output
     except OperationsError as exc:
-        failure=exc.code;disposition="failed";raise
+        calls=getattr(exc,"provider_calls",calls);failure=exc.code;disposition="failed";raise
     finally:
         completed=clock()
         try:state.append(OperationalHeartbeat("1",command,started,completed,disposition,calls,typed,due,failure))
@@ -129,7 +129,7 @@ def main(argv=None)->int:
                         for offset in range((end_day-start_day).days+1):
                             day=start_day+timedelta(days=offset);path,endpoint=canonical_mlb_schedule_request(day);began=clock();raw=public_get("https://statsapi.mlb.com",path);completed=clock();mlb_pages.append(ProviderPageAcquisition(day.isoformat(),endpoint,raw,began,completed,len(mlb_pages),"mlb-stats-api",at.isoformat(),day.isoformat()))
                         catalog_pages=acquire_retrospective_catalog_pages(lambda path:public_get(config.provider_base_url,path),clock=clock,command_start=at)
-                        return merge_mlb_schedule_responses(tuple(x.raw for x in mlb_pages)),merge_kalshi_catalog_pages(catalog_pages),catalog_pages,tuple(mlb_pages)
+                        return merge_mlb_schedule_responses(tuple(x.raw for x in mlb_pages)),merge_retrospective_catalog_pages(catalog_pages),catalog_pages,tuple(mlb_pages)
                     supporting_loader=retrospective_supporting
             retrospective_runner=None
             if args.command=="acquire-retrospective":
@@ -155,7 +155,10 @@ def main(argv=None)->int:
                         except ValueError as exc:raise OperationsError("retrospective-authority-invalid","provider settlement timestamp is malformed") from exc
                         path=canonical_kalshi_candle_path(series.provider_market_id,target,historical=settled_at<cutoff);return config.provider_base_url.rstrip("/")+path,{}
                     def adapter(value,_raw,_opportunity,series,target):return adapt_kalshi_candles(value,market_ticker=series.provider_market_id,target_at=target)
-                    created=discover_and_acquire_retrospective(archive=archive,transport_factory=lambda _opportunity,_series:retro_transport,clock=clock,sleeper=time.sleep,request_builder=request_builder,response_adapter=adapter,maximum_opportunities=args.maximum_opportunities)
+                    try:created=discover_and_acquire_retrospective(archive=archive,transport_factory=lambda _opportunity,_series:retro_transport,clock=clock,sleeper=time.sleep,request_builder=request_builder,response_adapter=adapter,maximum_opportunities=args.maximum_opportunities)
+                    except OperationsError as exc:
+                        if hasattr(exc,"provider_calls"):exc.provider_calls+=0 if args.fixture else 1
+                        raise
                     return created,retro_transport.calls+(0 if args.fixture else 1)
             result=execute(args.command,config,clock=clock,transport_factory=factory,supporting_loader=supporting_loader,outcome_loader=outcome_loader,retrospective_runner=retrospective_runner)
         print(json.dumps(result,sort_keys=True,separators=(",",":"),default=lambda x:x.isoformat()))

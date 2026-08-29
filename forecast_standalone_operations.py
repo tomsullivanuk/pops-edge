@@ -41,6 +41,12 @@ class OperationsError(RuntimeError):
         super().__init__(f"{code}: {detail}")
 
 
+class RetrospectiveAcquisitionError(OperationsError):
+    def __init__(self, detail: str, provider_calls: int):
+        self.provider_calls=provider_calls
+        super().__init__("retrospective-acquisition-failed",detail)
+
+
 class OperatingMode(str, Enum):
     DRY_RUN = "dry-run"
     ACTIVATED = "activated"
@@ -646,10 +652,12 @@ class NamespaceArchive:
 
     def _record_failure_locked(self, *, entry_values: Mapping[str, Any], raw_body: bytes | None = None) -> ManifestEntry:
         digest = sha256_bytes(raw_body) if raw_body is not None else None
-        if raw_body is not None: self._publish(self._path("raw", f"raw:{digest}"), raw_body)
         entry = ManifestEntry.create(**dict(entry_values), namespace=self.config.namespace,
             operating_mode=self.config.mode, raw_object_sha256=digest, normalized_object_id=None,
             normalized_schema_version=None)
+        for prior in self.entries():
+            if prior["invocation_id"]==entry.invocation_id and prior["manifest_entry_id"]!=entry.manifest_entry_id:raise OperationsError("immutable-conflict","failure invocation identity conflicts with archived evidence")
+        if raw_body is not None: self._publish(self._path("raw", f"raw:{digest}"), raw_body)
         self._publish(self._path("manifest", entry.manifest_entry_id), canonical_bytes(entry)); return entry
 
     def read_verified(self, family: str, identity: str) -> bytes:
@@ -1330,6 +1338,7 @@ def discover_and_acquire_retrospective(*,archive:NamespaceArchive,
         if maximum_opportunities is not None:
             if maximum_opportunities<1 or maximum_opportunities>100:raise OperationsError("retrospective-bound-invalid","maximum opportunities must be between 1 and 100")
         provider_calls=0
+        retrospective_limitations=("later-acquired retrospective archive Evidence","historical provider availability, survivorship, and revision limitations","post-event schedule-history limitations","one-minute provider aggregation","bid and ask closes are same-candle aggregates, not documented simultaneous quotes","no quote quantity, positive depth, or executable spread is established","acquisition time differs from historical effective time","no synthetic continuity, fallback, or prospective repair")
         for opportunity in pending:
             if opportunity.research_capture_opportunity_id in existing:continue
             context=contexts.get(opportunity.research_capture_opportunity_id);result=results.get(opportunity.research_capture_opportunity_id);history=histories.get(context.canonical_event_id) if context else None
@@ -1346,7 +1355,11 @@ def discover_and_acquire_retrospective(*,archive:NamespaceArchive,
             provider_calls+=len(acquired.attempts)
             completed=acquired.attempts[-1].completed_at
             if acquired.disposition is not Disposition.SUCCESS or acquired.raw_body is None or acquired.normalized is None:
-                raise OperationsError("retrospective-acquisition-failed",acquired.detail)
+                diagnostics=(f"opportunity:{opportunity.research_capture_opportunity_id}",f"market:{series[0].provider_market_id}",f"attempts:{len(acquired.attempts)}",*(f"attempt-{index+1}:{attempt.disposition.value}" for index,attempt in enumerate(acquired.attempts)))
+                values=_entry_values(archive=archive,command="acquire-retrospective",request_id=request_identity({"opportunity_id":opportunity.research_capture_opportunity_id,"market_id":series[0].provider_market_id,"target_at":_utc(target,"target")}),invoked_at=completed,
+                    endpoint=endpoint,disposition=acquired.disposition,protocol_id=protocol.standalone_probability_source_protocol_id,design=DesignAuthority.RETROSPECTIVE,diagnostics=diagnostics,provider_effective_at=None)
+                archive._record_failure_locked(entry_values=values,raw_body=acquired.raw_body)
+                raise RetrospectiveAcquisitionError("bounded retrospective provider acquisition failed",provider_calls)
             raw_digest=sha256_bytes(acquired.raw_body);raw_reference=f"raw:{raw_digest}"
             supplied_pages=tuple({**page,"candle_ids":[str(item.get("candle_end_at")) for item in page.get("candles",())]} for page in acquired.normalized.get("pages",()))
             page_values=validate_pagination(supplied_pages)
@@ -1360,14 +1373,14 @@ def discover_and_acquire_retrospective(*,archive:NamespaceArchive,
                         close_yes_bid=Decimal(str(candle_value["close_yes_bid"])) if candle_value.get("close_yes_bid") is not None else None,
                         close_yes_ask=Decimal(str(candle_value["close_yes_ask"])) if candle_value.get("close_yes_ask") is not None else None,
                         is_real=True,is_synthetic=False,is_repaired=False,retrieval_page_position=page_value["position"],raw_archive_reference=raw_reference,raw_archive_sha256=raw_digest,
-                        limitations=("fixture-only historical acquisition",),provenance=result.provenance)
+                        limitations=retrospective_limitations,provenance=result.provenance)
                     page_candles.append(candle);candles.append(candle)
                 pages.append(HistoricalCandleRetrievalPage(page_value["cursor"],page_value["position"],page_value.get("next_cursor"),page_value["terminal"],raw_reference,raw_digest,completed,
-                    tuple(x.historical_market_candle_observation_id for x in page_candles),ManifestValidationStatus.COMPLETE,("fixture-only page",)))
+                    tuple(x.historical_market_candle_observation_id for x in page_candles),ManifestValidationStatus.COMPLETE,retrospective_limitations))
             manifest=HistoricalCandleQueryManifest.create(protocol_id=protocol.standalone_probability_source_protocol_id,opportunity_id=opportunity.research_capture_opportunity_id,
                 canonical_event_id=schedule.canonical_event_id,proposition_id=proposition,provider_id=PROVIDER_ID,endpoint=endpoint,provider_market_id=series[0].provider_market_id,
                 interval="1m",requested_start_at=target-timedelta(minutes=5),requested_end_at=target,retrieval_started_at=acquired.attempts[0].started_at,retrieval_completed_at=completed,pages=tuple(pages),
-                returned_candle_evidence_ids=tuple(x.historical_market_candle_observation_id for x in candles),validation_status=ManifestValidationStatus.COMPLETE,limitations=("fixture-only historical acquisition",),
+                returned_candle_evidence_ids=tuple(x.historical_market_candle_observation_id for x in candles),validation_status=ManifestValidationStatus.COMPLETE,limitations=retrospective_limitations,
                 effective_at=completed,supersedes_manifest_id=None,correction_reason=None,provenance=result.provenance)
             candles=tuple(HistoricalMarketCandleObservation.create(**{name:getattr(item,name) for name in item.__dataclass_fields__ if name not in ("historical_market_candle_observation_id","schema_version","identity_algorithm_version","input_digest","manifest_id")},manifest_id=manifest.historical_candle_query_manifest_id) for item in candles)
             normalized=pr17_contract_bundle(manifest,*candles);values=_entry_values(archive=archive,command="acquire-retrospective",request_id=request_identity({"opportunity_id":opportunity.research_capture_opportunity_id,"target_at":_utc(target,"target")}),invoked_at=completed,

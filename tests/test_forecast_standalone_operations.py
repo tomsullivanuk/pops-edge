@@ -275,6 +275,19 @@ class OperationsTest(unittest.TestCase):
         self.assertEqual((candle.raw_archive_sha256,candle.raw_archive_reference),(entry["raw_object_sha256"],f"raw:{entry['raw_object_sha256']}"))
         self.assertEqual(entry["endpoint"],"https://fixture.invalid"+canonical_kalshi_candle_path(market_id,g["candle"].candle_end_at,historical=True))
 
+    def test_27b_retrospective_failure_is_durable_non_authoritative_and_idempotent(self):
+        _g,at=self.seed_prospective();values=self.entry_values(Disposition.VALIDATION_FAILURE);values["acquired_at"]=at;values["provider_effective_at"]=None;values["protocol_id"]=None;values["diagnostics"]=("opportunity:opportunity-1","market:KXMLBGAME-TEST","attempts:1","attempt-1:validation-failure")
+        raw=b'{"ticker":"FOREIGN","candlesticks":[]}'
+        first=self.archive.record_failure(entry_values=values,raw_body=raw);second=self.archive.record_failure(entry_values=values,raw_body=raw)
+        self.assertEqual(first.manifest_entry_id,second.manifest_entry_id)
+        entry=next(x for x in authoritative_entries(self.archive) if x["manifest_entry_id"]==first.manifest_entry_id);self.assertEqual(entry["raw_object_sha256"],__import__('hashlib').sha256(raw).hexdigest());self.assertIsNone(entry["normalized_object_id"])
+        state=replay_pr17_archive(self.archive,analysis_boundary=at);self.assertEqual((state.bucket("candles"),state.bucket("manifests")),((),()))
+        self.assertTrue(inspect_archive(self.archive).ready)
+        changed=dict(values,diagnostics=values["diagnostics"]+("different",))
+        with self.assertRaisesRegex(OperationsError,"immutable-conflict"):self.archive.record_failure(entry_values=changed,raw_body=raw)
+        no_raw=dict(values,invocation_id="invocation:2",sanitized_request_id="request:2",disposition=Disposition.TIMEOUT,diagnostics=("opportunity:opportunity-1","attempt-1:timeout"))
+        timeout=self.archive.record_failure(entry_values=no_raw);self.assertIsNone(timeout.raw_object_sha256)
+
     def test_28_prospective_archive_response_creates_attempt_and_terminal_snapshot(self):
         g,at=self.seed_prospective();transport=SequenceTransport(HTTPResponse(200,json.dumps({"contract_json":g["observation"].to_json()}).encode(),{}))
         discover_and_capture_prospective(archive=self.archive,transport_factory=lambda _o,_s:transport,clock=lambda:at)
