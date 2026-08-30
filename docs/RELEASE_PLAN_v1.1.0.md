@@ -1059,10 +1059,14 @@ authoritative sessions keep their declared 2/1 or 3/2 rule pairing.
 The corrective PR17C2 supporting transport gate adds schema-2 attempt history
 only to retrospective MLB schedule, Kalshi cutoff, and catalog logical pages.
 It uses the fixed 3-attempt/5-second/1-then-2-second/20-second/2-second-cap
-policy, retries only transient transport and provider failures, counts every
-call, and preserves safe attempt raw material. A terminal failure remains
+policy, retries only transient transport/provider failures or late responses
+with actual status 200, 429, or 5xx, counts every call, and preserves safe
+attempt raw material. Late redirects and client rejections do not retry. Late
+responses remain non-authoritative even when otherwise valid. A terminal failure remains
 visible and cannot publish provider bundles or completion authority. Completed
 schema-1 sessions and their replay meaning are unchanged.
+The exact completion verifier runs before manifest-last publication, so a CLI
+success result cannot name a session that immediate replay rejects.
 
 Supporting and outcome acquisitions preserve exact pages and admit contracts only through a replay-verified typed manifest and explicitly derived canonical union. All unresolved non-terminal games remain outcome obligations; the correction lookback bounds resolved games only. One command-start clock fixes requested dates, and opaque cursors use standard query encoding.
 
