@@ -676,6 +676,12 @@ the twenty-second observed first-start-to-terminal envelope from
 `RETROSPECTIVE_SUPPORTING_RETRY_POLICY`. The exact replay verifier must accept
 the complete prospective session envelope before manifest-last completion is
 written; the CLI must not report success for a completion replay would reject.
+If an older immutable completion nevertheless fails that verifier, reject that
+session locally: it contributes no bundles or contracts, remains named in
+inspection with `rejected_supporting_sessions`, and cannot poison replay of an
+independent valid session. Missing or corrupt archive objects remain globally
+blocking. Verified preserved pages from a different session may still be
+completed archive-only with zero provider calls.
 
 Each primary and secondary path must include `dry-run/<namespace>` (or, after a
 future authorized activation, `activated/<namespace>`). Mutation is prohibited
