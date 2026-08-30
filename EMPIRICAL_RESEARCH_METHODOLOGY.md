@@ -2633,7 +2633,9 @@ claims fail closed. Earlier authoritative rule versions replay unchanged.
 
 Transport resilience does not change scientific authority. PR17C2 supporting
 page schema 2 permits only bounded retries of the identical logical request for
-timeout, connection failure, rate limiting, or provider/server error. Earlier
+timeout, connection failure, rate limiting, provider/server error, or a
+response observed after the five-second request boundary. A late response's
+actual status and permitted bytes remain preserved non-authoritatively. Earlier
 transient attempts remain operational chronology and count as provider calls;
 only the terminal validated success supplies the page raw body to the derived
 union. Exhaustion produces one durable non-authoritative page failure and no
@@ -2644,6 +2646,8 @@ Schema-2 replay preserves observed attempt chronology and separately verifies
 the governed retry instant without tolerance. Each successor schedule equals
 the preceding observed completion plus the fixed bounded policy delay; actual
 start may be later, preserving scheduler latency, but never earlier.
+The complete session candidate must pass this same replay verification before
+manifest-last publication; operational success cannot precede that gate.
 
 Standalone performance cannot support or reject an Edge Claim, establish or invalidate a Market Edge, determine Practical Significance, create a Research Review conclusion or Current Scientific Applicability, or establish profitability, efficiency, actionable opportunity, Policy, Governance, or production authority. Time-bounded standalone performance is descriptive and creates no standalone Drift or review obligation.
 

@@ -701,8 +701,13 @@ def publish_supporting_session_completion(*,archive:NamespaceArchive,session_id:
     contract_sha256s=tuple(sorted(hashlib.sha256(payload.encode()).hexdigest() for payload in bundles[0][1]["contracts"]+kalshi_value["contracts"]))
     normalized={"schema_version":"1","record_kind":"pr17c2-supporting-session-completion","session_id":session_id,"requested_date_window":requested_date_window,"command_started_at":original_start,"completed_at":completed_at,"provider_calls":provider_calls,"mlb_acquisition_manifest_id":bundles[0][0]["manifest_entry_id"],"kalshi_acquisition_manifest_id":bundles[1][0]["manifest_entry_id"],"mlb_acquisition_id":bundles[0][1]["acquisition_id"],"kalshi_acquisition_id":kalshi_value["acquisition_id"],"cutoff_manifest_entry_id":kalshi_value["cutoff_manifest_entry_id"],"cutoff_raw_sha256":kalshi_value["cutoff_raw_sha256"],"cutoff_at":cutoff_at,"catalog_pages":pages,"mlb_union_sha256":bundles[0][1]["normalized_union_sha256"],"kalshi_union_sha256":kalshi_value["normalized_union_sha256"],"contract_sha256s":contract_sha256s,"union_rule":ACQUISITION_UNION_RULE_VERSION,"reconciliation_rule":"kalshi-historical-cutoff-settlement-ts-1"}
     if derivation_rule is not None:normalized["derivation_rule"]=derivation_rule
+    # The exact replay verifier must accept the prospective completion before
+    # any manifest-last authority is written.
+    verify_supporting_session_completion(archive,session_id,_candidate_completion=json.loads(canonical_bytes(normalized)))
     values=_entry_values(archive=archive,command="complete-retrospective-supporting-session",request_id=request_identity({"session_id":session_id,"completion":hashlib.sha256(canonical_bytes(normalized)).hexdigest()}),invoked_at=completed_at,endpoint="local://retrospective-supporting-session-completion",disposition=Disposition.SUCCESS,protocol_id=None,design=DesignAuthority.SUPPORTING,diagnostics=(f"session:{session_id}","complete manifest-last retrospective supporting authority"),provider_effective_at=completed_at);values["provider_id"]="pops-edge-supporting-session"
-    return archive._commit_locked(raw_body=canonical_bytes(normalized),normalized=normalized,entry_values=values).manifest_entry_id
+    manifest_id=archive._commit_locked(raw_body=canonical_bytes(normalized),normalized=normalized,entry_values=values).manifest_entry_id
+    verify_supporting_session_completion(archive,session_id)
+    return manifest_id
 
 
 def _archived_datetime(raw:Any,field:str)->datetime:
@@ -720,13 +725,14 @@ def _verify_supporting_page_attempts(archive:NamespaceArchive,entry:Mapping[str,
     attempts=page["attempts"]
     policy=RETROSPECTIVE_SUPPORTING_RETRY_POLICY
     if len(attempts)>policy.maximum_attempts:raise OperationsError("supporting-session-conflict","supporting page exceeds its attempt bound")
-    retryable={"timeout","connection-failure","rate-limited","provider-error"};prior_completed=None
+    retryable={"timeout","connection-failure","rate-limited","provider-error","late-response"};prior_completed=None
     for index,attempt in enumerate(attempts,1):
         required={"attempt","started_at","completed_at","retry_scheduled_at","disposition","status_code","retry_after_seconds","endpoint","request_identity","partition","partition_position","raw_sha256"}
         if set(attempt)!=required or attempt.get("attempt")!=index:raise OperationsError("supporting-session-conflict","supporting attempt numbering or schema conflicts")
         if any(attempt.get(field)!=page.get(field) for field in ("endpoint","request_identity","partition","partition_position")):raise OperationsError("supporting-session-conflict","supporting retry changes logical request identity")
         started=_archived_datetime(attempt.get("started_at"),"supporting attempt start");completed=_archived_datetime(attempt.get("completed_at"),"supporting attempt completion")
-        if completed<started or (completed-started).total_seconds()>policy.request_timeout_seconds:raise OperationsError("supporting-session-conflict","supporting attempt duration exceeds its request bound")
+        duration=(completed-started).total_seconds()
+        if completed<started or (duration>policy.request_timeout_seconds)!=(attempt.get("disposition")=="late-response"):raise OperationsError("supporting-session-conflict","supporting attempt duration conflicts with its request bound")
         if index==1:
             if attempt.get("retry_scheduled_at") is not None:raise OperationsError("supporting-session-conflict","first supporting attempt has retry scheduling authority")
         else:
@@ -739,6 +745,7 @@ def _verify_supporting_page_attempts(archive:NamespaceArchive,entry:Mapping[str,
         if disp=="rate-limited" and (status!=429 or not isinstance(retry_after,int) or not 0<=retry_after<=policy.maximum_retry_after_seconds):raise OperationsError("supporting-session-conflict","rate-limit attempt is malformed")
         if disp!="rate-limited" and retry_after is not None:raise OperationsError("supporting-session-conflict","Retry-After appears on an inapplicable attempt")
         if disp=="provider-error" and (not isinstance(status,int) or not 500<=status<=599):raise OperationsError("supporting-session-conflict","provider-error status is malformed")
+        if disp=="late-response" and not isinstance(status,int):raise OperationsError("supporting-session-conflict","late response status is absent")
         if disp=="success" and status!=200:raise OperationsError("supporting-session-conflict","successful attempt status conflicts")
         if digest is not None:
             if not isinstance(digest,str) or len(digest)!=64 or any(character not in "0123456789abcdef" for character in digest):raise OperationsError("supporting-session-conflict","attempt raw digest is malformed")
@@ -777,7 +784,7 @@ def publish_supporting_session_correction(*,archive:NamespaceArchive,session_id:
     return archive._commit_locked(raw_body=canonical_bytes(normalized),normalized=normalized,entry_values=values).manifest_entry_id
 
 
-def verify_supporting_session_completion(archive:NamespaceArchive,session_id:str,*,allow_legacy:bool=False)->Mapping[str,Any]:
+def verify_supporting_session_completion(archive:NamespaceArchive,session_id:str,*,allow_legacy:bool=False,_candidate_completion:Mapping[str,Any]|None=None)->Mapping[str,Any]:
     """Fully verify the sole manifest-last authority for one supporting session."""
     entries=tuple(archive.entries());by_id={entry["manifest_entry_id"]:entry for entry in entries};normalized=[]
     for entry in entries:
@@ -787,9 +794,13 @@ def verify_supporting_session_completion(archive:NamespaceArchive,session_id:str
         except (UnicodeDecodeError,json.JSONDecodeError,TypeError) as exc:raise OperationsError("supporting-session-conflict","archived normalized material is malformed") from exc
         normalized.append((entry,value))
     completions=tuple((entry,value) for entry,value in normalized if value.get("record_kind")=="pr17c2-supporting-session-completion" and value.get("session_id")==session_id);corrections=tuple((entry,value) for entry,value in normalized if value.get("record_kind")=="pr17c2-supporting-session-correction" and value.get("session_id")==session_id)
-    if not completions:raise OperationsError("supporting-session-incomplete","supporting session completion is absent")
-    if len(completions)!=1:raise OperationsError("supporting-session-conflict","supporting session completion is duplicated")
-    completion_entry,completion=completions[0]
+    if _candidate_completion is None:
+        if not completions:raise OperationsError("supporting-session-incomplete","supporting session completion is absent")
+        if len(completions)!=1:raise OperationsError("supporting-session-conflict","supporting session completion is duplicated")
+        completion_entry,completion=completions[0]
+    else:
+        if completions:raise OperationsError("supporting-session-conflict","supporting session completion already exists")
+        completion_entry={"manifest_entry_id":"prepublication-candidate"};completion=dict(_candidate_completion)
     if corrections and not allow_legacy:return verify_supporting_session_correction(archive,session_id)
     legacy=completion.get("derivation_rule") is None
     if legacy and not allow_legacy:raise OperationsError("supporting-session-correction-required","completed session uses superseded derivation semantics")

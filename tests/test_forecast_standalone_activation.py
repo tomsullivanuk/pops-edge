@@ -51,6 +51,22 @@ class ActivationTests(unittest.TestCase):
             result=acquire_retrospective_supporting_page(archive=archive,session_id="supporting-session:oversleep",provider="kalshi",purpose="catalog",base="https://fixture.invalid",path="/markets",request_identity_value="",transport=transport,clock=lambda:current[0],sleeper=oversleep,partition="live",partition_position=0)
             self.assertEqual((result.attempts[1].retry_scheduled_at,result.attempts[1].started_at),(at+timedelta(seconds=1),at+timedelta(seconds=1,microseconds=500000)))
 
+    def test_late_supporting_response_is_preserved_retried_and_never_accepted(self):
+        from forecast_standalone_activation import _verify_supporting_page_attempts
+        class TimedSequence:
+            def __init__(self,current,*items):self.current=current;self.items=list(items);self.calls=0
+            def request(self,*_args,**_kwargs):
+                self.calls+=1;duration,response=self.items.pop(0);self.current[0]+=duration;return response
+        at=datetime(2026,8,30,tzinfo=timezone.utc);current=[at];late=b'{"markets":[{"ticker":"LATE"}],"cursor":""}';accepted=b'{"markets":[],"cursor":""}'
+        transport=TimedSequence(current,(timedelta(seconds=6,microseconds=241250),HTTPResponse(200,late,{})),(timedelta(milliseconds=100),HTTPResponse(200,accepted,{})))
+        result=acquire_with_retries(transport=transport,endpoint="https://fixture.invalid/markets",request={},policy=RETROSPECTIVE_SUPPORTING_RETRY_POLICY,now=lambda:current[0],sleeper=lambda seconds:current.__setitem__(0,current[0]+timedelta(seconds=seconds)),validator=lambda value:value)
+        self.assertEqual((result.disposition,transport.calls),(Disposition.SUCCESS,2));self.assertEqual((result.attempts[0].disposition,result.attempts[0].status_code),(Disposition.LATE_RESPONSE,200));self.assertEqual(result.attempt_raw_bodies,(late,accepted));self.assertEqual(result.attempts[1].retry_scheduled_at,at+timedelta(seconds=7,microseconds=241250));self.assertEqual(result.raw_body,accepted)
+        with tempfile.TemporaryDirectory() as directory:
+            archive=self._supporting_retry_archive(Path(directory),"late-response");preserve_supporting_response(archive=archive,session_id="supporting-session:late-response",provider="kalshi",purpose="catalog",endpoint="https://fixture.invalid/markets",request_identity_value="",started_at=result.attempts[0].started_at,completed_at=result.attempts[-1].completed_at,disposition=result.disposition,raw=result.raw_body,partition="live",partition_position=0,attempts=result.attempts,attempt_raw_bodies=result.attempt_raw_bodies)
+            entry=archive.entries()[0];page=json.loads(archive.read_verified("normalized",entry["normalized_object_id"]));self.assertEqual(_verify_supporting_page_attempts(archive,entry,page),2);self.assertTrue(archive.read_verified("raw","raw:"+hashlib.sha256(late).hexdigest()))
+            current[:]=[at];terminal_transport=TimedSequence(current,(timedelta(seconds=15),HTTPResponse(200,late,{})));terminal=acquire_with_retries(transport=terminal_transport,endpoint="https://fixture.invalid/markets",request={},policy=RETROSPECTIVE_SUPPORTING_RETRY_POLICY,now=lambda:current[0],sleeper=lambda seconds:current.__setitem__(0,current[0]+timedelta(seconds=seconds)),validator=lambda value:value)
+            self.assertEqual((terminal.disposition,len(terminal.attempts),terminal_transport.calls),(Disposition.LATE_RESPONSE,1,1));terminal_archive=self._supporting_retry_archive(Path(directory),"terminal-late");preserve_supporting_response(archive=terminal_archive,session_id="supporting-session:terminal-late",provider="kalshi",purpose="catalog",endpoint="https://fixture.invalid/markets",request_identity_value="",started_at=terminal.attempts[0].started_at,completed_at=terminal.attempts[-1].completed_at,disposition=terminal.disposition,raw=terminal.raw_body,partition="live",partition_position=0,attempts=terminal.attempts,attempt_raw_bodies=terminal.attempt_raw_bodies);terminal_entry=terminal_archive.entries()[0];terminal_page=json.loads(terminal_archive.read_verified("normalized",terminal_entry["normalized_object_id"]));self.assertEqual(_verify_supporting_page_attempts(terminal_archive,terminal_entry,terminal_page),1);self.assertEqual(terminal_entry["disposition"],"late-response");self.assertIn(("incomplete_supporting_sessions",1),inspect_archive(terminal_archive).facts)
+
     def test_retrospective_supporting_retry_bounds_nonretryable_and_terminal_failure(self):
         class Sequence:
             def __init__(self,*items):self.items=list(items);self.calls=0
@@ -392,6 +408,8 @@ class ActivationTests(unittest.TestCase):
             with archive.mutation_lock():
                 mlb=publish_verified_acquisition(archive=archive,provider="mlb-stats-api",union_raw=mlb_raw,pages=(mlb_page,),contracts=(),collected_at=at,protocol_id=None,command="refresh-retrospective-supporting",supporting_session_id=session)
                 kalshi=publish_verified_acquisition(archive=archive,provider="kalshi",union_raw=union,pages=catalog,contracts=(),collected_at=at,protocol_id=None,command="refresh-retrospective-supporting",dependencies=(mlb["acquisition_id"],),retrospective_cutoff_at=cutoff,supporting_session_id=session)
+                with patch("forecast_standalone_activation._verify_supporting_page_attempts",side_effect=OperationsError("supporting-session-conflict","synthetic late success")),self.assertRaisesRegex(OperationsError,"supporting-session-conflict"):publish_supporting_session_completion(archive=archive,session_id=session,requested_date_window=("2026-03-25","2026-03-25"),command_started_at=at,provider_calls=91,cutoff_at=cutoff,mlb_acquisition=mlb,kalshi_acquisition=kalshi)
+                self.assertFalse(any(entry["command"]=="complete-retrospective-supporting-session" for entry in archive.entries()))
                 completion=publish_supporting_session_completion(archive=archive,session_id=session,requested_date_window=("2026-03-25","2026-03-25"),command_started_at=at,provider_calls=91,cutoff_at=cutoff,mlb_acquisition=mlb,kalshi_acquisition=kalshi)
             self.assertTrue(completion);inspection=inspect_archive(archive);self.assertIn(("complete_supporting_sessions",1),inspection.facts);self.assertIn(("incomplete_supporting_sessions",0),inspection.facts);self.assertEqual(len(catalog),89)
 

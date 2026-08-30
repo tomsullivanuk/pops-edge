@@ -654,8 +654,11 @@ retries for MLB schedule pages, the Kalshi historical cutoff, and historical
 and live catalog pages. The request endpoint, encoded cursor/date, partition,
 and position are identical on every attempt. The fixed policy is 3 attempts,
 5 seconds each, backoffs of 1 and 2 seconds, a 20-second total envelope, and a
-2-second `Retry-After` cap. Only timeout, connection failure, HTTP 429, and 5xx
-are retryable. Malformed, incomplete, oversized, or redirected responses,
+2-second `Retry-After` cap. Timeout, connection failure, HTTP 429, 5xx, and a
+response observed only after its five-second request boundary are retryable.
+A late response keeps its actual chronology, status, and permitted bytes under
+`late-response`, but it is never validated or admitted as the page success.
+Malformed, incomplete, oversized, or redirected responses,
 client rejections, secret or validation failures, and archive, pagination,
 reconciliation, or scientific failures stop after one attempt. Schema-2 pages
 preserve complete attempt chronology and safe raw bodies while counting every
@@ -669,7 +672,9 @@ the prior observed completion plus `max(policy backoff, bounded Retry-After)`.
 An observed retry may start later but never earlier; its lag remains evidence.
 Verification adds no tolerance and enforces each five-second request bound and
 the twenty-second observed first-start-to-terminal envelope from
-`RETROSPECTIVE_SUPPORTING_RETRY_POLICY`.
+`RETROSPECTIVE_SUPPORTING_RETRY_POLICY`. The exact replay verifier must accept
+the complete prospective session envelope before manifest-last completion is
+written; the CLI must not report success for a completion replay would reject.
 
 Each primary and secondary path must include `dry-run/<namespace>` (or, after a
 future authorized activation, `activated/<namespace>`). Mutation is prohibited
