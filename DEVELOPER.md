@@ -662,6 +662,14 @@ preserve complete attempt chronology and safe raw bodies while counting every
 call; a terminal failure is durable and non-authoritative. Legacy schema-1
 sessions replay unchanged.
 
+Schema-2 retry timestamps use one deterministic governed representation. Keep
+the trusted-clock first start and measured request duration, but derive a retry
+start exactly from the prior completion plus `max(policy backoff, bounded
+Retry-After)`. Do not include incidental sleeper wake-up latency and do not add
+a replay tolerance. Verification enforces each five-second request bound, the
+exact 1/2-second governed delays, and the twenty-second first-start-to-terminal
+envelope from `RETROSPECTIVE_SUPPORTING_RETRY_POLICY`.
+
 Each primary and secondary path must include `dry-run/<namespace>` (or, after a
 future authorized activation, `activated/<namespace>`). Mutation is prohibited
 for activated mode in PR17B2. Every mutation first takes the namespace advisory

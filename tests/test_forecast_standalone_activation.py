@@ -15,7 +15,7 @@ from pathlib import Path
 from decimal import Decimal
 
 from forecast_standalone_activation import *
-from forecast_standalone_operations import AttemptRecord,DeploymentConfig, Disposition,HTTPResponse, NamespaceArchive, OperatingMode, OperationsError, RetryPolicy, inspect_archive,rebuild_index,reconcile_archive,sync_secondary
+from forecast_standalone_operations import RETROSPECTIVE_SUPPORTING_RETRY_POLICY,AttemptRecord,DeploymentConfig, Disposition,HTTPResponse, NamespaceArchive, OperatingMode, OperationsError, RetryPolicy, acquire_with_retries,inspect_archive,rebuild_index,reconcile_archive,sync_secondary
 from inspect_forecast_standalone_activation import run
 from operate_forecast_standalone_activation import LiveRetrospectiveTransport,acquire_retrospective_supporting_page,adapt_kalshi_historical_cutoff,execute,live_mlb_material
 
@@ -57,7 +57,7 @@ class ActivationTests(unittest.TestCase):
             archive=self._supporting_retry_archive(Path(directory),"exhausted");transport=Sequence(TimeoutError(),TimeoutError(),TimeoutError())
             exhausted=acquire_retrospective_supporting_page(archive=archive,session_id="supporting-session:exhausted",provider="mlb-stats-api",purpose="schedule",base="https://fixture.invalid",path="/schedule?date=2026-08-01",request_identity_value="2026-08-01",transport=transport,clock=lambda:at,sleeper=lambda _:None)
             self.assertEqual((exhausted.disposition,len(exhausted.attempts),transport.calls),(Disposition.TIMEOUT,3,3));entry=archive.entries()[0];self.assertEqual(entry["disposition"],"timeout");self.assertIsNone(entry["raw_object_sha256"]);self.assertEqual(len(json.loads(archive.read_verified("normalized",entry["normalized_object_id"]))["attempts"]),3);facts=dict(inspect_archive(archive).facts);self.assertEqual((facts["failed_supporting_pages"],facts["incomplete_supporting_sessions"]),(1,1))
-            clock=iter((at,at,at+timedelta(seconds=14),at+timedelta(seconds=15))).__next__;limited=Sequence(TimeoutError(),HTTPResponse(200,b'{}',{}));result=acquire_retrospective_supporting_page(archive=self._supporting_retry_archive(Path(directory),"envelope"),session_id="supporting-session:envelope",provider="kalshi",purpose="catalog",base="https://fixture.invalid",path="/markets",request_identity_value="",transport=limited,clock=clock,sleeper=lambda _:None,partition="live",partition_position=0)
+            clock=iter((at,at,at+timedelta(seconds=14),at+timedelta(seconds=15))).__next__;limited=Sequence(TimeoutError(),HTTPResponse(200,b'{}',{}));result=acquire_with_retries(transport=limited,endpoint="https://fixture.invalid/markets",request={},policy=RETROSPECTIVE_SUPPORTING_RETRY_POLICY,now=clock,sleeper=lambda _:None,validator=lambda value:value)
             self.assertEqual((len(result.attempts),limited.calls),(1,1))
             cases=((HTTPResponse(200,b'{',{}),lambda value:value),(HTTPResponse(200,b'[]',{}),lambda value:value),(HTTPResponse(200,b'{}',{}),lambda _value:(_ for _ in ()).throw(OperationsError("validation-failure","fixture"))),(HTTPResponse(413,b'',{}),lambda value:value),(HTTPResponse(302,b'{}',{}),lambda value:value),(HTTPResponse(404,b'{}',{}),lambda value:value))
             for index,(first,validator) in enumerate(cases):
@@ -66,14 +66,44 @@ class ActivationTests(unittest.TestCase):
 
     def test_supporting_attempt_verifier_rejects_tampered_histories(self):
         from forecast_standalone_activation import _verify_supporting_page_attempts
-        at=datetime(2026,8,30,tzinfo=timezone.utc);raw=b'{"markets":[],"cursor":""}';attempts=(AttemptRecord(1,at,at,Disposition.TIMEOUT,None,None),AttemptRecord(2,at,at,Disposition.SUCCESS,200,None))
+        at=datetime(2026,8,30,tzinfo=timezone.utc);raw=b'{"markets":[],"cursor":""}';attempts=(AttemptRecord(1,at,at,Disposition.TIMEOUT,None,None),AttemptRecord(2,at+timedelta(seconds=1),at+timedelta(seconds=1),Disposition.SUCCESS,200,None))
         with tempfile.TemporaryDirectory() as directory:
-            archive=self._supporting_retry_archive(Path(directory),"attempt-tamper");preserve_supporting_response(archive=archive,session_id="supporting-session:tamper-attempts",provider="kalshi",purpose="catalog",endpoint="https://fixture.invalid/markets?cursor=opaque",request_identity_value="opaque",started_at=at,completed_at=at,disposition=Disposition.SUCCESS,raw=raw,partition="historical",partition_position=4,attempts=attempts,attempt_raw_bodies=(None,raw))
+            archive=self._supporting_retry_archive(Path(directory),"attempt-tamper");preserve_supporting_response(archive=archive,session_id="supporting-session:tamper-attempts",provider="kalshi",purpose="catalog",endpoint="https://fixture.invalid/markets?cursor=opaque",request_identity_value="opaque",started_at=at,completed_at=at+timedelta(seconds=1),disposition=Disposition.SUCCESS,raw=raw,partition="historical",partition_position=4,attempts=attempts,attempt_raw_bodies=(None,raw))
             entry=archive.entries()[0];base=json.loads(archive.read_verified("normalized",entry["normalized_object_id"]));self.assertEqual(_verify_supporting_page_attempts(archive,entry,base),2)
             changes=(lambda x:x["attempts"].pop(0),lambda x:x["attempts"].append(copy.deepcopy(x["attempts"][-1])),lambda x:x["attempts"].reverse(),lambda x:x["attempts"][0].__setitem__("endpoint","https://foreign.invalid"),lambda x:x["attempts"][0].__setitem__("request_identity","foreign"),lambda x:x["attempts"][0].__setitem__("status_code",200),lambda x:x["attempts"][0].__setitem__("attempt",2),lambda x:x["attempts"].insert(1,copy.deepcopy(x["attempts"][-1])))
             for change in changes:
                 altered=copy.deepcopy(base);change(altered)
                 with self.assertRaisesRegex(OperationsError,"supporting-session"):_verify_supporting_page_attempts(archive,entry,altered)
+
+    def test_supporting_attempt_verifier_enforces_complete_fixed_timing_policy(self):
+        from forecast_standalone_activation import _verify_supporting_page_attempts
+        at=datetime(2026,8,30,tzinfo=timezone.utc);success_raw=b'{"markets":[],"cursor":""}';counter=[0]
+        def verify(attempts,bodies):
+            counter[0]+=1;archive=self._supporting_retry_archive(root,f"timing-{counter[0]}");preserve_supporting_response(archive=archive,session_id=f"supporting-session:timing-{counter[0]}",provider="kalshi",purpose="catalog",endpoint="https://fixture.invalid/markets",request_identity_value="",started_at=attempts[0].started_at,completed_at=attempts[-1].completed_at,disposition=attempts[-1].disposition,raw=bodies[-1],partition="live",partition_position=0,attempts=attempts,attempt_raw_bodies=bodies);entry=archive.entries()[0];page=json.loads(archive.read_verified("normalized",entry["normalized_object_id"]));return _verify_supporting_page_attempts(archive,entry,page)
+        passing=(
+            ((AttemptRecord(1,at,at,Disposition.TIMEOUT,None,None),AttemptRecord(2,at+timedelta(seconds=1),at+timedelta(seconds=1),Disposition.SUCCESS,200,None)),(None,success_raw)),
+            ((AttemptRecord(1,at,at,Disposition.CONNECTION_FAILURE,None,None),AttemptRecord(2,at+timedelta(seconds=1),at+timedelta(seconds=1),Disposition.SUCCESS,200,None)),(None,success_raw)),
+            ((AttemptRecord(1,at,at,Disposition.RATE_LIMITED,429,2),AttemptRecord(2,at+timedelta(seconds=2),at+timedelta(seconds=2),Disposition.SUCCESS,200,None)),(b'{"limited":true}',success_raw)),
+            ((AttemptRecord(1,at,at,Disposition.PROVIDER_ERROR,503,None),AttemptRecord(2,at+timedelta(seconds=1),at+timedelta(seconds=1),Disposition.PROVIDER_ERROR,503,None),AttemptRecord(3,at+timedelta(seconds=3),at+timedelta(seconds=3),Disposition.SUCCESS,200,None)),(b'{"provider":1}',b'{"provider":2}',success_raw)),
+            ((AttemptRecord(1,at,at+timedelta(seconds=5),Disposition.TIMEOUT,None,None),AttemptRecord(2,at+timedelta(seconds=6),at+timedelta(seconds=11),Disposition.CONNECTION_FAILURE,None,None),AttemptRecord(3,at+timedelta(seconds=13),at+timedelta(seconds=18),Disposition.SUCCESS,200,None)),(None,None,success_raw)),
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)
+            for attempts,bodies in passing:self.assertEqual(verify(attempts,bodies),len(attempts))
+            failing=(
+                (AttemptRecord(1,at,at,Disposition.TIMEOUT,None,None),AttemptRecord(2,at,at,Disposition.SUCCESS,200,None)),
+                (AttemptRecord(1,at,at,Disposition.TIMEOUT,None,None),AttemptRecord(2,at+timedelta(seconds=1),at+timedelta(seconds=1),Disposition.TIMEOUT,None,None),AttemptRecord(3,at+timedelta(seconds=1),at+timedelta(seconds=1),Disposition.SUCCESS,200,None)),
+                (AttemptRecord(1,at,at,Disposition.TIMEOUT,None,None),AttemptRecord(2,at+timedelta(seconds=2),at+timedelta(seconds=2),Disposition.SUCCESS,200,None)),
+                (AttemptRecord(1,at,at,Disposition.RATE_LIMITED,429,2),AttemptRecord(2,at+timedelta(seconds=1),at+timedelta(seconds=1),Disposition.SUCCESS,200,None)),
+                (AttemptRecord(1,at,at,Disposition.RATE_LIMITED,429,2),AttemptRecord(2,at+timedelta(seconds=3),at+timedelta(seconds=3),Disposition.SUCCESS,200,None)),
+                (AttemptRecord(1,at,at+timedelta(seconds=6),Disposition.TIMEOUT,None,None),),
+                (AttemptRecord(1,at,at+timedelta(seconds=5),Disposition.TIMEOUT,None,None),AttemptRecord(2,at+timedelta(seconds=6),at+timedelta(seconds=11),Disposition.TIMEOUT,None,None),AttemptRecord(3,at+timedelta(seconds=13),at+timedelta(seconds=21),Disposition.SUCCESS,200,None)),
+                (AttemptRecord(1,at,at,Disposition.TIMEOUT,None,None),AttemptRecord(2,at+timedelta(seconds=1,microseconds=1),at+timedelta(seconds=1,microseconds=1),Disposition.SUCCESS,200,None)),
+            )
+            for attempts in failing:
+                bodies=tuple(success_raw if item.disposition is Disposition.SUCCESS else (b'{"limited":true}' if item.disposition is Disposition.RATE_LIMITED else None) for item in attempts)
+                with self.assertRaisesRegex(OperationsError,"supporting-session"):verify(attempts,bodies)
+            legacy=self._supporting_retry_archive(root,"timing-legacy");preserve_supporting_response(archive=legacy,session_id="supporting-session:legacy",provider="kalshi",purpose="catalog",endpoint="https://fixture.invalid/markets",request_identity_value="",started_at=at,completed_at=at,disposition=Disposition.SUCCESS,raw=success_raw,partition="live",partition_position=0);entry=legacy.entries()[0];page=json.loads(legacy.read_verified("normalized",entry["normalized_object_id"]));self.assertEqual(_verify_supporting_page_attempts(legacy,entry,page),1)
     def test_exact_authority_is_deterministic(self):
         self.assertEqual(APPROVED_ACTIVATION.activation_at.isoformat(), "2026-09-05T00:00:00-04:00")
         self.assertEqual(APPROVED_ACTIVATION.activation_utc.isoformat(), "2026-09-05T04:00:00+00:00")
@@ -366,7 +396,7 @@ class ActivationTests(unittest.TestCase):
             root=Path(directory);config=DeploymentConfig("idempotent-session","idempotent-session",OperatingMode.DRY_RUN,root/"dry-run/idempotent-session/primary",root/"dry-run/idempotent-session/secondary","https://fixture.invalid",RetryPolicy(1,1,1,(),0),1,root/"logs");archive=NamespaceArchive(config);at=datetime(2026,9,6,tzinfo=timezone.utc);cutoff=datetime(2026,8,1,tzinfo=timezone.utc);session="supporting-session:idempotent";mlb_raw,kalshi_raw=fixtures()[:2]
             activation,retrospective,prospective=canonical_activation_authorities();archive_pr17_authority(archive,(activation,retrospective,prospective),recorded_at=datetime(2026,8,27,tzinfo=timezone.utc))
             for day,raw in (("2026-09-05",mlb_raw),("2026-09-06",canonical_bytes({"dates":[]}))):
-                mlb_endpoint=canonical_mlb_schedule_request(day)[1];retry_attempts=(AttemptRecord(1,at,at,Disposition.CONNECTION_FAILURE,None,None),AttemptRecord(2,at,at,Disposition.SUCCESS,200,None)) if day=="2026-09-05" else None;preserve_supporting_response(archive=archive,session_id=session,provider="mlb-stats-api",purpose="schedule",endpoint=mlb_endpoint,request_identity_value=day,started_at=at,completed_at=at,disposition=Disposition.SUCCESS,raw=raw,attempts=retry_attempts,attempt_raw_bodies=(None,raw) if retry_attempts else ())
+                mlb_endpoint=canonical_mlb_schedule_request(day)[1];retry_attempts=(AttemptRecord(1,at,at,Disposition.CONNECTION_FAILURE,None,None),AttemptRecord(2,at+timedelta(seconds=1),at+timedelta(seconds=1),Disposition.SUCCESS,200,None)) if day=="2026-09-05" else None;page_at=at if retry_attempts else at+timedelta(seconds=1);preserve_supporting_response(archive=archive,session_id=session,provider="mlb-stats-api",purpose="schedule",endpoint=mlb_endpoint,request_identity_value=day,started_at=page_at,completed_at=retry_attempts[-1].completed_at if retry_attempts else page_at,disposition=Disposition.SUCCESS,raw=raw,attempts=retry_attempts,attempt_raw_bodies=(None,raw) if retry_attempts else ())
             cutoff_raw=b'{"market_settled_ts":"2026-08-01T00:00:00Z"}';preserve_supporting_response(archive=archive,session_id=session,provider="kalshi",purpose="historical-cutoff",endpoint="https://fixture.invalid/historical/cutoff",request_identity_value="historical-cutoff",started_at=at,completed_at=at,disposition=Disposition.SUCCESS,raw=cutoff_raw)
             markets=json.loads(kalshi_raw)["markets"]
             for position,(partition,partition_markets) in enumerate((("historical",[]),("live",markets))):

@@ -6,9 +6,7 @@ from datetime import date,datetime,timedelta,timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 from forecast_standalone_activation import APPROVED_EASTERN_DATE,APPROVED_TIMEZONE,RETROSPECTIVE_WINDOW_START,BoundedLiveReadOnlyTransport,KalshiCatalogPage,KalshiRequestSigner,MacOSKeychainCredentialProvider,OperationalHeartbeat,OperationalState,ProviderPageAcquisition,acquire_kalshi_catalog_pages,acquire_retrospective_catalog_pages,adapt_kalshi_candles,adapt_kalshi_orderbook,canonical_kalshi_candle_path,canonical_mlb_schedule_request,complete_supporting_session_from_archive,encoded_kalshi_catalog_path,encoded_kalshi_retrospective_catalog_path,health_from_operational_state,initialize_activation,invoke_activated_prospective,merge_kalshi_catalog_pages,merge_retrospective_catalog_pages,merge_mlb_schedule_responses,preserve_supporting_response,reconcile_outcomes_from_raw,refresh_supporting_from_raw,render_launchd_jobs,required_mlb_query_dates,rsa_pss_sha256_sign
-from forecast_standalone_operations import DeploymentConfig,DesignAuthority,Disposition,ExitCode,HTTPResponse,NamespaceArchive,OperatingMode,OperationsError,RetrospectiveAcquisitionError,RetryPolicy,SupportingAcquisitionError,_entry_values,acquire_prospective_once,acquire_typed_supporting_fixture,acquire_with_retries,discover_and_acquire_retrospective,index_health,inspect_archive,rebuild_index,reconcile_incomplete_acquisitions,replay_pr17_archive,request_identity,sync_secondary
-
-RETROSPECTIVE_SUPPORTING_RETRY_POLICY=RetryPolicy(3,5,20,(1,2),2)
+from forecast_standalone_operations import RETROSPECTIVE_SUPPORTING_RETRY_POLICY,DeploymentConfig,DesignAuthority,Disposition,ExitCode,HTTPResponse,NamespaceArchive,OperatingMode,OperationsError,RetrospectiveAcquisitionError,SupportingAcquisitionError,_entry_values,acquire_prospective_once,acquire_typed_supporting_fixture,acquire_with_retries,discover_and_acquire_retrospective,index_health,inspect_archive,rebuild_index,reconcile_incomplete_acquisitions,replay_pr17_archive,request_identity,sync_secondary
 
 class FixtureTransport:
     def __init__(self,path:Path):self.path=path;self.calls=0
@@ -50,7 +48,7 @@ def adapt_kalshi_historical_cutoff(value):
 def acquire_retrospective_supporting_page(*,archive,session_id,provider,purpose,base,path,request_identity_value,transport,clock,sleeper=time.sleep,partition=None,partition_position=None,validator=lambda value:value):
     """Acquire and durably preserve one PR17C2 logical supporting page."""
     endpoint=base.rstrip("/")+path
-    result=acquire_with_retries(transport=transport,endpoint=endpoint,request={},policy=RETROSPECTIVE_SUPPORTING_RETRY_POLICY,now=clock,sleeper=sleeper,validator=validator)
+    result=acquire_with_retries(transport=transport,endpoint=endpoint,request={},policy=RETROSPECTIVE_SUPPORTING_RETRY_POLICY,now=clock,sleeper=sleeper,validator=validator,governed_retry_chronology=True)
     terminal=result.attempts[-1]
     preserve_supporting_response(archive=archive,session_id=session_id,provider=provider,purpose=purpose,endpoint=endpoint,request_identity_value=request_identity_value,started_at=result.attempts[0].started_at,completed_at=terminal.completed_at,disposition=result.disposition,raw=result.raw_body,partition=partition,partition_position=partition_position,attempts=result.attempts,attempt_raw_bodies=result.attempt_raw_bodies)
     return result

@@ -714,22 +714,26 @@ def _archived_datetime(raw:Any,field:str)->datetime:
 
 def _verify_supporting_page_attempts(archive:NamespaceArchive,entry:Mapping[str,Any],page:Mapping[str,Any])->int:
     """Verify the retry chronology of one logical supporting page; schema 1 remains one call."""
-    from forecast_standalone_operations import Disposition
+    from forecast_standalone_operations import RETROSPECTIVE_SUPPORTING_RETRY_POLICY,Disposition
     if page.get("schema_version")=="1":return 1
     if page.get("schema_version")!="2" or not isinstance(page.get("attempts"),list) or not page["attempts"]:raise OperationsError("supporting-session-conflict","supporting page attempt schema is unsupported")
     attempts=page["attempts"]
-    if len(attempts)>3:raise OperationsError("supporting-session-conflict","supporting page exceeds its attempt bound")
+    policy=RETROSPECTIVE_SUPPORTING_RETRY_POLICY
+    if len(attempts)>policy.maximum_attempts:raise OperationsError("supporting-session-conflict","supporting page exceeds its attempt bound")
     retryable={"timeout","connection-failure","rate-limited","provider-error"};prior_completed=None
     for index,attempt in enumerate(attempts,1):
         required={"attempt","started_at","completed_at","disposition","status_code","retry_after_seconds","endpoint","request_identity","partition","partition_position","raw_sha256"}
         if set(attempt)!=required or attempt.get("attempt")!=index:raise OperationsError("supporting-session-conflict","supporting attempt numbering or schema conflicts")
         if any(attempt.get(field)!=page.get(field) for field in ("endpoint","request_identity","partition","partition_position")):raise OperationsError("supporting-session-conflict","supporting retry changes logical request identity")
         started=_archived_datetime(attempt.get("started_at"),"supporting attempt start");completed=_archived_datetime(attempt.get("completed_at"),"supporting attempt completion")
-        if completed<started or (prior_completed is not None and started<prior_completed):raise OperationsError("supporting-session-conflict","supporting attempt chronology conflicts")
+        if completed<started or (completed-started).total_seconds()>policy.request_timeout_seconds:raise OperationsError("supporting-session-conflict","supporting attempt duration exceeds its request bound")
+        if prior_completed is not None:
+            preceding=attempts[index-2];expected_delay=max(policy.backoff_seconds[index-2],preceding.get("retry_after_seconds") or 0)
+            if started!=prior_completed+timedelta(seconds=expected_delay):raise OperationsError("supporting-session-conflict","supporting retry does not use the exact governed delay")
         prior_completed=completed;disp=attempt.get("disposition");status=attempt.get("status_code");retry_after=attempt.get("retry_after_seconds");digest=attempt.get("raw_sha256")
         if disp not in {item.value for item in Disposition}:raise OperationsError("supporting-session-conflict","supporting attempt disposition is unknown")
         if disp in {"timeout","connection-failure"} and (status is not None or digest is not None):raise OperationsError("supporting-session-conflict","transport failure invents provider response material")
-        if disp=="rate-limited" and (status!=429 or not isinstance(retry_after,int) or not 0<=retry_after<=2):raise OperationsError("supporting-session-conflict","rate-limit attempt is malformed")
+        if disp=="rate-limited" and (status!=429 or not isinstance(retry_after,int) or not 0<=retry_after<=policy.maximum_retry_after_seconds):raise OperationsError("supporting-session-conflict","rate-limit attempt is malformed")
         if disp!="rate-limited" and retry_after is not None:raise OperationsError("supporting-session-conflict","Retry-After appears on an inapplicable attempt")
         if disp=="provider-error" and (not isinstance(status,int) or not 500<=status<=599):raise OperationsError("supporting-session-conflict","provider-error status is malformed")
         if disp=="success" and status!=200:raise OperationsError("supporting-session-conflict","successful attempt status conflicts")
@@ -739,6 +743,7 @@ def _verify_supporting_page_attempts(archive:NamespaceArchive,entry:Mapping[str,
         if index<len(attempts) and disp not in retryable:raise OperationsError("supporting-session-conflict","non-retryable attempt has a successor")
         if disp=="success" and index!=len(attempts):raise OperationsError("supporting-session-conflict","attempt appears after success")
     terminal=attempts[-1]
+    if (_archived_datetime(terminal.get("completed_at"),"supporting terminal completion")-_archived_datetime(attempts[0].get("started_at"),"supporting first attempt")).total_seconds()>policy.total_timeout_seconds:raise OperationsError("supporting-session-conflict","supporting page exceeds its total timeout envelope")
     if page.get("disposition")!=terminal.get("disposition") or _archived_datetime(page.get("started_at"),"supporting page start")!=_archived_datetime(attempts[0].get("started_at"),"supporting first attempt") or _archived_datetime(page.get("completed_at"),"supporting page completion")!=_archived_datetime(terminal.get("completed_at"),"supporting terminal attempt"):raise OperationsError("supporting-session-conflict","supporting page summary conflicts with attempts")
     if entry.get("disposition")!=terminal.get("disposition"):raise OperationsError("supporting-session-conflict","supporting manifest disposition conflicts with attempts")
     if terminal.get("disposition")=="success":

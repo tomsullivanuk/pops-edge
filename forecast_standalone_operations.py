@@ -137,6 +137,9 @@ class RetryPolicy:
         if self.maximum_retry_after_seconds < 0: raise OperationsError("configuration-error", "invalid Retry-After bound")
 
 
+RETROSPECTIVE_SUPPORTING_RETRY_POLICY=RetryPolicy(3,5,20,(1,2),2)
+
+
 @dataclass(frozen=True, slots=True)
 class DeploymentConfig:
     config_id: str
@@ -474,16 +477,19 @@ def acquire_prospective_once(*, transport: Transport, endpoint: str, request: Ma
 
 def acquire_with_retries(*, transport: Transport, endpoint: str, request: Mapping[str, str], policy: RetryPolicy,
                          now: Callable[[], datetime], sleeper: Callable[[float], None],
-                         validator: Callable[[Mapping[str, Any]], Mapping[str, Any]]) -> AcquisitionResult:
-    began = now(); records: list[AttemptRecord] = []; attempt_bodies: list[bytes | None] = []; last_body: bytes | None = None
+                         validator: Callable[[Mapping[str, Any]], Mapping[str, Any]],
+                         governed_retry_chronology: bool = False) -> AcquisitionResult:
+    began = now(); records: list[AttemptRecord] = []; attempt_bodies: list[bytes | None] = []; last_body: bytes | None = None;governed_start=None;first_start=None
     for number in range(1, policy.maximum_attempts + 1):
-        started = now(); status = None; retry_after = None
+        observed_started=now();started=governed_start if governed_start is not None else observed_started;first_start=first_start or started;status = None; retry_after = None
         try:
             response = transport.request("GET", endpoint, params=request, timeout=policy.request_timeout_seconds, allow_redirects=False)
             last_body = _permitted_response_raw(response); status = response.status_code; disposition = classify_response(response)
         except TimeoutError: disposition = Disposition.TIMEOUT; response = None;last_body=None
         except (ConnectionError, OSError): disposition = Disposition.CONNECTION_FAILURE; response = None;last_body=None
-        completed = now()
+        observed_completed=now()
+        if observed_completed<observed_started:raise OperationsError("trusted-clock-reversed","provider completion precedes request start")
+        completed=started+(observed_completed-observed_started) if governed_retry_chronology else observed_completed
         if response is not None and disposition is Disposition.SUCCESS:
             try: normalized = validator(_decode_json(response.body))
             except OperationsError as exc:
@@ -502,9 +508,10 @@ def acquire_with_retries(*, transport: Transport, endpoint: str, request: Mappin
         retryable = disposition in {Disposition.TIMEOUT, Disposition.CONNECTION_FAILURE, Disposition.RATE_LIMITED, Disposition.PROVIDER_ERROR}
         if not retryable or number == policy.maximum_attempts: break
         delay = max(policy.backoff_seconds[number - 1], retry_after or 0)
-        elapsed = (now() - began).total_seconds()
+        elapsed = ((completed-first_start).total_seconds() if governed_retry_chronology else (now() - began).total_seconds())
         if elapsed + delay + policy.request_timeout_seconds > policy.total_timeout_seconds: break
         sleeper(delay)
+        if governed_retry_chronology:governed_start=completed+timedelta(seconds=delay)
     return AcquisitionResult(records[-1].disposition, last_body, None, tuple(records), "bounded acquisition failed",tuple(attempt_bodies))
 
 
