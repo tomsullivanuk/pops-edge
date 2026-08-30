@@ -2611,6 +2611,16 @@ Coverage categories and opportunity membership are derived outputs, never caller
 
 Each genuine Schedule Observation that establishes a changed scheduled start owns a distinct opportunity and is partitioned independently at activation; a cross-boundary reschedule therefore preserves the original retrospective-side identity and the later prospective-side identity. Status-only observations create no duplicate opportunity. Eligibility consumes boundary-effective provider-neutral event-classification Evidence rather than Protocol-authored facts, including season, phase, game type, ordinary/doubleheader status, participant mapping, validation, and correction lineage. For unsuccessful prospective windows, opportunity-level precedence is explicit: a later valid capture outranks every earlier failure; without valid success, acquired-invalid outranks provider-call failure, which outranks pure no-call missed-window. Derivation, Outcome, and Measurement authority is selected only from material effective at the analysis boundary, with ambiguity failing closed and no input-order tie-breaker.
 
+For bounded multi-date MLB acquisition, `mlb-explicit-reschedule-lineage-1`
+separates stable same-`gamePk` event identity from evolving schedule and outcome
+state. Materially different representations require a unique, acyclic lineage
+proved by normalized MLB reschedule fields, date envelopes, scheduled instants,
+and compatible postponed-to-successor status. Stable identity contradictions,
+missing or ambiguous links, branches, cycles, foreign envelopes, and conflicting
+terminal states fail closed. The canonical union and correction-aware
+`OutcomeHistory` retain every distinct lineage observation in explicit lineage
+order; provider page order and dictionary overwrite grant no authority.
+
 Standalone performance cannot support or reject an Edge Claim, establish or invalidate a Market Edge, determine Practical Significance, create a Research Review conclusion or Current Scientific Applicability, or establish profitability, efficiency, actionable opportunity, Policy, Governance, or production authority. Time-bounded standalone performance is descriptive and creates no standalone Drift or review obligation.
 
 ### 2026 Kalshi MLB retrospective and prospective studies

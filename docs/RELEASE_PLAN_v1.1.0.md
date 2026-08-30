@@ -1040,6 +1040,14 @@ The reviewed implementation renders six absolute-path launchd jobs without insta
 PR17C1 additionally provides canonical activated-authority initialization, provider-native MLB and Kalshi decoding, raw-preserving fixed-point order-book adaptation, independently evaluated cadence health, and fail-closed daily inspect/rebuild maintenance. Fixture rehearsal runs the activated CLI and all rendered jobs without network, Keychain, or launchctl access.
 PR17C1 correction scope includes the complete prospective regular-season scheduled-state population, MLB-first opportunity construction independent of Kalshi availability, append-only correction replay, bounded complete Kalshi cursor pagination, New York obligation-driven multi-date MLB acquisition, and two-sided complementary bid-book normalization. Doubleheaders remain distinct; missing or ambiguous markets and cancelled or invalid events remain visible rather than being removed. This is proposed local activation machinery only and does not assert deployment or Evidence collection.
 
+PR17C2 multi-date completion uses `provider-pages-canonical-union-2` and
+`mlb-explicit-reschedule-lineage-1`, bound by supporting derivation
+`kalshi-mlb-explicit-rules-schedule-instant-3`. Legitimate repeated `gamePk`
+schedule evolution preserves original and successor observations under one
+stable event identity. Completion remains manifest-last and fails closed unless
+the full preserved page set deterministically yields one non-branching lineage;
+this correction adds no provider call or scheduler command.
+
 Supporting and outcome acquisitions preserve exact pages and admit contracts only through a replay-verified typed manifest and explicitly derived canonical union. All unresolved non-terminal games remain outcome obligations; the correction lookback bounds resolved games only. One command-start clock fixes requested dates, and opaque cursors use standard query encoding.
 
 PR17C1 also records actual per-request trusted chronology and integrates acquisition-group completion with archive reconciliation. Interrupted groups are unhealthy partial authority excluded from replay, indexes, secondary synchronization, and maintenance until deterministic create-only completion.

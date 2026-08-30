@@ -619,7 +619,13 @@ session is a zero-write no-op that returns the existing manifest identities;
 an invalid or duplicate completion fails closed.
 
 The approved retrospective derivation rule is
-`kalshi-mlb-explicit-rules-schedule-instant-2`. Reconciliation requires an
+`kalshi-mlb-explicit-rules-schedule-instant-3`. Its MLB multi-date component is
+`mlb-explicit-reschedule-lineage-1`: byte-identical repeated `gamePk` records
+deduplicate, while materially different records require one explicit,
+chronologically forward, non-branching reschedule lineage with stable season,
+sport, competition, and oriented participants. Preserve all raw pages and both
+postponed and successor observations; never use page order, dictionary order,
+description text, or last-record-wins selection. Reconciliation requires an
 explicitly binary market, structured YES, and a narrow settlement-rule template
 that names the winner, opponent, professional-baseball matchup, original local
 date/time, and supported New York timezone. Rule participants and the aware

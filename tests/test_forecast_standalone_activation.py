@@ -476,5 +476,54 @@ class ActivationTests(unittest.TestCase):
         self.assertEqual((derivation.bid.canonical_price,derivation.offer.canonical_price,derivation.midpoint,derivation.complement_probability),(Decimal("0.4000"),Decimal("0.7000"),Decimal("0.5500"),Decimal("0.4500")))
         self.assertEqual(derivation.bid.quantity,Decimal("5.00"));self.assertEqual(derivation.offer.quantity,Decimal("4.00"))
 
+    @staticmethod
+    def _reschedule_game(game_pk,day,instant,status,**lineage):
+        game={"gamePk":game_pk,"season":"2026","gameType":"R","gameDate":instant,"officialDate":day,"lastUpdated":instant,"doubleHeader":"N","gameNumber":1,"status":{"abstractGameState":"Final" if status=="Final" else "Preview","detailedState":status},"venue":{"id":1,"name":"Fixture Park"},"teams":{"away":{"team":{"id":113,"name":"Away Club","abbreviation":"AWY"}},"home":{"team":{"id":114,"name":"Home Club","abbreviation":"HME"}}}}
+        if status=="Final":game["teams"]["away"].update(score=2,isWinner=False);game["teams"]["home"].update(score=3,isWinner=True)
+        game.update(lineage);return game
+
+    @staticmethod
+    def _schedule_page(day,*games):
+        return json.dumps({"dates":[{"date":day,"games":list(games)}]},sort_keys=True,separators=(",",":")).encode()
+
+    def test_multidate_postponed_makeup_lineage_is_order_independent(self):
+        for game_pk,original_day,makeup_day in ((824621,"2026-04-02","2026-04-03"),(824134,"2026-04-03","2026-04-04"),(824460,"2026-04-04","2026-04-05")):
+            original=self._reschedule_game(game_pk,original_day,f"{original_day}T23:05:00Z","Postponed",rescheduleDate=makeup_day,rescheduleGameDate=f"{makeup_day}T23:05:00Z")
+            makeup=self._reschedule_game(game_pk,makeup_day,f"{makeup_day}T23:05:00Z","Final",rescheduledFromDate=original_day,rescheduledFrom=f"{original_day}T23:05:00Z")
+            pages=(self._schedule_page(original_day,original),self._schedule_page(makeup_day,makeup))
+            merged=merge_mlb_schedule_responses(pages)
+            self.assertEqual(merged,merge_mlb_schedule_responses(tuple(reversed(pages))))
+            payload=json.loads(merged);self.assertEqual([(x["officialDate"],x["status"]["detailedState"]) for day in payload["dates"] for x in day["games"]],[(original_day,"Postponed"),(makeup_day,"Final")])
+            state=SimpleNamespace(bucket=lambda _:())
+            contracts=refresh_supporting_from_raw(archive=None,mlb_raw=merged,kalshi_raw=b'{"cursor":"","markets":[]}',collected_at=datetime(2026,4,26,tzinfo=timezone.utc),prior_state=state,derive_only=True)
+            histories=tuple(x for x in contracts if type(x).__name__=="OutcomeHistory");self.assertEqual(len(histories),1)
+            self.assertEqual([(x.scheduled_start.date().isoformat(),x.provider_status.value) for x in histories[0].observations],[(original_day,"postponed"),(makeup_day,"final")]);self.assertEqual(histories[0].latest.home_score,3)
+
+    def test_multidate_identical_duplicate_is_safely_deduplicated(self):
+        game=self._reschedule_game(824621,"2026-04-02","2026-04-02T23:05:00Z","Scheduled")
+        page=self._schedule_page("2026-04-02",game);merged=merge_mlb_schedule_responses((page,page))
+        self.assertEqual(sum(len(day["games"]) for day in json.loads(merged)["dates"]),1)
+
+    def test_multidate_lineage_fails_closed_on_identity_and_relationship_conflicts(self):
+        original=self._reschedule_game(824621,"2026-04-02","2026-04-02T23:05:00Z","Postponed",rescheduleDate="2026-04-03")
+        makeup=self._reschedule_game(824621,"2026-04-03","2026-04-03T23:05:00Z","Final",rescheduledFromDate="2026-04-02")
+        cases=[]
+        changed=copy.deepcopy(makeup);changed["teams"]["home"]["team"]["id"]=999;cases.append((original,changed,"stable identity"))
+        reversed_teams=copy.deepcopy(makeup);reversed_teams["teams"]={"away":makeup["teams"]["home"],"home":makeup["teams"]["away"]};cases.append((original,reversed_teams,"stable identity"))
+        season=copy.deepcopy(makeup);season["season"]="2025";cases.append((original,season,"stable identity"))
+        missing=copy.deepcopy(makeup);missing.pop("rescheduledFromDate");without=copy.deepcopy(original);without.pop("rescheduleDate");cases.append((without,missing,"lacks explicit"))
+        contradictory=copy.deepcopy(makeup);contradictory["rescheduledFromDate"]="2026-04-01";cases.append((original,contradictory,"predecessor lineage"))
+        naive=copy.deepcopy(original);naive["rescheduleGameDate"]="2026-04-03T23:05:00";cases.append((naive,makeup,"malformed"))
+        wrong_status=copy.deepcopy(original);wrong_status["status"]["detailedState"]="Scheduled";cases.append((wrong_status,makeup,"not postponed"))
+        for first,second,message in cases:
+            with self.subTest(message=message),self.assertRaisesRegex(OperationsError,message):merge_mlb_schedule_responses((self._schedule_page("2026-04-02",first),self._schedule_page("2026-04-03",second)))
+
+    def test_multidate_foreign_envelope_and_competing_terminal_fail_closed(self):
+        original=self._reschedule_game(824621,"2026-04-02","2026-04-02T23:05:00Z","Postponed",rescheduleDate="2026-04-03")
+        makeup=self._reschedule_game(824621,"2026-04-03","2026-04-03T23:05:00Z","Final",rescheduledFromDate="2026-04-02")
+        with self.assertRaisesRegex(OperationsError,"foreign requested-date"):merge_mlb_schedule_responses((self._schedule_page("2026-04-01",original),))
+        terminal=copy.deepcopy(makeup);terminal["gameDate"]="2026-04-03T23:35:00Z";terminal["rescheduledFromDate"]="2026-04-02"
+        with self.assertRaisesRegex(OperationsError,"ambiguous|branches|competing"):merge_mlb_schedule_responses((self._schedule_page("2026-04-02",original),self._schedule_page("2026-04-03",makeup,terminal)))
+
 
 if __name__ == "__main__": unittest.main()
