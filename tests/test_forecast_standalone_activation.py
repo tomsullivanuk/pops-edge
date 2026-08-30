@@ -451,6 +451,15 @@ class ActivationTests(unittest.TestCase):
                 completed=complete_supporting_session_from_archive(archive=archive,session_id=replacement);self.assertEqual(completed["provider_calls"],0)
                 inspection=inspect_archive(archive);facts=dict(inspection.facts);self.assertTrue(inspection.ready);self.assertEqual((inspection.state,facts["rejected_supporting_sessions"],facts["valid_complete_supporting_sessions"]),("verified-with-rejected-sessions",1,1));self.assertTrue(any(rejected in issue for issue in inspection.issues))
                 replayed=replay_pr17_archive(archive,analysis_boundary=at+timedelta(days=1));self.assertTrue(replayed.bucket("protocols"));self.assertTrue(replayed.bucket("market_series"))
+                entries_before=tuple(archive.entries());repeated=complete_supporting_session_from_archive(archive=archive,session_id=replacement);self.assertEqual((repeated["completion_manifest_id"],repeated["provider_calls"]),(completed["completion_manifest_id"],0));self.assertEqual(tuple(archive.entries()),entries_before)
+                rebuild_index(archive);self.assertEqual(sync_secondary(archive)["conflicts"],0);self.assertTrue(replay_pr17_archive(archive,analysis_boundary=at+timedelta(days=1)).bucket("market_series"))
+                for code in ("archive-corrupt","archive-integrity-failure","index-disagreement","unexpected-operational-failure"):
+                    with self.subTest(code=code),patch("forecast_standalone_activation.verify_supporting_session_completion",side_effect=OperationsError(code,"synthetic global failure")):
+                        with self.assertRaisesRegex(OperationsError,code):inspect_archive(archive)
+                        with self.assertRaisesRegex(OperationsError,code):replay_pr17_archive(archive,analysis_boundary=at+timedelta(days=1))
+                with patch("forecast_standalone_activation.verify_supporting_session_completion",side_effect=RuntimeError("synthetic programming failure")):
+                    with self.assertRaisesRegex(RuntimeError,"programming failure"):inspect_archive(archive)
+                    with self.assertRaisesRegex(RuntimeError,"programming failure"):replay_pr17_archive(archive,analysis_boundary=at+timedelta(days=1))
 
     def test_completion_verifier_rejects_each_authority_field_tamper(self):
         from forecast_standalone_operations import Disposition,archive_pr17_authority

@@ -1015,6 +1015,20 @@ def _lock_available(archive: NamespaceArchive) -> bool:
     finally: handle.close()
 
 
+def _is_supporting_session_authority_rejection(exc:OperationsError)->bool:
+    """Localize only completion or selected acquisition-envelope authority failures."""
+    return exc.code.startswith("supporting-session") or exc.code in {
+        "acquisition-chronology-conflict",
+        "acquisition-contract-conflict",
+        "acquisition-contract-reconstruction-conflict",
+        "acquisition-dependency-conflict",
+        "acquisition-incompatible",
+        "acquisition-incomplete",
+        "acquisition-page-conflict",
+        "acquisition-union-conflict",
+    }
+
+
 def inspect_archive(archive: NamespaceArchive) -> DiagnosticResult:
     integrity=reconcile_archive(archive)
     try:entries=authoritative_entries(archive)
@@ -1034,7 +1048,9 @@ def inspect_archive(archive: NamespaceArchive) -> DiagnosticResult:
     for session_id in sorted(completion_sessions):
         try:
             verified=verify_supporting_session_completion(archive,session_id);valid_sessions.add(session_id);authoritative_bundle_manifests.update((verified["mlb_manifest_id"],verified["kalshi_manifest_id"]))
-        except OperationsError as exc:completion_issues.append(f"supporting session completion invalid: {session_id}: {exc.code}")
+        except OperationsError as exc:
+            if not _is_supporting_session_authority_rejection(exc):raise
+            completion_issues.append(f"supporting session completion invalid: {session_id}: {exc.code}")
     unresolved=sum(1 for item in integrity.partial if item.endswith(":missing-envelope"));abandoned=kinds.count("pr17c1-acquisition-reconciliation");complete=kinds.count("pr17c1-acquisition-bundle")
     retrospective_manifest_ids={entry["manifest_entry_id"] for entry in entries if entry.get("normalized_object_id") and json.loads(archive.read_verified("normalized",entry["normalized_object_id"])).get("record_kind")=="pr17c1-acquisition-bundle" and json.loads(archive.read_verified("normalized",entry["normalized_object_id"])).get("family")=="refresh-retrospective-supporting"}
     non_authoritative=len(retrospective_manifest_ids-authoritative_bundle_manifests)
@@ -1116,7 +1132,7 @@ def _contracts_from_entry(archive:NamespaceArchive,entry:Mapping[str,Any],prior_
             from forecast_standalone_activation import verify_supporting_session_completion
             try:verified=verify_supporting_session_completion(archive,session)
             except OperationsError as exc:
-                if exc.code.startswith(("supporting-session","acquisition-")):return ()
+                if _is_supporting_session_authority_rejection(exc):return ()
                 raise
             if entry.get("manifest_entry_id") not in {verified["mlb_manifest_id"],verified["kalshi_manifest_id"]}:return ()
         from forecast_standalone_activation import refresh_supporting_from_raw,reconcile_outcomes_from_raw,verify_acquisition_bundle
