@@ -655,7 +655,8 @@ and live catalog pages. The request endpoint, encoded cursor/date, partition,
 and position are identical on every attempt. The fixed policy is 3 attempts,
 5 seconds each, backoffs of 1 and 2 seconds, a 20-second total envelope, and a
 2-second `Retry-After` cap. Timeout, connection failure, HTTP 429, 5xx, and a
-response observed only after its five-second request boundary are retryable.
+late response with actual status 200, 429, or 5xx are retryable. Late redirects,
+oversized responses, and non-rate-limited client rejections are not retryable.
 A late response keeps its actual chronology, status, and permitted bytes under
 `late-response`, but it is never validated or admitted as the page success.
 Malformed, incomplete, oversized, or redirected responses,

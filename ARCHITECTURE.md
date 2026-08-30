@@ -1583,9 +1583,11 @@ MLB schedule, Kalshi historical-cutoff, historical-catalog, or live-catalog
 request under supporting-page schema 2. The finite policy is three attempts,
 five seconds per request, one- then two-second backoff, a twenty-second page
 envelope, and at most two honored `Retry-After` seconds. Timeout, connection
-failure, rate limiting, provider/server error, and a response observed after
-the request boundary may continue. A late response is preserved separately
-with its real status and permitted bytes but can never supply page authority.
+failure, rate limiting, provider/server error, and a late response whose actual
+status is 200, 429, or 5xx may continue. A late redirect, oversized response,
+or non-rate-limited client rejection remains non-retryable. Every late response
+is preserved separately with its real status and permitted bytes but can never
+supply page authority.
 Every attempt, safe response body, timestamp, status, and call remains bound to
 the single logical page; validation and integrity failures remain fail-closed.
 Schema-2 preserves every observed trusted-clock start and completion. A separate

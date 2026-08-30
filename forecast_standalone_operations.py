@@ -494,7 +494,11 @@ def acquire_with_retries(*, transport: Transport, endpoint: str, request: Mappin
         if response is not None and (completed-started).total_seconds()>policy.request_timeout_seconds:
             # A transport timeout is not a trustworthy wall-clock guarantee.  Preserve
             # any permitted late bytes and their real status, but never accept them.
-            disposition=Disposition.LATE_RESPONSE;retry_after=None
+            if disposition is Disposition.RATE_LIMITED:
+                text=response.headers.get("Retry-After","0")
+                try:retry_after=min(max(int(text),0),policy.maximum_retry_after_seconds)
+                except ValueError:retry_after=0
+            disposition=Disposition.LATE_RESPONSE
         if response is not None and disposition is Disposition.SUCCESS:
             try: normalized = validator(_decode_json(response.body))
             except OperationsError as exc:
@@ -510,7 +514,7 @@ def acquire_with_retries(*, transport: Transport, endpoint: str, request: Mappin
             except ValueError: retry_after = 0
         records.append(AttemptRecord(number, started, completed, disposition, status, retry_after,retry_scheduled_at))
         attempt_bodies.append(last_body)
-        retryable = disposition in {Disposition.TIMEOUT, Disposition.CONNECTION_FAILURE, Disposition.RATE_LIMITED, Disposition.PROVIDER_ERROR,Disposition.LATE_RESPONSE}
+        retryable = disposition in {Disposition.TIMEOUT, Disposition.CONNECTION_FAILURE, Disposition.RATE_LIMITED, Disposition.PROVIDER_ERROR} or (disposition is Disposition.LATE_RESPONSE and status is not None and (status in {200,429} or 500<=status<=599))
         if not retryable or number == policy.maximum_attempts: break
         delay = max(policy.backoff_seconds[number - 1], retry_after or 0)
         elapsed = (now()-first_start).total_seconds()

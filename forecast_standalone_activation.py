@@ -725,7 +725,7 @@ def _verify_supporting_page_attempts(archive:NamespaceArchive,entry:Mapping[str,
     attempts=page["attempts"]
     policy=RETROSPECTIVE_SUPPORTING_RETRY_POLICY
     if len(attempts)>policy.maximum_attempts:raise OperationsError("supporting-session-conflict","supporting page exceeds its attempt bound")
-    retryable={"timeout","connection-failure","rate-limited","provider-error","late-response"};prior_completed=None
+    retryable={"timeout","connection-failure","rate-limited","provider-error"};prior_completed=None
     for index,attempt in enumerate(attempts,1):
         required={"attempt","started_at","completed_at","retry_scheduled_at","disposition","status_code","retry_after_seconds","endpoint","request_identity","partition","partition_position","raw_sha256"}
         if set(attempt)!=required or attempt.get("attempt")!=index:raise OperationsError("supporting-session-conflict","supporting attempt numbering or schema conflicts")
@@ -742,15 +742,18 @@ def _verify_supporting_page_attempts(archive:NamespaceArchive,entry:Mapping[str,
         prior_completed=completed;disp=attempt.get("disposition");status=attempt.get("status_code");retry_after=attempt.get("retry_after_seconds");digest=attempt.get("raw_sha256")
         if disp not in {item.value for item in Disposition}:raise OperationsError("supporting-session-conflict","supporting attempt disposition is unknown")
         if disp in {"timeout","connection-failure"} and (status is not None or digest is not None):raise OperationsError("supporting-session-conflict","transport failure invents provider response material")
-        if disp=="rate-limited" and (status!=429 or not isinstance(retry_after,int) or not 0<=retry_after<=policy.maximum_retry_after_seconds):raise OperationsError("supporting-session-conflict","rate-limit attempt is malformed")
-        if disp!="rate-limited" and retry_after is not None:raise OperationsError("supporting-session-conflict","Retry-After appears on an inapplicable attempt")
+        retry_after_applicable=disp=="rate-limited" or (disp=="late-response" and status==429)
+        if retry_after_applicable and (status!=429 or not isinstance(retry_after,int) or not 0<=retry_after<=policy.maximum_retry_after_seconds):raise OperationsError("supporting-session-conflict","rate-limit attempt is malformed")
+        if not retry_after_applicable and retry_after is not None:raise OperationsError("supporting-session-conflict","Retry-After appears on an inapplicable attempt")
         if disp=="provider-error" and (not isinstance(status,int) or not 500<=status<=599):raise OperationsError("supporting-session-conflict","provider-error status is malformed")
         if disp=="late-response" and not isinstance(status,int):raise OperationsError("supporting-session-conflict","late response status is absent")
         if disp=="success" and status!=200:raise OperationsError("supporting-session-conflict","successful attempt status conflicts")
         if digest is not None:
             if not isinstance(digest,str) or len(digest)!=64 or any(character not in "0123456789abcdef" for character in digest):raise OperationsError("supporting-session-conflict","attempt raw digest is malformed")
-            archive.read_verified("raw","raw:"+digest)
-        if index<len(attempts) and disp not in retryable:raise OperationsError("supporting-session-conflict","non-retryable attempt has a successor")
+            try:archive.read_verified("raw","raw:"+digest)
+            except (OSError,OperationsError) as exc:raise OperationsError("supporting-session-conflict","attempt raw material is missing or corrupt") from exc
+        can_retry=disp in retryable or (disp=="late-response" and isinstance(status,int) and (status in {200,429} or 500<=status<=599))
+        if index<len(attempts) and not can_retry:raise OperationsError("supporting-session-conflict","non-retryable attempt has a successor")
         if disp=="success" and index!=len(attempts):raise OperationsError("supporting-session-conflict","attempt appears after success")
     terminal=attempts[-1]
     if (_archived_datetime(terminal.get("completed_at"),"supporting terminal completion")-_archived_datetime(attempts[0].get("started_at"),"supporting first attempt")).total_seconds()>policy.total_timeout_seconds:raise OperationsError("supporting-session-conflict","supporting page exceeds its total timeout envelope")

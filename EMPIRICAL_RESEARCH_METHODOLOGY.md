@@ -2633,8 +2633,9 @@ claims fail closed. Earlier authoritative rule versions replay unchanged.
 
 Transport resilience does not change scientific authority. PR17C2 supporting
 page schema 2 permits only bounded retries of the identical logical request for
-timeout, connection failure, rate limiting, provider/server error, or a
-response observed after the five-second request boundary. A late response's
+timeout, connection failure, rate limiting, provider/server error, or a late
+response whose actual status would otherwise permit success or transient retry.
+Late redirects and client rejections remain non-retryable. A late response's
 actual status and permitted bytes remain preserved non-authoritatively. Earlier
 transient attempts remain operational chronology and count as provider calls;
 only the terminal validated success supplies the page raw body to the derived
