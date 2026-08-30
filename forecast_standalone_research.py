@@ -376,7 +376,8 @@ def create_standalone_eligibility_authority(*,protocol:StandaloneProbabilitySour
         if OutcomeStatus.POSTPONED in statuses:reasons.append("postponed")
         if OutcomeStatus.SUSPENDED in statuses:reasons.append("suspended")
         if OutcomeStatus.SUSPENDED in statuses and statuses[-1] is not OutcomeStatus.SUSPENDED:reasons.append("resumed")
-        if len({item.scheduled_start for item in visible})>1:reasons.append("rescheduled")
+        if "explicit-mlb-resume-lineage" in classification.limitations and "resumed" not in reasons:reasons.append("resumed")
+        if len({item.scheduled_start for item in visible})>1 and "explicit-mlb-resume-lineage" not in classification.limitations:reasons.append("rescheduled")
         if scope.get("ordinary_game","required")!="required":validation.append("unsupported-ordinary-game-rule")
     else:
         if phase is not EventPhase.REGULAR_SEASON or season!=scope.get("season","2026"):reasons.append("outside-prospective-regular-season")
@@ -400,6 +401,7 @@ def expected_schedule_opportunities(*,protocol:StandaloneProbabilitySourceProtoc
         if not visible:continue
         first=visible[0];schedule_states=[first]
         for item in visible[1:]:
+            if item.observation_id.startswith("outcome-resume-lineage:"):continue
             if item.scheduled_start!=schedule_states[-1].scheduled_start:schedule_states.append(item)
         for item in schedule_states:
             belongs=item.scheduled_start<activation.activation_at if protocol.design_tag is StandaloneDesignTag.RETROSPECTIVE else item.scheduled_start>=activation.activation_at

@@ -1048,6 +1048,14 @@ stable event identity. Completion remains manifest-last and fails closed unless
 the full preserved page set deterministically yields one non-branching lineage;
 this correction adds no provider call or scheduler command.
 
+The suspension/resumption correction advances new supporting completion to
+`provider-pages-canonical-union-3`,
+`mlb-explicit-schedule-evolution-lineage-2`, and
+`kalshi-mlb-explicit-rules-schedule-instant-4`. Reciprocal resume fields retain
+the original-date identity and both observations but make the event
+retrospectively non-ordinary, Coverage-visible, and candle-ineligible. Legacy
+authoritative sessions keep their declared 2/1 or 3/2 rule pairing.
+
 Supporting and outcome acquisitions preserve exact pages and admit contracts only through a replay-verified typed manifest and explicitly derived canonical union. All unresolved non-terminal games remain outcome obligations; the correction lookback bounds resolved games only. One command-start clock fixes requested dates, and opaque cursors use standard query encoding.
 
 PR17C1 also records actual per-request trusted chronology and integrates acquisition-group completion with archive reconciliation. Interrupted groups are unhealthy partial authority excluded from replay, indexes, secondary synchronization, and maintenance until deterministic create-only completion.
