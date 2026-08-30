@@ -407,9 +407,16 @@ def _mlb_record_authority(record:Mapping[str,Any],envelope:date)->Mapping[str,An
 def _mlb_lineage_target(record:Mapping[str,Any],candidates:Iterable[tuple[bytes,Mapping[str,Any]]],fields:tuple[str,...],direction:str)->bytes|None:
     declared=tuple((field,_mlb_lineage_value(record[field],field)) for field in fields if record.get(field) is not None)
     if not declared:return None
+    target_declarations=declared
+    if len(declared)==2:
+        timestamps=tuple((field,day,instant) for field,(day,instant) in declared if instant is not None);dates=tuple((field,day) for field,(day,instant) in declared if instant is None)
+        if len(timestamps)!=1 or len(dates)!=1:raise OperationsError("multi-date-conflict",f"MLB {direction} paired timestamp/date fields are malformed")
+        timestamp_field,_,instant=timestamps[0];date_field,declared_day=dates[0];new_york_day=instant.astimezone(ZoneInfo(APPROVED_TIMEZONE)).date()
+        if declared_day!=new_york_day:raise OperationsError("multi-date-conflict",f"MLB {direction} paired fields disagree: {timestamp_field},{date_field}")
+        target_declarations=((timestamp_field,(new_york_day,instant)),)
     matches=[]
     for digest,authority in candidates:
-        if all((instant==authority["scheduled"] if instant is not None else day in authority["dates"]) for _,(day,instant) in declared):matches.append(digest)
+        if all((instant==authority["scheduled"] if instant is not None else day in authority["dates"]) for _,(day,instant) in target_declarations):matches.append(digest)
     if len(matches)!=1:raise OperationsError("multi-date-conflict",f"MLB {direction} lineage is missing, contradictory, or ambiguous: {','.join(field for field,_ in declared)}")
     return matches[0]
 

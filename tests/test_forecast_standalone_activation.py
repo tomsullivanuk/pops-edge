@@ -551,7 +551,7 @@ class ActivationTests(unittest.TestCase):
         original,resumed=self._resume_pair();cases=[]
         one_sided=copy.deepcopy(resumed);one_sided.pop("resumedFromDate");cases.append((original,one_sided,"explicit and reciprocal"))
         timestamp=copy.deepcopy(resumed);timestamp["resumedFrom"]="2026-06-16T23:16:00Z";cases.append((original,timestamp,"predecessor lineage"))
-        date_mismatch=copy.deepcopy(original);date_mismatch["resumeGameDate"]="2026-06-18";cases.append((date_mismatch,resumed,"successor lineage"))
+        date_mismatch=copy.deepcopy(original);date_mismatch["resumeGameDate"]="2026-06-18";cases.append((date_mismatch,resumed,"paired fields disagree"))
         malformed=copy.deepcopy(original);malformed["resumeDate"]="2026-06-17T18:00:00";cases.append((malformed,resumed,"malformed"))
         participants=copy.deepcopy(resumed);participants["teams"]["home"]["team"]["id"]=999;cases.append((original,participants,"stable identity"))
         official=copy.deepcopy(resumed);official["officialDate"]="2026-06-17";cases.append((original,official,"original officialDate"))
@@ -560,8 +560,18 @@ class ActivationTests(unittest.TestCase):
             with self.subTest(message=message),self.assertRaisesRegex(OperationsError,message):merge_mlb_schedule_responses((self._schedule_page("2026-06-16",first),self._schedule_page("2026-06-17",second)))
         cycle_origin,cycle_successor=self._resume_pair();cycle_origin.update(gameDate="2026-06-17T18:00:00Z",resumeDate="2026-06-16T23:15:00Z",resumeGameDate="2026-06-16");cycle_successor.update(gameDate="2026-06-16T23:15:00Z",resumedFrom="2026-06-17T18:00:00Z",resumedFromDate="2026-06-17")
         with self.assertRaisesRegex(OperationsError,"cyclic|chronologically"):merge_mlb_schedule_responses((self._schedule_page("2026-06-17",cycle_origin),self._schedule_page("2026-06-16",cycle_successor)))
-        competing=copy.deepcopy(resumed);competing["gameDate"]="2026-06-17T19:00:00Z";original_branch=copy.deepcopy(original);original_branch["resumeDate"]="2026-06-17";original_branch["resumeGameDate"]="2026-06-17"
+        competing=copy.deepcopy(resumed);competing["gameDate"]="2026-06-17T19:00:00Z";original_branch=copy.deepcopy(original)
         with self.assertRaisesRegex(OperationsError,"branches|competing"):merge_mlb_schedule_responses((self._schedule_page("2026-06-16",original_branch),self._schedule_page("2026-06-17",resumed,competing)))
+
+    def test_lineage_paired_dates_use_new_york_timestamp_date(self):
+        original,resumed=self._resume_pair()
+        reproduced=copy.deepcopy(original);reproduced["resumeGameDate"]="2026-06-16"
+        from_mismatch=copy.deepcopy(resumed);from_mismatch["resumedFromDate"]="2026-06-15"
+        near_midnight=copy.deepcopy(original);near_midnight.update(resumeDate="2026-06-18T01:00:00Z",resumeGameDate="2026-06-18");near_midnight_successor=copy.deepcopy(resumed);near_midnight_successor["gameDate"]="2026-06-18T01:00:00Z"
+        reschedule_original=self._reschedule_game(824621,"2026-04-02","2026-04-02T23:05:00Z","Postponed",rescheduleDate="2026-04-03T23:05:00Z",rescheduleGameDate="2026-04-02");reschedule_makeup=self._reschedule_game(824621,"2026-04-03","2026-04-03T23:05:00Z","Final",rescheduledFromDate="2026-04-02",rescheduledFrom="2026-04-02T23:05:00Z")
+        cases=((self._schedule_page("2026-06-16",reproduced),self._schedule_page("2026-06-17",resumed)),(self._schedule_page("2026-06-16",original),self._schedule_page("2026-06-17",from_mismatch)),(self._schedule_page("2026-06-16",near_midnight),self._schedule_page("2026-06-17",near_midnight_successor)),(self._schedule_page("2026-04-02",reschedule_original),self._schedule_page("2026-04-03",reschedule_makeup)))
+        for pages in cases:
+            with self.subTest(pages=pages),self.assertRaisesRegex(OperationsError,"paired fields disagree"):merge_mlb_schedule_responses(pages)
 
     def test_versioned_session_rules_require_exact_union_pairing(self):
         self.assertEqual(SUPPORTED_DERIVATION_UNION_RULES,{"kalshi-mlb-explicit-rules-schedule-instant-2":"provider-pages-canonical-union-1","kalshi-mlb-explicit-rules-schedule-instant-3":"provider-pages-canonical-union-2","kalshi-mlb-explicit-rules-schedule-instant-4":"provider-pages-canonical-union-3"})
