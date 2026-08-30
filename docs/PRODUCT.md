@@ -279,6 +279,12 @@ Coverage construction derives the complete schedule opportunity universe, eligib
 
 Cross-activation reschedules retain one opportunity per genuine scheduled state, independently partitioned by that state's scheduled start. Standalone eligibility uses immutable boundary-aware event-classification Evidence, and prospective Coverage gives any later valid in-window capture precedence over earlier unsuccessful attempts. Derivations, Outcomes, and Measurements are selected at the explicit boundary without last-input-wins behavior.
 
+Bounded multi-date MLB supporting material reconciles repeated `gamePk` records
+only through explicit, internally consistent provider reschedule lineage. Both
+the original postponed state and the makeup/final state remain auditable under
+one event identity and an ordered correction-aware history; input ordering,
+descriptive text, and last-record-wins behavior never select scientific state.
+
 ### Comparative Performance
 
 Comparative Performance evaluates a Probability Source relative to the Market Benchmark. It determines whether observed forecasting performance contains useful information beyond what the market already reflects, including the conditions and limitations under which that conclusion holds.

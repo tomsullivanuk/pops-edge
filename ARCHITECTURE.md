@@ -1561,6 +1561,14 @@ Kalshi authentication follows its documented read-only RSA-PSS/SHA-256 boundary:
 Current Kalshi catalog and order-book routes are public read-only market-data GETs, so the signing/Keychain seam is retained but not invoked for them. The order-book successor seam archives exact provider bytes separately from canonical `MarketObservation` material and strictly accepts `orderbook_fp` fixed-point bids. The `maintain` command verifies authoritative integrity, rebuilds only the derived SQLite index, then verifies index health. The activated rehearsal uses these same initialization, adapter, CLI, heartbeat, rendering, and archive paths with fixtures.
 PR17C1 keeps schedule authority upstream of market discovery. Complete MLB responses produce correction-aware histories, classifications, eligibility, and scheduled-state opportunities before independent per-event Kalshi reconciliation; a missing or ambiguous market cannot discard another event or the MLB universe. Catalog acquisition follows a bounded validated cursor chain and preserves page raw material, while MLB requests use the versioned New York obligation/lookback date rule and expose incomplete multi-date acquisition. Kalshi `orderbook_fp` resting YES bids complement to canonical NO offers and resting NO bids complement to canonical YES offers. Refreshes append genuine corrections, suppress semantic no-change, and preserve earlier-boundary replay.
 
+The multi-date union rule `provider-pages-canonical-union-2` binds
+`mlb-explicit-reschedule-lineage-1`. Raw response pages remain immutable; the
+derived union groups stable same-`gamePk` identity and admits materially
+different records only when canonical reschedule fields establish one unique
+forward lineage. The derived record order, outcome history, terminal
+classification, acquisition digest, completion, replay, inspection, and index
+reconstruction all consume that same order-independent rule.
+
 Retrospective MLB winner-market reconciliation requires an explicitly binary
 market and a narrow provider settlement-rule template that identifies the YES
 participant, opponent, two-participant matchup, and original New York local

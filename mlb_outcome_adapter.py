@@ -55,12 +55,8 @@ class MLBOutcomeAdapter:
         *,
         canonical_games: tuple[MLBGame, ...] = (),
     ) -> tuple[MLBOutcomeAdapterResult, ...]:
-        facts = MLBStatsAPIAdapter().parse_response(response)
-        facts_by_id = {
-            item.game.game_pk: item
-            for item in facts.games
-            if item.game is not None
-        }
+        adapter = MLBStatsAPIAdapter()
+        raw = adapter._raw_evidence(response)
         supplied = {game.game_pk: game for game in canonical_games}
         results = []
         for record in _game_records(response.payload):
@@ -68,7 +64,7 @@ class MLBOutcomeAdapter:
             if not isinstance(game_pk, int) or game_pk <= 0:
                 results.append(MLBOutcomeAdapterResult(None, None, (OutcomeIssue("missing-game-pk", "positive integer gamePk is required"),)))
                 continue
-            fact = facts_by_id.get(game_pk)
+            fact = adapter.parse_game(record, raw)
             if fact is None or fact.game is None or fact.schedule_observation is None:
                 results.append(MLBOutcomeAdapterResult(str(game_pk), None, (OutcomeIssue("canonical-event-rejected", "existing MLB facts adapter could not establish Canonical Event identity"),)))
                 continue
