@@ -1067,6 +1067,10 @@ visible and cannot publish provider bundles or completion authority. Completed
 schema-1 sessions and their replay meaning are unchanged.
 The exact completion verifier runs before manifest-last publication, so a CLI
 success result cannot name a session that immediate replay rejects.
+Previously written completions that fail this verifier remain immutable and
+visible as rejected supporting sessions. They contribute no scientific
+authority and do not block archive-only completion or replay of an independent
+valid session; missing or corrupt archive objects continue to block globally.
 
 Supporting and outcome acquisitions preserve exact pages and admit contracts only through a replay-verified typed manifest and explicitly derived canonical union. All unresolved non-terminal games remain outcome obligations; the correction lookback bounds resolved games only. One command-start clock fixes requested dates, and opaque cursors use standard query encoding.
 

@@ -2649,6 +2649,11 @@ the preceding observed completion plus the fixed bounded policy delay; actual
 start may be later, preserving scheduler latency, but never earlier.
 The complete session candidate must pass this same replay verification before
 manifest-last publication; operational success cannot precede that gate.
+An existing completion that fails the gate is a rejected, non-authoritative
+session, not a reason to reinterpret or discard its Evidence and not authority
+to suppress an independent valid collection. Replay excludes all of its
+contracts while inspection reports the rejection. Archive-object loss or
+corruption remains globally blocking rather than session-local.
 
 Standalone performance cannot support or reject an Edge Claim, establish or invalidate a Market Edge, determine Practical Significance, create a Research Review conclusion or Current Scientific Applicability, or establish profitability, efficiency, actionable opportunity, Policy, Governance, or production authority. Time-bounded standalone performance is descriptive and creates no standalone Drift or review obligation.
 

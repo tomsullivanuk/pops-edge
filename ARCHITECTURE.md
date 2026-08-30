@@ -1598,6 +1598,11 @@ Replay applies no tolerance: accepted attempts last at most five seconds, a
 `late-response` lasts more than five seconds, and terminal completion remains
 within twenty seconds of the observed first start. The same verifier preflights
 the entire completion candidate before manifest-last authority is written.
+An immutable completion that fails this gate is rejected as a session-local
+authority claim. Its pages, bundles, completion, and rejection remain visible,
+but none contribute scientific contracts and unrelated verified sessions
+continue deterministic replay. This isolation never masks missing or corrupt
+archive objects, which remain namespace-wide integrity failures.
 Schema-1 pages retain their original single-call replay semantics.
 
 Retrospective MLB winner-market reconciliation requires an explicitly binary

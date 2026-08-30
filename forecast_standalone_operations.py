@@ -1015,6 +1015,20 @@ def _lock_available(archive: NamespaceArchive) -> bool:
     finally: handle.close()
 
 
+def _is_supporting_session_authority_rejection(exc:OperationsError)->bool:
+    """Localize only completion or selected acquisition-envelope authority failures."""
+    return exc.code.startswith("supporting-session") or exc.code in {
+        "acquisition-chronology-conflict",
+        "acquisition-contract-conflict",
+        "acquisition-contract-reconstruction-conflict",
+        "acquisition-dependency-conflict",
+        "acquisition-incompatible",
+        "acquisition-incomplete",
+        "acquisition-page-conflict",
+        "acquisition-union-conflict",
+    }
+
+
 def inspect_archive(archive: NamespaceArchive) -> DiagnosticResult:
     integrity=reconcile_archive(archive)
     try:entries=authoritative_entries(archive)
@@ -1034,14 +1048,17 @@ def inspect_archive(archive: NamespaceArchive) -> DiagnosticResult:
     for session_id in sorted(completion_sessions):
         try:
             verified=verify_supporting_session_completion(archive,session_id);valid_sessions.add(session_id);authoritative_bundle_manifests.update((verified["mlb_manifest_id"],verified["kalshi_manifest_id"]))
-        except OperationsError as exc:completion_issues.append(f"supporting session completion invalid: {session_id}: {exc.code}")
+        except OperationsError as exc:
+            if not _is_supporting_session_authority_rejection(exc):raise
+            completion_issues.append(f"supporting session completion invalid: {session_id}: {exc.code}")
     unresolved=sum(1 for item in integrity.partial if item.endswith(":missing-envelope"));abandoned=kinds.count("pr17c1-acquisition-reconciliation");complete=kinds.count("pr17c1-acquisition-bundle")
     retrospective_manifest_ids={entry["manifest_entry_id"] for entry in entries if entry.get("normalized_object_id") and json.loads(archive.read_verified("normalized",entry["normalized_object_id"])).get("record_kind")=="pr17c1-acquisition-bundle" and json.loads(archive.read_verified("normalized",entry["normalized_object_id"])).get("family")=="refresh-retrospective-supporting"}
     non_authoritative=len(retrospective_manifest_ids-authoritative_bundle_manifests)
-    facts=(("verified_entries",len(entries)),("orphaned_objects",len(integrity.orphaned)),("missing_objects",len(integrity.referenced_missing)),("corrupt_objects",len(integrity.referenced_corrupt)),("unresolved_partial_acquisitions",unresolved),("preserved_supporting_session_pages",len(session_pages)),("supporting_session_pages",len(session_pages)),("incomplete_supporting_sessions",len(session_ids-valid_sessions)),("valid_complete_supporting_sessions",len(valid_sessions)),("complete_supporting_sessions",len(valid_sessions)),("non_authoritative_retrospective_provider_bundles",non_authoritative),("authoritative_completed_retrospective_sessions",len(valid_sessions)),("failed_supporting_pages",failed_session_pages),("reconciled_abandoned_acquisitions",abandoned),("complete_authoritative_acquisitions",complete-len(retrospective_bundles)+2*len(valid_sessions)))+tuple((f"{key}_entries",value) for key,value in sorted(by_design.items()))
+    facts=(("verified_entries",len(entries)),("orphaned_objects",len(integrity.orphaned)),("missing_objects",len(integrity.referenced_missing)),("corrupt_objects",len(integrity.referenced_corrupt)),("unresolved_partial_acquisitions",unresolved),("preserved_supporting_session_pages",len(session_pages)),("supporting_session_pages",len(session_pages)),("incomplete_supporting_sessions",len(session_ids-valid_sessions)),("rejected_supporting_sessions",len(completion_issues)),("valid_complete_supporting_sessions",len(valid_sessions)),("complete_supporting_sessions",len(valid_sessions)),("non_authoritative_retrospective_provider_bundles",non_authoritative),("authoritative_completed_retrospective_sessions",len(valid_sessions)),("failed_supporting_pages",failed_session_pages),("reconciled_abandoned_acquisitions",abandoned),("complete_authoritative_acquisitions",complete-len(retrospective_bundles)+2*len(valid_sessions)))+tuple((f"{key}_entries",value) for key,value in sorted(by_design.items()))
     issues=tuple(f"archive orphaned: {item}" for item in integrity.orphaned)+tuple(f"archive missing: {item}" for item in integrity.referenced_missing)+tuple(f"archive corrupt: {item}" for item in integrity.referenced_corrupt)+tuple(f"archive malformed: {item}" for item in integrity.malformed)+tuple(f"archive incompatible: {item}" for item in integrity.incompatible)+tuple(f"archive partial: {item}" for item in integrity.partial)+tuple(completion_issues)
-    ready=integrity.healthy and not completion_issues
-    return DiagnosticResult(OPERATIONS_SCHEMA_VERSION,"inspect",archive.config.identity,archive.config.namespace,archive.config.mode,ready,"verified" if ready else "attention",facts,issues)
+    ready=integrity.healthy
+    state="verified-with-rejected-sessions" if ready and completion_issues else ("verified" if ready else "attention")
+    return DiagnosticResult(OPERATIONS_SCHEMA_VERSION,"inspect",archive.config.identity,archive.config.namespace,archive.config.mode,ready,state,facts,issues)
 
 
 COMMAND_CAPABILITIES={
@@ -1115,7 +1132,7 @@ def _contracts_from_entry(archive:NamespaceArchive,entry:Mapping[str,Any],prior_
             from forecast_standalone_activation import verify_supporting_session_completion
             try:verified=verify_supporting_session_completion(archive,session)
             except OperationsError as exc:
-                if exc.code=="supporting-session-incomplete":return ()
+                if _is_supporting_session_authority_rejection(exc):return ()
                 raise
             if entry.get("manifest_entry_id") not in {verified["mlb_manifest_id"],verified["kalshi_manifest_id"]}:return ()
         from forecast_standalone_activation import refresh_supporting_from_raw,reconcile_outcomes_from_raw,verify_acquisition_bundle
