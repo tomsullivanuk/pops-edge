@@ -2640,10 +2640,10 @@ union. Exhaustion produces one durable non-authoritative page failure and no
 completion authority. All validation, pagination, reconciliation, lineage, and
 contract checks remain single-attempt and fail closed. Historical schema-1
 sessions retain their original semantics.
-Schema-2 replay treats retry time as governed chronology without tolerance:
-measured request duration is retained, incidental scheduler wake-up latency is
-excluded, and each successor start equals the preceding completion plus the
-fixed bounded policy delay.
+Schema-2 replay preserves observed attempt chronology and separately verifies
+the governed retry instant without tolerance. Each successor schedule equals
+the preceding observed completion plus the fixed bounded policy delay; actual
+start may be later, preserving scheduler latency, but never earlier.
 
 Standalone performance cannot support or reject an Edge Claim, establish or invalidate a Market Edge, determine Practical Significance, create a Research Review conclusion or Current Scientific Applicability, or establish profitability, efficiency, actionable opportunity, Policy, Governance, or production authority. Time-bounded standalone performance is descriptive and creates no standalone Drift or review obligation.
 

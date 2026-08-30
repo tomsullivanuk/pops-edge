@@ -597,7 +597,7 @@ def preserve_supporting_response(*,archive:NamespaceArchive,session_id:str,provi
         if len(bodies)!=len(attempt_values):raise OperationsError("supporting-attempt-conflict","attempt raw chronology is incomplete")
         descriptor={"schema_version":"2","record_kind":"pr17c2-supporting-session-page","session_id":session_id,"provider":provider,"purpose":purpose,"partition":partition,"partition_position":partition_position,"request_identity":request_identity_value,"endpoint":endpoint,"started_at":started_at,"completed_at":completed_at,"disposition":disposition.value,"attempts":[]}
         for attempt,body in zip(attempt_values,bodies):
-            descriptor["attempts"].append({"attempt":attempt.attempt,"started_at":attempt.started_at,"completed_at":attempt.completed_at,"disposition":attempt.disposition.value,"status_code":attempt.status_code,"retry_after_seconds":attempt.retry_after_seconds,"endpoint":endpoint,"request_identity":request_identity_value,"partition":partition,"partition_position":partition_position,"raw_sha256":hashlib.sha256(body).hexdigest() if body is not None else None})
+            descriptor["attempts"].append({"attempt":attempt.attempt,"started_at":attempt.started_at,"completed_at":attempt.completed_at,"retry_scheduled_at":attempt.retry_scheduled_at,"disposition":attempt.disposition.value,"status_code":attempt.status_code,"retry_after_seconds":attempt.retry_after_seconds,"endpoint":endpoint,"request_identity":request_identity_value,"partition":partition,"partition_position":partition_position,"raw_sha256":hashlib.sha256(body).hexdigest() if body is not None else None})
         if attempt_values[0].started_at!=started_at or attempt_values[-1].completed_at!=completed_at or attempt_values[-1].disposition is not disposition:raise OperationsError("supporting-attempt-conflict","page summary conflicts with attempt chronology")
         if disposition.value=="success" and (raw is None or bodies[-1]!=raw):raise OperationsError("supporting-attempt-conflict","successful raw body is not bound to the terminal attempt")
     else:descriptor={"schema_version":"1","record_kind":"pr17c2-supporting-session-page","session_id":session_id,"provider":provider,"purpose":purpose,"partition":partition,"partition_position":partition_position,"request_identity":request_identity_value,"endpoint":endpoint,"started_at":started_at,"completed_at":completed_at,"disposition":disposition.value}
@@ -722,14 +722,17 @@ def _verify_supporting_page_attempts(archive:NamespaceArchive,entry:Mapping[str,
     if len(attempts)>policy.maximum_attempts:raise OperationsError("supporting-session-conflict","supporting page exceeds its attempt bound")
     retryable={"timeout","connection-failure","rate-limited","provider-error"};prior_completed=None
     for index,attempt in enumerate(attempts,1):
-        required={"attempt","started_at","completed_at","disposition","status_code","retry_after_seconds","endpoint","request_identity","partition","partition_position","raw_sha256"}
+        required={"attempt","started_at","completed_at","retry_scheduled_at","disposition","status_code","retry_after_seconds","endpoint","request_identity","partition","partition_position","raw_sha256"}
         if set(attempt)!=required or attempt.get("attempt")!=index:raise OperationsError("supporting-session-conflict","supporting attempt numbering or schema conflicts")
         if any(attempt.get(field)!=page.get(field) for field in ("endpoint","request_identity","partition","partition_position")):raise OperationsError("supporting-session-conflict","supporting retry changes logical request identity")
         started=_archived_datetime(attempt.get("started_at"),"supporting attempt start");completed=_archived_datetime(attempt.get("completed_at"),"supporting attempt completion")
         if completed<started or (completed-started).total_seconds()>policy.request_timeout_seconds:raise OperationsError("supporting-session-conflict","supporting attempt duration exceeds its request bound")
-        if prior_completed is not None:
+        if index==1:
+            if attempt.get("retry_scheduled_at") is not None:raise OperationsError("supporting-session-conflict","first supporting attempt has retry scheduling authority")
+        else:
             preceding=attempts[index-2];expected_delay=max(policy.backoff_seconds[index-2],preceding.get("retry_after_seconds") or 0)
-            if started!=prior_completed+timedelta(seconds=expected_delay):raise OperationsError("supporting-session-conflict","supporting retry does not use the exact governed delay")
+            scheduled=_archived_datetime(attempt.get("retry_scheduled_at"),"supporting retry scheduled instant")
+            if scheduled!=prior_completed+timedelta(seconds=expected_delay) or started<scheduled:raise OperationsError("supporting-session-conflict","supporting retry scheduling conflicts with observed chronology")
         prior_completed=completed;disp=attempt.get("disposition");status=attempt.get("status_code");retry_after=attempt.get("retry_after_seconds");digest=attempt.get("raw_sha256")
         if disp not in {item.value for item in Disposition}:raise OperationsError("supporting-session-conflict","supporting attempt disposition is unknown")
         if disp in {"timeout","connection-failure"} and (status is not None or digest is not None):raise OperationsError("supporting-session-conflict","transport failure invents provider response material")

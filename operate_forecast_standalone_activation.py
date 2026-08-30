@@ -48,7 +48,7 @@ def adapt_kalshi_historical_cutoff(value):
 def acquire_retrospective_supporting_page(*,archive,session_id,provider,purpose,base,path,request_identity_value,transport,clock,sleeper=time.sleep,partition=None,partition_position=None,validator=lambda value:value):
     """Acquire and durably preserve one PR17C2 logical supporting page."""
     endpoint=base.rstrip("/")+path
-    result=acquire_with_retries(transport=transport,endpoint=endpoint,request={},policy=RETROSPECTIVE_SUPPORTING_RETRY_POLICY,now=clock,sleeper=sleeper,validator=validator,governed_retry_chronology=True)
+    result=acquire_with_retries(transport=transport,endpoint=endpoint,request={},policy=RETROSPECTIVE_SUPPORTING_RETRY_POLICY,now=clock,sleeper=sleeper,validator=validator)
     terminal=result.attempts[-1]
     preserve_supporting_response(archive=archive,session_id=session_id,provider=provider,purpose=purpose,endpoint=endpoint,request_identity_value=request_identity_value,started_at=result.attempts[0].started_at,completed_at=terminal.completed_at,disposition=result.disposition,raw=result.raw_body,partition=partition,partition_position=partition_position,attempts=result.attempts,attempt_raw_bodies=result.attempt_raw_bodies)
     return result

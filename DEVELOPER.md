@@ -662,13 +662,14 @@ preserve complete attempt chronology and safe raw bodies while counting every
 call; a terminal failure is durable and non-authoritative. Legacy schema-1
 sessions replay unchanged.
 
-Schema-2 retry timestamps use one deterministic governed representation. Keep
-the trusted-clock first start and measured request duration, but derive a retry
-start exactly from the prior completion plus `max(policy backoff, bounded
-Retry-After)`. Do not include incidental sleeper wake-up latency and do not add
-a replay tolerance. Verification enforces each five-second request bound, the
-exact 1/2-second governed delays, and the twenty-second first-start-to-terminal
-envelope from `RETROSPECTIVE_SUPPORTING_RETRY_POLICY`.
+Schema-2 separates observed chronology from governed scheduling. Preserve each
+trusted-clock attempt start and completion unchanged. Record null
+`retry_scheduled_at` for attempt 1 and, for later attempts, derive it exactly as
+the prior observed completion plus `max(policy backoff, bounded Retry-After)`.
+An observed retry may start later but never earlier; its lag remains evidence.
+Verification adds no tolerance and enforces each five-second request bound and
+the twenty-second observed first-start-to-terminal envelope from
+`RETROSPECTIVE_SUPPORTING_RETRY_POLICY`.
 
 Each primary and secondary path must include `dry-run/<namespace>` (or, after a
 future authorized activation, `activated/<namespace>`). Mutation is prohibited

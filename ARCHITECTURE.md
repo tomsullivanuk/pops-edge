@@ -1586,12 +1586,12 @@ envelope, and at most two honored `Retry-After` seconds. Only timeout,
 connection failure, rate limiting, and provider/server error may continue.
 Every attempt, safe response body, timestamp, status, and call remains bound to
 the single logical page; validation and integrity failures remain fail-closed.
-Schema-2 time uses governed chronology: the first start and each measured
-request duration come from the trusted clock, while every successor start is
-derived exactly as the preceding completion plus its policy delay. Incidental
-scheduler wake-up latency is not archived as retry authority, and replay applies
-no tolerance. Each duration must be at most five seconds and terminal completion
-must be within twenty seconds of the first start.
+Schema-2 preserves every observed trusted-clock start and completion. A separate
+`retry_scheduled_at` records the exact governed instant derived from the prior
+completion and policy delay; the first attempt records it as null. Actual retry
+start may be later, preserving scheduler latency as evidence, but never earlier.
+Replay applies no tolerance, limits each observed duration to five seconds, and
+requires terminal completion within twenty seconds of the observed first start.
 Schema-1 pages retain their original single-call replay semantics.
 
 Retrospective MLB winner-market reconciliation requires an explicitly binary
