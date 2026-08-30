@@ -525,5 +525,46 @@ class ActivationTests(unittest.TestCase):
         terminal=copy.deepcopy(makeup);terminal["gameDate"]="2026-04-03T23:35:00Z";terminal["rescheduledFromDate"]="2026-04-02"
         with self.assertRaisesRegex(OperationsError,"ambiguous|branches|competing"):merge_mlb_schedule_responses((self._schedule_page("2026-04-02",original),self._schedule_page("2026-04-03",makeup,terminal)))
 
+    def _resume_pair(self):
+        predecessor=self._reschedule_game(824912,"2026-06-16","2026-06-16T23:15:00Z","Final",resumeDate="2026-06-17T18:00:00Z",resumeGameDate="2026-06-17")
+        successor=self._reschedule_game(824912,"2026-06-16","2026-06-17T18:00:00Z","Final",resumedFrom="2026-06-16T23:15:00Z",resumedFromDate="2026-06-16")
+        predecessor.update(calendarEventID="14-824912-2026-06-16",dayNight="night",gamesInSeries=3,seriesGameNumber=1)
+        successor.update(calendarEventID="14-824912-2026-06-17",dayNight="day",gamesInSeries=2,seriesGameNumber=2)
+        return predecessor,successor
+
+    def test_multidate_resume_lineage_is_order_independent_nonordinary_and_covered(self):
+        from forecast_standalone_research import PopulationEligibilityDisposition,create_probability_source_coverage_v3
+        original,resumed=self._resume_pair();pages=(self._schedule_page("2026-06-16",original),self._schedule_page("2026-06-17",resumed));merged=merge_mlb_schedule_responses(pages);reversed_merged=merge_mlb_schedule_responses(tuple(reversed(pages)))
+        self.assertEqual(merged,reversed_merged)
+        payload=json.loads(merged);self.assertEqual(payload["_popsEdgeMlbLineages"],[{"gamePk":824912,"lineageKind":"resume","observationSha256s":payload["_popsEdgeMlbLineages"][0]["observationSha256s"],"originalOfficialDate":"2026-06-16","rule":MLB_MULTIDATE_LINEAGE_RULE_VERSION}])
+        _,retro,_=canonical_activation_authorities();state=SimpleNamespace(bucket=lambda name:(retro,) if name=="protocols" else ())
+        at=datetime(2026,6,27,tzinfo=timezone.utc);contracts=refresh_supporting_from_raw(archive=None,mlb_raw=merged,kalshi_raw=b'{"cursor":"","markets":[]}',collected_at=at,prior_state=state,derive_only=True)
+        reversed_contracts=refresh_supporting_from_raw(archive=None,mlb_raw=reversed_merged,kalshi_raw=b'{"cursor":"","markets":[]}',collected_at=at,prior_state=state,derive_only=True);self.assertEqual(tuple(x.to_json() for x in contracts),tuple(x.to_json() for x in reversed_contracts))
+        histories=tuple(x for x in contracts if type(x).__name__=="OutcomeHistory");classifications=tuple(x for x in contracts if type(x).__name__=="StandaloneEventClassificationEvidence");opportunities=tuple(x for x in contracts if type(x).__name__=="ResearchCaptureOpportunity");contexts=tuple(x for x in contracts if type(x).__name__=="ResearchEventEligibilityContext");results=tuple(x for x in contracts if type(x).__name__=="PopulationEligibilityResult")
+        self.assertEqual(len(histories),1);self.assertEqual([x.scheduled_start.isoformat() for x in histories[0].observations],["2026-06-16T23:15:00+00:00","2026-06-17T18:00:00+00:00"]);self.assertEqual(len(opportunities),1)
+        self.assertFalse(classifications[0].ordinary_game);self.assertIn("explicit-mlb-resume-lineage",classifications[0].limitations);self.assertIs(results[0].disposition,PopulationEligibilityDisposition.EXCLUDED);self.assertIn("resumed",results[0].reason_codes);self.assertNotIn("suspended",results[0].reason_codes);self.assertNotIn("rescheduled",results[0].reason_codes)
+        self.assertFalse(any(type(x).__name__=="HistoricalCandleQueryManifest" for x in contracts))
+        activation,_,_=canonical_activation_authorities();coverage=create_probability_source_coverage_v3(protocol=retro,analysis_boundary=at,activation=activation,opportunities=opportunities,eligibility_contexts=contexts,eligibility_results=results,schedule_histories=histories,classifications=classifications,provenance=classifications[0].provenance)
+        self.assertEqual(coverage.coverage_universe_ids,tuple(x.research_capture_opportunity_id for x in opportunities));self.assertEqual(coverage.eligible_denominator_ids,());self.assertEqual(coverage.reconciliation.protocol_ineligible,coverage.coverage_universe_ids)
+
+    def test_multidate_resume_lineage_fails_closed_on_reciprocity_and_conflict(self):
+        original,resumed=self._resume_pair();cases=[]
+        one_sided=copy.deepcopy(resumed);one_sided.pop("resumedFromDate");cases.append((original,one_sided,"explicit and reciprocal"))
+        timestamp=copy.deepcopy(resumed);timestamp["resumedFrom"]="2026-06-16T23:16:00Z";cases.append((original,timestamp,"predecessor lineage"))
+        date_mismatch=copy.deepcopy(original);date_mismatch["resumeGameDate"]="2026-06-18";cases.append((date_mismatch,resumed,"successor lineage"))
+        malformed=copy.deepcopy(original);malformed["resumeDate"]="2026-06-17T18:00:00";cases.append((malformed,resumed,"malformed"))
+        participants=copy.deepcopy(resumed);participants["teams"]["home"]["team"]["id"]=999;cases.append((original,participants,"stable identity"))
+        official=copy.deepcopy(resumed);official["officialDate"]="2026-06-17";cases.append((original,official,"original officialDate"))
+        mixed=copy.deepcopy(original);mixed["rescheduleDate"]="2026-06-17T18:00:00Z";cases.append((mixed,resumed,"mixes reschedule and resume"))
+        for first,second,message in cases:
+            with self.subTest(message=message),self.assertRaisesRegex(OperationsError,message):merge_mlb_schedule_responses((self._schedule_page("2026-06-16",first),self._schedule_page("2026-06-17",second)))
+        cycle_origin,cycle_successor=self._resume_pair();cycle_origin.update(gameDate="2026-06-17T18:00:00Z",resumeDate="2026-06-16T23:15:00Z",resumeGameDate="2026-06-16");cycle_successor.update(gameDate="2026-06-16T23:15:00Z",resumedFrom="2026-06-17T18:00:00Z",resumedFromDate="2026-06-17")
+        with self.assertRaisesRegex(OperationsError,"cyclic|chronologically"):merge_mlb_schedule_responses((self._schedule_page("2026-06-17",cycle_origin),self._schedule_page("2026-06-16",cycle_successor)))
+        competing=copy.deepcopy(resumed);competing["gameDate"]="2026-06-17T19:00:00Z";original_branch=copy.deepcopy(original);original_branch["resumeDate"]="2026-06-17";original_branch["resumeGameDate"]="2026-06-17"
+        with self.assertRaisesRegex(OperationsError,"branches|competing"):merge_mlb_schedule_responses((self._schedule_page("2026-06-16",original_branch),self._schedule_page("2026-06-17",resumed,competing)))
+
+    def test_versioned_session_rules_require_exact_union_pairing(self):
+        self.assertEqual(SUPPORTED_DERIVATION_UNION_RULES,{"kalshi-mlb-explicit-rules-schedule-instant-2":"provider-pages-canonical-union-1","kalshi-mlb-explicit-rules-schedule-instant-3":"provider-pages-canonical-union-2","kalshi-mlb-explicit-rules-schedule-instant-4":"provider-pages-canonical-union-3"})
+
 
 if __name__ == "__main__": unittest.main()

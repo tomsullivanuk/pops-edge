@@ -285,6 +285,12 @@ the original postponed state and the makeup/final state remain auditable under
 one event identity and an ordered correction-aware history; input ordering,
 descriptive text, and last-record-wins behavior never select scientific state.
 
+Explicit MLB suspension/resumption is not a reschedule. Reciprocal provider
+resume fields preserve the original official-date event identity plus both
+historical observations, while classification keeps the event visible and
+excludes it as resumed/non-ordinary. The resumed execution instant creates no
+second ordinary-game or candle opportunity.
+
 ### Comparative Performance
 
 Comparative Performance evaluates a Probability Source relative to the Market Benchmark. It determines whether observed forecasting performance contains useful information beyond what the market already reflects, including the conditions and limitations under which that conclusion holds.

@@ -2621,6 +2621,16 @@ terminal states fail closed. The canonical union and correction-aware
 `OutcomeHistory` retain every distinct lineage observation in explicit lineage
 order; provider page order and dictionary overwrite grant no authority.
 
+Version `mlb-explicit-schedule-evolution-lineage-2` keeps reschedule and
+suspension/resumption authority distinct. Resume lineage requires reciprocal
+`resume*` and `resumedFrom*` timestamps and dates, stable identity, one original
+`officialDate`, and a unique forward non-branching chain. It preserves both
+provider observations without inventing a suspended status; the original date
+owns the sole scheduled-state opportunity, while typed resume classification
+marks the event non-ordinary and retrospectively excluded but still visible in
+population and Coverage. Mixed, one-sided, ambiguous, cyclic, or contradictory
+claims fail closed. Earlier authoritative rule versions replay unchanged.
+
 Standalone performance cannot support or reject an Edge Claim, establish or invalidate a Market Edge, determine Practical Significance, create a Research Review conclusion or Current Scientific Applicability, or establish profitability, efficiency, actionable opportunity, Policy, Governance, or production authority. Time-bounded standalone performance is descriptive and creates no standalone Drift or review obligation.
 
 ### 2026 Kalshi MLB retrospective and prospective studies

@@ -39,11 +39,15 @@ RETROSPECTIVE_WINDOW_START=datetime(2026,3,25,0,0,tzinfo=ZoneInfo("America/New_Y
 RETROSPECTIVE_WINDOW_SECONDS=14_169_600
 MLB_DATE_RULE_VERSION="eastern-unresolved-obligations-lookback-2"
 MLB_CORRECTION_LOOKBACK_DAYS=7
-ACQUISITION_UNION_RULE_VERSION="provider-pages-canonical-union-2"
-LEGACY_ACQUISITION_UNION_RULE_VERSION="provider-pages-canonical-union-1"
-MLB_MULTIDATE_LINEAGE_RULE_VERSION="mlb-explicit-reschedule-lineage-1"
-SUPPORTING_DERIVATION_RULE_VERSION="kalshi-mlb-explicit-rules-schedule-instant-3"
-LEGACY_SUPPORTING_DERIVATION_RULE_VERSION="kalshi-mlb-explicit-rules-schedule-instant-2"
+ACQUISITION_UNION_RULE_VERSION="provider-pages-canonical-union-3"
+MLB_MULTIDATE_LINEAGE_RULE_VERSION="mlb-explicit-schedule-evolution-lineage-2"
+SUPPORTING_DERIVATION_RULE_VERSION="kalshi-mlb-explicit-rules-schedule-instant-4"
+SUPPORTED_DERIVATION_UNION_RULES={
+    "kalshi-mlb-explicit-rules-schedule-instant-2":"provider-pages-canonical-union-1",
+    "kalshi-mlb-explicit-rules-schedule-instant-3":"provider-pages-canonical-union-2",
+    SUPPORTING_DERIVATION_RULE_VERSION:ACQUISITION_UNION_RULE_VERSION,
+}
+SUPPORTED_ACQUISITION_UNION_RULES=frozenset(SUPPORTED_DERIVATION_UNION_RULES.values())
 APPROVED_SUPPORTING_CORRECTION_REASON="pr17c2-settlement-rule-reconciliation-eligibility-v2"
 HEARTBEAT_SCHEMA_VERSION="1"
 
@@ -114,7 +118,7 @@ def initialize_activation(archive:NamespaceArchive,at:datetime)->tuple[str,str]:
     return activation.standalone_research_activation_boundary_id,protocol.standalone_probability_source_protocol_id
 
 
-def refresh_supporting_from_raw(*,archive:NamespaceArchive|None,mlb_raw:bytes,kalshi_raw:bytes,collected_at:datetime,catalog_pages:Iterable[KalshiCatalogPage]=(),mlb_pages:Iterable[bytes]=(),prior_state:Any=None,derive_only:bool=False,acquisition_command:str="refresh-supporting",retrospective_cutoff_at:datetime|None=None,supporting_session_id:str|None=None,supporting_provider_calls:int|None=None,requested_date_window:tuple[str,str]|None=None,supporting_correction_reason:str|None=None,predecessor_completion_manifest_id:str|None=None)->Mapping[str,Any]|tuple[Any,...]:
+def refresh_supporting_from_raw(*,archive:NamespaceArchive|None,mlb_raw:bytes,kalshi_raw:bytes,collected_at:datetime,catalog_pages:Iterable[KalshiCatalogPage]=(),mlb_pages:Iterable[bytes]=(),prior_state:Any=None,derive_only:bool=False,acquisition_command:str="refresh-supporting",retrospective_cutoff_at:datetime|None=None,supporting_session_id:str|None=None,supporting_provider_calls:int|None=None,requested_date_window:tuple[str,str]|None=None,supporting_correction_reason:str|None=None,predecessor_completion_manifest_id:str|None=None,union_rule:str=ACQUISITION_UNION_RULE_VERSION)->Mapping[str,Any]|tuple[Any,...]:
     """Decode live-shaped MLB/Kalshi material into established PR17 authority."""
     from event_contracts import ValidationStatus
     from forecast_comparative_research import ResearchCaptureOpportunity
@@ -131,17 +135,20 @@ def refresh_supporting_from_raw(*,archive:NamespaceArchive|None,mlb_raw:bytes,ka
     except (UnicodeDecodeError,json.JSONDecodeError) as exc:raise OperationsError("malformed-response","provider JSON is malformed") from exc
     if not isinstance(mlb_payload,dict) or not isinstance(kalshi_payload,dict) or set(kalshi_payload)!={"markets","cursor"} or not isinstance(kalshi_payload["markets"],list):raise OperationsError("incomplete-response","supporting provider shape is incomplete")
     response=MLBStatsAPIResponse("https://statsapi.mlb.com/api/v1/schedule",(),collected_at,200,"https://statsapi.mlb.com/api/v1/schedule",mlb_payload,mlb_raw)
+    lineage_descriptors=mlb_payload.get("_popsEdgeMlbLineages",[])
+    if not isinstance(lineage_descriptors,list):raise OperationsError("provider-data-invalid","MLB derived lineage authority is malformed")
+    resume_game_pks={item.get("gamePk") for item in lineage_descriptors if isinstance(item,dict) and item.get("lineageKind")=="resume"}
     facts=MLBStatsAPIAdapter().parse_response(response)
     fact_groups={}
     for item in facts.games:
         if item.game and item.schedule_observation:fact_groups.setdefault(item.game.event.canonical_event_id,[]).append(item)
-    terminal_facts=tuple(items[-1] for _,items in sorted(fact_groups.items()));games=tuple(x.game for x in terminal_facts);schedules=tuple(x.schedule_observation for x in terminal_facts)
+    selected_facts=tuple((items[0] if items[0].game.game_pk in resume_game_pks else items[-1]) for _,items in sorted(fact_groups.items()));games=tuple(x.game for x in selected_facts);schedules=tuple(x.schedule_observation for x in selected_facts)
     if not games or len(games)!=len(schedules) or sum(map(len,fact_groups.values()))!=len(facts.games):raise OperationsError("provider-data-invalid","MLB schedule authority is incomplete")
     outcomes=MLBOutcomeAdapter().parse_response(response,canonical_games=games)
     if any(x.observation is None or x.observation.validation_status is not ValidationStatus.VALID for x in outcomes):raise OperationsError("provider-data-invalid","MLB outcome/status authority is invalid")
     state=prior_state or replay_pr17_archive(archive,analysis_boundary=collected_at)
     prior_histories={x.canonical_event_id:x for x in state.bucket("outcome_histories")}
-    histories={};changed_histories=[];outcome_groups={}
+    resume_event_ids={item.game.event.canonical_event_id for item in selected_facts if item.game.game_pk in resume_game_pks};histories={};changed_histories=[];outcome_groups={}
     for result in outcomes:outcome_groups.setdefault(result.observation.canonical_event_id,[]).append(result.observation)
     fields=("provider_status","scheduled_start","away_score","home_score","winning_participant_id","tie","unresolved","validation_status")
     for event_id,observations in sorted(outcome_groups.items()):
@@ -150,26 +157,29 @@ def refresh_supporting_from_raw(*,archive:NamespaceArchive|None,mlb_raw:bytes,ka
             if any(all(getattr(existing,key)==getattr(observation,key) for key in fields) for existing in ordered):continue
             if latest is not None and observation.collected_at<latest.collected_at:raise OperationsError("supporting-clock-reversed","MLB supporting observation is backdated")
             if len(observations)>1:
-                identity=hashlib.sha256(canonical_bytes({"event":event_id,"position":position,"evidence":observation.canonical_evidence_sha256,"rule":MLB_MULTIDATE_LINEAGE_RULE_VERSION})).hexdigest()
-                observation=replace(observation,observation_id=f"outcome-lineage:{position:03d}:{identity}")
+                identity_rule="mlb-explicit-reschedule-lineage-1" if union_rule=="provider-pages-canonical-union-2" else MLB_MULTIDATE_LINEAGE_RULE_VERSION
+                identity=hashlib.sha256(canonical_bytes({"event":event_id,"position":position,"evidence":observation.canonical_evidence_sha256,"rule":identity_rule})).hexdigest()
+                prefix="outcome-resume-lineage" if event_id in resume_event_ids else "outcome-lineage"
+                observation=replace(observation,observation_id=f"{prefix}:{position:03d}:{identity}")
             ordered.append(observation);latest=observation;changed=True
         history=OutcomeHistory(event_id,"mlb-stats-api",tuple(ordered));histories[event_id]=history
         if changed:changed_histories.append(history)
     provenance=ResearchContractProvenance("pops-edge:pr17c1-supporting","1",notes=("provider-decoded supporting authority",),generated_at=collected_at)
     prior_classifications=tuple(state.bucket("classifications"));classifications={};changed_classifications=[]
-    result_by_event={x.game.event.canonical_event_id:x for x in terminal_facts}
+    result_by_event={x.game.event.canonical_event_id:x for x in selected_facts}
     for event_id,result in sorted(result_by_event.items()):
         game=result.game;schedule=result.schedule_observation
         phase=EventPhase.REGULAR_SEASON if game.game_type=="R" else EventPhase.POSTSEASON if game.game_type in {"F","D","L","W","S","C","P"} else EventPhase.OTHER
-        doubleheader=game.doubleheader_designation not in (None,"N","S") or (game.game_number or 1)>1
+        resumed=game.game_pk in resume_game_pks;doubleheader=game.doubleheader_designation not in (None,"N","S") or (game.game_number or 1)>1
         doubleheader_id=(f"mlb-doubleheader:{game.season}:{'-'.join(sorted((game.away_team.canonical_team_id,game.home_team.canonical_team_id)))}:{schedule.scheduled_start.date().isoformat()}" if doubleheader else None)
         mapping=EventClassificationValidationStatus.VALID if phase is not EventPhase.OTHER else EventClassificationValidationStatus.INVALID
         reasons=() if mapping is EventClassificationValidationStatus.VALID else ("unsupported MLB game type",)
         prior=tuple(x for x in prior_classifications if x.canonical_event_id==event_id)
         current=max(prior,key=lambda x:(x.effective_at,x.standalone_event_classification_evidence_id)) if prior else None
-        values=dict(authoritative_provider_id="mlb-stats-api",provider_event_id=str(game.game_pk),canonical_event_id=event_id,sport=game.event.sport.lower(),competition=game.event.competition.lower(),season=game.season,event_phase=phase,game_type=game.game_type,ordinary_game=phase is EventPhase.REGULAR_SEASON and not doubleheader,doubleheader_id=doubleheader_id,game_number=(game.game_number or 1) if doubleheader else None,participant_ids=tuple(sorted((game.away_team.canonical_team_id,game.home_team.canonical_team_id))),home_participant_id=game.home_team.canonical_team_id,away_participant_id=game.away_team.canonical_team_id,mapping_validation_status=mapping,validation_reasons=reasons,collected_at=collected_at,effective_at=collected_at,supersedes_classification_id=None,correction_reason=None,limitations=tuple(issue.code.value for issue in result.issues),provenance=provenance)
-        scientific=(values["season"],values["event_phase"],values["game_type"],values["ordinary_game"],values["doubleheader_id"],values["game_number"],values["participant_ids"],mapping,reasons)
-        before=None if current is None else (current.season,current.event_phase,current.game_type,current.ordinary_game,current.doubleheader_id,current.game_number,current.participant_ids,current.mapping_validation_status,current.validation_reasons)
+        limitations=tuple(sorted({*(issue.code.value for issue in result.issues),*(({"explicit-mlb-resume-lineage"}) if resumed else set())}))
+        values=dict(authoritative_provider_id="mlb-stats-api",provider_event_id=str(game.game_pk),canonical_event_id=event_id,sport=game.event.sport.lower(),competition=game.event.competition.lower(),season=game.season,event_phase=phase,game_type=game.game_type,ordinary_game=phase is EventPhase.REGULAR_SEASON and not doubleheader and not resumed,doubleheader_id=doubleheader_id,game_number=(game.game_number or 1) if doubleheader else None,participant_ids=tuple(sorted((game.away_team.canonical_team_id,game.home_team.canonical_team_id))),home_participant_id=game.home_team.canonical_team_id,away_participant_id=game.away_team.canonical_team_id,mapping_validation_status=mapping,validation_reasons=reasons,collected_at=collected_at,effective_at=collected_at,supersedes_classification_id=None,correction_reason=None,limitations=limitations,provenance=provenance)
+        scientific=(values["season"],values["event_phase"],values["game_type"],values["ordinary_game"],values["doubleheader_id"],values["game_number"],values["participant_ids"],mapping,reasons,limitations)
+        before=None if current is None else (current.season,current.event_phase,current.game_type,current.ordinary_game,current.doubleheader_id,current.game_number,current.participant_ids,current.mapping_validation_status,current.validation_reasons,current.limitations)
         if current is not None and scientific==before:classification=current
         else:
             if current is not None:values.update(supersedes_classification_id=current.standalone_event_classification_evidence_id,correction_reason="authoritative MLB classification changed")
@@ -186,6 +196,7 @@ def refresh_supporting_from_raw(*,archive:NamespaceArchive|None,mlb_raw:bytes,ka
         schedule_states=[]
         for observation in history.observations:
             if not schedule_states or observation.scheduled_start!=schedule_states[-1].scheduled_start:schedule_states.append(observation)
+        if classification.provider_event_id in {str(value) for value in resume_game_pks}:schedule_states=schedule_states[:1]
         for observation in schedule_states:
             for protocol in protocols:
                 retrospective=protocol.design_tag.value=="retrospective"
@@ -403,42 +414,54 @@ def _mlb_lineage_target(record:Mapping[str,Any],candidates:Iterable[tuple[bytes,
     return matches[0]
 
 
-def _reconcile_mlb_game_lineage(records:Iterable[tuple[bytes,Mapping[str,Any],Mapping[str,Any]]])->tuple[Mapping[str,Any],...]:
+def _reconcile_mlb_game_lineage(records:Iterable[tuple[bytes,Mapping[str,Any],Mapping[str,Any]]])->tuple[tuple[Mapping[str,Any],...],Mapping[str,Any]|None]:
     unique={encoded:(record,authority) for encoded,record,authority in records}
     values=tuple((encoded,*unique[encoded]) for encoded in sorted(unique))
     stable={authority["stable"] for _,_,authority in values}
     if len(stable)!=1:raise OperationsError("multi-date-conflict","MLB repeated gamePk has conflicting stable identity: season,sport,competition,participants")
-    if len(values)==1:return (values[0][1],)
+    if len(values)==1:return (values[0][1],),None
+    reschedule_fields={"rescheduleDate","rescheduleGameDate","rescheduledFromDate","rescheduledFrom"};resume_fields={"resumeDate","resumeGameDate","resumedFromDate","resumedFrom"}
+    claims_reschedule=any(any(record.get(field) is not None for field in reschedule_fields) for _,record,_ in values);claims_resume=any(any(record.get(field) is not None for field in resume_fields) for _,record,_ in values)
+    if claims_reschedule and claims_resume:raise OperationsError("multi-date-conflict","MLB repeated gamePk mixes reschedule and resume lineage claims")
+    lineage_kind="resume" if claims_resume else "reschedule"
+    if lineage_kind=="resume":
+        if len(values)!=2:raise OperationsError("multi-date-conflict","MLB resume lineage branches or has competing representations")
+        predecessors=tuple((encoded,record,authority) for encoded,record,authority in values if record.get("resumeDate") is not None or record.get("resumeGameDate") is not None)
+        successors=tuple((encoded,record,authority) for encoded,record,authority in values if record.get("resumedFrom") is not None or record.get("resumedFromDate") is not None)
+        if len(predecessors)!=1 or len(successors)!=1 or not all(predecessors[0][1].get(field) is not None for field in ("resumeDate","resumeGameDate")) or not all(successors[0][1].get(field) is not None for field in ("resumedFrom","resumedFromDate")):raise OperationsError("multi-date-conflict","MLB resume lineage must be explicit and reciprocal")
+        if predecessors[0][2]["official"]!=successors[0][2]["official"]:raise OperationsError("multi-date-conflict","MLB resume lineage has incompatible original officialDate")
     edges=set();digests={encoded for encoded,_,_ in values}
     for encoded,record,authority in values:
         others=tuple((candidate,candidate_authority) for candidate,_,candidate_authority in values if candidate!=encoded)
-        successor=_mlb_lineage_target(record,others,("rescheduleDate","rescheduleGameDate"),"successor")
-        predecessor=_mlb_lineage_target(record,others,("rescheduledFromDate","rescheduledFrom"),"predecessor")
+        successor=_mlb_lineage_target(record,others,(("resumeDate","resumeGameDate") if lineage_kind=="resume" else ("rescheduleDate","rescheduleGameDate")),lineage_kind+" successor")
+        predecessor=_mlb_lineage_target(record,others,(("resumedFromDate","resumedFrom") if lineage_kind=="resume" else ("rescheduledFromDate","rescheduledFrom")),lineage_kind+" predecessor")
         if successor is not None:edges.add((encoded,successor))
         if predecessor is not None:edges.add((predecessor,encoded))
-    if not edges:raise OperationsError("multi-date-conflict","MLB materially different repeated gamePk lacks explicit reschedule lineage")
+    if not edges:raise OperationsError("multi-date-conflict",f"MLB materially different repeated gamePk lacks explicit {lineage_kind} lineage")
     incoming={digest:set() for digest in digests};outgoing={digest:set() for digest in digests}
     authorities={encoded:authority for encoded,_,authority in values}
     for source,target in edges:
-        if source==target or authorities[target]["scheduled"]<=authorities[source]["scheduled"]:raise OperationsError("multi-date-conflict","MLB reschedule lineage is cyclic or chronologically contradictory")
+        if source==target or authorities[target]["scheduled"]<=authorities[source]["scheduled"]:raise OperationsError("multi-date-conflict",f"MLB {lineage_kind} lineage is cyclic or chronologically contradictory")
         outgoing[source].add(target);incoming[target].add(source)
-    if any(len(incoming[x])>1 or len(outgoing[x])>1 for x in digests):raise OperationsError("multi-date-conflict","MLB reschedule lineage branches or has competing representations")
+    if any(len(incoming[x])>1 or len(outgoing[x])>1 for x in digests):raise OperationsError("multi-date-conflict",f"MLB {lineage_kind} lineage branches or has competing representations")
     roots=[x for x in digests if not incoming[x]]
-    if len(roots)!=1:raise OperationsError("multi-date-conflict","MLB reschedule lineage has no unique origin")
+    if len(roots)!=1:raise OperationsError("multi-date-conflict",f"MLB {lineage_kind} lineage has no unique origin")
     ordered=[];current=roots[0]
     while True:
-        if current in ordered:raise OperationsError("multi-date-conflict","MLB reschedule lineage is cyclic")
+        if current in ordered:raise OperationsError("multi-date-conflict",f"MLB {lineage_kind} lineage is cyclic")
         ordered.append(current);next_values=tuple(outgoing[current])
         if not next_values:break
-        if "postponed" not in authorities[current]["status"]:raise OperationsError("multi-date-conflict","MLB reschedule predecessor is not postponed")
+        if lineage_kind=="reschedule" and "postponed" not in authorities[current]["status"]:raise OperationsError("multi-date-conflict","MLB reschedule predecessor is not postponed")
         current=next_values[0]
-    if set(ordered)!=digests or "postponed" in authorities[ordered[-1]]["status"]:raise OperationsError("multi-date-conflict","MLB reschedule lineage is disconnected or has contradictory terminal status")
+    if set(ordered)!=digests or (lineage_kind=="reschedule" and "postponed" in authorities[ordered[-1]]["status"]):raise OperationsError("multi-date-conflict",f"MLB {lineage_kind} lineage is disconnected or has contradictory terminal status")
     by_digest={encoded:record for encoded,record,_ in values}
-    return tuple(by_digest[digest] for digest in ordered)
+    descriptor={"gamePk":authorities[ordered[0]]["identity"],"lineageKind":lineage_kind,"rule":MLB_MULTIDATE_LINEAGE_RULE_VERSION,"originalOfficialDate":authorities[ordered[0]]["official"].isoformat(),"observationSha256s":[hashlib.sha256(digest).hexdigest() for digest in ordered]}
+    return tuple(by_digest[digest] for digest in ordered),descriptor
 
 
-def merge_mlb_schedule_responses(responses:Iterable[bytes])->bytes:
+def merge_mlb_schedule_responses(responses:Iterable[bytes],*,union_rule:str=ACQUISITION_UNION_RULE_VERSION)->bytes:
     """Derive an order-independent union with explicit same-game reschedule lineage."""
+    if union_rule not in SUPPORTED_ACQUISITION_UNION_RULES:raise OperationsError("acquisition-incompatible","unknown MLB union rule")
     games={}
     for raw in responses:
         if len(raw)>MAX_RESPONSE_BYTES:raise OperationsError("transport-oversized","MLB response exceeds the bound")
@@ -454,11 +477,21 @@ def merge_mlb_schedule_responses(responses:Iterable[bytes])->bytes:
                 authority=_mlb_record_authority(game,envelope);encoded=canonical_bytes(game)
                 games.setdefault(authority["identity"],[]).append((encoded,game,authority))
     if not games:return canonical_bytes({"dates":[]})
-    grouped={}
+    grouped={};lineages=[]
     for identity in sorted(games):
-        for game in _reconcile_mlb_game_lineage(games[identity]):
+        if union_rule=="provider-pages-canonical-union-1":
+            unique={encoded:record for encoded,record,_ in games[identity]}
+            if len(unique)!=1:raise OperationsError("multi-date-conflict","MLB game conflicts across date responses")
+            reconciled=(next(iter(unique.values())),);lineage=None
+        else:
+            reconciled,lineage=_reconcile_mlb_game_lineage(games[identity])
+            if union_rule=="provider-pages-canonical-union-2" and lineage is not None and lineage["lineageKind"]!="reschedule":raise OperationsError("multi-date-conflict","legacy MLB lineage rule does not support resume claims")
+        if lineage is not None:lineages.append(lineage)
+        for game in reconciled:
             day=game["officialDate"];grouped.setdefault(day,[]).append(game)
-    return canonical_bytes({"dates":[{"date":day,"games":grouped[day]} for day in sorted(grouped)]})
+    result={"dates":[{"date":day,"games":grouped[day]} for day in sorted(grouped)]}
+    if lineages and union_rule==ACQUISITION_UNION_RULE_VERSION:result["_popsEdgeMlbLineages"]=lineages
+    return canonical_bytes(result)
 
 
 def encoded_kalshi_catalog_path(cursor:str)->str:
@@ -701,9 +734,9 @@ def verify_supporting_session_completion(archive:NamespaceArchive,session_id:str
     legacy=completion.get("derivation_rule") is None
     if legacy and not allow_legacy:raise OperationsError("supporting-session-correction-required","completed session uses superseded derivation semantics")
     required={"schema_version","record_kind","session_id","requested_date_window","command_started_at","completed_at","provider_calls","mlb_acquisition_manifest_id","kalshi_acquisition_manifest_id","mlb_acquisition_id","kalshi_acquisition_id","cutoff_manifest_entry_id","cutoff_raw_sha256","cutoff_at","catalog_pages","mlb_union_sha256","kalshi_union_sha256","contract_sha256s","union_rule","reconciliation_rule"}|({"derivation_rule"} if not legacy else set())
-    derivation=completion.get("derivation_rule");supported_derivations={LEGACY_SUPPORTING_DERIVATION_RULE_VERSION,SUPPORTING_DERIVATION_RULE_VERSION}
-    if set(completion)!=required or completion.get("schema_version")!="1" or completion.get("record_kind")!="pr17c2-supporting-session-completion" or completion.get("session_id")!=session_id or (not legacy and derivation not in supported_derivations):raise OperationsError("supporting-session-conflict","completion schema or identity conflicts")
-    expected_union=ACQUISITION_UNION_RULE_VERSION if derivation==SUPPORTING_DERIVATION_RULE_VERSION else LEGACY_ACQUISITION_UNION_RULE_VERSION
+    derivation=completion.get("derivation_rule")
+    if set(completion)!=required or completion.get("schema_version")!="1" or completion.get("record_kind")!="pr17c2-supporting-session-completion" or completion.get("session_id")!=session_id or (not legacy and derivation not in SUPPORTED_DERIVATION_UNION_RULES):raise OperationsError("supporting-session-conflict","completion schema or identity conflicts")
+    expected_union=SUPPORTED_DERIVATION_UNION_RULES.get(derivation,"provider-pages-canonical-union-1")
     if completion.get("union_rule")!=expected_union or completion.get("reconciliation_rule")!="kalshi-historical-cutoff-settlement-ts-1":raise OperationsError("supporting-session-conflict","completion reconciliation authority is unsupported")
     wanted_ids={"mlb-stats-api":f"{session_id}:mlb-stats-api","kalshi":f"{session_id}:kalshi"};bundles={}
     for provider,manifest_field in (("mlb-stats-api","mlb_acquisition_manifest_id"),("kalshi","kalshi_acquisition_manifest_id")):
@@ -767,8 +800,8 @@ def verify_supporting_session_correction(archive:NamespaceArchive,session_id:str
     root_entry,root_value=roots[0];correction_entry,correction=corrections[0]
     legacy=verify_supporting_session_completion(archive,session_id,allow_legacy=True)
     required={"schema_version","record_kind","session_id","reason","derivation_rule","predecessor_completion_manifest_id","requested_date_window","command_started_at","completed_at","provider_calls","mlb_acquisition_manifest_id","kalshi_acquisition_manifest_id","mlb_acquisition_id","kalshi_acquisition_id","cutoff_manifest_entry_id","cutoff_raw_sha256","cutoff_at","catalog_pages","mlb_union_sha256","kalshi_union_sha256","contract_sha256s","union_rule","reconciliation_rule"}
-    correction_derivation=correction.get("derivation_rule");supported_derivations={LEGACY_SUPPORTING_DERIVATION_RULE_VERSION,SUPPORTING_DERIVATION_RULE_VERSION};expected_union=ACQUISITION_UNION_RULE_VERSION if correction_derivation==SUPPORTING_DERIVATION_RULE_VERSION else LEGACY_ACQUISITION_UNION_RULE_VERSION
-    if root_value.get("derivation_rule") is not None or set(correction)!=required or correction.get("schema_version")!="1" or correction.get("record_kind")!="pr17c2-supporting-session-correction" or correction.get("reason")!=APPROVED_SUPPORTING_CORRECTION_REASON or correction_derivation not in supported_derivations or correction.get("predecessor_completion_manifest_id")!=root_entry["manifest_entry_id"]:raise OperationsError("supporting-session-correction-conflict","correction schema, version, or predecessor conflicts")
+    correction_derivation=correction.get("derivation_rule");expected_union=SUPPORTED_DERIVATION_UNION_RULES.get(correction_derivation)
+    if root_value.get("derivation_rule") is not None or set(correction)!=required or correction.get("schema_version")!="1" or correction.get("record_kind")!="pr17c2-supporting-session-correction" or correction.get("reason")!=APPROVED_SUPPORTING_CORRECTION_REASON or expected_union is None or correction.get("predecessor_completion_manifest_id")!=root_entry["manifest_entry_id"]:raise OperationsError("supporting-session-correction-conflict","correction schema, version, or predecessor conflicts")
     suffix=":correction:"+hashlib.sha256(APPROVED_SUPPORTING_CORRECTION_REASON.encode()).hexdigest();bundles={}
     for provider,field in (("mlb-stats-api","mlb_acquisition_manifest_id"),("kalshi","kalshi_acquisition_manifest_id")):
         entry=by_id.get(correction.get(field))
@@ -862,7 +895,7 @@ def complete_supporting_session_from_archive(*,archive:NamespaceArchive,session_
 
 def verify_acquisition_bundle(archive:NamespaceArchive,value:Mapping[str,Any],*,include_union:bool=False)->Any:
     """Replay gate for page completeness, lineage, raw bytes and union identity."""
-    if value.get("schema_version")!="1" or value.get("union_rule") not in {LEGACY_ACQUISITION_UNION_RULE_VERSION,ACQUISITION_UNION_RULE_VERSION}:raise OperationsError("acquisition-incompatible","unknown acquisition envelope")
+    if value.get("schema_version")!="1" or value.get("union_rule") not in SUPPORTED_ACQUISITION_UNION_RULES:raise OperationsError("acquisition-incompatible","unknown acquisition envelope")
     provider=value.get("provider");pages=value.get("pages");group=value.get("acquisition_id")
     if provider not in {"kalshi","mlb-stats-api"} or not isinstance(pages,list) or not pages:raise OperationsError("acquisition-incomplete","acquisition page manifest is incomplete")
     def dt(raw):return datetime.fromisoformat(raw["datetime_utc"]) if isinstance(raw,dict) else datetime.fromisoformat(raw) if isinstance(raw,str) else raw
@@ -929,7 +962,7 @@ def verify_acquisition_bundle(archive:NamespaceArchive,value:Mapping[str,Any],*,
         for page,raw in zip(pages,raw_pages):
             payload=json.loads(raw);reported={str(x.get("date")) for x in payload.get("dates",()) if isinstance(x,dict)}
             if reported and reported!={page["request_identity"]}:raise OperationsError("acquisition-page-conflict","MLB requested date conflicts with response")
-        derived=merge_mlb_schedule_responses(raw_pages)
+        derived=merge_mlb_schedule_responses(raw_pages,union_rule=value.get("union_rule"))
     if _canonical_json_digest(derived)!=value.get("normalized_union_sha256"):raise OperationsError("acquisition-union-conflict","normalized union is inconsistent with pages")
     contracts=value.get("contracts")
     if not isinstance(contracts,list):raise OperationsError("acquisition-incomplete","typed contracts are absent")

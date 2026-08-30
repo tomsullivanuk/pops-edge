@@ -618,7 +618,7 @@ digests, and exact call accounting. Repeating completion for an already valid
 session is a zero-write no-op that returns the existing manifest identities;
 an invalid or duplicate completion fails closed.
 
-The approved retrospective derivation rule is
+Previously completed retrospective authority may use
 `kalshi-mlb-explicit-rules-schedule-instant-3`. Its MLB multi-date component is
 `mlb-explicit-reschedule-lineage-1`: byte-identical repeated `gamePk` records
 deduplicate, while materially different records require one explicit,
@@ -636,6 +636,15 @@ Retrospective ordinary-game eligibility uses valid
 classification, regular-season phase, and `ordinary_game`; preserve `game_type`
 as provider evidence without imposing a second spelling gate. The only approved
 archive correction reason is `pr17c2-settlement-rule-reconciliation-eligibility-v2`.
+
+New supporting sessions use
+`kalshi-mlb-explicit-rules-schedule-instant-4` with
+`provider-pages-canonical-union-3` and
+`mlb-explicit-schedule-evolution-lineage-2`. Resume fields must be reciprocal
+and must never cross-match reschedule fields. Preserve both final snapshots,
+use the original official date for the only opportunity, and carry
+`explicit-mlb-resume-lineage` in classification so retrospective eligibility
+and candle selection exclude the event without fabricating a Suspended status.
 Correction is zero-network and append-only: preserve the root completion, reuse
 its pages, publish new versioned bundles, then publish exactly one unbranched
 manifest-last supersession.

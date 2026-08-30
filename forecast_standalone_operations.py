@@ -1097,18 +1097,18 @@ def _contracts_from_entry(archive:NamespaceArchive,entry:Mapping[str,Any],prior_
             def bucket(self,name):return tuple(x for x in prior_objects if PR17_GRAPH_BUCKETS.get(type(x).__name__)==name)
         prior=PriorState();started=datetime.fromisoformat(value["command_started_at_iso"]);family=value.get("family");provider=value.get("provider")
         if family=="reconcile-outcomes" and provider=="mlb-stats-api":expected=reconcile_outcomes_from_raw(archive=None,mlb_raw=union,collected_at=started,prior_state=prior,derive_only=True)
-        elif family in {"refresh-supporting","refresh-retrospective-supporting"} and provider=="mlb-stats-api":expected=tuple(x for x in refresh_supporting_from_raw(archive=None,mlb_raw=union,kalshi_raw=b'{"cursor":"","markets":[]}',collected_at=started,prior_state=prior,derive_only=True,acquisition_command=family) if type(x).__name__!="ProviderMarketSeries")
+        elif family in {"refresh-supporting","refresh-retrospective-supporting"} and provider=="mlb-stats-api":expected=tuple(x for x in refresh_supporting_from_raw(archive=None,mlb_raw=union,kalshi_raw=b'{"cursor":"","markets":[]}',collected_at=started,prior_state=prior,derive_only=True,acquisition_command=family,union_rule=value.get("union_rule")) if type(x).__name__!="ProviderMarketSeries")
         elif family in {"refresh-supporting","refresh-retrospective-supporting"} and provider=="kalshi":
             dependencies=value.get("dependencies",())
             if not isinstance(dependencies,list) or len(dependencies)!=1:raise OperationsError("acquisition-dependency-conflict","Kalshi acquisition requires one MLB dependency")
-            mlb_union=None
+            mlb_union=None;mlb_union_rule=None
             for candidate_entry in authoritative_entries(archive):
                 normalized_id=candidate_entry.get("normalized_object_id")
                 if not normalized_id:continue
                 candidate=json.loads(archive.read_verified("normalized",normalized_id))
-                if candidate.get("record_kind")=="pr17c1-acquisition-bundle" and candidate.get("acquisition_id")==dependencies[0] and candidate.get("provider")=="mlb-stats-api":mlb_union,_=verify_acquisition_bundle(archive,candidate,include_union=True);break
+                if candidate.get("record_kind")=="pr17c1-acquisition-bundle" and candidate.get("acquisition_id")==dependencies[0] and candidate.get("provider")=="mlb-stats-api":mlb_union,_=verify_acquisition_bundle(archive,candidate,include_union=True);mlb_union_rule=candidate.get("union_rule");break
             if mlb_union is None:raise OperationsError("acquisition-dependency-conflict","MLB dependency is absent")
-            expected=tuple(x for x in refresh_supporting_from_raw(archive=None,mlb_raw=mlb_union,kalshi_raw=union,collected_at=started,prior_state=prior,derive_only=True,acquisition_command=family) if type(x).__name__=="ProviderMarketSeries")
+            expected=tuple(x for x in refresh_supporting_from_raw(archive=None,mlb_raw=mlb_union,kalshi_raw=union,collected_at=started,prior_state=prior,derive_only=True,acquisition_command=family,union_rule=mlb_union_rule) if type(x).__name__=="ProviderMarketSeries")
         else:raise OperationsError("acquisition-incompatible","unsupported PR17C1 acquisition family")
         expected_payloads=tuple(sorted(x.to_json() for x in expected))
         if tuple(sorted(payloads))!=expected_payloads:

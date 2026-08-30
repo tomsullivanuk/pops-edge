@@ -1569,6 +1569,15 @@ forward lineage. The derived record order, outcome history, terminal
 classification, acquisition digest, completion, replay, inspection, and index
 reconstruction all consume that same order-independent rule.
 
+`provider-pages-canonical-union-3` binds
+`mlb-explicit-schedule-evolution-lineage-2`. Its typed derived descriptor keeps
+reciprocal resume lineage separate from reschedule lineage and never rewrites
+provider records. Resume classification preserves the original official date,
+sets `ordinary_game` false, retains both ordered Outcome observations, and
+suppresses a second scheduled-state/candle opportunity. Version-to-union
+pairings are exact; versions 2/1 and 3/2 remain replayable without
+reinterpretation.
+
 Retrospective MLB winner-market reconciliation requires an explicitly binary
 market and a narrow provider settlement-rule template that identifies the YES
 participant, opponent, two-participant matchup, and original New York local
