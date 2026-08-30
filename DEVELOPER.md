@@ -649,6 +649,28 @@ Correction is zero-network and append-only: preserve the root completion, reuse
 its pages, publish new versioned bundles, then publish exactly one unbranched
 manifest-last supersession.
 
+`refresh-retrospective-supporting` alone uses bounded per-logical-page transport
+retries for MLB schedule pages, the Kalshi historical cutoff, and historical
+and live catalog pages. The request endpoint, encoded cursor/date, partition,
+and position are identical on every attempt. The fixed policy is 3 attempts,
+5 seconds each, backoffs of 1 and 2 seconds, a 20-second total envelope, and a
+2-second `Retry-After` cap. Only timeout, connection failure, HTTP 429, and 5xx
+are retryable. Malformed, incomplete, oversized, or redirected responses,
+client rejections, secret or validation failures, and archive, pagination,
+reconciliation, or scientific failures stop after one attempt. Schema-2 pages
+preserve complete attempt chronology and safe raw bodies while counting every
+call; a terminal failure is durable and non-authoritative. Legacy schema-1
+sessions replay unchanged.
+
+Schema-2 separates observed chronology from governed scheduling. Preserve each
+trusted-clock attempt start and completion unchanged. Record null
+`retry_scheduled_at` for attempt 1 and, for later attempts, derive it exactly as
+the prior observed completion plus `max(policy backoff, bounded Retry-After)`.
+An observed retry may start later but never earlier; its lag remains evidence.
+Verification adds no tolerance and enforces each five-second request bound and
+the twenty-second observed first-start-to-terminal envelope from
+`RETROSPECTIVE_SUPPORTING_RETRY_POLICY`.
+
 Each primary and secondary path must include `dry-run/<namespace>` (or, after a
 future authorized activation, `activated/<namespace>`). Mutation is prohibited
 for activated mode in PR17B2. Every mutation first takes the namespace advisory

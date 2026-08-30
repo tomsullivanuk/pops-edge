@@ -2631,6 +2631,20 @@ marks the event non-ordinary and retrospectively excluded but still visible in
 population and Coverage. Mixed, one-sided, ambiguous, cyclic, or contradictory
 claims fail closed. Earlier authoritative rule versions replay unchanged.
 
+Transport resilience does not change scientific authority. PR17C2 supporting
+page schema 2 permits only bounded retries of the identical logical request for
+timeout, connection failure, rate limiting, or provider/server error. Earlier
+transient attempts remain operational chronology and count as provider calls;
+only the terminal validated success supplies the page raw body to the derived
+union. Exhaustion produces one durable non-authoritative page failure and no
+completion authority. All validation, pagination, reconciliation, lineage, and
+contract checks remain single-attempt and fail closed. Historical schema-1
+sessions retain their original semantics.
+Schema-2 replay preserves observed attempt chronology and separately verifies
+the governed retry instant without tolerance. Each successor schedule equals
+the preceding observed completion plus the fixed bounded policy delay; actual
+start may be later, preserving scheduler latency, but never earlier.
+
 Standalone performance cannot support or reject an Edge Claim, establish or invalidate a Market Edge, determine Practical Significance, create a Research Review conclusion or Current Scientific Applicability, or establish profitability, efficiency, actionable opportunity, Policy, Governance, or production authority. Time-bounded standalone performance is descriptive and creates no standalone Drift or review obligation.
 
 ### 2026 Kalshi MLB retrospective and prospective studies

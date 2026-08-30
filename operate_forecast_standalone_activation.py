@@ -6,7 +6,7 @@ from datetime import date,datetime,timedelta,timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 from forecast_standalone_activation import APPROVED_EASTERN_DATE,APPROVED_TIMEZONE,RETROSPECTIVE_WINDOW_START,BoundedLiveReadOnlyTransport,KalshiCatalogPage,KalshiRequestSigner,MacOSKeychainCredentialProvider,OperationalHeartbeat,OperationalState,ProviderPageAcquisition,acquire_kalshi_catalog_pages,acquire_retrospective_catalog_pages,adapt_kalshi_candles,adapt_kalshi_orderbook,canonical_kalshi_candle_path,canonical_mlb_schedule_request,complete_supporting_session_from_archive,encoded_kalshi_catalog_path,encoded_kalshi_retrospective_catalog_path,health_from_operational_state,initialize_activation,invoke_activated_prospective,merge_kalshi_catalog_pages,merge_retrospective_catalog_pages,merge_mlb_schedule_responses,preserve_supporting_response,reconcile_outcomes_from_raw,refresh_supporting_from_raw,render_launchd_jobs,required_mlb_query_dates,rsa_pss_sha256_sign
-from forecast_standalone_operations import DeploymentConfig,DesignAuthority,Disposition,ExitCode,HTTPResponse,NamespaceArchive,OperatingMode,OperationsError,RetrospectiveAcquisitionError,SupportingAcquisitionError,_entry_values,acquire_prospective_once,acquire_typed_supporting_fixture,discover_and_acquire_retrospective,index_health,inspect_archive,rebuild_index,reconcile_incomplete_acquisitions,replay_pr17_archive,request_identity,sync_secondary
+from forecast_standalone_operations import RETROSPECTIVE_SUPPORTING_RETRY_POLICY,DeploymentConfig,DesignAuthority,Disposition,ExitCode,HTTPResponse,NamespaceArchive,OperatingMode,OperationsError,RetrospectiveAcquisitionError,SupportingAcquisitionError,_entry_values,acquire_prospective_once,acquire_typed_supporting_fixture,acquire_with_retries,discover_and_acquire_retrospective,index_health,inspect_archive,rebuild_index,reconcile_incomplete_acquisitions,replay_pr17_archive,request_identity,sync_secondary
 
 class FixtureTransport:
     def __init__(self,path:Path):self.path=path;self.calls=0
@@ -43,6 +43,15 @@ def adapt_kalshi_historical_cutoff(value):
     except (KeyError,TypeError,ValueError) as exc:raise OperationsError("validation-failure","Kalshi historical cutoff is malformed") from exc
     if cutoff.tzinfo is None:raise OperationsError("validation-failure","Kalshi historical cutoff is naive")
     return {"market_settled_at":cutoff}
+
+
+def acquire_retrospective_supporting_page(*,archive,session_id,provider,purpose,base,path,request_identity_value,transport,clock,sleeper=time.sleep,partition=None,partition_position=None,validator=lambda value:value):
+    """Acquire and durably preserve one PR17C2 logical supporting page."""
+    endpoint=base.rstrip("/")+path
+    result=acquire_with_retries(transport=transport,endpoint=endpoint,request={},policy=RETROSPECTIVE_SUPPORTING_RETRY_POLICY,now=clock,sleeper=sleeper,validator=validator)
+    terminal=result.attempts[-1]
+    preserve_supporting_response(archive=archive,session_id=session_id,provider=provider,purpose=purpose,endpoint=endpoint,request_identity_value=request_identity_value,started_at=result.attempts[0].started_at,completed_at=terminal.completed_at,disposition=result.disposition,raw=result.raw_body,partition=partition,partition_position=partition_position,attempts=result.attempts,attempt_raw_bodies=result.attempt_raw_bodies)
+    return result
 
 def live_mlb_material(purpose,at,*,histories,public_get,clock):
     """Acquire obligation dates through the established MLB request contract."""
@@ -150,9 +159,9 @@ def main(argv=None)->int:
                         requester=configured_kalshi_transport(config,clock).requester
                         def bounded_get(provider,purpose,base,path,identity,*,partition=None,partition_position=None,validator=lambda value:value):
                             nonlocal calls
-                            endpoint=base.rstrip("/")+path;transport=LiveRetrospectiveTransport(BoundedLiveReadOnlyTransport(base,requester,timeout_seconds=config.retry_policy.request_timeout_seconds),base)
-                            result=acquire_prospective_once(transport=transport,endpoint=endpoint,request={},timeout_seconds=config.retry_policy.request_timeout_seconds,now=clock,validator=validator);calls+=transport.calls
-                            attempt=result.attempts[-1];preserve_supporting_response(archive=session_archive,session_id=session,provider=provider,purpose=purpose,endpoint=endpoint,request_identity_value=identity,started_at=result.attempts[0].started_at,completed_at=attempt.completed_at,disposition=result.disposition,raw=result.raw_body,partition=partition,partition_position=partition_position)
+                            endpoint=base.rstrip("/")+path;transport=LiveRetrospectiveTransport(BoundedLiveReadOnlyTransport(base,requester,timeout_seconds=RETROSPECTIVE_SUPPORTING_RETRY_POLICY.request_timeout_seconds),base)
+                            result=acquire_retrospective_supporting_page(archive=session_archive,session_id=session,provider=provider,purpose=purpose,base=base,path=path,request_identity_value=identity,transport=transport,clock=clock,partition=partition,partition_position=partition_position,validator=validator);calls+=len(result.attempts)
+                            attempt=result.attempts[-1]
                             if result.disposition is not Disposition.SUCCESS or result.raw_body is None:raise SupportingAcquisitionError("supporting-acquisition-failed",f"{purpose} acquisition failed",calls)
                             return result.raw_body,result.attempts[0].started_at,attempt.completed_at,result.normalized
                         try:

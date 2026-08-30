@@ -137,6 +137,9 @@ class RetryPolicy:
         if self.maximum_retry_after_seconds < 0: raise OperationsError("configuration-error", "invalid Retry-After bound")
 
 
+RETROSPECTIVE_SUPPORTING_RETRY_POLICY=RetryPolicy(3,5,20,(1,2),2)
+
+
 @dataclass(frozen=True, slots=True)
 class DeploymentConfig:
     config_id: str
@@ -256,6 +259,7 @@ class AttemptRecord:
     disposition: Disposition
     status_code: int | None
     retry_after_seconds: int | None
+    retry_scheduled_at: datetime | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -265,6 +269,7 @@ class AcquisitionResult:
     normalized: Mapping[str, Any] | None
     attempts: tuple[AttemptRecord, ...]
     detail: str
+    attempt_raw_bodies: tuple[bytes | None, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -474,35 +479,40 @@ def acquire_prospective_once(*, transport: Transport, endpoint: str, request: Ma
 def acquire_with_retries(*, transport: Transport, endpoint: str, request: Mapping[str, str], policy: RetryPolicy,
                          now: Callable[[], datetime], sleeper: Callable[[float], None],
                          validator: Callable[[Mapping[str, Any]], Mapping[str, Any]]) -> AcquisitionResult:
-    began = now(); records: list[AttemptRecord] = []; last_body: bytes | None = None
+    records: list[AttemptRecord] = []; attempt_bodies: list[bytes | None] = []; last_body: bytes | None = None;retry_scheduled_at=None;first_start=None
     for number in range(1, policy.maximum_attempts + 1):
-        started = now(); status = None; retry_after = None
+        started=now();first_start=first_start or started;status = None; retry_after = None
+        if number>1 and (started-first_start).total_seconds()+policy.request_timeout_seconds>policy.total_timeout_seconds:break
         try:
             response = transport.request("GET", endpoint, params=request, timeout=policy.request_timeout_seconds, allow_redirects=False)
             last_body = _permitted_response_raw(response); status = response.status_code; disposition = classify_response(response)
-        except TimeoutError: disposition = Disposition.TIMEOUT; response = None
-        except (ConnectionError, OSError): disposition = Disposition.CONNECTION_FAILURE; response = None
-        completed = now()
+        except TimeoutError: disposition = Disposition.TIMEOUT; response = None;last_body=None
+        except (ConnectionError, OSError): disposition = Disposition.CONNECTION_FAILURE; response = None;last_body=None
+        completed=now()
+        if completed<started:raise OperationsError("trusted-clock-reversed","provider completion precedes request start")
         if response is not None and disposition is Disposition.SUCCESS:
             try: normalized = validator(_decode_json(response.body))
             except OperationsError as exc:
                 if exc.code=="secret-material": last_body=None
                 disposition = Disposition.MALFORMED_RESPONSE if exc.code == "malformed-response" else (Disposition.INCOMPLETE_RESPONSE if exc.code == "incomplete-response" else Disposition.VALIDATION_FAILURE)
             else:
-                records.append(AttemptRecord(number, started, completed, Disposition.SUCCESS, status, None))
-                return AcquisitionResult(Disposition.SUCCESS, response.body, normalized, tuple(records), "accepted")
+                records.append(AttemptRecord(number, started, completed, Disposition.SUCCESS, status, None,retry_scheduled_at))
+                attempt_bodies.append(response.body)
+                return AcquisitionResult(Disposition.SUCCESS, response.body, normalized, tuple(records), "accepted",tuple(attempt_bodies))
         if response is not None and disposition is Disposition.RATE_LIMITED:
             text = response.headers.get("Retry-After", "0")
             try: retry_after = min(max(int(text), 0), policy.maximum_retry_after_seconds)
             except ValueError: retry_after = 0
-        records.append(AttemptRecord(number, started, completed, disposition, status, retry_after))
+        records.append(AttemptRecord(number, started, completed, disposition, status, retry_after,retry_scheduled_at))
+        attempt_bodies.append(last_body)
         retryable = disposition in {Disposition.TIMEOUT, Disposition.CONNECTION_FAILURE, Disposition.RATE_LIMITED, Disposition.PROVIDER_ERROR}
         if not retryable or number == policy.maximum_attempts: break
         delay = max(policy.backoff_seconds[number - 1], retry_after or 0)
-        elapsed = (now() - began).total_seconds()
+        elapsed = (now()-first_start).total_seconds()
         if elapsed + delay + policy.request_timeout_seconds > policy.total_timeout_seconds: break
+        retry_scheduled_at=completed+timedelta(seconds=delay)
         sleeper(delay)
-    return AcquisitionResult(records[-1].disposition, last_body, None, tuple(records), "bounded acquisition failed")
+    return AcquisitionResult(records[-1].disposition, last_body, None, tuple(records), "bounded acquisition failed",tuple(attempt_bodies))
 
 
 def validate_kalshi_payload(value: Mapping[str, Any], *, expected_kind: str, expected: Mapping[str, str]) -> Mapping[str, Any]:
@@ -618,11 +628,12 @@ class NamespaceArchive:
             temporary.unlink(missing_ok=True)
         return created
 
-    def commit(self, *, raw_body: bytes, normalized: Mapping[str, Any], entry_values: Mapping[str, Any], failpoint: str | None = None) -> ManifestEntry:
+    def commit(self, *, raw_body: bytes, normalized: Mapping[str, Any], entry_values: Mapping[str, Any], failpoint: str | None = None, auxiliary_raw_bodies: Iterable[bytes] = ()) -> ManifestEntry:
         with self.mutation_lock():
-            return self._commit_locked(raw_body=raw_body, normalized=normalized, entry_values=entry_values,failpoint=failpoint)
+            return self._commit_locked(raw_body=raw_body, normalized=normalized, entry_values=entry_values,failpoint=failpoint,auxiliary_raw_bodies=auxiliary_raw_bodies)
 
-    def _commit_locked(self, *, raw_body: bytes, normalized: Mapping[str, Any], entry_values: Mapping[str, Any], failpoint: str | None = None) -> ManifestEntry:
+    def _commit_locked(self, *, raw_body: bytes, normalized: Mapping[str, Any], entry_values: Mapping[str, Any], failpoint: str | None = None, auxiliary_raw_bodies: Iterable[bytes] = ()) -> ManifestEntry:
+        auxiliary=tuple(auxiliary_raw_bodies)
         raw_digest = sha256_bytes(raw_body); raw_identity = f"raw:{raw_digest}"
         normalized_body = canonical_bytes(normalized); normalized_digest = sha256_bytes(normalized_body)
         normalized_id = f"normalized:{normalized_digest}"
@@ -630,13 +641,14 @@ class NamespaceArchive:
             operating_mode=self.config.mode, raw_object_sha256=raw_digest, normalized_object_id=normalized_id,
             normalized_schema_version=str(normalized.get("schema_version", OPERATIONS_SCHEMA_VERSION)))
         integrity=reconcile_archive(self)
-        candidate={f"raw:{raw_digest}",f"normalized:{normalized_digest}"}
+        candidate={f"raw:{raw_digest}",f"normalized:{normalized_digest}",*(f"raw:{sha256_bytes(body)}" for body in auxiliary)}
         if integrity.orphaned and not set(integrity.orphaned)<=candidate:
             raise OperationsError("orphan-conflict","unreferenced interrupted material conflicts with retry")
         for prior in self.entries():
             if prior["invocation_id"]==entry.invocation_id and (prior.get("raw_object_sha256"),prior.get("normalized_object_id"))!=(raw_digest,normalized_id):
                 raise OperationsError("immutable-conflict","invocation identity already resolves different material")
         if failpoint=="before-raw":raise OperationsError("injected-interruption",failpoint)
+        for body in auxiliary:self._publish(self._path("raw",f"raw:{sha256_bytes(body)}"),body)
         self._publish(self._path("raw", raw_identity), raw_body)
         if failpoint=="after-raw":raise OperationsError("injected-interruption",failpoint)
         self._publish(self._path("normalized", normalized_id), normalized_body)
@@ -650,10 +662,11 @@ class NamespaceArchive:
         with self.mutation_lock():
             return self._commit_normalized_locked(normalized=normalized,entry_values=entry_values)
 
-    def _commit_normalized_locked(self,*,normalized:Mapping[str,Any],entry_values:Mapping[str,Any])->ManifestEntry:
+    def _commit_normalized_locked(self,*,normalized:Mapping[str,Any],entry_values:Mapping[str,Any],auxiliary_raw_bodies:Iterable[bytes]=())->ManifestEntry:
         body=canonical_bytes(normalized);digest=sha256_bytes(body);identity=f"normalized:{digest}"
         entry=ManifestEntry.create(**dict(entry_values),namespace=self.config.namespace,operating_mode=self.config.mode,
             raw_object_sha256=None,normalized_object_id=identity,normalized_schema_version=str(normalized.get("schema_version",OPERATIONS_SCHEMA_VERSION)))
+        for raw in auxiliary_raw_bodies:self._publish(self._path("raw",f"raw:{sha256_bytes(raw)}"),raw)
         self._publish(self._path("normalized",identity),body)
         self._publish(self._path("manifest",entry.manifest_entry_id),canonical_bytes(entry));return entry
 
@@ -750,6 +763,14 @@ def reconcile_archive(archive:NamespaceArchive)->ArchiveIntegrityResult:
             (incompatible if exc.code=="namespace-crossing" else malformed).append(relative)
     expected_raw={item["raw_object_sha256"] for item in valid if item.get("raw_object_sha256")}
     expected_normalized={item["normalized_object_id"].split(":")[-1] for item in valid if item.get("normalized_object_id")}
+    for item in valid:
+        normalized_id=item.get("normalized_object_id")
+        if not normalized_id:continue
+        try:value=json.loads(archive._path("normalized",normalized_id).read_bytes())
+        except (FileNotFoundError,UnicodeDecodeError,json.JSONDecodeError):continue
+        if value.get("record_kind")=="pr17c2-supporting-session-page" and value.get("schema_version")=="2":
+            for attempt in value.get("attempts",()):
+                if isinstance(attempt,dict) and isinstance(attempt.get("raw_sha256"),str):expected_raw.add(attempt["raw_sha256"])
     actual_raw={p.name:p for p in sorted(archive.raw_root.glob("*/*")) if p.is_file()} if archive.raw_root.exists() else {}
     actual_normalized={p.stem:p for p in sorted(archive.normalized_root.glob("*/*.json")) if p.is_file()} if archive.normalized_root.exists() else {}
     missing=[];corrupt=[];referenced=[]

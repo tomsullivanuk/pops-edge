@@ -588,16 +588,26 @@ def _page_material(item:Any,index:int,collected_at:datetime)->tuple[str,str,byte
     return values
 
 
-def preserve_supporting_response(*,archive:NamespaceArchive,session_id:str,provider:str,purpose:str,endpoint:str,request_identity_value:str,started_at:datetime,completed_at:datetime,disposition:Any,raw:bytes|None,partition:str|None=None,partition_position:int|None=None)->str:
+def preserve_supporting_response(*,archive:NamespaceArchive,session_id:str,provider:str,purpose:str,endpoint:str,request_identity_value:str,started_at:datetime,completed_at:datetime,disposition:Any,raw:bytes|None,partition:str|None=None,partition_position:int|None=None,attempts:Iterable[Any]|None=None,attempt_raw_bodies:Iterable[bytes|None]=())->str:
     """Persist one received supporting result without granting scientific authority."""
     from forecast_standalone_operations import DesignAuthority,Disposition,_entry_values,request_identity
-    descriptor={"schema_version":"1","record_kind":"pr17c2-supporting-session-page","session_id":session_id,"provider":provider,"purpose":purpose,"partition":partition,"partition_position":partition_position,"request_identity":request_identity_value,"endpoint":endpoint,"started_at":started_at,"completed_at":completed_at,"disposition":disposition.value}
+    attempt_values=tuple(attempts) if attempts is not None else ()
+    bodies=tuple(attempt_raw_bodies)
+    if attempt_values:
+        if len(bodies)!=len(attempt_values):raise OperationsError("supporting-attempt-conflict","attempt raw chronology is incomplete")
+        descriptor={"schema_version":"2","record_kind":"pr17c2-supporting-session-page","session_id":session_id,"provider":provider,"purpose":purpose,"partition":partition,"partition_position":partition_position,"request_identity":request_identity_value,"endpoint":endpoint,"started_at":started_at,"completed_at":completed_at,"disposition":disposition.value,"attempts":[]}
+        for attempt,body in zip(attempt_values,bodies):
+            descriptor["attempts"].append({"attempt":attempt.attempt,"started_at":attempt.started_at,"completed_at":attempt.completed_at,"retry_scheduled_at":attempt.retry_scheduled_at,"disposition":attempt.disposition.value,"status_code":attempt.status_code,"retry_after_seconds":attempt.retry_after_seconds,"endpoint":endpoint,"request_identity":request_identity_value,"partition":partition,"partition_position":partition_position,"raw_sha256":hashlib.sha256(body).hexdigest() if body is not None else None})
+        if attempt_values[0].started_at!=started_at or attempt_values[-1].completed_at!=completed_at or attempt_values[-1].disposition is not disposition:raise OperationsError("supporting-attempt-conflict","page summary conflicts with attempt chronology")
+        if disposition.value=="success" and (raw is None or bodies[-1]!=raw):raise OperationsError("supporting-attempt-conflict","successful raw body is not bound to the terminal attempt")
+    else:descriptor={"schema_version":"1","record_kind":"pr17c2-supporting-session-page","session_id":session_id,"provider":provider,"purpose":purpose,"partition":partition,"partition_position":partition_position,"request_identity":request_identity_value,"endpoint":endpoint,"started_at":started_at,"completed_at":completed_at,"disposition":disposition.value}
     values=_entry_values(archive=archive,command="refresh-retrospective-supporting-page",request_id=request_identity({"session_id":session_id,"provider":provider,"purpose":purpose,"partition":partition,"partition_position":partition_position,"request_identity":request_identity_value}),invoked_at=completed_at,endpoint=endpoint,disposition=disposition,protocol_id=None,design=DesignAuthority.SUPPORTING,diagnostics=(f"session:{session_id}",f"purpose:{purpose}",*( (f"partition:{partition}",) if partition else ()),f"disposition:{disposition.value}"),provider_effective_at=None);values["provider_id"]=provider
     with archive.mutation_lock():
-        if disposition is Disposition.SUCCESS:
-            if raw is None:raise OperationsError("incomplete-success","successful supporting page lacks raw bytes")
-            entry=archive._commit_locked(raw_body=raw,normalized=descriptor,entry_values=values)
-        else:entry=archive._record_failure_locked(entry_values=values,raw_body=raw)
+        if disposition is Disposition.SUCCESS and raw is None:raise OperationsError("incomplete-success","successful supporting page lacks raw bytes")
+        auxiliary=tuple(body for body in bodies[:-1] if body is not None)
+        if raw is not None:entry=archive._commit_locked(raw_body=raw,normalized=descriptor,entry_values=values,auxiliary_raw_bodies=auxiliary)
+        elif attempt_values:entry=archive._commit_normalized_locked(normalized=descriptor,entry_values=values,auxiliary_raw_bodies=auxiliary)
+        else:entry=archive._record_failure_locked(entry_values=values,raw_body=None)
     return entry.manifest_entry_id
 
 
@@ -702,6 +712,49 @@ def _archived_datetime(raw:Any,field:str)->datetime:
     return value
 
 
+def _verify_supporting_page_attempts(archive:NamespaceArchive,entry:Mapping[str,Any],page:Mapping[str,Any])->int:
+    """Verify the retry chronology of one logical supporting page; schema 1 remains one call."""
+    from forecast_standalone_operations import RETROSPECTIVE_SUPPORTING_RETRY_POLICY,Disposition
+    if page.get("schema_version")=="1":return 1
+    if page.get("schema_version")!="2" or not isinstance(page.get("attempts"),list) or not page["attempts"]:raise OperationsError("supporting-session-conflict","supporting page attempt schema is unsupported")
+    attempts=page["attempts"]
+    policy=RETROSPECTIVE_SUPPORTING_RETRY_POLICY
+    if len(attempts)>policy.maximum_attempts:raise OperationsError("supporting-session-conflict","supporting page exceeds its attempt bound")
+    retryable={"timeout","connection-failure","rate-limited","provider-error"};prior_completed=None
+    for index,attempt in enumerate(attempts,1):
+        required={"attempt","started_at","completed_at","retry_scheduled_at","disposition","status_code","retry_after_seconds","endpoint","request_identity","partition","partition_position","raw_sha256"}
+        if set(attempt)!=required or attempt.get("attempt")!=index:raise OperationsError("supporting-session-conflict","supporting attempt numbering or schema conflicts")
+        if any(attempt.get(field)!=page.get(field) for field in ("endpoint","request_identity","partition","partition_position")):raise OperationsError("supporting-session-conflict","supporting retry changes logical request identity")
+        started=_archived_datetime(attempt.get("started_at"),"supporting attempt start");completed=_archived_datetime(attempt.get("completed_at"),"supporting attempt completion")
+        if completed<started or (completed-started).total_seconds()>policy.request_timeout_seconds:raise OperationsError("supporting-session-conflict","supporting attempt duration exceeds its request bound")
+        if index==1:
+            if attempt.get("retry_scheduled_at") is not None:raise OperationsError("supporting-session-conflict","first supporting attempt has retry scheduling authority")
+        else:
+            preceding=attempts[index-2];expected_delay=max(policy.backoff_seconds[index-2],preceding.get("retry_after_seconds") or 0)
+            scheduled=_archived_datetime(attempt.get("retry_scheduled_at"),"supporting retry scheduled instant")
+            if scheduled!=prior_completed+timedelta(seconds=expected_delay) or started<scheduled:raise OperationsError("supporting-session-conflict","supporting retry scheduling conflicts with observed chronology")
+        prior_completed=completed;disp=attempt.get("disposition");status=attempt.get("status_code");retry_after=attempt.get("retry_after_seconds");digest=attempt.get("raw_sha256")
+        if disp not in {item.value for item in Disposition}:raise OperationsError("supporting-session-conflict","supporting attempt disposition is unknown")
+        if disp in {"timeout","connection-failure"} and (status is not None or digest is not None):raise OperationsError("supporting-session-conflict","transport failure invents provider response material")
+        if disp=="rate-limited" and (status!=429 or not isinstance(retry_after,int) or not 0<=retry_after<=policy.maximum_retry_after_seconds):raise OperationsError("supporting-session-conflict","rate-limit attempt is malformed")
+        if disp!="rate-limited" and retry_after is not None:raise OperationsError("supporting-session-conflict","Retry-After appears on an inapplicable attempt")
+        if disp=="provider-error" and (not isinstance(status,int) or not 500<=status<=599):raise OperationsError("supporting-session-conflict","provider-error status is malformed")
+        if disp=="success" and status!=200:raise OperationsError("supporting-session-conflict","successful attempt status conflicts")
+        if digest is not None:
+            if not isinstance(digest,str) or len(digest)!=64 or any(character not in "0123456789abcdef" for character in digest):raise OperationsError("supporting-session-conflict","attempt raw digest is malformed")
+            archive.read_verified("raw","raw:"+digest)
+        if index<len(attempts) and disp not in retryable:raise OperationsError("supporting-session-conflict","non-retryable attempt has a successor")
+        if disp=="success" and index!=len(attempts):raise OperationsError("supporting-session-conflict","attempt appears after success")
+    terminal=attempts[-1]
+    if (_archived_datetime(terminal.get("completed_at"),"supporting terminal completion")-_archived_datetime(attempts[0].get("started_at"),"supporting first attempt")).total_seconds()>policy.total_timeout_seconds:raise OperationsError("supporting-session-conflict","supporting page exceeds its total timeout envelope")
+    if page.get("disposition")!=terminal.get("disposition") or _archived_datetime(page.get("started_at"),"supporting page start")!=_archived_datetime(attempts[0].get("started_at"),"supporting first attempt") or _archived_datetime(page.get("completed_at"),"supporting page completion")!=_archived_datetime(terminal.get("completed_at"),"supporting terminal attempt"):raise OperationsError("supporting-session-conflict","supporting page summary conflicts with attempts")
+    if entry.get("disposition")!=terminal.get("disposition"):raise OperationsError("supporting-session-conflict","supporting manifest disposition conflicts with attempts")
+    if terminal.get("disposition")=="success":
+        if terminal.get("raw_sha256") is None or entry.get("raw_object_sha256")!=terminal.get("raw_sha256"):raise OperationsError("supporting-session-conflict","successful page raw binding conflicts")
+    elif entry.get("raw_object_sha256")!=terminal.get("raw_sha256"):raise OperationsError("supporting-session-conflict","terminal failure raw binding conflicts")
+    return len(attempts)
+
+
 def publish_supporting_session_correction(*,archive:NamespaceArchive,session_id:str,reason:str,predecessor_completion_manifest_id:str,requested_date_window:tuple[str,str],provider_calls:int,cutoff_at:datetime,mlb_acquisition:Mapping[str,Any],kalshi_acquisition:Mapping[str,Any])->str:
     """Publish one narrowly versioned, manifest-last supersession authority."""
     from forecast_standalone_operations import DesignAuthority,Disposition,_entry_values,request_identity
@@ -785,13 +838,14 @@ def verify_supporting_session_completion(archive:NamespaceArchive,session_id:str
     expected_contracts=tuple(sorted(hashlib.sha256(payload.encode()).hexdigest() for payload in mlb_contracts+kalshi_contracts))
     if completion.get("contract_sha256s")!=list(expected_contracts):raise OperationsError("supporting-session-conflict","completion contract digests conflict")
     session_pages=tuple((entry,value) for entry,value in normalized if value.get("record_kind")=="pr17c2-supporting-session-page" and value.get("session_id")==session_id)
+    provider_call_count=sum(_verify_supporting_page_attempts(archive,entry,value) for entry,value in session_pages)
     referenced={page["manifest_entry_id"] for page in mlb_pages}|{page["manifest_entry_id"] for page in kalshi.get("pages",())}|{cutoff_id}
     successful={entry["manifest_entry_id"] for entry,value in session_pages if entry.get("disposition")=="success"}
     failed=tuple(entry for entry in entries if entry.get("command")=="refresh-retrospective-supporting-page" and entry.get("disposition")!="success" and f"session:{session_id}" in entry.get("diagnostics",()))
     if failed or successful!=referenced:raise OperationsError("supporting-session-conflict","completed session has failed, foreign, or unreferenced pages")
     session_bundles=tuple((entry,value) for entry,value in normalized if value.get("record_kind")=="pr17c1-acquisition-bundle" and value.get("acquisition_id") in set(wanted_ids.values()))
     if {entry["manifest_entry_id"] for entry,_ in session_bundles}!={mlb_entry["manifest_entry_id"],kalshi_entry["manifest_entry_id"]}:raise OperationsError("supporting-session-conflict","completed session has foreign or duplicate provider bundles")
-    if completion.get("provider_calls")!=len(session_pages):raise OperationsError("supporting-session-conflict","provider-call count conflicts with preserved session")
+    if completion.get("provider_calls")!=provider_call_count:raise OperationsError("supporting-session-conflict","provider-call count conflicts with preserved session")
     return {"session_id":session_id,"completion_manifest_id":completion_entry["manifest_entry_id"],"mlb_manifest_id":mlb_entry["manifest_entry_id"],"kalshi_manifest_id":kalshi_entry["manifest_entry_id"],"provider_calls":0,"contracts":len(mlb_contracts)+len(kalshi_contracts),"derivation_rule":completion.get("derivation_rule") or "legacy-kalshi-mlb-v1"}
 
 
@@ -895,7 +949,8 @@ def complete_supporting_session_from_archive(*,archive:NamespaceArchive,session_
     if correction_reason:
         from forecast_standalone_operations import replay_pr17_archive
         prior_state=replay_pr17_archive(archive,analysis_boundary=command_started,excluded_supporting_sessions=(session_id,))
-    result=refresh_supporting_from_raw(archive=archive,mlb_raw=mlb_union,kalshi_raw=kalshi_union,collected_at=command_started,catalog_pages=typed_catalog,mlb_pages=mlb_pages,prior_state=prior_state,acquisition_command="refresh-retrospective-supporting",retrospective_cutoff_at=cutoff,supporting_session_id=session_id,supporting_provider_calls=len(pages),requested_date_window=(dates[0].isoformat(),dates[-1].isoformat()),supporting_correction_reason=correction_reason,predecessor_completion_manifest_id=predecessor_completion_manifest_id)
+    provider_call_count=sum(_verify_supporting_page_attempts(archive,entry,value) for entry,value in pages)
+    result=refresh_supporting_from_raw(archive=archive,mlb_raw=mlb_union,kalshi_raw=kalshi_union,collected_at=command_started,catalog_pages=typed_catalog,mlb_pages=mlb_pages,prior_state=prior_state,acquisition_command="refresh-retrospective-supporting",retrospective_cutoff_at=cutoff,supporting_session_id=session_id,supporting_provider_calls=provider_call_count,requested_date_window=(dates[0].isoformat(),dates[-1].isoformat()),supporting_correction_reason=correction_reason,predecessor_completion_manifest_id=predecessor_completion_manifest_id)
     verified=verify_supporting_session_completion(archive,session_id)
     return {**result,**verified,"provider_calls":0,"completed_session_id":session_id,"original_completion_manifest_id":predecessor_completion_manifest_id}
 
