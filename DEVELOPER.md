@@ -775,7 +775,57 @@ publication). A distinct 1,939-event full-validation stress run was interrupted
 in the existing canonical manifest-lineage validator; full-population runtime
 remains unverified. Do not infer deployment readiness or fragment authority from
 these size probes. Full-snapshot rehearsal and any validator performance work
-require review; this implementation does not change scientific validators.
+require review; the correction below changes lookup work, not validation semantics.
+
+The focused PR17C3 performance correction groups classification and manifest
+records once per validator invocation and uses local parent/child lookups.
+Complete-input validation still precedes boundary selection, including future
+correction checks. Existing group iteration and returned sorting are retained;
+future-only classifications remain invisible, while a future-only manifest group
+still fails its required-root check. No cache, trusted-validation flag, rule version,
+publication gate, pinned dependency, or scientific constructor changes.
+
+Synthetic measurements on 2026-08-31 used CPython 3.14.5 / Clang 21.0.0,
+macOS 26.6.2 arm64, the repository venv, and `sized_candidate(N)` from the
+publication tests. Baseline was `d7d1b38cb1bff717cb4f03f09f40544827660586`.
+Each size includes fixture construction and candidate graph validation: one
+`cProfile.Profile().runcall(sized_candidate, N)` followed by three unprofiled
+runs (median shown). Socket connections were denied. No archive replay or
+publication is measured. Profiling and cold-start overhead affect absolute times;
+these are local observations, not CI timing thresholds or runtime guarantees.
+
+| Synthetic events | Unprofiled median before / after (s) | Profiled before / after (s) |
+| --- | --- | --- |
+| 32 | 0.067 / 0.062 | 0.212 / 0.210 |
+| 64 | 0.160 / 0.115 | 0.394 / 0.363 |
+| 128 | 0.631 / 0.254 | 1.111 / 0.768 |
+| 256 | 3.726 / 0.677 | 4.876 / 1.904 |
+
+At 256 events, classification cumulative profiled time fell from 2.059 to 0.588s,
+and manifest-lineage time from 1.753 to 0.254s; invocation counts remained 1,293
+and 1,034. Differential tests retain the pre-change validators and compare exact
+accepted outputs and rejection codes/details across malformed registries,
+permutations, equality boundaries, and future corrections. Canonical candidate
+bytes and identities match at identical inputs/boundaries (1/8/32 events in CI;
+32/64/128/256 in the before/after profile). Deterministic attribute-work tests
+cover independent groups and long chains at 16/64/128 records, with linear
+per-invocation membership/traversal work rather than timing assertions. Final
+sorting is unchanged. For 128 independent records, classification reads fell
+from 50,688 to 2,048 and manifest reads from 50,816 to 1,920.
+Validation: 235 focused tests and 652 repository tests passed. Two fixture-only
+rehearsals were byte-identical (authoritative-output SHA-256
+`50d5b24aa9e7853f4ba5ccdd45f5ec11951696ed5f96e7f1563f016304b85a03`),
+with zero pre-activation calls and six successful fixture jobs.
+
+Repeated full-registry invocation still contributes population-quadratic work;
+these two validators retain about 44% of the 256-event profiled runtime. Archive
+I/O and source dependency closure are not quantified here. The prior full-copy
+rehearsal was manually interrupted after approximately 31 minutes during augmented
+graph validation, without a scientific validation error or a stage/publication.
+That interruption is not a correctness failure. Full-population archive-copy
+publication, inspection, historical replay, and unchanged zero-write repetition
+remain a separate authorized step after review and merge. Synthetic speedups do
+not establish real-publication readiness; no further optimization is included.
 
 After PR17B2 dry-run validation, the Product Owner may approve a future Eastern
 calendar date before it begins. Midnight at that date becomes immutable

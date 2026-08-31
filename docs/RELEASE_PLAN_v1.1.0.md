@@ -1039,6 +1039,19 @@ Other deferred capabilities:
   digest, Protocol, and verified scientific inputs; published repeats are unchanged
   and zero-provider-call. No aggregate performance, uncertainty, final report,
   scheduler addition, or claim of full-window Evidence closure is included.
+
+  Focused performance correction: invocation-local grouping and parent/child
+  lookups remove redundant full-registry scans in classification and manifest
+  lineage validation. All complete-input, boundary, correction, graph, integrity,
+  source-pinning, staging, and repeat gates remain required. Differential and
+  deterministic work-count tests preserve rejection semantics and canonical bytes.
+  Synthetic 256-event candidate construction/validation improved from 3.726s to
+  0.677s unprofiled median (profiled: 4.876s to 1.904s); environment, smaller sizes,
+  overhead, and residual costs are documented in `DEVELOPER.md`. This is not
+  full-population publication readiness. The earlier approximately 31-minute
+  full-copy rehearsal was manually interrupted, not rejected by scientific
+  validation. Real-data copy publication/repeat validation requires separate
+  post-review/merge authorization; no such archive was accessed for this correction.
 - **PR17D — Prospective Observation Close and Separate Report.**
 
 PR17C1 prepares local-Mac, Keychain-backed, read-only operations: 30-second prospective invocation; hourly complete MLB schedule/classification refresh followed by independent zero/one/ambiguous Kalshi mapping per opportunity; daily outcomes, archive/index maintenance, same-drive secondary synchronization, and morning health reporting. Pre-staging does not permit calls before the boundary, dry-run data cannot be promoted, and same-device redundancy is not independent backup. Until reviewed merge and deployment, no Protocol is active and no real Evidence exists.
