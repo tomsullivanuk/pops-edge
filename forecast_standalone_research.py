@@ -178,21 +178,29 @@ def select_authoritative_event_classifications(classifications:Iterable[Standalo
     _require_aware(boundary,"classification boundary");values=tuple(classifications);by_id={x.standalone_event_classification_evidence_id:x for x in values}
     if len(by_id)!=len(values):_fail("classification registry contains duplicate or conflicting identity")
     groups={(x.authoritative_provider_id,x.provider_event_id,x.canonical_event_id) for x in values};selected=[]
+    members_by_group={group:[] for group in groups}
+    for item in values:
+        members_by_group[(item.authoritative_provider_id,item.provider_event_id,item.canonical_event_id)].append(item)
     for group in groups:
-        members=tuple(x for x in values if (x.authoritative_provider_id,x.provider_event_id,x.canonical_event_id)==group)
+        members=members_by_group[group]
+        member_ids={x.standalone_event_classification_evidence_id for x in members}
+        children_by_parent={}
+        for item in members:
+            children_by_parent.setdefault(item.supersedes_classification_id,[]).append(item)
+        # Validate the complete group, including corrections beyond the boundary.
         for item in members:
             if item.supersedes_classification_id:
                 parent=by_id.get(item.supersedes_classification_id)
-                if parent is None or parent not in members:_fail("orphaned or cross-event classification correction")
+                if parent is None or parent.standalone_event_classification_evidence_id not in member_ids:_fail("orphaned or cross-event classification correction")
                 if item.effective_at<=parent.effective_at:_fail("reversed classification correction chronology")
-                if len(tuple(x for x in members if x.supersedes_classification_id==parent.standalone_event_classification_evidence_id))>1:_fail("branched classification correction")
+                if len(children_by_parent[parent.standalone_event_classification_evidence_id])>1:_fail("branched classification correction")
         visible=tuple(x for x in members if x.effective_at<=boundary)
         if not visible:continue
         roots=tuple(x for x in visible if x.supersedes_classification_id is None)
         if len(roots)!=1:_fail("classification lineage requires one root")
         current=roots[0];seen={current.standalone_event_classification_evidence_id}
         while True:
-            children=tuple(x for x in visible if x.supersedes_classification_id==current.standalone_event_classification_evidence_id)
+            children=tuple(x for x in children_by_parent.get(current.standalone_event_classification_evidence_id,()) if x.effective_at<=boundary)
             if len(children)>1:_fail("branched classification correction")
             if not children:break
             current=children[0];seen.add(current.standalone_event_classification_evidence_id)
@@ -544,13 +552,16 @@ def validate_manifest_lineage(manifests:Iterable[HistoricalCandleQueryManifest],
             if len(children[parent.historical_candle_query_manifest_id])>1:_fail("branched manifest correction")
     selected=[]
     groups={(x.protocol_id,x.opportunity_id,x.provider_market_id) for x in values}
+    members_by_group={group:[] for group in groups}
+    for item in values:
+        members_by_group[(item.protocol_id,item.opportunity_id,item.provider_market_id)].append(item)
     for group in groups:
-        visible=[x for x in values if (x.protocol_id,x.opportunity_id,x.provider_market_id)==group and x.effective_at<=boundary]
+        visible=[x for x in members_by_group[group] if x.effective_at<=boundary]
         roots=[x for x in visible if x.supersedes_manifest_id is None]
         if len(roots)!=1:_fail("manifest lineage requires one unambiguous root")
         current=roots[0];seen={current.historical_candle_query_manifest_id}
         while True:
-            nxt=[x for x in visible if x.supersedes_manifest_id==current.historical_candle_query_manifest_id]
+            nxt=[x for x in children[current.historical_candle_query_manifest_id] if x.effective_at<=boundary]
             if len(nxt)>1:_fail("branched manifest correction")
             if not nxt:break
             current=nxt[0]
