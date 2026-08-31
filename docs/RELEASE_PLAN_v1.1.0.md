@@ -1031,6 +1031,14 @@ Other deferred capabilities:
 - **PR17C1 — Activation Authority and Prospective Collection Start:** reviewed merge deadline September 3; proposes `2026-09-05T00:00:00-04:00` `America/New_York` / `2026-09-05T04:00:00Z`. Merge-time explicit Product Owner authorization makes it immutable; installation and live access are separate actions.
 - **PR17C2 — Retrospective Acquisition and Evidence Closure.**
 - **PR17C3 — Retrospective Analysis and Report.**
+
+  Limited publication capability: explicit archive-only historical derivation,
+  event Measurement, and cumulative Coverage publication in one normalized-only
+  manifest-last bundle. Source identity excludes mutable maintenance state and
+  this publication's outputs. Frozen staging may resume only with exact payload,
+  digest, Protocol, and verified scientific inputs; published repeats are unchanged
+  and zero-provider-call. No aggregate performance, uncertainty, final report,
+  scheduler addition, or claim of full-window Evidence closure is included.
 - **PR17D — Prospective Observation Close and Separate Report.**
 
 PR17C1 prepares local-Mac, Keychain-backed, read-only operations: 30-second prospective invocation; hourly complete MLB schedule/classification refresh followed by independent zero/one/ambiguous Kalshi mapping per opportunity; daily outcomes, archive/index maintenance, same-drive secondary synchronization, and morning health reporting. Pre-staging does not permit calls before the boundary, dry-run data cannot be promoted, and same-device redundancy is not independent backup. Until reviewed merge and deployment, no Protocol is active and no real Evidence exists.

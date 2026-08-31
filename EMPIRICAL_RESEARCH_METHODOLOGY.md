@@ -2899,6 +2899,24 @@ authority.
 
 ### Versioned standalone Measurement path
 
+The limited PR17C3 archive-only publication path uses these existing constructors
+to publish historical-candle derivations, event-level V3 Measurements, and one
+cumulative V3 Coverage object atomically. The complete schedule-derived registry,
+including exclusions and missing-market/candle dispositions, determines Coverage;
+review-receipt counts never determine membership. Truthful archive-derived
+provenance binds the exact source snapshot, Protocol, namespace, and frozen actual
+computation boundary. No new raw Evidence or synthetic provider response is
+created. A normalized-only bundle has authority only after its sole manifest is
+published last and exact replay succeeds. Interrupted staging is non-authoritative;
+the publication preserves its exact contributing manifests and dependency closure,
+including the completion/correction authority that admitted supporting contracts.
+Historical verification reconstructs that pinned authority, not current session
+selection under old timestamps. Later independent completion cannot change the
+original scientific input set; missing or inconsistent pins remain blocking.
+Only exact matching bytes and unchanged verified sources may resume. This limited
+capability does not close the retrospective window or authorize aggregate
+performance, uncertainty, calibration summaries, or final reporting.
+
 Existing PR16B `ProbabilitySourceMeasurement` v1/v2 contracts, serialization,
 identities, registries, graph behavior, and historical artifacts remain
 unchanged. PR17B1 introduces an explicit version-dispatched successor,

@@ -61,7 +61,7 @@ def live_mlb_material(purpose,at,*,histories,public_get,clock):
     pages=tuple(pages)
     return merge_mlb_schedule_responses(tuple(x.raw for x in pages)),pages
 
-def execute(command,config,*,clock=lambda:datetime.now(timezone.utc),transport_factory=None,supporting_loader=None,outcome_loader=None,retrospective_runner=None,free_disk=None,session_completion_id=None,session_correction_reason=None):
+def execute(command,config,*,clock=lambda:datetime.now(timezone.utc),transport_factory=None,supporting_loader=None,outcome_loader=None,retrospective_runner=None,free_disk=None,session_completion_id=None,session_correction_reason=None,publication_protocol_id=None,expected_source_snapshot=None):
     archive=NamespaceArchive(config);state=OperationalState(config.log_root/"operational-state");started=clock()
     calls=typed=due=None;disposition="success";failure=None
     try:
@@ -95,6 +95,15 @@ def execute(command,config,*,clock=lambda:datetime.now(timezone.utc),transport_f
         elif command=="correct-retrospective-supporting-session":
             if not session_completion_id or not session_correction_reason:raise OperationsError("configuration-error","explicit --session-id and --reason are required")
             result=complete_supporting_session_from_archive(archive=archive,session_id=session_completion_id,correction_reason=session_correction_reason);calls=0;typed=result.get("contracts",0);output={"configuration_id":config.identity,"namespace":config.namespace,**result};output.setdefault("disposition","corrected")
+        elif command=="publish-retrospective-analysis":
+            from forecast_standalone_publication import publish_retrospective_analysis
+            calls=0
+            if not publication_protocol_id or not expected_source_snapshot:raise OperationsError("configuration-error","explicit --protocol-id and --source-snapshot are required")
+            output=publish_retrospective_analysis(archive=archive,protocol_id=publication_protocol_id,expected_source_snapshot=expected_source_snapshot,clock=clock);calls=0;typed=output["contracts"];disposition=output["disposition"]
+        elif command=="inspect-retrospective-publication":
+            from forecast_standalone_publication import publication_source
+            calls=0
+            _,snapshot=publication_source(archive,started);calls=0;output={"source_snapshot":snapshot,"provider_calls":0,"disposition":"inspected"}
         elif command=="inspect":output=json.loads(inspect_archive(archive).to_json());disposition="success" if output["ready"] else "not-ready"
         elif command=="reconcile-acquisitions":
             artifacts=reconcile_incomplete_acquisitions(archive,reconciled_at=started);output={"configuration_id":config.identity,"disposition":"success","reconciliation_artifacts":artifacts,"artifact_count":len(artifacts)};typed=len(artifacts)
@@ -121,10 +130,12 @@ def execute(command,config,*,clock=lambda:datetime.now(timezone.utc),transport_f
 
 def main(argv=None)->int:
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument("--config",type=Path);parser.add_argument("--fixture",type=Path);parser.add_argument("--trusted-at")
-    parser.add_argument("command",choices=("initialize-activation","capture-prospective","refresh-supporting","refresh-retrospective-supporting","complete-retrospective-supporting-session","correct-retrospective-supporting-session","acquire-retrospective","reconcile-outcomes","reconcile-acquisitions","inspect","maintain","rebuild-index","sync-secondary","health-report","render-launchd"));parser.add_argument("--output",type=Path);parser.add_argument("--maximum-opportunities",type=int);parser.add_argument("--start-date");parser.add_argument("--end-date");parser.add_argument("--session-id");parser.add_argument("--reason")
+    parser.add_argument("command",choices=("initialize-activation","capture-prospective","refresh-supporting","refresh-retrospective-supporting","complete-retrospective-supporting-session","correct-retrospective-supporting-session","acquire-retrospective","reconcile-outcomes","reconcile-acquisitions","inspect","maintain","rebuild-index","sync-secondary","health-report","render-launchd","publish-retrospective-analysis","inspect-retrospective-publication"));parser.add_argument("--output",type=Path);parser.add_argument("--maximum-opportunities",type=int);parser.add_argument("--start-date");parser.add_argument("--end-date");parser.add_argument("--session-id");parser.add_argument("--reason")
+    parser.add_argument("--protocol-id");parser.add_argument("--source-snapshot")
     args=parser.parse_args(argv)
     try:
         if args.config is None:raise OperationsError("configuration-error","--config is required")
+        if args.command=="publish-retrospective-analysis" and (args.trusted_at or args.fixture):raise OperationsError("configuration-error","publication requires the actual trusted clock and archived inputs, not --trusted-at or --fixture")
         config=DeploymentConfig.from_json(args.config)
         if args.command=="render-launchd":
             if args.output is None:raise OperationsError("configuration-error","--output is required")
@@ -213,7 +224,7 @@ def main(argv=None)->int:
                         if hasattr(exc,"provider_calls"):exc.provider_calls+=0 if args.fixture else 1
                         raise
                     return created,retro_transport.calls
-            result=execute(args.command,config,clock=clock,transport_factory=factory,supporting_loader=supporting_loader,outcome_loader=outcome_loader,retrospective_runner=retrospective_runner,session_completion_id=args.session_id,session_correction_reason=args.reason)
+            result=execute(args.command,config,clock=clock,transport_factory=factory,supporting_loader=supporting_loader,outcome_loader=outcome_loader,retrospective_runner=retrospective_runner,session_completion_id=args.session_id,session_correction_reason=args.reason,publication_protocol_id=args.protocol_id,expected_source_snapshot=args.source_snapshot)
         print(json.dumps(result,sort_keys=True,separators=(",",":"),default=lambda x:x.isoformat()))
         return int(ExitCode.SUCCESS if result.get("disposition")!="not-ready" else ExitCode.NOT_READY)
     except OperationsError as exc:

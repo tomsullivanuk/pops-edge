@@ -1554,7 +1554,32 @@ These gaps must be resolved through separately approved implementation work. Arc
 
 PR17C1 adds typed activation and replaceable read-only provider/credential seams without altering PR17B1 scientific contracts or PR17B2 archive contracts. Its exact proposed boundary is `2026-09-05T00:00:00-04:00` (`America/New_York`, `2026-09-05T04:00:00Z`), immutable only following explicit Product Owner authorization and reviewed merge by September 3. An activated local-Mac configuration may be pre-staged, but the trusted boundary enforces zero early calls and zero early attempts. Secrets are retrieved only at the live Kalshi boundary through a replaceable macOS Keychain provider; they never enter configuration, archives, reports, or diagnostics.
 
-Thin `launchd` wrappers invoke typed operations every 30 seconds, hourly, or daily. Exact-one market discovery, immutable external Evidence, create-only publication, dry-run/activated physical isolation, daily same-drive secondary synchronization (not physical backup), and non-authoritative health reporting preserve separation among scientific, operational, reporting, Policy, Governance, and production authority. PR17C2, PR17C3, and PR17D remain unimplemented.
+Thin `launchd` wrappers invoke typed operations every 30 seconds, hourly, or daily. Exact-one market discovery, immutable external Evidence, create-only publication, dry-run/activated physical isolation, daily same-drive secondary synchronization (not physical backup), and non-authoritative health reporting preserve separation among scientific, operational, reporting, Policy, Governance, and production authority. PR17C2 provides bounded retrospective acquisition; neither full-window closure nor PR17C3 analysis/report completion nor PR17D closure is implied.
+
+### Limited PR17C3 archive-only publication
+
+`forecast_standalone_publication.py` provides one explicitly invoked retrospective
+derivation/Measurement/cumulative Coverage publication. Canonical constructors
+and full augmented-graph validation own all scientific semantics. One
+normalized-only bundle becomes visible through one create-only manifest last;
+the scoped `derived` disposition is not provider `success` and creates no raw
+Evidence. Existing provider-success requirements remain unchanged.
+
+Scientific-input identity hashes verified source contracts, their exact contributing
+manifest identities, the closed manifest dependency set (including supporting
+completion/correction authority, provider bundles, pages, and predecessors), and namespace/mode,
+excluding this publication, mutable indexes, logs, and non-authoritative sessions.
+The immutable local staging record freezes the trusted boundary, exact payload,
+Protocol, source snapshot, and bundle digest. It is not scientific authority.
+Historical verification reconstructs that pinned authority set through the same
+strict replay validators; it never reselects supporting authority from the current
+archive. Later independent completion cannot retroactively admit older bundles
+into the publication. Full-namespace integrity verification still precedes pinned
+replay, and missing or altered pinned dependencies fail closed.
+Only exact stage resumption is allowed; source changes, conflicting manifests,
+or invalid archive integrity fail closed. A repeat verifies the existing bundle
+and returns unchanged without new scientific writes or a fresh derivation time.
+There is no new scheduler, acquisition, aggregate analysis, or report path.
 
 Kalshi authentication follows its documented read-only RSA-PSS/SHA-256 boundary: public key ID plus Keychain-provided private key, millisecond timestamp, and signature over timestamp, `GET`, and the query-free path. Headers exist only at transport invocation. Append-only sanitized heartbeats supply actual command chronology and counts to deterministic health inspection. The deployment renderer emits absolute-path plists but performs no installation.
 

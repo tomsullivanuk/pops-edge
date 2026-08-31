@@ -66,6 +66,7 @@ class DesignAuthority(str, Enum):
 
 class Disposition(str, Enum):
     SUCCESS = "success"
+    DERIVED = "derived"
     TIMEOUT = "timeout"
     CONNECTION_FAILURE = "connection-failure"
     RATE_LIMITED = "rate-limited"
@@ -243,6 +244,8 @@ class ManifestEntry:
             raise OperationsError("ambiguous-correction", "predecessor and correction reason must appear together")
         if self.disposition is Disposition.SUCCESS and not (self.raw_object_sha256 and self.normalized_object_id):
             raise OperationsError("incomplete-success", "successful entries require raw and normalized authority")
+        if self.disposition is Disposition.DERIVED and (self.command!="publish-retrospective-analysis" or self.raw_object_sha256 is not None or not self.normalized_object_id or self.provider_id!="pops-edge-archive-analysis"):
+            raise OperationsError("invalid-derived-publication", "derived publication requires normalized-only archive Analysis")
         if self.raw_object_sha256 is not None and (len(self.raw_object_sha256)!=64 or any(ch not in "0123456789abcdef" for ch in self.raw_object_sha256)):
             raise OperationsError("invalid-identity","raw object digest")
         if self.normalized_object_id is not None and not self.normalized_object_id.startswith("normalized:"):
@@ -978,7 +981,7 @@ def status(archive: NamespaceArchive) -> DiagnosticResult:
     try:entries=authoritative_entries(archive)
     except OperationsError:entries=()
     health,index_issues=index_health(archive); secondary=secondary_status(archive)
-    successes=[x for x in entries if x["disposition"]==Disposition.SUCCESS.value]; failures=[x for x in entries if x["disposition"]!=Disposition.SUCCESS.value]
+    successes=[x for x in entries if x["disposition"] in {Disposition.SUCCESS.value,Disposition.DERIVED.value}]; failures=[x for x in entries if x["disposition"] not in {Disposition.SUCCESS.value,Disposition.DERIVED.value}]
     issues=list(index_issues)
     for name,values in (("missing",integrity.referenced_missing),("corrupt",integrity.referenced_corrupt),("orphaned",integrity.orphaned),("malformed",integrity.malformed),("incompatible",integrity.incompatible),("partial",integrity.partial)):
         issues.extend(f"archive {name}: {item}" for item in values)
@@ -1034,6 +1037,9 @@ def inspect_archive(archive: NamespaceArchive) -> DiagnosticResult:
     try:entries=authoritative_entries(archive)
     except OperationsError:entries=()
     for entry in entries: _verify_entry_objects(archive,entry)
+    if any(entry.get("command")=="publish-retrospective-analysis" for entry in entries):
+        from forecast_standalone_publication import _published
+        _published(archive)
     by_design={tag.value:sum(1 for item in entries if item["design_authority"]==tag.value) for tag in DesignAuthority}
     kinds=[];session_pages=[];completion_sessions=set();retrospective_bundles=[]
     for entry in archive.entries():
@@ -1087,6 +1093,7 @@ class ScientificArchiveState:
     objects:tuple[Any,...]
     graph:tuple[tuple[str,tuple[Any,...]],...]
     reports:tuple[Any,...]
+    source_manifest_ids:tuple[str,...]=()
     def bucket(self,name:str)->tuple[Any,...]:return dict(self.graph).get(name,())
 
 
@@ -1121,10 +1128,17 @@ def archive_pr17_authority(archive:NamespaceArchive,contracts:Iterable[Any],*,re
     return tuple(entries)
 
 
-def _contracts_from_entry(archive:NamespaceArchive,entry:Mapping[str,Any],prior_objects:Iterable[Any]=(),excluded_supporting_sessions:Iterable[str]=())->tuple[Any,...]:
+def _contracts_from_entry(archive:NamespaceArchive,entry:Mapping[str,Any],prior_objects:Iterable[Any]=(),excluded_supporting_sessions:Iterable[str]=(),_exclude_retrospective_publications:bool=False)->tuple[Any,...]:
     identity=entry.get("normalized_object_id")
     if not identity:return ()
     value=json.loads(archive.read_verified("normalized",identity))
+    if value.get("record_kind")=="pr17c3-retrospective-publication" or entry.get("command")=="publish-retrospective-analysis":
+        if _exclude_retrospective_publications:return ()
+        from forecast_standalone_publication import _published,verify_publication
+        publications=_published(archive)
+        if len(publications)!=1 or publications[0][0]["manifest_entry_id"]!=entry["manifest_entry_id"]:
+            raise OperationsError("retrospective-publication-conflict","publication manifest selection is ambiguous")
+        return verify_publication(archive,value)
     if value.get("record_kind")=="pr17c1-acquisition-bundle":
         if value.get("family")=="refresh-retrospective-supporting" and value.get("page_record_kind")=="pr17c2-supporting-session-page":
             session=value.get("supporting_session_id") or value.get("acquisition_id","").rsplit(":",1)[0]
@@ -1177,10 +1191,15 @@ def _contracts_from_entry(archive:NamespaceArchive,entry:Mapping[str,Any],prior_
     return contracts
 
 
-def replay_pr17_archive(archive:NamespaceArchive,*,analysis_boundary:datetime,excluded_supporting_sessions:Iterable[str]=())->ScientificArchiveState:
+def replay_pr17_archive(archive:NamespaceArchive,*,analysis_boundary:datetime,excluded_supporting_sessions:Iterable[str]=(),_exclude_retrospective_publications:bool=False)->ScientificArchiveState:
     _utc(analysis_boundary,"archive replay boundary")
-    entries=authoritative_entries(archive);objects=[]
-    for entry in entries:objects.extend(_contracts_from_entry(archive,entry,objects,excluded_supporting_sessions))
+    entries=authoritative_entries(archive);objects=[];source_manifest_ids=[]
+    for entry in entries:
+        if _exclude_retrospective_publications and datetime.fromisoformat(entry["acquired_at"]["datetime_utc"])>analysis_boundary:continue
+        if entry.get("command")=="publish-retrospective-analysis" and datetime.fromisoformat(entry["acquired_at"]["datetime_utc"])>analysis_boundary:continue
+        contracts=_contracts_from_entry(archive,entry,objects,excluded_supporting_sessions,_exclude_retrospective_publications)
+        if contracts:source_manifest_ids.append(entry["manifest_entry_id"])
+        objects.extend(contracts)
     keyed={}
     for item in objects:
         key=(type(item).__name__,item.to_json())
@@ -1200,7 +1219,7 @@ def replay_pr17_archive(archive:NamespaceArchive,*,analysis_boundary:datetime,ex
     canonical={name:tuple(sorted(values,key=lambda item:item.to_json())) for name,values in buckets.items()}
     from forecast_standalone_research import validate_standalone_research_graph
     reports=validate_standalone_research_graph(**canonical,analysis_boundary=analysis_boundary)
-    return ScientificArchiveState(analysis_boundary,objects,tuple(sorted(canonical.items())),reports)
+    return ScientificArchiveState(analysis_boundary,objects,tuple(sorted(canonical.items())),reports,tuple(sorted(source_manifest_ids)))
 
 
 def request_identity(request: Mapping[str, Any]) -> str:
