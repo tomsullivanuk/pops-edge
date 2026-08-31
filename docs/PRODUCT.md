@@ -566,6 +566,15 @@ The product must not manufacture an edge when evidence is absent or insufficient
 **Pops' Edge identifies positive expected value opportunities supported by empirically earned operational trust.**
 ## PR17C delivery split and activation proposal
 
+The limited PR17C3 publication capability is an explicitly invoked, archive-only
+atomic publication of canonical historical-candle derivations, individual V3
+Measurements, and complete cumulative Coverage. It preserves missing-data and
+exclusion accounting; it creates derived Analysis, not new provider Evidence.
+Exact source-snapshot approval, frozen truthful chronology, manifest-last
+publication, and unchanged zero-call repetition separate this capability from
+acquisition, deployment, aggregate analysis, and final reporting. It does not
+claim full retrospective Evidence closure or completion of PR17C3/PR17D.
+
 PR17C1 (activation authority and prospective collection start), PR17C2 (retrospective acquisition/closure), and PR17C3 (retrospective analysis/report) precede unchanged PR17D (prospective close/separate report). The proposed boundary is September 5, 2026 midnight `America/New_York`, exactly `2026-09-05T00:00:00-04:00` / `2026-09-05T04:00:00Z`; explicit Product Owner authorization and reviewed squash merge are required by September 3. Pre-staging is permitted, but early provider calls and scientific attempts are prohibited. No Protocol is active and no real Evidence exists until merge and deployment.
 
 The approved operating shape is an inert local-Mac template: 30-second prospective invocation, hourly schedule/classification/catalog refresh, daily outcomes, maintenance, same-drive secondary synchronization, and a morning non-authoritative health report. Same-device redundancy is not an independent physical backup. Kalshi credentials remain behind the macOS Keychain boundary, market discovery must produce exactly one authoritative home-team YES mapping, external Evidence storage is immutable, and dry-run material cannot be promoted.

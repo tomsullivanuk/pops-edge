@@ -728,6 +728,48 @@ malformed, incompatible, and partial sets. Orphans are never indexed or copied
 to secondary storage. Deterministic publication failpoints support recovery
 tests; only an identical retry may complete interrupted manifest-last work.
 
+### Explicit retrospective publication (limited PR17C3)
+
+`inspect-retrospective-publication` reports the verified `source_snapshot` without
+provider calls. After independent approval of that snapshot, invoke
+`operate_forecast_standalone_activation.py --config <authorized-config>
+publish-retrospective-analysis --protocol-id <canonical-retrospective-id>
+--source-snapshot <scientific-input:digest>`. These are manual commands, never
+scheduled. Real execution requires separate operational authorization.
+
+Publication accepts no category lists or analysis-time override (`--trusted-at`
+is rejected). Canonical constructors build all qualifying derivations and
+Measurements, then reconstruct cumulative Coverage from the complete registry.
+One normalized-only bundle is published with a narrowly scoped `derived`
+manifest disposition and truthful `pops-edge-archive-analysis` provenance;
+`archive_pr17_authority` is not used. Provider response limits do not apply to
+local derived serialization. No aggregate analysis or report is calculated.
+
+`retrospective-publication-stage.json` freezes the actual trusted boundary,
+Protocol, scientific-input snapshot, bundle digest, and exact candidate bytes.
+It remains immutable and non-authoritative. An explicit retry validates and
+resumes only this exact stage; other orphans, source changes, conflicting authority,
+and integrity failures are not repaired. A completed repeat verifies the existing
+publication first and returns its identities with `unchanged`, zero provider
+calls, and zero scientific writes. This focused path intentionally refuses a new
+publication after scientific inputs change; further incremental-publication
+policy requires separate review. PR #19 rejected-session isolation is unchanged.
+
+Historical publication replay binds only source manifests available by its frozen
+boundary, so later independent Evidence cannot invalidate an already valid
+publication. An explicit staging/repeat invocation also compares the current
+verified source snapshot and refuses changed inputs rather than silently extending
+the publication. Global archive integrity remains checked across the namespace.
+
+Offline sizing: a fully graph-validated 64-event synthetic candidate contains
+129 scientific objects in 356,208 normalized bytes. A 3,879-object repeated-payload
+serialization-only probe is 9,889,632 bytes (not a valid scientific graph or a
+publication). A distinct 1,939-event full-validation stress run was interrupted
+in the existing canonical manifest-lineage validator; full-population runtime
+remains unverified. Do not infer deployment readiness or fragment authority from
+these size probes. Full-snapshot rehearsal and any validator performance work
+require review; this implementation does not change scientific validators.
+
 After PR17B2 dry-run validation, the Product Owner may approve a future Eastern
 calendar date before it begins. Midnight at that date becomes immutable
 timezone-aware `activation_at`; PR17A sets no date. Dry-run material cannot
