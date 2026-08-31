@@ -22,12 +22,76 @@ def _fail(detail):
     raise OperationsError("retrospective-publication-conflict", detail)
 
 
+class _PinnedPublicationArchive:
+    """Read-only publication-local authority view; storage verification stays global."""
+    def __init__(self, archive, identities):
+        integrity = reconcile_archive(archive)
+        if integrity.blocking:
+            raise OperationsError("archive-integrity-failure", "pinned publication dependencies are damaged")
+        if not isinstance(identities, list) or identities != sorted(set(identities)):
+            _fail("pinned dependency identities must be unique and canonical")
+        self._archive = archive
+        entries = {entry["manifest_entry_id"]:entry for entry in archive.entries()}
+        if not set(identities) <= entries.keys():
+            raise OperationsError("archive-integrity-failure", "pinned publication manifest is missing")
+        self._entries = tuple(entry for entry in archive.entries() if entry["manifest_entry_id"] in set(identities))
+
+    def entries(self):
+        return self._entries
+
+    def __getattr__(self, name):
+        return getattr(self._archive, name)
+
+
+def _source_authority(archive, state):
+    """Close contributing manifests over immutable references and session authority."""
+    entries = {entry["manifest_entry_id"]:entry for entry in archive.entries()}
+    values = {identity:json.loads(archive.read_verified("normalized",entry["normalized_object_id"]))
+              for identity,entry in entries.items() if entry.get("normalized_object_id")}
+    roots = sorted(state.source_manifest_ids)
+    closure = set(roots)
+
+    def references(value):
+        if isinstance(value, str):
+            return {value} if value.startswith("operations-manifest:") else set()
+        if isinstance(value, dict):
+            return set().union(*(references(item) for item in value.values()))
+        if isinstance(value, (list, tuple)):
+            return set().union(*(references(item) for item in value))
+        return set()
+
+    pending = list(roots)
+    while pending:
+        identity = pending.pop()
+        if identity not in entries:
+            raise OperationsError("archive-integrity-failure", "pinned dependency manifest is absent")
+        entry = entries[identity]; value = values.get(identity,{})
+        if entry.get("command") == COMMAND:
+            _fail("publication cannot depend on its own outputs")
+        dependencies = references(value)
+        if entry.get("predecessor_id"):
+            dependencies.add(entry["predecessor_id"])
+        acquisition_ids = set(value.get("dependencies",()))
+        session = value.get("supporting_session_id") or value.get("session_id")
+        if not session and value.get("family")=="refresh-retrospective-supporting" and value.get("page_record_kind")=="pr17c2-supporting-session-page":
+            session = value.get("acquisition_id", "").rsplit(":",1)[0]
+        for candidate_id,candidate in values.items():
+            if candidate.get("acquisition_id") in acquisition_ids:
+                dependencies.add(candidate_id)
+            if session and (candidate.get("session_id")==session or candidate.get("supporting_session_id")==session or
+                            candidate.get("acquisition_id") in {session+":mlb-stats-api",session+":kalshi"}):
+                dependencies.add(candidate_id)
+        for dependency in dependencies-closure:
+            closure.add(dependency);pending.append(dependency)
+    return {"source_manifest_ids":roots,"dependency_manifest_ids":sorted(closure)}
+
+
 def publication_source(archive, boundary):
     """Verified scientific input only; indexes, logs and this output are excluded."""
     state = replay_pr17_archive(archive, analysis_boundary=boundary,
                                _exclude_retrospective_publications=True)
     material = {"namespace": archive.config.namespace, "mode": archive.config.mode.value,
-                "source_manifest_ids": state.source_manifest_ids,
+                "source_authority": _source_authority(archive,state),
                 "contracts": sorted(x.to_json() for x in state.objects)}
     return state, "scientific-input:" + sha256_bytes(canonical_bytes(material))
 
@@ -52,7 +116,7 @@ def _augmented(state, contracts, boundary):
     validate_standalone_research_graph(**graph, analysis_boundary=boundary)
 
 
-def _candidate(state, protocol_id, snapshot, boundary, namespace):
+def _candidate(state, protocol_id, snapshot, boundary, namespace, source_authority=None):
     from forecast_research_contracts import ResearchContractProvenance
     from forecast_standalone_research import (
         create_historical_candle_probability_derivation,
@@ -116,6 +180,7 @@ def _candidate(state, protocol_id, snapshot, boundary, namespace):
     bundle = pr17_contract_bundle(*contracts)
     material = {"schema_version": "1", "record_kind": KIND, "protocol_id": protocol_id,
                 "namespace": namespace, "source_snapshot": snapshot,
+                "source_authority": source_authority if source_authority is not None else {"source_manifest_ids":list(state.source_manifest_ids),"dependency_manifest_ids":list(state.source_manifest_ids)},
                 "analysis_boundary": boundary.isoformat(), "provider_calls": 0,
                 "bundle_sha256": sha256_bytes(canonical_bytes(bundle)), "bundle": bundle}
     material["publication_id"] = KIND + ":" + sha256_bytes(canonical_bytes(material))
@@ -126,7 +191,7 @@ def verify_publication(archive, value):
     """Exact source/digest and full graph gate shared by staging, replay and retry."""
     from forecast_standalone_research import deserialize_v3
     required = {"schema_version", "record_kind", "protocol_id", "namespace", "source_snapshot",
-                "analysis_boundary", "provider_calls", "bundle_sha256", "bundle", "publication_id"}
+                "analysis_boundary", "provider_calls", "bundle_sha256", "bundle", "publication_id", "source_authority"}
     if set(value) != required or value["record_kind"] != KIND or value["schema_version"] != "1":
         _fail("unknown publication schema")
     if value["namespace"] != archive.config.namespace or value["provider_calls"] != 0:
@@ -136,7 +201,13 @@ def verify_publication(archive, value):
         _fail("publication identity digest mismatch")
     boundary = datetime.fromisoformat(value["analysis_boundary"])
     _utc(boundary, "publication analysis boundary")
-    state, snapshot = publication_source(archive, boundary)
+    authority = value["source_authority"]
+    if not isinstance(authority,dict) or set(authority)!={"source_manifest_ids","dependency_manifest_ids"}:
+        _fail("pinned source authority is malformed")
+    pinned = _PinnedPublicationArchive(archive,authority["dependency_manifest_ids"])
+    state, snapshot = publication_source(pinned, boundary)
+    if _source_authority(pinned,state)!=authority:
+        _fail("pinned source authority closure is inconsistent")
     _authority(state, value["protocol_id"])
     if snapshot != value["source_snapshot"]:
         _fail("scientific source snapshot changed")
@@ -248,7 +319,8 @@ def publish_retrospective_analysis(*, archive, protocol_id, expected_source_snap
             state, snapshot = publication_source(archive, boundary)
             if snapshot != expected_source_snapshot:
                 _fail("scientific source snapshot changed before staging")
-            value = _candidate(state, protocol_id, snapshot, boundary, archive.config.namespace)
+            value = _candidate(state, protocol_id, snapshot, boundary, archive.config.namespace,
+                               source_authority=_source_authority(archive,state))
             verify_publication(archive, value)
             archive._publish(stage, canonical_bytes(value))
         normalized_id = "normalized:" + sha256_bytes(canonical_bytes(value))

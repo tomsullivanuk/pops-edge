@@ -2908,7 +2908,12 @@ provenance binds the exact source snapshot, Protocol, namespace, and frozen actu
 computation boundary. No new raw Evidence or synthetic provider response is
 created. A normalized-only bundle has authority only after its sole manifest is
 published last and exact replay succeeds. Interrupted staging is non-authoritative;
-only exact matching bytes and unchanged verified sources may resume. This limited
+the publication preserves its exact contributing manifests and dependency closure,
+including the completion/correction authority that admitted supporting contracts.
+Historical verification reconstructs that pinned authority, not current session
+selection under old timestamps. Later independent completion cannot change the
+original scientific input set; missing or inconsistent pins remain blocking.
+Only exact matching bytes and unchanged verified sources may resume. This limited
 capability does not close the retrospective window or authorize aggregate
 performance, uncertainty, calibration summaries, or final reporting.
 

@@ -755,13 +755,20 @@ calls, and zero scientific writes. This focused path intentionally refuses a new
 publication after scientific inputs change; further incremental-publication
 policy requires separate review. PR #19 rejected-session isolation is unchanged.
 
-Historical publication replay binds only source manifests available by its frozen
-boundary, so later independent Evidence cannot invalidate an already valid
-publication. An explicit staging/repeat invocation also compares the current
+Historical publication replay binds `source_authority.source_manifest_ids` and
+`source_authority.dependency_manifest_ids` inside the immutable publication.
+The closure includes the exact supporting completion/correction lineage that
+admitted provider contracts, their pages, bundles, references, and predecessors.
+The publication-local read-only authority view reconstructs only those manifests
+with the existing strict validators, after checking global archive integrity.
+The frozen timestamp alone is not source authority: a later completion with old
+acquisition timestamps cannot add bundles to historical replay. Missing, corrupt,
+substituted, incomplete, or inconsistent pins fail closed. No existing material
+is rewritten or reinterpreted. An explicit staging/repeat invocation compares the current
 verified source snapshot and refuses changed inputs rather than silently extending
 the publication. Global archive integrity remains checked across the namespace.
 
-Offline sizing: a fully graph-validated 64-event synthetic candidate contains
+Pre-pinning offline sizing: a fully graph-validated 64-event synthetic candidate contains
 129 scientific objects in 356,208 normalized bytes. A 3,879-object repeated-payload
 serialization-only probe is 9,889,632 bytes (not a valid scientific graph or a
 publication). A distinct 1,939-event full-validation stress run was interrupted

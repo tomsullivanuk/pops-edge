@@ -1566,10 +1566,16 @@ the scoped `derived` disposition is not provider `success` and creates no raw
 Evidence. Existing provider-success requirements remain unchanged.
 
 Scientific-input identity hashes verified source contracts, their exact contributing
-manifest identities, and namespace/mode,
+manifest identities, the closed manifest dependency set (including supporting
+completion/correction authority, provider bundles, pages, and predecessors), and namespace/mode,
 excluding this publication, mutable indexes, logs, and non-authoritative sessions.
 The immutable local staging record freezes the trusted boundary, exact payload,
 Protocol, source snapshot, and bundle digest. It is not scientific authority.
+Historical verification reconstructs that pinned authority set through the same
+strict replay validators; it never reselects supporting authority from the current
+archive. Later independent completion cannot retroactively admit older bundles
+into the publication. Full-namespace integrity verification still precedes pinned
+replay, and missing or altered pinned dependencies fail closed.
 Only exact stage resumption is allowed; source changes, conflicting manifests,
 or invalid archive integrity fail closed. A repeat verifies the existing bundle
 and returns unchanged without new scientific writes or a fresh derivation time.

@@ -1,5 +1,7 @@
 """Only temporary synthetic archives; never configured deployed material."""
 import json
+import copy
+from event_contracts import ContractError
 import tempfile
 import unittest
 from dataclasses import replace
@@ -10,7 +12,7 @@ from unittest.mock import patch
 from forecast_standalone_operations import (
     DeploymentConfig, NamespaceArchive, OperatingMode, RetryPolicy, OperationsError,
     archive_pr17_authority, inspect_archive, rebuild_index, sync_secondary,
-    replay_pr17_archive, canonical_bytes,
+    replay_pr17_archive, canonical_bytes, sha256_bytes,
 )
 from forecast_standalone_publication import (
     STAGE, publication_source, publish_retrospective_analysis, verify_publication,
@@ -258,6 +260,87 @@ class PublicationTests(unittest.TestCase):
             self.archive._commit_normalized_locked(normalized=value,entry_values=_manifest_values(self.archive,value,self.boundary+timedelta(seconds=1)))
         with self.assertRaisesRegex(OperationsError,"ambiguous publication"):self.publish()
         with self.assertRaisesRegex(OperationsError,"ambiguous publication"):replay_pr17_archive(self.archive,analysis_boundary=self.boundary+timedelta(seconds=2))
+
+
+class PinnedSupportingAuthorityTests(unittest.TestCase):
+    def setUp(self):
+        from datetime import datetime,timezone
+        from forecast_standalone_activation import (canonical_activation_authorities,preserve_supporting_response,
+            canonical_mlb_schedule_request,encoded_kalshi_retrospective_catalog_path,complete_supporting_session_from_archive)
+        from forecast_standalone_operations import Disposition
+        from inspect_forecast_standalone_activation import fixtures
+        self.temporary=tempfile.TemporaryDirectory();self.addCleanup(self.temporary.cleanup)
+        root=Path(self.temporary.name)
+        self.archive=NamespaceArchive(DeploymentConfig("pinned","pinned",OperatingMode.DRY_RUN,
+            root/"dry-run/pinned/primary",root/"dry-run/pinned/secondary","https://fixture.invalid",
+            RetryPolicy(1,1,1,(),0),1,root/"logs"))
+        activation,retro,prospective=canonical_activation_authorities()
+        self.pid=retro.standalone_probability_source_protocol_id
+        at=datetime(2026,9,6,tzinfo=timezone.utc);self.boundary=at+timedelta(days=1)
+        archive_pr17_authority(self.archive,(activation,retro,prospective),recorded_at=at-timedelta(days=10))
+        mlb,kalshi=fixtures()[:2];self.session="supporting-session:pin-regression"
+        common=dict(archive=self.archive,session_id=self.session,started_at=at,completed_at=at,disposition=Disposition.SUCCESS)
+        for day,raw in (("2026-09-05",mlb),("2026-09-06",canonical_bytes({"dates":[]}))):
+            preserve_supporting_response(**common,provider="mlb-stats-api",purpose="schedule",endpoint=canonical_mlb_schedule_request(day)[1],request_identity_value=day,raw=raw)
+        preserve_supporting_response(**common,provider="kalshi",purpose="historical-cutoff",endpoint="https://fixture.invalid/historical/cutoff",request_identity_value="historical-cutoff",raw=b'{"market_settled_ts":"2026-08-01T00:00:00Z"}')
+        for partition,markets in (("historical",[]),("live",json.loads(kalshi)["markets"])):
+            preserve_supporting_response(**common,provider="kalshi",purpose="catalog",endpoint="https://fixture.invalid"+encoded_kalshi_retrospective_catalog_path("",historical=partition=="historical"),request_identity_value="",raw=canonical_bytes({"markets":markets,"cursor":""}),partition=partition,partition_position=0)
+        with patch("forecast_standalone_activation.publish_supporting_session_completion",side_effect=RuntimeError("interrupted")):
+            with self.assertRaises(RuntimeError):complete_supporting_session_from_archive(archive=self.archive,session_id=self.session)
+
+    def complete(self):
+        from forecast_standalone_activation import complete_supporting_session_from_archive
+        return complete_supporting_session_from_archive(archive=self.archive,session_id=self.session)
+
+    def publish(self):
+        self.snapshot=publication_source(self.archive,self.boundary)[1]
+        return publish_retrospective_analysis(archive=self.archive,protocol_id=self.pid,
+            expected_source_snapshot=self.snapshot,clock=lambda:self.boundary)
+
+    def test_late_completion_preserves_original_replay_and_inspection(self):
+        result=self.publish();before=replay_pr17_archive(self.archive,analysis_boundary=self.boundary).bucket("coverages")
+        value=json.loads((self.archive.root/STAGE).read_bytes())
+        completion=self.complete()
+        self.assertNotIn(completion["completion_manifest_id"],value["source_authority"]["dependency_manifest_ids"])
+        self.assertEqual(replay_pr17_archive(self.archive,analysis_boundary=self.boundary+timedelta(seconds=1)).bucket("coverages"),before)
+        self.assertTrue(inspect_archive(self.archive).ready)
+        self.assertNotEqual(publication_source(self.archive,self.boundary)[1],self.snapshot)
+        with self.assertRaisesRegex(OperationsError,"snapshot changed"):
+            publish_retrospective_analysis(archive=self.archive,protocol_id=self.pid,expected_source_snapshot=self.snapshot,clock=lambda:self.boundary)
+        rebuild_index(self.archive);self.assertEqual(sync_secondary(self.archive)["conflicts"],0)
+        secondary=NamespaceArchive(replace(self.archive.config,primary_root=self.archive.config.secondary_root,secondary_root=self.archive.config.primary_root))
+        self.assertEqual(replay_pr17_archive(secondary,analysis_boundary=self.boundary).bucket("coverages"),before)
+        self.assertEqual(json.loads((self.archive.root/STAGE).read_bytes())["publication_id"],result["publication_id"])
+
+    def test_completion_and_pages_are_explicitly_pinned_and_verified(self):
+        completion=self.complete();publication=self.publish()
+        value=json.loads((self.archive.root/STAGE).read_bytes());authority=value["source_authority"]
+        self.assertIn(completion["completion_manifest_id"],authority["dependency_manifest_ids"])
+        self.assertNotIn(completion["completion_manifest_id"],authority["source_manifest_ids"])
+        pages={entry["manifest_entry_id"] for entry in self.archive.entries() if entry["command"]=="refresh-retrospective-supporting-page"}
+        self.assertTrue(pages<=set(authority["dependency_manifest_ids"]))
+        for field in ("source_manifest_ids","dependency_manifest_ids"):
+            altered=copy.deepcopy(value);altered["source_authority"][field]=altered["source_authority"][field][1:]
+            altered["publication_id"]="pr17c3-retrospective-publication:"+sha256_bytes(canonical_bytes({k:v for k,v in altered.items() if k!="publication_id"}))
+            with self.assertRaises((OperationsError,ContractError)):verify_publication(self.archive,altered)
+        for substitute in (None,publication["manifest_id"]):
+            altered=copy.deepcopy(value)
+            pins=set(authority["dependency_manifest_ids"])-{completion["completion_manifest_id"]}
+            if substitute:pins.add(substitute)
+            altered["source_authority"]["dependency_manifest_ids"]=sorted(pins)
+            altered["publication_id"]="pr17c3-retrospective-publication:"+sha256_bytes(canonical_bytes({k:v for k,v in altered.items() if k!="publication_id"}))
+            with self.assertRaises(OperationsError):verify_publication(self.archive,altered)
+        entry=next(x for x in self.archive.entries() if x["manifest_entry_id"]==completion["completion_manifest_id"])
+        for family,identity in (("manifest",entry["manifest_entry_id"]),("normalized",entry["normalized_object_id"]),("raw","raw:"+entry["raw_object_sha256"])):
+            path=self.archive._path(family,identity);body=path.read_bytes()
+            for damage in ("missing","corrupt"):
+                with self.subTest(family=family,damage=damage):
+                    path.unlink()
+                    if damage=="corrupt":path.write_bytes(b"corrupted synthetic completion")
+                    with self.assertRaisesRegex(OperationsError,"archive-integrity-failure"):verify_publication(self.archive,value)
+                    if path.exists():path.unlink()
+                    path.write_bytes(body)
+        self.assertTrue(verify_publication(self.archive,value))
 
 
 if __name__ == "__main__":
