@@ -569,7 +569,7 @@ class ActivationTests(unittest.TestCase):
     def test_execute_passes_one_trusted_start_to_loaders(self):
         from inspect_forecast_standalone_activation import fixtures
         with tempfile.TemporaryDirectory() as directory:
-            root=Path(directory);mlb,catalog,_=fixtures();_,protocol=canonical_prospective_authority();at=datetime(2026,9,5,3,59,59,tzinfo=timezone.utc)
+            root=Path(directory);mlb,catalog,_=fixtures();_,protocol=canonical_prospective_authority();at=datetime(2026,9,5,4,0,0,tzinfo=timezone.utc)
             config=DeploymentConfig("clock","clock",OperatingMode.ACTIVATED,root/"activated/clock/primary",root/"activated/clock/secondary","https://fixture.invalid",RetryPolicy(1,1,1,(),0),1,root/"logs",research_protocol_ids=(protocol.standalone_probability_source_protocol_id,),activation_at=APPROVED_ACTIVATION_AT);initialize_activation(NamespaceArchive(config),datetime(2026,8,28,tzinfo=timezone.utc));seen=[]
             execute("refresh-supporting",config,clock=lambda:at,supporting_loader=lambda trusted:(seen.append(trusted) or (mlb,catalog)))
             execute("reconcile-outcomes",config,clock=lambda:at,outcome_loader=lambda trusted:(seen.append(trusted) or (mlb,(mlb,))))

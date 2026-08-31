@@ -1100,3 +1100,27 @@ PR17C1 also records actual per-request trusted chronology and integrates acquisi
 Replay independently reconstructs normalized unions and complete contract sets from verified pages and boundary-effective predecessor authority, requiring exact canonical equality with stored serialization.
 
 `reconcile-acquisitions` records immutable, exact-page abandonment for unambiguous interrupted groups; fresh replacement attempts retain later truthful chronology and distinct identity. Abandoned pages remain auditable but scientifically non-authoritative.
+
+### PR17C1 laptop commissioning acceptance clarification
+
+The approved commissioning correction makes scheduled supporting/Outcome calls
+respect the same fixed pre-activation gate as capture, makes transport failure
+heartbeats and attempted-call counts truthful, and adds manual bounded MLB calendar
+reconciliation for completed dates never observed during laptop outages. Up to 31
+explicit completed Eastern dates per invocation; empty dates remain visible;
+repeated completed-date work is a no-op. Late schedule acquisition cannot recover
+historical quotes or certify unknown past schedule states. Travel-related sleep
+and network gaps are accepted, with honest Coverage and report limitations.
+
+Commissioning-review corrections separate immutable date acquisition receipts from
+scientific completion of related resume/reschedule observations across invocations.
+Incomplete lineage cannot publish ordinary-game authority. Outcome-first unknown
+game discovery is preserved as a truthful deferred failure unless the proposed
+full graph validates; later manual reconciliation and independent retries remain
+usable. These corrections require PM/Chief Architect review and do not establish
+commissioning approval merely by passing the validation suite.
+
+This correction does not commission itself, change power settings, add scheduled
+jobs, alter the boundary, close PR17C2/PR17C3, repair prospective prices, or expand
+the downstream sequence. Aggregate reproducibility and expanded-source publication
+remain separate PR17C3 tasks; PR17D retains prospective closure/reporting.

@@ -61,11 +61,50 @@ def live_mlb_material(purpose,at,*,histories,public_get,clock):
     pages=tuple(pages)
     return merge_mlb_schedule_responses(tuple(x.raw for x in pages)),pages
 
-def execute(command,config,*,clock=lambda:datetime.now(timezone.utc),transport_factory=None,supporting_loader=None,outcome_loader=None,retrospective_runner=None,free_disk=None,session_completion_id=None,session_correction_reason=None,publication_protocol_id=None,expected_source_snapshot=None):
+def load_live_supporting(*, archive, purpose, at, public_get, clock):
+    """Count each actual read attempt, including a failed final page, without retries."""
+    calls = 0
+    def counted_get(base, path):
+        nonlocal calls
+        calls += 1
+        try:
+            return public_get(base, path)
+        except TimeoutError as exc:
+            raise OperationsError("transport-timeout", "Supporting provider request timed out") from exc
+        except OSError as exc:
+            raise OperationsError("transport-connection-failure", "Supporting provider request failed") from exc
+    try:
+        histories = replay_pr17_archive(archive, analysis_boundary=at).bucket("outcome_histories")
+        mlb, mlb_pages = live_mlb_material(purpose, at, histories=histories,
+                                         public_get=counted_get, clock=clock)
+        if purpose == "outcomes":
+            return mlb, mlb_pages, calls
+        pages = acquire_kalshi_catalog_pages(
+            lambda cursor: counted_get(archive.config.provider_base_url, encoded_kalshi_catalog_path(cursor)),
+            clock=clock, command_start=at)
+        return mlb, merge_kalshi_catalog_pages(pages), pages, mlb_pages, calls
+    except Exception as exc:
+        if isinstance(exc, OperationsError):
+            failure = exc
+        else:
+            failure = OperationsError("internal-error", "Supporting provider acquisition failed")
+        failure.provider_calls = calls
+        if failure is exc:raise
+        raise failure from exc
+
+
+def execute(command,config,*,clock=lambda:datetime.now(timezone.utc),transport_factory=None,supporting_loader=None,outcome_loader=None,retrospective_runner=None,free_disk=None,session_completion_id=None,session_correction_reason=None,publication_protocol_id=None,expected_source_snapshot=None,schedule_reconciliation_runner=None):
     archive=NamespaceArchive(config);state=OperationalState(config.log_root/"operational-state");started=clock()
     calls=typed=due=None;disposition="success";failure=None
     try:
         if config.mode is not OperatingMode.ACTIVATED:raise OperationsError("deployment-mode-invalid","PR17C1 CLI requires activated namespace")
+        if command in {"refresh-supporting","reconcile-outcomes"}:
+            from forecast_standalone_activation import APPROVED_ACTIVATION_AT,resolve_activated_authority
+            resolve_activated_authority(archive,started)
+            if started<APPROVED_ACTIVATION_AT:
+                calls=typed=due=0;disposition="pre-activation-no-call"
+                return {"configuration_id":config.identity,"namespace":config.namespace,"provider_calls":0,
+                        "typed_dispositions":0,"due_opportunities":0,"disposition":disposition}
         if command=="initialize-activation":
             activation_id,protocol_id=initialize_activation(archive,started);output={"configuration_id":config.identity,"disposition":"success","activation_id":activation_id,"protocol_id":protocol_id}
         elif command=="capture-prospective":
@@ -84,8 +123,12 @@ def execute(command,config,*,clock=lambda:datetime.now(timezone.utc),transport_f
             typed=result["contracts"];disposition=result["disposition"];output={"configuration_id":config.identity,"provider_calls":calls,**result}
         elif command=="reconcile-outcomes":
             if outcome_loader is None:raise OperationsError("adapter-unavailable","configured MLB outcome adapter is absent")
-            loaded=outcome_loader(started);mlb_raw,mlb_pages=(loaded if isinstance(loaded,tuple) and len(loaded)==2 else (loaded,()))
-            result=reconcile_outcomes_from_raw(archive=archive,mlb_raw=mlb_raw,collected_at=started,mlb_pages=mlb_pages);calls=len(mlb_pages) if mlb_pages else 1;typed=result["changed"];disposition=result["disposition"];output={"configuration_id":config.identity,"provider_calls":calls,**result}
+            loaded=outcome_loader(started);mlb_raw,mlb_pages=(loaded[:2] if isinstance(loaded,tuple) and len(loaded) in {2,3} else (loaded,()))
+            calls=loaded[2] if isinstance(loaded,tuple) and len(loaded)==3 else len(mlb_pages) if mlb_pages else 1
+            result=reconcile_outcomes_from_raw(archive=archive,mlb_raw=mlb_raw,collected_at=started,mlb_pages=mlb_pages);typed=result["changed"];disposition=result["disposition"];output={"configuration_id":config.identity,"provider_calls":calls,**result}
+        elif command=="reconcile-prospective-schedule":
+            if schedule_reconciliation_runner is None:raise OperationsError("configuration-error","Explicit reconciliation date bounds and MLB reader required")
+            output=schedule_reconciliation_runner(archive,started);calls=output["provider_calls"];typed=output["contracts"];disposition=output["disposition"]
         elif command=="acquire-retrospective":
             if retrospective_runner is None:raise OperationsError("adapter-unavailable","bounded retrospective adapter is absent")
             created,calls=retrospective_runner(archive);typed=len(created);output={"configuration_id":config.identity,"namespace":config.namespace,"provider_calls":calls,"created_manifest_ids":created,"disposition":"completed"}
@@ -122,6 +165,12 @@ def execute(command,config,*,clock=lambda:datetime.now(timezone.utc),transport_f
         return output
     except OperationsError as exc:
         calls=getattr(exc,"provider_calls",calls);failure=exc.code;disposition="failed";raise
+    except Exception as exc:
+        calls=getattr(exc,"provider_calls",calls);disposition="failed"
+        failure="operational-io-failure" if isinstance(exc,OSError) else "internal-error"
+        error=OperationsError(failure,"Operational invocation failed")
+        if calls is not None:error.provider_calls=calls
+        raise error from exc
     finally:
         completed=clock()
         try:state.append(OperationalHeartbeat("1",command,started,completed,disposition,calls,typed,due,failure))
@@ -130,12 +179,14 @@ def execute(command,config,*,clock=lambda:datetime.now(timezone.utc),transport_f
 
 def main(argv=None)->int:
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument("--config",type=Path);parser.add_argument("--fixture",type=Path);parser.add_argument("--trusted-at")
-    parser.add_argument("command",choices=("initialize-activation","capture-prospective","refresh-supporting","refresh-retrospective-supporting","complete-retrospective-supporting-session","correct-retrospective-supporting-session","acquire-retrospective","reconcile-outcomes","reconcile-acquisitions","inspect","maintain","rebuild-index","sync-secondary","health-report","render-launchd","publish-retrospective-analysis","inspect-retrospective-publication"));parser.add_argument("--output",type=Path);parser.add_argument("--maximum-opportunities",type=int);parser.add_argument("--start-date");parser.add_argument("--end-date");parser.add_argument("--session-id");parser.add_argument("--reason")
+    parser.add_argument("command",choices=("initialize-activation","capture-prospective","refresh-supporting","refresh-retrospective-supporting","complete-retrospective-supporting-session","correct-retrospective-supporting-session","acquire-retrospective","reconcile-outcomes","reconcile-acquisitions","inspect","maintain","rebuild-index","sync-secondary","health-report","render-launchd","publish-retrospective-analysis","inspect-retrospective-publication","reconcile-prospective-schedule"));parser.add_argument("--output",type=Path);parser.add_argument("--maximum-opportunities",type=int);parser.add_argument("--start-date");parser.add_argument("--end-date");parser.add_argument("--session-id");parser.add_argument("--reason")
     parser.add_argument("--protocol-id");parser.add_argument("--source-snapshot")
     args=parser.parse_args(argv)
     try:
         if args.config is None:raise OperationsError("configuration-error","--config is required")
         if args.command=="publish-retrospective-analysis" and (args.trusted_at or args.fixture):raise OperationsError("configuration-error","publication requires the actual trusted clock and archived inputs, not --trusted-at or --fixture")
+        if args.command=="reconcile-prospective-schedule" and args.trusted_at and not args.fixture:
+            raise OperationsError("configuration-error","Live schedule reconciliation requires the actual clock")
         config=DeploymentConfig.from_json(args.config)
         if args.command=="render-launchd":
             if args.output is None:raise OperationsError("configuration-error","--output is required")
@@ -150,15 +201,8 @@ def main(argv=None)->int:
                 supporting_loader=lambda _at:((args.fixture/"mlb.json").read_bytes(),(args.fixture/"kalshi.json").read_bytes());outcome_loader=lambda _at:(args.fixture/"mlb.json").read_bytes()
             else:
                 def public_get(base,path):return BoundedLiveReadOnlyTransport(base,configured_kalshi_transport(config,clock).requester).get(path)
-                def histories(at):return replay_pr17_archive(NamespaceArchive(config),analysis_boundary=at).bucket("outcome_histories")
-                def mlb_material(purpose,at):
-                    return live_mlb_material(purpose,at,histories=histories(at),public_get=public_get,clock=clock)
-                def catalog_material(at):
-                    pages=acquire_kalshi_catalog_pages(lambda cursor:public_get(config.provider_base_url,encoded_kalshi_catalog_path(cursor)),clock=clock,command_start=at)
-                    return merge_kalshi_catalog_pages(pages),pages
-                def supporting_material(at):
-                    mlb,mlb_pages=mlb_material("schedule",at);catalog,catalog_pages=catalog_material(at);return mlb,catalog,catalog_pages,mlb_pages
-                supporting_loader=supporting_material;outcome_loader=lambda at:mlb_material("outcomes",at)
+                supporting_loader=lambda at:load_live_supporting(archive=NamespaceArchive(config),purpose="schedule",at=at,public_get=public_get,clock=clock)
+                outcome_loader=lambda at:load_live_supporting(archive=NamespaceArchive(config),purpose="outcomes",at=at,public_get=public_get,clock=clock)
                 if args.command=="refresh-retrospective-supporting":
                     if not args.start_date or not args.end_date:raise OperationsError("configuration-error","retrospective supporting acquisition requires --start-date and --end-date")
                     try:start_day=date.fromisoformat(args.start_date);end_day=date.fromisoformat(args.end_date)
@@ -224,7 +268,22 @@ def main(argv=None)->int:
                         if hasattr(exc,"provider_calls"):exc.provider_calls+=0 if args.fixture else 1
                         raise
                     return created,retro_transport.calls
-            result=execute(args.command,config,clock=clock,transport_factory=factory,supporting_loader=supporting_loader,outcome_loader=outcome_loader,retrospective_runner=retrospective_runner,session_completion_id=args.session_id,session_correction_reason=args.reason,publication_protocol_id=args.protocol_id,expected_source_snapshot=args.source_snapshot)
+            schedule_runner=None
+            if args.command=="reconcile-prospective-schedule":
+                from forecast_standalone_schedule_reconciliation import reconcile_schedule
+                try:
+                    first,last=date.fromisoformat(args.start_date),date.fromisoformat(args.end_date)
+                    if (first.isoformat(),last.isoformat())!=(args.start_date,args.end_date):raise ValueError
+                except (TypeError,ValueError) as exc:
+                    raise OperationsError("configuration-error","Explicit canonical --start-date and --end-date are required") from exc
+                def schedule_get(base,path):
+                    if args.fixture:
+                        from urllib.parse import parse_qs,urlparse
+                        day=parse_qs(urlparse(path).query)["date"][0]
+                        return (args.fixture/("mlb-"+day+".json")).read_bytes()
+                    return public_get(base,path)
+                schedule_runner=lambda archive,started:reconcile_schedule(archive=archive,started=started,start_date=first,end_date=last,public_get=schedule_get,clock=clock)
+            result=execute(args.command,config,clock=clock,transport_factory=factory,supporting_loader=supporting_loader,outcome_loader=outcome_loader,retrospective_runner=retrospective_runner,session_completion_id=args.session_id,session_correction_reason=args.reason,publication_protocol_id=args.protocol_id,expected_source_snapshot=args.source_snapshot,schedule_reconciliation_runner=schedule_runner)
         print(json.dumps(result,sort_keys=True,separators=(",",":"),default=lambda x:x.isoformat()))
         return int(ExitCode.SUCCESS if result.get("disposition")!="not-ready" else ExitCode.NOT_READY)
     except OperationsError as exc:

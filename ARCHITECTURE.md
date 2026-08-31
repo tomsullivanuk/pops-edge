@@ -1650,3 +1650,56 @@ Page chronology records real trusted request intervals and is monotonic from the
 Ordinary replay independently rebuilds each versioned union and correction-aware scientific contract set from verified pages, trusted chronology, canonical Protocol authority, and the exact predecessor state. It requires exact canonical stored-set equality; envelope serialization is never Evidence or an independent trust boundary.
 
 The narrow `reconcile-acquisitions` operation closes only the operational integrity state of an unambiguous page-only group. Its create-only abandonment artifact names the exact immutable pages, provider, command family, rule, reason, and trusted reconciliation time; it cannot confer scientific authority. A restarted acquisition retains new chronology and identity, while inspection and secondary storage preserve both the abandoned audit trail and independent replacement.
+
+### PR17C1 bounded laptop commissioning correction
+
+Scheduled supporting refresh and Outcome reconciliation resolve the archived
+activation authority before entering provider loaders, and return the same
+pre-activation no-call disposition as prospective capture. Live supporting/outcome
+composition counts each attempted request, including terminal failures, without
+adding retries. Transport exceptions become sanitized typed failures; unexpected
+invocation failures cannot append a successful heartbeat. An uninstrumented
+injected loader retains unknown call count rather than inventing one.
+
+`forecast_standalone_schedule_reconciliation.py` owns the explicit manual
+`reconcile-prospective-schedule` operation. Its 1–31-date inclusive batch covers
+completed Eastern dates from activation through the requested 2026 endpoint.
+Date selection is independent of known event identities. Completed-date receipts
+are derived from verified MLB acquisition envelopes for supporting refresh or
+manual reconciliation, with requests made after the date ended. Outcome-only
+acquisition is not population-completeness authority. Invalid legacy date material
+is preserved but does not certify a date under the new accounting check.
+
+Each missing date uses one MLB request and an existing create-only, manifest-last
+acquisition envelope under `reconcile-prospective-schedule-receipt`, containing no
+scientific contracts. Empty responses require explicit zero-game Evidence. A
+separate `reconcile-prospective-schedule` envelope binds exact receipt acquisition
+IDs and matching raw pages/chronology for at most 31 related dates. The existing
+multi-page union resolves reciprocal resume/reschedule lineage before canonical
+schedule, classification, opportunity and eligibility derivation. Its explicit
+`schedule_reconciled_at` is the actual later scientific availability time; source
+page start/completion times remain unchanged. Complete graph validation precedes
+publication, and replay requires exact receipt dependencies and contract equality.
+
+Preserved receipts can complete a related group across separate manual invocations.
+Required missing dates are reported explicitly, including those outside current
+request bounds; no extra dates are fetched. Partial receipts confer no scientific
+completion. Independent completed groups survive later failures, and repeated
+completion is a zero-call, zero-scientific-write no-op. Failed retrieval/validation
+retains a non-authoritative failure manifest and any returned raw body. No new
+resume framework, scheduler job, daemon, database, or automatic reconnect repair
+is introduced.
+
+Before the outcome writer publishes, it validates the full proposed graph. If
+outcome-only discovery lacks Schedule/opportunity authority, every received page
+is preserved under `reconcile-outcomes-failure`, the operation raises
+`outcome-authority-deferred`, and heartbeat/CLI attempted-call counts remain exact.
+The still-valid prior graph permits later manual schedule reconciliation and an
+independent Outcome retry. Existing corrupt archives are not repaired or bypassed.
+
+The operation provides calendar acquisition accounting only. Later acquisition
+cannot certify never-observed historical schedule states or repair quotes.
+Completeness claims must retain that distinction, and the fixed study boundary,
+existing publication bytes, original source history and statistical methods remain
+unchanged. The approved laptop deployment tolerates sleep/network gaps; it does
+not require wake prevention or an always-on service.
