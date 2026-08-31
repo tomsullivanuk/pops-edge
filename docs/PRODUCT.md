@@ -601,3 +601,20 @@ append-only supporting-session correction preserves the original derivation for
 audit while selecting exactly one verified corrected lineage for current replay.
 
 Fresh-process recovery never backdates or reuses interrupted responses. `reconcile-acquisitions` preserves an exact immutable abandonment record, after which a separately complete replacement may proceed with new chronology; inspection continues to expose abandoned material while scientific outputs exclude it.
+
+### Local laptop availability during PR17C
+
+The Product Owner accepts travel-related sleep and network outages during local
+collection. Resume ordinary collection when available; never reconstruct missed
+prospective quotes. Manually reconciling bounded completed MLB calendar dates can
+make previously unknown games and empty dates visible, with actual later retrieval
+times. This cannot recover unobserved historical schedule states. Coverage and
+reports must disclose calendar gaps, capture failures and availability-related
+selection limitations. Perfect collection, wake prevention and always-on hosting
+are not requirements for this phase.
+
+Successful calendar acquisition is not sufficient scientific lineage authority.
+Related observations must reconcile before publication; partial receipts remain
+visible without silently changing population membership. Outcome-first discovery
+may be explicitly deferred without poisoning the prior scientific graph, allowing
+later manual schedule reconciliation and independent outcome collection.

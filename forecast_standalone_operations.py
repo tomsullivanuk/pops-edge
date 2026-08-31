@@ -1157,7 +1157,13 @@ def _contracts_from_entry(archive:NamespaceArchive,entry:Mapping[str,Any],prior_
         class PriorState:
             def bucket(self,name):return tuple(x for x in prior_objects if PR17_GRAPH_BUCKETS.get(type(x).__name__)==name)
         prior=PriorState();started=datetime.fromisoformat(value["command_started_at_iso"]);family=value.get("family");provider=value.get("provider")
-        if family=="reconcile-outcomes" and provider=="mlb-stats-api":expected=reconcile_outcomes_from_raw(archive=None,mlb_raw=union,collected_at=started,prior_state=prior,derive_only=True)
+        if family=="reconcile-prospective-schedule-receipt" and provider=="mlb-stats-api":expected=()
+        elif family=="reconcile-prospective-schedule" and provider=="mlb-stats-api":
+            from forecast_standalone_schedule_reconciliation import schedule_contracts
+            reconciled_at=datetime.fromisoformat(value["schedule_reconciled_at"]["datetime_utc"])
+            if reconciled_at!=datetime.fromisoformat(entry["acquired_at"]["datetime_utc"]):raise OperationsError("schedule-date-conflict","Manual reconciliation chronology conflicts with manifest")
+            expected=schedule_contracts(union=union,started=reconciled_at,prior_state=prior,union_rule=value.get("union_rule"))
+        elif family=="reconcile-outcomes" and provider=="mlb-stats-api":expected=reconcile_outcomes_from_raw(archive=None,mlb_raw=union,collected_at=started,prior_state=prior,derive_only=True)
         elif family in {"refresh-supporting","refresh-retrospective-supporting"} and provider=="mlb-stats-api":expected=tuple(x for x in refresh_supporting_from_raw(archive=None,mlb_raw=union,kalshi_raw=b'{"cursor":"","markets":[]}',collected_at=started,prior_state=prior,derive_only=True,acquisition_command=family,union_rule=value.get("union_rule")) if type(x).__name__!="ProviderMarketSeries")
         elif family in {"refresh-supporting","refresh-retrospective-supporting"} and provider=="kalshi":
             dependencies=value.get("dependencies",())
@@ -1182,7 +1188,7 @@ def _contracts_from_entry(archive:NamespaceArchive,entry:Mapping[str,Any],prior_
             detail=f"{family}/{provider}: stored-only {tuple(sorted(contract_type(x) for x in stored_set-expected_set))}; page-derived-only {tuple(sorted(contract_type(x) for x in expected_set-stored_set))}"
             raise OperationsError("acquisition-contract-reconstruction-conflict",detail)
         return tuple(expected)
-    if entry.get("command") in {"refresh-supporting","reconcile-outcomes"}:
+    if entry.get("command") in {"refresh-supporting","reconcile-outcomes","reconcile-prospective-schedule"}:
         raise OperationsError("acquisition-page-authority-missing","PR17C1 provider contracts require a verified acquisition envelope")
     if value.get("record_kind")!="pr17b1-contract-bundle" or value.get("schema_version")!=OPERATIONS_SCHEMA_VERSION:return ()
     from forecast_standalone_research import deserialize_v3

@@ -611,11 +611,13 @@ def preserve_supporting_response(*,archive:NamespaceArchive,session_id:str,provi
     return entry.manifest_entry_id
 
 
-def publish_verified_acquisition(*,archive:NamespaceArchive,provider:str,union_raw:bytes,pages:Iterable[Any],contracts:Iterable[Any],collected_at:datetime,protocol_id:str|None,command:str,dependencies:Iterable[str]=(),fail_after_pages:int|None=None,retrospective_cutoff_at:datetime|None=None,supporting_session_id:str|None=None,correction_reason:str|None=None)->Mapping[str,Any]:
+def publish_verified_acquisition(*,archive:NamespaceArchive,provider:str,union_raw:bytes,pages:Iterable[Any],contracts:Iterable[Any],collected_at:datetime,protocol_id:str|None,command:str,dependencies:Iterable[str]=(),fail_after_pages:int|None=None,retrospective_cutoff_at:datetime|None=None,supporting_session_id:str|None=None,correction_reason:str|None=None,schedule_reconciled_at:datetime|None=None)->Mapping[str,Any]:
     """Preserve exact pages, then bind contracts to their verified derived union."""
     from forecast_standalone_operations import DesignAuthority,Disposition,_entry_values,pr17_contract_bundle,request_identity
     page_items=tuple(pages);page_values=tuple(_page_material(item,index,collected_at) for index,item in enumerate(page_items))
     if not page_values:raise OperationsError("acquisition-incomplete","provider acquisition has no exact pages")
+    if schedule_reconciled_at is not None and (command!="reconcile-prospective-schedule" or schedule_reconciled_at.tzinfo is None or schedule_reconciled_at<page_values[-1][4]):
+        raise OperationsError("trusted-clock-invalid","Manual schedule derivation must follow preserved acquisition")
     for index,item in enumerate(page_items):
         if isinstance(item,ProviderPageAcquisition) and (item.position!=index or item.provider!=provider or item.acquisition_context not in {"command-start-fixed",collected_at.isoformat()}):raise OperationsError("acquisition-page-conflict","typed provider-page identity context conflicts")
     if collected_at.tzinfo is None or collected_at.utcoffset() is None:raise OperationsError("trusted-clock-invalid","acquisition command start must be aware")
@@ -675,7 +677,9 @@ def publish_verified_acquisition(*,archive:NamespaceArchive,provider:str,union_r
             cutoff_pages=tuple((entry,page) for entry,page in session_pages if page.get("purpose")=="historical-cutoff")
             if len(cutoff_pages)!=1 or not cutoff_pages[0][0].get("raw_object_sha256"):raise OperationsError("acquisition-incomplete","preserved cutoff response does not resolve exactly once")
             normalized["cutoff_manifest_entry_id"]=cutoff_pages[0][0]["manifest_entry_id"];normalized["cutoff_raw_sha256"]=cutoff_pages[0][0]["raw_object_sha256"]
-    values=_entry_values(archive=archive,command=command,request_id=request_identity({"acquisition_id":group_id,"normalized_union_sha256":normalized["normalized_union_sha256"],"contracts_sha256":hashlib.sha256(canonical_bytes(serialized)).hexdigest()}),invoked_at=acquisition_completed_at,endpoint=f"derived://{provider}/{ACQUISITION_UNION_RULE_VERSION}",disposition=Disposition.SUCCESS,protocol_id=protocol_id,design=DesignAuthority.SUPPORTING,diagnostics=("typed authority bound to complete provider-page manifest","normalized union is derived, not provider-native raw"),provider_effective_at=acquisition_completed_at);values["provider_id"]=provider
+    if schedule_reconciled_at is not None:normalized["schedule_reconciled_at"]=schedule_reconciled_at
+    publication_at=schedule_reconciled_at or acquisition_completed_at
+    values=_entry_values(archive=archive,command=command,request_id=request_identity({"acquisition_id":group_id,"normalized_union_sha256":normalized["normalized_union_sha256"],"contracts_sha256":hashlib.sha256(canonical_bytes(serialized)).hexdigest()}),invoked_at=publication_at,endpoint=f"derived://{provider}/{ACQUISITION_UNION_RULE_VERSION}",disposition=Disposition.SUCCESS,protocol_id=protocol_id,design=DesignAuthority.SUPPORTING,diagnostics=("typed authority bound to complete provider-page manifest","normalized union is derived, not provider-native raw"),provider_effective_at=publication_at);values["provider_id"]=provider
     # The acquisition entry references an exact contributing provider page as
     # its immutable raw object; the normalized union exists only in the envelope.
     entry=archive._commit_locked(raw_body=page_values[0][2],normalized=normalized,entry_values=values)
@@ -1039,6 +1043,9 @@ def verify_acquisition_bundle(archive:NamespaceArchive,value:Mapping[str,Any],*,
             payload=json.loads(raw);reported={str(x.get("date")) for x in payload.get("dates",()) if isinstance(x,dict)}
             if reported and reported!={page["request_identity"]}:raise OperationsError("acquisition-page-conflict","MLB requested date conflicts with response")
         derived=merge_mlb_schedule_responses(raw_pages,union_rule=value.get("union_rule"))
+    if value.get("family") in {"reconcile-prospective-schedule","reconcile-prospective-schedule-receipt"}:
+        from forecast_standalone_schedule_reconciliation import verify_schedule_bundle
+        verify_schedule_bundle(archive,value,raw_pages)
     if _canonical_json_digest(derived)!=value.get("normalized_union_sha256"):raise OperationsError("acquisition-union-conflict","normalized union is inconsistent with pages")
     contracts=value.get("contracts")
     if not isinstance(contracts,list):raise OperationsError("acquisition-incomplete","typed contracts are absent")
@@ -1065,6 +1072,22 @@ def reconcile_outcomes_from_raw(*,archive:NamespaceArchive|None,mlb_raw:bytes,co
         changed.append(history)
     if derive_only:return tuple(changed)
     raw_pages=tuple(mlb_pages) or (mlb_raw,);pages=tuple(_mlb_page_tuple(item,index) for index,item in enumerate(raw_pages))
+    from forecast_standalone_schedule_reconciliation import validate_supporting_addition
+    from event_contracts import ContractError
+    try:validate_supporting_addition(state,changed,collected_at)
+    except ContractError as exc:
+        # Outcome discovery is not sufficient Schedule/opportunity authority.
+        # Preserve every received page, but publish no unusable partial graph.
+        for index,item in enumerate(pages):
+            identity,endpoint,raw,began,completed=_page_material(item,index,collected_at)
+            values=_entry_values(archive=archive,command="reconcile-outcomes-failure",
+                request_id=request_identity({"requested_date":identity,"started":began,"position":index}),
+                invoked_at=completed,endpoint=endpoint,disposition=Disposition.VALIDATION_FAILURE,
+                protocol_id=None,design=DesignAuthority.SUPPORTING,
+                diagnostics=("outcome-authority-deferred","Bounded schedule reconciliation is required before Outcome-only authority can be admitted"))
+            values["provider_id"]="mlb-stats-api"
+            archive.record_failure(entry_values=values,raw_body=raw)
+        raise OperationsError("outcome-authority-deferred","Outcome material preserved without scientific authority; reconcile bounded missing schedule dates and retry independently") from exc
     with archive.mutation_lock():acquisition=publish_verified_acquisition(archive=archive,provider="mlb-stats-api",union_raw=mlb_raw,pages=pages,contracts=changed,collected_at=collected_at,protocol_id=None,command="reconcile-outcomes")
     return {"changed":len(changed),"mlb_pages":len(pages),"outcome_manifest_id":acquisition["manifest_entry_id"],"disposition":"success" if changed else "unchanged"}
 

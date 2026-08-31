@@ -1306,3 +1306,80 @@ Record every provider request's trusted aware start and completion; enforce mono
 Ordinary replay regenerates the versioned union and correction-aware expected contracts from the exact pages, command chronology, canonical Protocol, and boundary-effective predecessors, then requires exact canonical equality with the envelope contract set.
 
 Run `reconcile-acquisitions` after inspecting an interrupted page-only group. It deterministically creates at most one exact-page `abandon-incomplete-acquisition-1` artifact, refuses ambiguous or backdated material, and is idempotent. Then run the normal provider command as a fresh attempt; never reuse timestamps, attach new pages to the old group, or delete archived pages.
+
+## PR17C1 commissioning with travel outages
+
+The approved local laptop model accepts sleep and connectivity interruptions.
+Before September 5 midnight America/New_York, scheduled capture, supporting and
+Outcome commands resolve authority but do not enter provider loaders. The offline
+activation rehearsal now tests pre-boundary capture before performing supporting
+acquisition at the boundary, rather than pre-seeding it through an early live path.
+There is no requirement to prevent sleep, wake the machine, or move to a server.
+
+`reconcile-prospective-schedule --start-date YYYY-MM-DD --end-date YYYY-MM-DD`
+(on `operate_forecast_standalone_activation.py --config <activated-config>`)
+is a manual MLB-only operation, never a launchd job. After an outage, explicitly
+review and invoke inclusive batches of at most 31 completed Eastern dates since
+September 5, 2026. To account for the whole elapsed prospective calendar, cover
+all elapsed dates in such batches; do not select date ranges from performance.
+The operation skips dates already backed by complete verified post-date MLB
+schedule acquisition, including explicit empty dates. A same-day or advance
+schedule read is not a completed-date receipt. A later independent invocation
+continues remaining dates after failure; there is no automatic retry policy.
+Dates beyond 2026, pre-activation dates, current/future dates, noncanonical date
+strings and unbounded ranges are rejected. A caller-supplied live clock is rejected.
+
+Only MLB schedule data is fetched: no historical price or current quote repair,
+no Kalshi catalog, no credentials, no index rebuild, secondary sync, aggregate
+publication or reporting. Each successfully acquired date has a durable, empty-
+contract receipt; empty responses require explicit `totalGames: 0`. Scientific
+completion is separate and requires all declared related observations to satisfy
+the existing lineage rules. Reciprocal suspension/resumption preserves one original
+opportunity and nonordinary classification, never two ordinary opportunities.
+`schedule-lineage-incomplete` reports missing related dates without fetching beyond
+the explicit bounds. Request those dates in a separately authorized manual batch;
+already preserved receipts are reused, not reacquired or rewritten. At most 31
+dates may participate in a completion. Diagnostics distinguish `requested_dates`,
+`reused_dates`, and `scientifically_completed_dates`, including previously authorized
+related receipts outside the current request range. A missing or conflicting counterpart cannot
+certify scientific completeness merely because its calendar request succeeded.
+Independent completed groups remain visible after later failures; unresolved
+receipt groups remain inspectable but scientifically incomplete. A repeated
+completed reconciliation performs zero calls and zero scientific writes. Raw page
+chronology is preserved; contracts become available at `schedule_reconciled_at`,
+the actual later reconciliation time. Unrecoverable historical schedule states
+and availability selection remain disclosed limitations.
+
+Outcome collection may run first after an outage. If its proposed full graph lacks
+Schedule/opportunity authority, `outcome-authority-deferred` is a nonzero failure,
+not success: all received pages remain immutable non-authoritative failure records,
+and the heartbeat retains the exact attempted-call count. Manually reconcile the
+missing completed schedule dates, then retry Outcome collection independently.
+No invalid partial graph is published, no validation gate is bypassed, and no
+undocumented always-online or command-order requirement is imposed. Conflicting
+preserved receipts and irrecoverable historical states fail closed; this is not an
+archive-repair mechanism or a promise of automatic recovery.
+
+Tests inject transports into `load_live_supporting` and `reconcile_schedule`, use
+temporary activated fixture namespaces, and never access real providers/Keychain.
+`--fixture <directory>` uses `mlb-YYYY-MM-DD.json` for each manual date. Verify both
+nonzero CLI failure and failed heartbeat, exact request counts, later success,
+never-seen and empty dates, exact-repeat no-op, date tampering rejection and expired
+capture with zero provider calls. An uninstrumented fixture loader error reports
+unknown call count rather than guessing; live loaders supply exact counts.
+
+Commissioning-review follow-up validation (2026-08-31): both blocking findings
+were first reproduced with temporary fixtures. The corrected candidate passes 22
+commissioning tests (including nine new regression cases), 231 focused tests and
+all 674 repository tests. Two deterministic fixture rehearsals are byte-identical,
+with zero pre-activation provider calls and six successful fixture jobs. These
+results supersede neither the review gate nor the requirement for explicit
+commissioning/deployment authorization. Existing immutable review receipts remain
+unchanged; no real archive or provider was used for this correction.
+
+Commissioning still requires review and deployment of this correction before
+installing/loading the six existing plists. Verify installed executable/config
+paths and actual pre-boundary no-call heartbeats. No change to activation authority
+or laptop power settings is needed. Do not call a pre-boundary staging result proof
+of post-boundary connectivity, cadence or prospective readiness. Manual calendar
+accounting and final scientific Coverage/reporting remain separate checks.

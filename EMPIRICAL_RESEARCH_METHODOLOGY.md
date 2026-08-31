@@ -5148,3 +5148,51 @@ Each page records its actual trusted request start and completion; sequential pa
 Replay independently reconstructs the union and complete correction-aware scientific contract set from verified pages, trusted chronology, the canonical Protocol, and boundary-effective predecessor authority. Exact canonical equality with the stored set is mandatory; semantic no-change reconstructs empty, and missing, extra, duplicate, substituted, altered, foreign, or lineage-incompatible contracts fail closed.
 
 After restart, `reconcile-acquisitions` may immutably mark an unambiguous envelope-less group abandoned under `abandon-incomplete-acquisition-1`. The artifact covers exactly its preserved pages and truthful detection chronology; it deletes or promotes nothing. Earlier boundaries retain non-authoritative partial material, later inspection distinguishes reconciled abandonment, and a fresh acquisition uses new truthful chronology and a distinct identity. Unresolved or invalid reconciliation blocks health, maintenance, replay, index, and secondary work; valid abandoned audit material is preserved and excluded from scientific authority.
+
+## PR17C1 laptop outages and calendar reconciliation
+
+The local laptop may sleep, be shut down, or lack connectivity while travelling.
+These are accepted operational limitations, not permission to omit failures or
+claim complete observations. Missed prospective quotes are never reconstructed.
+All scheduled acquisition entry points (capture, supporting refresh and Outcomes)
+make no provider calls before the fixed September 5 activation boundary; separately
+approved manual retrospective acquisition is unchanged.
+
+A later, explicitly invoked MLB schedule reconciliation may discover population
+members on completed Eastern dates since activation, including dates never seen
+by the collector. It records actual retrieval chronology and reuses the existing
+schedule-state partition and eligibility rules. It does not assert that an earlier
+schedule state was observed, synthesize an earlier attempt, acquire an expired
+quote, or make historical candle Evidence prospective. Source material concerning
+earlier schedule states remains governed by its original partition; no boundary
+moves to accommodate an outage.
+
+Calendar acquisition accounting is derived from verified complete MLB schedule
+pages and their exact requested dates, independently of known games, market
+availability, scores and Outcomes. An empty date requires an explicit provider
+zero-game response. A date observed before it ended does not by itself certify a
+completed-date reconciliation. The manual operation requests only unresolved dates
+within an explicit batch of at most 31 completed Eastern dates in 2026, starting
+no earlier than activation. Each date has an independent immutable acquisition
+receipt, not independent scientific lineage authority. Reciprocal resume and
+reschedule observations must satisfy the existing combined-page lineage rules
+before scientific completion. Resume lineage retains only the original
+scheduled-state opportunity and its nonordinary classification. An unresolved
+related date remains scientifically outstanding even when its request succeeded;
+no request bound is silently expanded. Previously acquired pages may be used by
+a later bounded completion, with exact original request chronology preserved and
+scientific availability fixed at the actual later reconciliation time.
+
+Outcome-first discovery after an offline interval must not publish an incomplete
+scientific graph. A received outcome that lacks sufficient Schedule/opportunity
+authority remains immutable non-authoritative material with an explicit deferred
+failure. Later manual schedule reconciliation can establish the missing authority,
+after which independent Outcome collection may resume. This is not permission to
+bypass graph validation, rewrite history, or require uninterrupted connectivity.
+
+This accounting establishes which dates were queried successfully, not recovery of
+all historical schedule states. Coverage and final reporting must disclose missing
+calendar acquisition and unrecoverable schedule history alongside missed/failed
+captures and the selection limitations caused by laptop availability. Neither a
+successful reconciliation nor an operational health result proves complete
+prospective Evidence or creates any downstream Policy authority.
