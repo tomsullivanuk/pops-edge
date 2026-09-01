@@ -27,6 +27,14 @@ Pops' Edge is evolving from a sports-wagering proving ground into an empirical d
 
 It delivers Comparative Performance Reports and the Forecast Intelligence Workspace, migrates Opportunity Analysis to authorized Policy Forecasts, and preserves World Cup compatibility. `docs/RELEASE_PLAN_v1.1.0.md` governs implementation.
 
+After the standalone Kalshi studies, v1.1.0 evaluates two independently gated
+challenger paths in parallel: PR18 admits and collects an external supplier only
+when access, retention, identity, chronology, and market-independence authority
+are sufficient; PR19 determines whether one self-hosted, market-independent,
+point-in-time native MLB model is scientifically admissible. Either track may
+close without a challenger. Current Scientific Applicability and downstream
+Policy work wait until both tracks have formally closed.
+
 ### Horizon 2 — Richer Forecast Intelligence
 
 Forecast Intelligence matures through more Probability Sources, richer populations, stronger Research Protocols and Research Reviews, and Drift Surveillance. Better evidence produces more defensible Policy Recommendations; Product Owner Governance remains required.
@@ -66,6 +74,10 @@ The Forecast Intelligence Workspace is the principal research and governance sur
 Historical Policy Forecast evaluation or automated Shadow measurement may become valuable but remains unscheduled and subject to separate architectural approval.
 
 Additional providers, venues, sports, and domains are directions, not commitments. No universal schema, broad World Cup rewrite, SaaS, or distributed services are promised.
+
+Native-model expansion beyond one bounded MLB game-winner Model 0—including
+totals, run lines, ensembles, automatic retraining, online learning, and cloud
+hosting—remains deferred until prospective evidence justifies it.
 
 ## Long-term destination
 

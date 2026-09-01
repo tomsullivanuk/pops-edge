@@ -361,7 +361,7 @@ infinity and absent indeterminate comparisons without shrinking the Brier or
 Calibration population. The synthetic fixture and offline
 inspector add no provider collection or operational behavior. Canonical
 Comparative Performance Reports remain PR15; Current Scientific Applicability
-and Policy Recommendation remain PR19. PR16A defines standalone Probability
+and Policy Recommendation remain PR20. PR16A defines standalone Probability
 Source performance architecture. PR16B now implements its explicit v2 Protocol,
 typed capture, market derivation, source Measurement, failure-inclusive Coverage,
 cumulative and time-bounded performance, uncertainty, report-reference,

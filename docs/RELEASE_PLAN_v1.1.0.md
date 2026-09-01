@@ -57,6 +57,8 @@ Cup and MLB implementations justify them.
   Surveillance.
 - Implement Market-Benchmark-relative Comparative Performance and canonical
   Comparative Performance Reports.
+- Evaluate an externally supplied challenger and a self-hosted native MLB
+  Probability Source through separate, parallel, independently gated tracks.
 - Align Policy Hypotheses to empirically supported Market Edges.
 - Deliver the deterministic, read-only Forecast Intelligence Workspace.
 - Migrate Opportunity Analysis to governance-authorized Policy Forecast
@@ -412,7 +414,7 @@ Policy Hypothesis does not automatically become this separate executable
 production definition, and offline execution does not imply active status.
 Wall-clock run time is absent from canonical analytical serialization. PR12
 governance will select which Policy Forecast, if any, has production authority;
-PR22 will consume that authorized output.
+PR23 will consume that authorized output.
 
 **Implemented boundary:** immutable provider-neutral Forecast Policy and
 versioned rule components; distinct structured production eligibility;
@@ -462,14 +464,14 @@ Governance Record identities; append-only replay reproduces current and
 historical lifecycle and authority without mutable state; Reject is terminal;
 missing or conflicting production authority fails closed; Research artifacts
 remain non-executable; changing effective time or scope changes record identity;
-PR22 consumer migration remains deferred.
+PR23 consumer migration remains deferred.
 
 **Implemented boundary:** PR12 now provides immutable deterministic Governance
 Scope and Governance Record contracts, append-only Governance History,
 historical lifecycle derivation, structured fail-closed conflict diagnostics,
 and exclusive production-policy resolution from a caller-supplied immutable
 policy registry. Fixture-only inspection is available; no operational workflow
-selects or executes a governed policy, and PR22 remains deferred.
+selects or executes a governed policy, and PR23 remains deferred.
 Stable Product Owner ID is identifying while display name is optional metadata;
 equivalent same-time decisions retain all supporting record IDs, materially
 different decisions fail closed, and only conflicts involving current or
@@ -512,7 +514,7 @@ and provenance values. A compact offline MLB fixture, inspector, focused tests,
 and pure `validate_research_contracts(...)` graph validation exercise scheduled
 and Drift obligation chronology and first-qualifying Market Edge recognition.
 The canonical Comparative Performance Report and deterministic Current
-Scientific Applicability projection remain PR15 and PR19 responsibilities,
+Scientific Applicability projection remain PR15 and PR20 responsibilities,
 respectively.
 
 ### PR14 — Research Snapshot, Comparative Measurement, and Comparative Performance
@@ -534,7 +536,7 @@ rule-derived failure-inclusive Coverage, paired bootstrap uncertainty,
 extended-real Log Loss, and version-2 fixed-bin Calibration. Its synthetic
 offline fixture and inspector exercise eligibility, historical replay, and
 paired analysis. Canonical reporting remains PR15 and
-Current Scientific Applicability remains PR19.
+Current Scientific Applicability remains PR20.
 
 ### PR15 — Comparative Performance Reporting and Surveillance
 
@@ -568,7 +570,7 @@ fails closed unless exactly one surveillance-window rule is active.
 Comparative Performance; Research Review conclusions; Current Scientific
 Applicability; Policy Recommendation; Policy Hypothesis; Governance; Workspace;
 Opportunity Analysis; collection/workflow infrastructure; or production
-authority. PR19 continues to own Current Scientific Applicability and Policy
+authority. PR20 continues to own Current Scientific Applicability and Policy
 Recommendation.
 
 **Gate:** deterministic Claim Set replay establishes one complete authoritative
@@ -590,7 +592,7 @@ offline fixture and inspector. `forecast_research_contracts.py` supplies the
 supporting immutable `ProtocolClaimSet`, deterministic lineage replay, and
 scheduled-boundary admission validation; canonical report completeness derives
 from that authority. Current Scientific Applicability and Policy Recommendation
-remain deferred to PR19.
+remain deferred to PR20.
 
 ### PR16A — Standalone Probability Source Performance Methodology and Architecture
 
@@ -679,7 +681,7 @@ no comparative authority; five prospective
 slots include the exact approved upper endpoint without a sixth attempt and
 cannot backdate or catch up; prospective failures cannot be repaired; storage,
 backup, scheduling, Outcome, replay, and reporting boundaries are deterministic;
-and release sequencing is consistent through PR23.
+and release sequencing is consistent through PR24.
 
 ### PR17B1 — Standalone Scientific Contracts and Deterministic Replay
 
@@ -871,6 +873,12 @@ through five separately reviewed gates:
   Performance and uncertainty, and publish the canonical report for later
   Research Review.
 
+PR18 owns externally published or supported forecast feeds. Rights and
+clean-room decisions for using `gmalbert/baseball-predictions` as a self-hosted
+design reference belong to PR19. If its author instead offers a supported
+external probability feed, that feed may enter PR18 only through the same
+supplier admission gate as every other external candidate.
+
 **Dependencies:** implemented PR4/PR6 Forecast Observation and adapter
 boundaries; PR13–PR15 comparative contracts, Measurement, uncertainty,
 surveillance, and reporting; PR17C activation and compatible independently
@@ -880,8 +888,9 @@ commercial, deployment, and scientific-activation gate.
 **Exclusions:** no change to the September 5, 2026 PR17 boundary; no challenger
 in either PR17 standalone population or report; no retrospective reconstruction
 of missing prospective Evidence; no supplier admission from marketing accuracy,
-hit rate, or an unmatched backtest; no automatic weighting, ensemble, model
-training, broad hyperparameter search, sportsbook consensus, standalone Drift,
+hit rate, or an unmatched backtest; no self-hosted model construction; no
+automatic weighting, ensemble, model training, broad hyperparameter search,
+sportsbook consensus, standalone Drift,
 Current Scientific Applicability, Policy Recommendation, Policy Hypothesis,
 Governance, Opportunity Analysis, wagering, trading, or production authority.
 
@@ -897,40 +906,115 @@ Practical-Significance and Burden-of-Proof rules. A valid finding may instead
 favor Kalshi or remain insufficient to distinguish the sources. PR18B–PR18E do
 not proceed until PR18A admits a candidate.
 
-### PR19 — Current Scientific Applicability and Policy Recommendation
+### PR19 — Native MLB Probability Source Feasibility and Prospective Collection
+
+**Purpose:** determine whether Pops' Edge can produce and self-host one
+scientifically admissible native MLB pregame home-win Probability Source, and,
+only if it passes the offline admission gate, collect its forecasts
+prospectively for synchronized comparison with the Kalshi Market Benchmark.
+
+**Architectural boundary:** raw point-in-time MLB observations remain Evidence;
+feature snapshots, training datasets, model bundles, calibration artifacts, and
+evaluation outputs are derived or reproducibility material and do not become
+Evidence. A probability emitted prospectively by one identified, pinned native
+model becomes immutable Forecast Observation Evidence of what that model
+forecast at that time. It creates no Forecast Intelligence conclusion, Policy,
+Governance, wagering, or production authority.
+
+PR19 proceeds through five separately reviewed gates:
+
+- **PR19A — Decision, Rights, and Methodology:** select explicitly licensed
+  reuse or an independently implemented clean-room path; define the canonical
+  home-win estimand, market-independence boundary, feature information-time
+  contract, validation design, baselines, admission thresholds, and accepted
+  limitations before model construction.
+- **PR19B — Point-in-Time Dataset and Feature Provenance:** construct the
+  smallest reproducible training matrix from observations available strictly
+  before each forecast boundary; preserve source watermarks, feature-set
+  identity, missingness, and deterministic leakage validation.
+- **PR19C — Model 0 Training and Offline Admission:** train and calibrate one
+  deliberately simple primary model, compare it with precommitted simple
+  baselines on untouched chronological test data, produce a pinned model bundle
+  and manifest, and admit or reject it without result-directed rule changes.
+- **PR19D — Self-Hosted Prospective Collection:** following explicit Product
+  Owner authorization, activate local inference at a future boundary, keep the
+  admitted model and calibration fixed, emit immutable Forecast Observations,
+  synchronize them with independently captured Kalshi Evidence, and preserve
+  failure-inclusive Coverage without backfill.
+- **PR19E — Prospective Close and Report:** close the precommitted observation
+  period, reproduce the complete population, Coverage, Brier Score, Log Loss,
+  Calibration, uncertainty, Comparative Performance, and canonical report for
+  later Research Review.
+
+**Dependencies:** implemented identity, Forecast Observation, Outcome,
+Measurement, comparative research, reporting, and replay foundations from
+PR4/PR6/PR9 and PR13–PR15; compatible independently captured PR17 Kalshi
+Evidence; an explicit rights or clean-room decision; and Product Owner approval
+at each model admission, activation, and live-collection gate.
+
+**Must hold:** no sportsbook, Kalshi, or other market-derived value may enter
+features, labels, imputation, calibration, model or feature selection,
+retraining, or forecast generation; every training and inference feature must
+satisfy its point-in-time availability contract; the final test period remains
+untouched until the Protocol-defined evaluation; the prospectively activated
+model, calibration, feature set, training cutoff, and dependency identity remain
+pinned; deterministic replay reproduces every admitted forecast and result;
+and missing, failed, invalid, or late inference remains visible and receives no
+scientific authority.
+
+**Accepted limitations:** one MLB regular-season game-winner model; bounded
+local-Mac self-hosting; a deliberately modest feature set; manual intervention;
+occasional visible missed forecasts; no automatic recovery; and no retraining
+during one prospective Protocol.
+
+**Exclusions:** no copying, modification, or execution of unlicensed third-party
+code; no totals or run-line model; no ensemble, broad hyperparameter search,
+automatic weighting, online learning, scheduled retraining, retrospective
+repair of prospective Evidence, cloud service, high availability, wagering,
+trading, Opportunity Analysis, Policy, Governance, or production authority.
+
+**Gate:** PR19 may validly close after PR19A, PR19B, or PR19C with no admitted
+model. PR19D and PR19E proceed only when the pinned Model 0 satisfies the
+precommitted rights, independence, chronology, reproducibility, calibration,
+and offline-performance requirements. A later prospective finding may favor
+Kalshi, favor the native model, or remain insufficient to distinguish them.
+
+### PR20 — Current Scientific Applicability and Policy Recommendation
 
 **Purpose:** derive current scientific applicability and advisory Policy Recommendations from immutable research history.
 
 **Scope:** deterministic Current Scientific Applicability projection at an explicit timezone-aware `as_of` boundary; complete scheduled and material-event obligation replay; and non-authoritative Policy Recommendation aligned with the legacy `PolicyProposal` precursor.
 
 **Dependencies:** PR13 contracts, PR15 canonical Comparative Performance Reports,
-PR16B standalone report integration, separate PR17C/PR17D findings, and the
-PR18 Comparative Performance Report and later Research Review when PR19 makes
-any claim about the admitted challenger or its Edge Claim.
+PR16B standalone report integration, separate PR17C/PR17D findings, formal
+closure of both PR18 and PR19, and any applicable PR18/PR19 Comparative
+Performance Report and later Research Review when PR20 makes a claim about an
+admitted challenger or its Edge Claim. Either source track may close without an
+admitted challenger or empirical report.
 
 **Exclusions:** mutable applicability state, Policy Hypothesis alignment, Product Owner Governance decisions, Forecast Policy, Workspace, or operational authority.
 
 **Gate:** replay preserves historical Reviews and Market Edges, fails closed on unresolved obligations or incompatibility, and creates neither Governance nor production authority.
 
-### PR20 — Policy Hypothesis Alignment
+### PR21 — Policy Hypothesis Alignment
 
 **Purpose:** align the implemented `PolicyHypothesis` with the finalized Product definition: a proposed operational strategy for exploiting one or more empirically supported Market Edges.
 
 **Scope:** explicit linkage to supporting Market Edges and Forecast Intelligence; deterministic identity and provenance; multiple competing hypotheses over the same empirical foundation; and alignment of existing candidate-strategy semantics.
 
-**Dependencies:** PR13 Edge Claim and Market Edge contracts and PR19 applicability and recommendation outputs.
+**Dependencies:** PR13 Edge Claim and Market Edge contracts and PR20 applicability and recommendation outputs.
 
 **Exclusions:** a Policy Hypothesis remains non-authoritative, is not Evidence or a Forecast Policy, and does not redesign Product Owner Governance.
 
 **Gate:** aligned Policy Hypotheses remain reproducible and non-executable, and no hypothesis grants itself production authority or mutates Governance.
 
-### PR21 — Forecast Intelligence Workspace
+### PR22 — Forecast Intelligence Workspace
 
 **Purpose:** implement the first deterministic, read-only Forecast Intelligence Workspace as a surface over existing Forecast Intelligence and Governance context.
 
 **Scope:** one locally generated workspace; shared explicit research and governance context; Comparative Performance and Reports; Edge Claims, Market Edges, Research Reviews, and Drift Surveillance; Policy Recommendations and Policy Hypotheses; Product Owner Governance context; diagnostics; and provenance.
 
-**Dependencies:** PR13–PR20 canonical research, Forecast Intelligence,
+**Dependencies:** PR13–PR21 canonical research, Forecast Intelligence,
 applicability, recommendation, and Policy Hypothesis contracts, plus completed
 Governance replay.
 
@@ -938,7 +1022,7 @@ Governance replay.
 
 **Gate:** identical immutable inputs and context produce substantively identical projections; the Workspace cannot create Governance Records or production behavior.
 
-### PR22 — Policy Forecast Opportunity Integration
+### PR23 — Policy Forecast Opportunity Integration
 
 **Purpose:** complete the migration from direct-provider Opportunity Analysis to governance-authorized Policy Forecast consumption.
 
@@ -962,15 +1046,15 @@ Opportunity Analysis
 - preserve complete provenance and fail-closed validation.
 
 **Dependencies:** completed PR11 Forecast Policy and Policy Forecast, completed
-PR12 Governance, and aligned PR13–PR20 research-to-policy contracts. The
-Workspace is not an operational dependency, but PR21 precedes this work in the
+PR12 Governance, and aligned PR13–PR21 research-to-policy contracts. The
+Workspace is not an operational dependency, but PR22 precedes this work in the
 release sequence.
 
 **Exclusions:** do not introduce historical Policy Forecast evaluation, automated Shadow measurement, new sizing Policy, or automated Execution.
 
 **Gate:** Opportunity Analysis consumes only a compatible Policy Forecast produced by the Governance-authorized Forecast Policy; the legacy direct-provider path is removed or explicitly isolated without changing World Cup behavior.
 
-### PR23 — v1.1.0 Integration and Release Readiness
+### PR24 — v1.1.0 Integration and Release Readiness
 
 **Purpose:** complete integration and release validation without introducing new analytical capabilities.
 
@@ -984,7 +1068,7 @@ release sequence.
 - known-limitations and rollback review; and
 - release readiness.
 
-**Dependencies:** PR13–PR22 complete and their acceptance gates satisfied.
+**Dependencies:** PR13–PR23 complete and their acceptance gates satisfied.
 
 **Exclusions:** no new research, analytical, governance, policy, or operational capability.
 
@@ -992,11 +1076,16 @@ release sequence.
 
 ## Sequencing rules
 
-PRs merge in numerical order. A later PR may refine a future PR's scope through
-a documented decision, but it must not silently absorb unfinished earlier
-work. The completed foundation followed research before contracts, contracts
-before ingestion, and ingestion before valuation and reporting; shared
-architecture remains justified by concrete implementations.
+PRs merge in numerical order except for the explicitly parallel PR18 external-
+supplier and PR19 native-model tracks. After their shared prerequisites are
+satisfied, PR18 and PR19 may develop and merge independently in either order;
+neither may consume unfinished or non-authoritative material from the other.
+PR20 does not begin until both tracks have formally closed, including a valid
+closure with no admitted challenger. A later PR may refine a future PR's scope
+through a documented decision, but it must not silently absorb unfinished
+earlier work. The completed foundation followed research before contracts,
+contracts before ingestion, and ingestion before valuation and reporting;
+shared architecture remains justified by concrete implementations.
 
 The remaining work follows this sequence:
 
@@ -1009,8 +1098,10 @@ Time-bounded surveillance, Drift analysis, and canonical reporting
         ↓
 Standalone source methodology, implementation, retrospective reporting, and prospective operation
         ↓
-Alternative-source admission, synchronized comparative collection, and paired reporting
-        ↓
+External-source admission and native-model feasibility
+        ↓ (parallel, independently gated tracks)
+Synchronized comparative collection and separate paired reporting
+        ↓ (both tracks formally closed)
 Current applicability and Policy Recommendation
         ↓
 Policy alignment
@@ -1022,7 +1113,7 @@ Operational integration
 Release validation
 ```
 
-PR21 precedes PR22 as a release-sequencing choice. The Forecast Intelligence
+PR22 precedes PR23 as a release-sequencing choice. The Forecast Intelligence
 Workspace is not an architectural runtime dependency of Policy Forecast
 Opportunity Integration.
 
@@ -1065,6 +1156,10 @@ contracts, isolated outputs, and the deferred rename checklist.
 - Forecast Intelligence measures Comparative Performance relative to the
   Market Benchmark and produces canonical Comparative Performance Reports.
 - Pops' Edge reports complete standalone Market Benchmark Performance and paired Comparative Performance without challenger state changing the standalone denominator.
+- The external-supplier and native-model tracks close independently and
+  truthfully; any admitted self-hosted model is market-independent,
+  point-in-time reproducible, pinned for prospective collection, and measured
+  under the same provider-neutral scientific boundaries.
 - Policy Hypotheses represent operational strategies grounded in empirically
   supported Market Edges without acquiring production authority.
 - The Forecast Intelligence Workspace is operational as a deterministic,

@@ -3,6 +3,19 @@
 **Status:** PR2 decision, 2026-07-28
 **Production status:** no recurring MLB collection is authorized yet
 
+**Roadmap amendment, 2026-09-01:** the Product Owner approved a separate PR19
+self-hosted native-model track in parallel with PR18 external-supplier work.
+[`gmalbert/baseball-predictions` at audited commit `685cdff`](https://github.com/gmalbert/baseball-predictions/tree/685cdff166df6eb84f69d8c0b6ac291713511aab)
+is a design and reproducibility reference, not an admitted provider, licensed
+dependency, or trusted model artifact. The audited tree has no apparent license;
+its active [legacy feature path](https://github.com/gmalbert/baseball-predictions/blob/685cdff166df6eb84f69d8c0b6ac291713511aab/src/models/features.py)
+explicitly uses same-season full-season aggregates, and its own
+[quarantine policy](https://github.com/gmalbert/baseball-predictions/blob/685cdff166df6eb84f69d8c0b6ac291713511aab/config/model_quarantine.yaml)
+rejects the packaged legacy models. PR19A must therefore obtain explicit rights
+or select an independently implemented clean-room path before any code use. No
+model implementation, activation, forecast collection, or production authority
+is granted by this roadmap decision.
+
 ## 1. Executive conclusion
 
 Use a licensed official-data feed for production MLB schedules, identity,
@@ -259,6 +272,7 @@ evidence hashes, pitcher state, side mapping, and executable quotes.
 | FanGraphs | transparent ZiPS/Steamer | good method; feed/history unclear | license needed | comparison candidate |
 | Dimers | market-informed blend | good visible coverage | terms prohibit automation | reject automation |
 | TeamRankings | unresolved | IDs/times/history unresolved | unknown | research only |
+| `gmalbert/baseball-predictions` | self-hosted reference; independence requires end-to-end audit | promising chronology, calibration, manifest, and replay concepts; legacy model path is not point-in-time admissible | no apparent license; upstream data rights unresolved | PR19 design reference only |
 | Kalshi | own-market authority | stable tickers/rules/live+history | documented public GETs | approved read-only strategy |
 | The Odds API | market benchmark | IDs/update times/history | quota/subscription | deferred |
 
@@ -270,6 +284,7 @@ Permission is a veto; do not obscure distinct tradeoffs with one score.
 Licensed official MLB feed -> canonical game/team/pitcher/status observations
 Approved independent model -> immutable forecast observations
 Approved comparison model  -> separate forecast observations
+Admitted native Model 0     -> separate immutable forecast observations
 Kalshi read-only API        -> rules/market/book/candle observations
 Optional The Odds API       -> separate per-book observations
 Canonical reconciliation   -> fail-closed gates -> later valuation
