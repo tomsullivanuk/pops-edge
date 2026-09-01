@@ -1,5 +1,21 @@
 # Changelog
 
+## PR19A — native-model rights and methodology
+
+- Pinned and evaluated `gmalbert/baseball-predictions` without copying or
+  executing it; recorded the absent project license, unresolved artifact and
+  source-data rights, and selected an independently implemented clean-room path.
+- Fixed the one MLB regular-season home-win estimand, T-6h point-in-time
+  contract, end-to-end market-independence boundary, three team-level features,
+  2021–2025 chronological split, simple logistic model, calibration, baselines,
+  metrics, uncertainty, and deterministic PR19B/PR19C pass/fail gates.
+- Recorded that existing fixtures, forecast snapshots, Kalshi material, and the
+  unapproved MLB Stats API client do not constitute a rights-cleared
+  point-in-time training population. PR19B entry remains closed; no data was
+  collected and no model was constructed, trained, admitted, or activated.
+- Independent review accepted the documentation-only candidate after one P3
+  amendment made an equal-time recent-game cutoff ambiguity fail closed.
+
 ## PR17B2 — Kalshi MLB acquisition and durable Evidence operations
 
 - Added an inactive, fixture-driven Kalshi operational boundary with separate

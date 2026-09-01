@@ -6,15 +6,20 @@
 **Roadmap amendment, 2026-09-01:** the Product Owner approved a separate PR19
 self-hosted native-model track in parallel with PR18 external-supplier work.
 [`gmalbert/baseball-predictions` at audited commit `685cdff`](https://github.com/gmalbert/baseball-predictions/tree/685cdff166df6eb84f69d8c0b6ac291713511aab)
-is a design and reproducibility reference, not an admitted provider, licensed
-dependency, or trusted model artifact. The audited tree has no apparent license;
+was evaluated as a possible design and reproducibility reference, not an
+admitted provider, licensed dependency, or trusted model artifact. The audited
+tree has no apparent license;
 its active [legacy feature path](https://github.com/gmalbert/baseball-predictions/blob/685cdff166df6eb84f69d8c0b6ac291713511aab/src/models/features.py)
 explicitly uses same-season full-season aggregates, and its own
 [quarantine policy](https://github.com/gmalbert/baseball-predictions/blob/685cdff166df6eb84f69d8c0b6ac291713511aab/config/model_quarantine.yaml)
-rejects the packaged legacy models. PR19A must therefore obtain explicit rights
-or select an independently implemented clean-room path before any code use. No
-model implementation, activation, forecast collection, or production authority
-is granted by this roadmap decision.
+rejects the packaged legacy models. PR19A selected the independently
+implemented clean-room path in the
+[rights decision](PR19A_RIGHTS_DECISION_v1.1.0.md): no upstream code, tests,
+configuration, prose, model, data, asset, dependency lock, or generated output
+may be copied, modified, executed, or used. The separate
+[Model 0 protocol](PR19A_MODEL_0_PROTOCOL_v1.1.0.md) is native Pops' Edge
+authority. No model implementation, activation, forecast collection, or
+production authority is granted by this decision.
 
 ## 1. Executive conclusion
 
@@ -272,7 +277,7 @@ evidence hashes, pitcher state, side mapping, and executable quotes.
 | FanGraphs | transparent ZiPS/Steamer | good method; feed/history unclear | license needed | comparison candidate |
 | Dimers | market-informed blend | good visible coverage | terms prohibit automation | reject automation |
 | TeamRankings | unresolved | IDs/times/history unresolved | unknown | research only |
-| `gmalbert/baseball-predictions` | self-hosted reference; independence requires end-to-end audit | promising chronology, calibration, manifest, and replay concepts; legacy model path is not point-in-time admissible | no apparent license; upstream data rights unresolved | PR19 design reference only |
+| `gmalbert/baseball-predictions` | evaluated external repository; no native-source authority | reinforces independently established chronology, calibration, manifest, and replay requirements; legacy model path is not point-in-time admissible | no project license; artifact and upstream-data rights unresolved | clean-room exclusion; no code, artifact, data, or dependency reuse |
 | Kalshi | own-market authority | stable tickers/rules/live+history | documented public GETs | approved read-only strategy |
 | The Odds API | market benchmark | IDs/update times/history | quota/subscription | deferred |
 

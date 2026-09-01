@@ -946,6 +946,19 @@ PR19 proceeds through five separately reviewed gates:
   Calibration, uncertainty, Comparative Performance, and canonical report for
   later Research Review.
 
+PR19A's
+[rights decision](PR19A_RIGHTS_DECISION_v1.1.0.md) selects the independently
+implemented clean-room path: no evaluated upstream code, artifact, data, asset,
+or dependency lock is reusable. Its
+[Model 0 protocol](PR19A_MODEL_0_PROTOCOL_v1.1.0.md) fixes the one home-win
+estimand, T-6h boundary, market-independent three-feature dataset, 2021–2025
+chronological split, logistic primary model, sigmoid calibration, baselines,
+metrics, uncertainty, and exact PR19B/PR19C gates. PR19B entry currently fails
+because no admitted source supplies the rights-cleared, point-in-time
+2021–2025 schedule/status/outcome history required by the protocol. That
+truthful no-go does not invalidate PR19A and grants no data-acquisition or model
+construction authority.
+
 **Dependencies:** implemented identity, Forecast Observation, Outcome,
 Measurement, comparative research, reporting, and replay foundations from
 PR4/PR6/PR9 and PR13–PR15; compatible independently captured PR17 Kalshi
