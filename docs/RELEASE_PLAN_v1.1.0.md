@@ -828,6 +828,75 @@ represents valid empty or insufficient populations, and neither rewrites nor
 acquires authority from the retrospective report. It is a distinct
 `ProbabilitySourcePerformanceReport` under the prospective Protocol.
 
+### PR18 — Alternative Probability Source Admission and Comparative Collection
+
+**Purpose:** evaluate candidate independent MLB pregame winner Probability
+Sources and, only when one satisfies the admission gate, conduct the first real
+prospective, synchronized comparison with the Kalshi Market Benchmark without
+altering either PR17 standalone population.
+
+**Scope:** bounded supplier due diligence and an explicit admission decision;
+written machine-access, analysis, and Evidence-retention authority; verified
+market-independence and probability semantics; one immutable comparative
+Protocol and Edge Claim; provider-specific acquisition behind the existing
+provider-neutral Forecast Observation boundary; exact raw Evidence and
+MLB-owned event reconciliation; synchronized benchmark/challenger Research
+Snapshots; failure-inclusive Coverage; paired Measurement, Brier Score, Log
+Loss, Calibration, uncertainty, cumulative and time-bounded Comparative
+Performance; and one canonical Comparative Performance Report. PR18 proceeds
+through five separately reviewed gates:
+
+- **PR18A — Supplier Due Diligence and Admission Decision:** verify access,
+  permission, retention, independence, probability semantics, identity,
+  timestamps, revisions, coverage, cadence, cost, and termination effects.
+  Trial material remains non-authoritative.
+- **PR18B — Comparative Protocol and Acquisition Architecture:** precommit the
+  scientific question, population, admitted challenger, canonical home-win
+  probability, capture and synchronization rules, revision selection,
+  failure-inclusive Coverage, paired measures, Practical Significance, Burden
+  of Proof, uncertainty, report boundary, and limitations before scientific
+  collection.
+- **PR18C — Adapter, Persistence, and Offline Validation:** implement the
+  smallest provider adapter and isolated acquisition path that preserve exact
+  permitted source material, deterministic reconciliation, immutable Evidence,
+  replay, visible failures, and fixture-backed validation without activation.
+- **PR18D — Comparative Activation and Prospective Collection:** following
+  explicit Product Owner authorization, fix a future boundary and begin local,
+  non-executing comparative collection without changing PR17 operations or
+  granting Policy, Governance, Opportunity Analysis, wagering, or production
+  authority.
+- **PR18E — Comparative Close and Report:** close the precommitted observation
+  period, reconcile Outcomes, reproduce the complete paired population and
+  failure-inclusive Coverage, calculate Protocol-governed Comparative
+  Performance and uncertainty, and publish the canonical report for later
+  Research Review.
+
+**Dependencies:** implemented PR4/PR6 Forecast Observation and adapter
+boundaries; PR13–PR15 comparative contracts, Measurement, uncertainty,
+surveillance, and reporting; PR17C activation and compatible independently
+captured Kalshi Evidence; and explicit Product Owner approval at each live,
+commercial, deployment, and scientific-activation gate.
+
+**Exclusions:** no change to the September 5, 2026 PR17 boundary; no challenger
+in either PR17 standalone population or report; no retrospective reconstruction
+of missing prospective Evidence; no supplier admission from marketing accuracy,
+hit rate, or an unmatched backtest; no automatic weighting, ensemble, model
+training, broad hyperparameter search, sportsbook consensus, standalone Drift,
+Current Scientific Applicability, Policy Recommendation, Policy Hypothesis,
+Governance, Opportunity Analysis, wagering, trading, or production authority.
+
+**Gate:** PR18A may conclude that no candidate is admissible. One supplier is
+admitted only with sufficient access, retention, identity, chronology,
+probability, and market-independence authority; its
+Protocol is immutable before admitted Outcomes are known; acquisition failures
+remain visible and non-authoritative; identical verified Evidence reproduces
+the paired population, Coverage, Measurements, uncertainty, Comparative
+Performance, and report; and no claim that the challenger outperforms Kalshi is
+made unless the Protocol's paired evidence satisfies its precommitted
+Practical-Significance and Burden-of-Proof rules. A valid finding may instead
+favor Kalshi or remain insufficient to distinguish the sources. PR18B–PR18E do
+not proceed until PR18A admits a candidate.
+
 ### PR19 — Current Scientific Applicability and Policy Recommendation
 
 **Purpose:** derive current scientific applicability and advisory Policy Recommendations from immutable research history.
@@ -835,7 +904,9 @@ acquires authority from the retrospective report. It is a distinct
 **Scope:** deterministic Current Scientific Applicability projection at an explicit timezone-aware `as_of` boundary; complete scheduled and material-event obligation replay; and non-authoritative Policy Recommendation aligned with the legacy `PolicyProposal` precursor.
 
 **Dependencies:** PR13 contracts, PR15 canonical Comparative Performance Reports,
-PR16B standalone report integration, and separate PR17C/PR17D findings.
+PR16B standalone report integration, separate PR17C/PR17D findings, and the
+PR18 Comparative Performance Report and later Research Review when PR19 makes
+any claim about the admitted challenger or its Edge Claim.
 
 **Exclusions:** mutable applicability state, Policy Hypothesis alignment, Product Owner Governance decisions, Forecast Policy, Workspace, or operational authority.
 
@@ -937,6 +1008,8 @@ Evidence → Measurement → cumulative Comparative Performance
 Time-bounded surveillance, Drift analysis, and canonical reporting
         ↓
 Standalone source methodology, implementation, retrospective reporting, and prospective operation
+        ↓
+Alternative-source admission, synchronized comparative collection, and paired reporting
         ↓
 Current applicability and Policy Recommendation
         ↓
