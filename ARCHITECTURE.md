@@ -803,6 +803,15 @@ provider-neutral identity, Forecast Observation, reconciliation, Research
 Snapshot, Measurement, Coverage, Comparative Performance, and reporting
 boundaries; it does not create a second research framework.
 
+PR19A's
+[rights decision](docs/PR19A_RIGHTS_DECISION_v1.1.0.md) selects an independently
+implemented clean-room path and prohibits use of the evaluated external
+repository's code, artifacts, data, and dependency lock. The
+[Model 0 protocol](docs/PR19A_MODEL_0_PROTOCOL_v1.1.0.md) owns the canonical
+estimand, T-6h information boundary, fixed team-level feature set,
+chronological split, simple model and calibration method, and deterministic
+PR19B/PR19C gates. These documents introduce no executable model contract.
+
 Point-in-time MLB source observations remain Evidence. Feature snapshots,
 training matrices, fitted estimators, calibration artifacts, manifests, and
 offline evaluations are derived or reproducibility material and cannot enter

@@ -157,6 +157,9 @@ or enter prospective research or support paired authority.
 - [Backlog](BACKLOG.md) — deferred and uncommitted work
 - [Changelog](CHANGELOG.md) — version history
 - [v1.1.0 release plan](docs/RELEASE_PLAN_v1.1.0.md) — PR1–PR24 sequence, including PR16A/PR16B, PR17A–PR17D, and parallel PR18/PR19 challenger tracks
+- [PR19A rights decision](docs/PR19A_RIGHTS_DECISION_v1.1.0.md) — pinned external-repository due diligence and clean-room decision
+- [PR19A Model 0 protocol](docs/PR19A_MODEL_0_PROTOCOL_v1.1.0.md) — canonical estimand, information boundary, methodology, and PR19B/PR19C gates
+- [PR19A implementation review](docs/PR19A_IMPLEMENTATION_REVIEW_v1.1.0.md) — acceptance decision, evidence, validation, limitations, and next gate
 
 PR17B has two non-renumbering slices. PR17B1 adds the offline scientific-contract
 and deterministic-replay foundation in `forecast_standalone_research.py`,
