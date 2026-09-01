@@ -1156,7 +1156,9 @@ class ProbabilitySourcePerformanceV3:
 def create_probability_source_performance_v3(*,protocol:StandaloneProbabilitySourceProtocol,coverage:ProbabilitySourceCoverageV3,
         measurements:Iterable[ProbabilitySourceMeasurementV3],scope:PerformanceScope,analysis_boundary:datetime,
         analysis_start:datetime|None,provenance:ResearchContractProvenance,limitations:tuple[str,...]=())->ProbabilitySourcePerformanceV3:
-    values=tuple(measurements);ids=_unique((x.probability_source_measurement_v3_id for x in values),"performance Measurements")
+    # Decimal reductions must follow stable population identity, not caller order.
+    values=_unique(measurements,"performance Measurements",lambda x:x.probability_source_measurement_v3_id)
+    ids=tuple(x.probability_source_measurement_v3_id for x in values)
     if coverage.protocol_id!=protocol.standalone_probability_source_protocol_id or ids!=coverage.measurement_ids:_fail("performance must use exact matching Coverage population")
     if (scope is PerformanceScope.CUMULATIVE)!=(coverage.coverage_scope=="cumulative"):_fail("performance scope requires matching Coverage scope")
     if scope is PerformanceScope.TIME_BOUNDED and (coverage.window_start,coverage.analysis_boundary)!=(analysis_start,analysis_boundary):_fail("bounded performance requires matching bounded Coverage")

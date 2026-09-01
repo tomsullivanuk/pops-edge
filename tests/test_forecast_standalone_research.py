@@ -180,6 +180,76 @@ class StandaloneResearchV3Tests(unittest.TestCase):
         finally:getcontext().prec=prior
         self.assertEqual(one,ambient)
 
+    def _aggregate_fixture_coverage(self, items, scope):
+        # Synthetic constructor-level population; full graph tests remain separate.
+        base = self.g["retro_coverage"]
+        excluded = {"probability_source_coverage_v3_id", "input_digest"}
+        values = {k: getattr(base, k) for k in base.__dataclass_fields__ if k not in excluded}
+        opportunities = tuple(sorted(m.opportunity_id for m in items))
+        values.update(
+            coverage_scope=scope.value,
+            window_start=None if scope is PerformanceScope.CUMULATIVE else self.g["retro_bounded_coverage"].window_start,
+            coverage_universe_ids=opportunities, eligible_denominator_ids=opportunities,
+            measured_opportunity_ids=opportunities,
+            measurement_ids=tuple(sorted(m.probability_source_measurement_v3_id for m in items)),
+            reconciliation=RetrospectiveCoverageReconciliation(measured=opportunities),
+            coverage_rate=Decimal(1) if items else None,
+        )
+        return fsr._identity(ProbabilitySourceCoverageV3, "probability_source_coverage_v3", values,
+            ("probability_source_coverage_v3_id", "provenance", "input_digest"))
+
+    def _aggregate(self, items, coverage, scope):
+        return create_probability_source_performance_v3(
+            protocol=self.g["retrospective"], coverage=coverage, measurements=items,
+            scope=scope, analysis_boundary=coverage.analysis_boundary,
+            analysis_start=coverage.window_start, provenance=self.g["provenance"])
+
+    def test_21b_aggregate_bytes_invariant_under_population_permutations(self):
+        import random
+        items = tuple(measurement_variant(self.g["retro_measurement"], Decimal(i)/100, i)
+                      for i in range(1, 100))
+        ordered = tuple(sorted(items, key=lambda m: m.probability_source_measurement_v3_id))
+        unchanged = tuple(m.to_json() for m in items)
+        for scope in PerformanceScope:
+            coverage = self._aggregate_fixture_coverage(items, scope)
+            expected = self._aggregate(ordered, coverage, scope)
+            for seed in range(4):
+                shuffled = list(items)
+                random.Random(seed).shuffle(shuffled)
+                for population in (items, tuple(reversed(items)), iter(shuffled)):
+                    actual = self._aggregate(population, coverage, scope)
+                    self.assertEqual(expected.to_json(), actual.to_json())
+                    self.assertEqual(expected.uncertainty, actual.uncertainty)
+            with localcontext() as context:
+                context.prec = 9
+                self.assertEqual(expected.to_json(), self._aggregate(items, coverage, scope).to_json())
+        self.assertEqual(unchanged, tuple(m.to_json() for m in items))
+
+    def test_21c_aggregate_empty_singleton_and_infinite_loss(self):
+        single = self.g["retro_measurement"]
+        infinite = measurement_variant(single, Decimal(0), 0)
+        for scope in PerformanceScope:
+            for items in ((), (single,), (single, infinite)):
+                coverage = self._aggregate_fixture_coverage(items, scope)
+                actual = self._aggregate(items, coverage, scope)
+                self.assertEqual(actual.to_json(), self._aggregate(reversed(items), coverage, scope).to_json())
+                self.assertEqual(actual.sample_size, len(items))
+                self.assertEqual(actual.mean_log_loss, None if not items else single.log_loss if len(items) == 1 else Decimal("Infinity"))
+                if len(items) == 1:
+                    self.assertEqual(actual.uncertainty.lower, actual.uncertainty.upper)
+
+    def test_21d_aggregate_duplicate_foreign_and_mismatched_populations_fail(self):
+        single = self.g["retro_measurement"]
+        foreign = self.g["prospective_measurement"]
+        for scope in PerformanceScope:
+            coverage = self._aggregate_fixture_coverage((single,), scope)
+            for items in ((single, single), (), (foreign,)):
+                with self.assertRaises(ContractError):
+                    self._aggregate(items, coverage, scope)
+            foreign_coverage = self._aggregate_fixture_coverage((foreign,), scope)
+            with self.assertRaises(ContractError):
+                self._aggregate((foreign,), foreign_coverage, scope)
+
     def test_22_bootstrap_seed_scope_sensitivity(self):
         g=self.g;b=g["retro_report"].analysis_boundary;items=(g["retro_measurement"],);c=create_one_sample_uncertainty_v3(protocol=g["retrospective"],scope=PerformanceScope.CUMULATIVE,analysis_boundary=b,analysis_start=None,measurements=items);w=create_one_sample_uncertainty_v3(protocol=g["retrospective"],scope=PerformanceScope.TIME_BOUNDED,analysis_boundary=b,analysis_start=b-timedelta(days=30),measurements=items);self.assertNotEqual(c.seed_digest,w.seed_digest)
 

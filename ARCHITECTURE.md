@@ -714,6 +714,16 @@ reference, registry, replay, or graph contracts cannot consume V3 without
 reinterpretation, PR17B1 provides explicit versioned successors. Dispatch is by
 version and type, never optional fields. Historical identities remain stable.
 
+V3 aggregate construction rejects duplicate Measurement identities and orders the
+validated population by Measurement identity before every Decimal reduction.
+Cumulative and time-bounded aggregates therefore have identical canonical bytes
+for any permutation of the same population. Decimal precision, score definitions,
+fixed-bin calibration, and the independently canonicalized bootstrap are unchanged.
+This corrects aggregate construction only: no Measurement, Protocol, legacy
+contract, or archived artifact is rewritten. Serialized objects retain their
+content-addressed identity; a previously order-dependent aggregate is not silently
+repaired or admitted as canonically reproducible by graph validation.
+
 Coverage replay starts from complete Schedule histories, derives every expected
 opportunity and eligibility result, and independently assigns each failure or
 success category; stored reconciliation is an output rather than constructor
