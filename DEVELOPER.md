@@ -333,7 +333,7 @@ and lifecycle transitions.
 
 `PolicyProposal` is the current implementation precursor to the canonical
 Policy Recommendation. The implemented `PolicyHypothesis` retains its
-historical candidate-strategy semantics until PR20 aligns it with the Product
+historical candidate-strategy semantics until PR21 aligns it with the Product
 definition: a proposed operational strategy for exploiting one or more
 empirically supported Market Edges. Neither implementation symbol should be
 treated as though that migration has already occurred.
@@ -390,7 +390,7 @@ applies identity transformation and weight `1.0`, validates the complete binary
 distribution without silent correction, and fails closed with no fallback when
 the provider is absent. This neither approves nor activates the policy. PR12
 owns governance and lifecycle state and selects the production-authoritative
-Forecast Policy. PR22, not PR11, will separately migrate Opportunity Analysis
+Forecast Policy. PR23, not PR11, will separately migrate Opportunity Analysis
 and the Opportunity Board to governance-authorized Policy Forecast input.
 
 Run the bounded fixture inspection with:
@@ -882,15 +882,23 @@ Measurement registries are filtered at the explicit boundary and ambiguous
 candidates fail closed independently of ordering.
 4. **PR17C — Activation, Retrospective Report, and Prospective Start:** freeze the future boundary, produce the separate retrospective report, and begin collection.
 5. **PR17D — Prospective Close and Separate Report:** close after the 2026 regular season and publish the independent prospective report.
-6. **PR19 — Current Scientific Applicability and Policy Recommendation:** add deterministic applicability replay and non-authoritative recommendations.
-7. **PR20 — Policy Hypothesis Alignment:** align `PolicyHypothesis` with one or
+6. **PR18 — External Alternative Source Admission and Comparison:** complete
+   supplier due diligence and, only after admission, synchronized prospective
+   collection and paired reporting.
+7. **PR19 — Native MLB Probability Source:** resolve rights or clean-room
+   implementation, construct point-in-time features, admit or reject a pinned
+   Model 0, and, only after admission and authorization, self-host prospective
+   collection and paired reporting. PR18 and PR19 are independently gated and
+   may proceed in parallel.
+8. **PR20 — Current Scientific Applicability and Policy Recommendation:** add deterministic applicability replay and non-authoritative recommendations after both PR18 and PR19 formally close.
+9. **PR21 — Policy Hypothesis Alignment:** align `PolicyHypothesis` with one or
    more empirically supported Market Edges while keeping it non-authoritative
    and non-executable.
-8. **PR21 — Forecast Intelligence Workspace:** implement the Product Owner's
+10. **PR22 — Forecast Intelligence Workspace:** implement the Product Owner's
    principal research and governance surface.
-9. **PR22 — Policy Forecast Opportunity Integration:** migrate Opportunity
+11. **PR23 — Policy Forecast Opportunity Integration:** migrate Opportunity
    Analysis and the Opportunity Board to governance-authorized Policy Forecasts.
-10. **PR23 — v1.1.0 Integration and Release Readiness:** validate the integrated
+12. **PR24 — v1.1.0 Integration and Release Readiness:** validate the integrated
    lifecycle, compatibility, documentation, and release gates.
 
 The Release Plan owns detailed scope, dependencies, exclusions, and gates. Do

@@ -80,7 +80,7 @@ observation eligibility/selection are explicit, versioned, deterministic, and
 fail closed. Each Policy Forecast is canonical only to its specific policy
 execution; multiple outputs may coexist for an event. Policies and forecasts
 contain no approval or lifecycle state; PR12 governance alone determines which
-policy, if any, has production authority. PR22 remains responsible for selecting
+policy, if any, has production authority. PR23 remains responsible for selecting
 a compatible Policy Forecast execution for consumption. The current Opportunity
 Board continues to consume DRatings directly until that bounded migration.
 
@@ -127,8 +127,10 @@ time order-book Kalshi MLB standalone Protocols. Both use the home-team YES
 representation; preserve independent populations, Coverage, Measurements,
 performance, uncertainty, limitations, and reports; and create no scientific,
 Policy, Governance, wagering, or production authority. PR17B–PR17D retain
-implementation, activation, collection, and separate-report ownership. Current
-Scientific Applicability and Policy Recommendation remain future PR19 work. The Forecast Intelligence
+implementation, activation, collection, and separate-report ownership. PR18
+owns the external-supplier challenger track and PR19 owns the independently
+gated self-hosted native-model track. Current Scientific Applicability and
+Policy Recommendation remain future PR20 work. The Forecast Intelligence
 Workspace remains a later product surface. Research contracts create neither
 Governance nor production authority.
 
@@ -154,7 +156,7 @@ or enter prospective research or support paired authority.
 - [Roadmap](ROADMAP.md) — ordered product direction
 - [Backlog](BACKLOG.md) — deferred and uncommitted work
 - [Changelog](CHANGELOG.md) — version history
-- [v1.1.0 release plan](docs/RELEASE_PLAN_v1.1.0.md) — PR1–PR23 sequence, including PR16A/PR16B and PR17A–PR17D
+- [v1.1.0 release plan](docs/RELEASE_PLAN_v1.1.0.md) — PR1–PR24 sequence, including PR16A/PR16B, PR17A–PR17D, and parallel PR18/PR19 challenger tracks
 
 PR17B has two non-renumbering slices. PR17B1 adds the offline scientific-contract
 and deterministic-replay foundation in `forecast_standalone_research.py`,

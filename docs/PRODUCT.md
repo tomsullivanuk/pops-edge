@@ -130,6 +130,24 @@ A Probability Source answers:
 
 A Forecast Provider is a Probability Source that publishes externally generated forecasts. Provider identity determines where an observation originated, not the empirical standard by which it is evaluated.
 
+### Self-hosted native models
+
+A self-hosted native model is an internal Probability Source, not a Forecast
+Provider. Its prospectively emitted probability may become immutable Evidence
+of what that identified model forecast at that time. The MLB observations used
+to construct it remain separate Evidence; feature snapshots, training data,
+model and calibration artifacts, and offline evaluation remain derived or
+reproducibility material and do not become Evidence.
+
+Self-hosting does not establish independence or trust. A native source must
+exclude market-derived information throughout feature construction, missing-
+value treatment, calibration, selection, retraining, and inference; satisfy
+point-in-time chronology; retain a reproducible pinned identity; and earn any
+empirical trust through the same Forecast Intelligence boundaries as an
+external source. PR18 owns the external-supplier track, while PR19 owns the
+native-model track. Either may close without an admitted challenger, and
+neither creates Policy, Governance, wagering, or production authority.
+
 ## Market Benchmark
 
 The Market Benchmark is the role assigned to a Probability Source within a Research Protocol; it is not an intrinsic global identity of that source. It represents wager-backed quoted market pricing: the probability implied by participants' demonstrated willingness to commit capital in the captured two-sided market. Pops' Edge does not claim to observe participants' private beliefs or correct for popularity, loyalty, entertainment, hedging, or unwillingness to wager.

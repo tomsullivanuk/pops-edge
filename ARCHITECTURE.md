@@ -795,6 +795,34 @@ applicability, Policy, Governance, or production authority. Existing
 references are unchanged and are not reinterpreted. PR17C and PR17D each own a
 separate `ProbabilitySourcePerformanceReport`.
 
+### Self-hosted native Probability Source
+
+PR19 owns the bounded feasibility and prospective research path for one
+self-hosted native MLB pregame home-win Probability Source. It reuses the
+provider-neutral identity, Forecast Observation, reconciliation, Research
+Snapshot, Measurement, Coverage, Comparative Performance, and reporting
+boundaries; it does not create a second research framework.
+
+Point-in-time MLB source observations remain Evidence. Feature snapshots,
+training matrices, fitted estimators, calibration artifacts, manifests, and
+offline evaluations are derived or reproducibility material and cannot enter
+Evidence by impersonation. Once one admitted, pinned model is activated under
+a prospective Protocol, its emitted probability is captured as immutable
+Forecast Observation Evidence of what that identified model forecast at that
+time. Model identity includes the material model, calibration, feature-set,
+training-cutoff, dependency, and source-code versions needed for deterministic
+replay.
+
+Market independence is end-to-end: sportsbook, Kalshi, or other market-derived
+values cannot influence features, labels, missing-value treatment, calibration,
+feature or model selection, retraining, or inference. Point-in-time feature
+watermarks must precede the applicable forecast boundary. Invalid, late,
+missing, or failed inference remains visible, receives no scientific authority,
+and contributes honestly to failure-inclusive Coverage. Local self-hosting,
+manual intervention, and no automatic recovery are accepted at the current
+stage; model ensembles, online learning, scheduled retraining, additional MLB
+markets, cloud hosting, wagering, and production authority remain deferred.
+
 ## Forecast Intelligence
 
 Forecast Intelligence is the umbrella architectural capability that transforms immutable Evidence and Measurement into reproducible knowledge about the standalone and comparative performance of Probability Sources.
@@ -1221,11 +1249,11 @@ An applicable obligation remains unresolved unless a qualifying completed Resear
 
 While any qualifying obligation remains unresolved, Current Scientific Applicability is suspended and operational reliance must fail closed, while the latest completed scientific conclusion and historical Market Edge remain intact. Scientific inapplicability neither creates nor revokes Governance authority and does not modify Governance History.
 
-Current Scientific Applicability is a deterministic replayable Forecast Intelligence projection owned by PR19; it is not stored as mutable authoritative state. At an explicit timezone-aware `as_of` boundary, the projection identifies the latest completed conclusion for the Edge Claim, all scheduled obligations due by `as_of`, all valid material-event artifacts effective by `as_of`, and the obligations explicitly covered by completed Reviews. Unresolved obligations suspend applicability. Otherwise only Supported or Strongly Supported may support applicability, subject to every other protocol, Research Domain, Research Population, Evidence, analytical, and compatibility requirement. Resolving an obligation does not by itself restore applicability.
+Current Scientific Applicability is a deterministic replayable Forecast Intelligence projection owned by PR20; it is not stored as mutable authoritative state. At an explicit timezone-aware `as_of` boundary, the projection identifies the latest completed conclusion for the Edge Claim, all scheduled obligations due by `as_of`, all valid material-event artifacts effective by `as_of`, and the obligations explicitly covered by completed Reviews. Unresolved obligations suspend applicability. Otherwise only Supported or Strongly Supported may support applicability, subject to every other protocol, Research Domain, Research Population, Evidence, analytical, and compatibility requirement. Resolving an obligation does not by itself restore applicability.
 
 PR13 provides the immutable structures needed for this replay: claim and Market Edge relationships, scheduled review-boundary identities, authorized material-event references, effective and completion times, completed conclusions, explicit obligation coverage, deterministic identities, provenance, serialization, and fail-closed validation. Bounded typed supporting value objects may express these relationships; they are not additional top-level research contracts and must not become mutable workflow or current-state objects.
 
-PR13 does not calculate or store authoritative Current Scientific Applicability, implement the canonical Comparative Performance Report, or introduce a generic `ReviewTrigger`, mutable review lifecycle, workflow manager, always-on surveillance service, Workspace/UI state, or additional durable current-applicability contract. Workspace or UI state cannot originate, resolve, or override Under Review. PR19 owns Current Scientific Applicability and Policy Recommendation without granting Governance or operational authority.
+PR13 does not calculate or store authoritative Current Scientific Applicability, implement the canonical Comparative Performance Report, or introduce a generic `ReviewTrigger`, mutable review lifecycle, workflow manager, always-on surveillance service, Workspace/UI state, or additional durable current-applicability contract. Workspace or UI state cannot originate, resolve, or override Under Review. PR20 owns Current Scientific Applicability and Policy Recommendation without granting Governance or operational authority.
 
 This personal hobby platform does not require speculative always-on services. Scheduled local analysis and explicit reruns are sufficient until operational evidence justifies more infrastructure.
 
@@ -1550,7 +1578,9 @@ The following gaps are architectural state, not roadmap commitments:
 | Standalone Probability Source methodology and target architecture | Governed by merged PR16A; its synthetic/offline contract path is implemented by PR16B |
 | Market probability derivation, standalone Measurement, Coverage, cumulative/time-bounded performance, and report integration | Implemented in PR16B for the broad Research Domain with synthetic offline Evidence |
 | Separate retrospective/prospective Kalshi MLB authority | Defined by PR17A; contracts/replay implemented in PR17B1; operations and activation remain PR17B2–PR17D |
-| Current Scientific Applicability and Policy Recommendation | Approved for PR19; not implemented |
+| External alternative-source admission and prospective comparison | Approved for PR18; not implemented |
+| Self-hosted native MLB Probability Source feasibility and prospective comparison | Approved for PR19; not implemented |
+| Current Scientific Applicability and Policy Recommendation | Approved for PR20; not implemented |
 | Edge Claim, Market Edge, Research Review, and Drift Surveillance contracts | Implemented |
 | Policy Hypothesis aligned explicitly to supported Market Edges | Product-approved; existing symbol has older analytical-candidate semantics |
 | Forecast Policy, deterministic execution, and Policy Forecast | Implemented |
