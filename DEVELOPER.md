@@ -1383,3 +1383,30 @@ paths and actual pre-boundary no-call heartbeats. No change to activation author
 or laptop power settings is needed. Do not call a pre-boundary staging result proof
 of post-boundary connectivity, cadence or prospective readiness. Manual calendar
 accounting and final scientific Coverage/reporting remain separate checks.
+
+
+## PR17C3 aggregate input ordering correction
+
+The August 31 local descriptive review exposed caller-order Decimal accumulation
+in `create_probability_source_performance_v3`: reversing 1,939 archived
+Measurements changed mean log loss by 2e-49 and changed aggregate identity.
+The correction uses the existing duplicate-rejecting canonical ordering helper
+before aggregate reductions. It preserves 50-digit precision, extended-real log
+loss, calibration bins/weights, bootstrap seed/version/resampling, and all
+Measurement and Protocol identities. No global identity version is changed.
+Canonical-order inputs retain their previous aggregate bytes. Previously
+noncanonical input order may yield a last-digit and content-address change;
+rounding display output is not a reproducibility fix.
+
+Constructor regressions cover original, reversed, shuffled, and generator input
+for cumulative and time-bounded results, fixed-provenance serialized equality,
+ambient precision, empty/singleton/infinite loss, and rejection of duplicate,
+foreign, and Coverage-mismatched populations. The synthetic Coverage fixture is
+constructor-level material, not a substitute for the existing full graph tests.
+
+The real archive check is read-only and exercises the published 1,939-Measurement
+population. Aggregate results remain review artifacts; this change adds no
+publication, acquisition, scheduler, or final-report capability. No authoritative
+V3 aggregate was present in the reviewed archive. If an external archive contains
+an old noncanonical aggregate, preserve its serialized history and resolve
+versioned reconstruction explicitly before applying this correction there.

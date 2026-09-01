@@ -1040,6 +1040,13 @@ Other deferred capabilities:
   and zero-provider-call. No aggregate performance, uncertainty, final report,
   scheduler addition, or claim of full-window Evidence closure is included.
 
+  Aggregate reproducibility correction: canonical Measurement identity ordering
+  precedes V3 aggregate Decimal reductions in both scopes. Scoring precision,
+  calibration, bootstrap, Protocols, and individual Measurements remain unchanged.
+  Permutation regressions and read-only real-population verification gate this
+  correction. It neither publishes aggregates nor closes the retrospective window,
+  enables expanded-source publication, or commissions prospective collection.
+
   Focused performance correction: invocation-local grouping and parent/child
   lookups remove redundant full-registry scans in classification and manifest
   lineage validation. All complete-input, boundary, correction, graph, integrity,
