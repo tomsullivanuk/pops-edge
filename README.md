@@ -160,6 +160,7 @@ or enter prospective research or support paired authority.
 - [PR19A rights decision](docs/PR19A_RIGHTS_DECISION_v1.1.0.md) — pinned external-repository due diligence and clean-room decision
 - [PR19A Model 0 protocol](docs/PR19A_MODEL_0_PROTOCOL_v1.1.0.md) — canonical estimand, information boundary, methodology, and PR19B/PR19C gates
 - [PR19A implementation review](docs/PR19A_IMPLEMENTATION_REVIEW_v1.1.0.md) — acceptance decision, evidence, validation, limitations, and next gate
+- [PR19B feasibility protocol and result](docs/PR19B_FEASIBILITY_PROTOCOL_AND_RESULT_v1.1.0.md) — Product Owner amendment, fixed 2026 one-look study, seals, Coverage, and non-authoritative result
 
 PR17B has two non-renumbering slices. PR17B1 adds the offline scientific-contract
 and deterministic-replay foundation in `forecast_standalone_research.py`,

@@ -928,14 +928,16 @@ PR19 proceeds through five separately reviewed gates:
   home-win estimand, market-independence boundary, feature information-time
   contract, validation design, baselines, admission thresholds, and accepted
   limitations before model construction.
-- **PR19B — Point-in-Time Dataset and Feature Provenance:** construct the
-  smallest reproducible training matrix from observations available strictly
-  before each forecast boundary; preserve source watermarks, feature-set
-  identity, missingness, and deterministic leakage validation.
-- **PR19C — Model 0 Training and Offline Admission:** train and calibrate one
-  deliberately simple primary model, compare it with precommitted simple
-  baselines on untouched chronological test data, produce a pinned model bundle
-  and manifest, and admit or reject it without result-directed rule changes.
+- **PR19B — Development-Only 2026 Feasibility:** construct the approved
+  market-independent population from already archived MLB facts, freeze the
+  protocol and test identity/label digest before fitting, train and calibrate
+  the fixed Model 0 once, and issue exactly one BASIC SIGNAL, CREDIBLE SIGNAL,
+  or NO BASIC SIGNAL result. This combined feasibility gate produces Derived
+  Analysis only and admits no model.
+- **PR19C — Future Point-in-Time Model Admission:** only after a separate
+  Product Owner decision and rights-cleared point-in-time dataset gate, train,
+  calibrate, and evaluate a pinned admission candidate under a prospectively
+  fixed protocol. The PR19B result cannot satisfy or weaken that future gate.
 - **PR19D — Self-Hosted Prospective Collection:** following explicit Product
   Owner authorization, activate local inference at a future boundary, keep the
   admitted model and calibration fixed, emit immutable Forecast Observations,
@@ -953,17 +955,21 @@ or dependency lock is reusable. Its
 [Model 0 protocol](PR19A_MODEL_0_PROTOCOL_v1.1.0.md) fixes the one home-win
 estimand, T-6h boundary, market-independent three-feature dataset, 2021–2025
 chronological split, logistic primary model, sigmoid calibration, baselines,
-metrics, uncertainty, and exact PR19B/PR19C gates. PR19B entry currently fails
-because no admitted source supplies the rights-cleared, point-in-time
-2021–2025 schedule/status/outcome history required by the protocol. That
-truthful no-go does not invalidate PR19A and grants no data-acquisition or model
-construction authority.
+metrics, uncertainty, and the formal-admission gates historically approved in
+PR19A. The
+[PR19B feasibility amendment](PR19B_FEASIBILITY_PROTOCOL_AND_RESULT_v1.1.0.md)
+records the later Product Owner decision to run a separate development-only 2026
+study from existing archived facts. The amendment neither rewrites PR19A's
+historical no-go nor converts uncertain collection rights or retrospective facts
+into point-in-time admission authority.
 
 **Dependencies:** implemented identity, Forecast Observation, Outcome,
 Measurement, comparative research, reporting, and replay foundations from
 PR4/PR6/PR9 and PR13–PR15; compatible independently captured PR17 Kalshi
 Evidence; an explicit rights or clean-room decision; and Product Owner approval
-at each model admission, activation, and live-collection gate.
+at each model admission, activation, and live-collection gate. PR19B feasibility
+depends only on already archived immutable MLB supporting material and the
+explicit Product Owner amendment; it authorizes no provider contact or new data.
 
 **Must hold:** no sportsbook, Kalshi, or other market-derived value may enter
 features, labels, imputation, calibration, model or feature selection,
@@ -973,10 +979,14 @@ untouched until the Protocol-defined evaluation; the prospectively activated
 model, calibration, feature set, training cutoff, and dependency identity remain
 pinned; deterministic replay reproduces every admitted forecast and result;
 and missing, failed, invalid, or late inference remains visible and receives no
-scientific authority.
+scientific authority. For PR19B feasibility, the protocol and test row/label
+identity must be sealed before fitting, the fitted bundle must be sealed before
+one test opening, and the result must remain development-only.
 
-**Accepted limitations:** one MLB regular-season game-winner model; bounded
-local-Mac self-hosting; a deliberately modest feature set; manual intervention;
+**Accepted limitations:** one partial retrospectively retrieved 2026 season; an
+eight-hour scheduled-start proxy rather than proven outcome-publication time;
+one MLB regular-season game-winner model; bounded local-Mac self-hosting; a
+deliberately modest feature set; manual intervention;
 occasional visible missed forecasts; no automatic recovery; and no retraining
 during one prospective Protocol.
 
@@ -986,11 +996,12 @@ automatic weighting, online learning, scheduled retraining, retrospective
 repair of prospective Evidence, cloud service, high availability, wagering,
 trading, Opportunity Analysis, Policy, Governance, or production authority.
 
-**Gate:** PR19 may validly close after PR19A, PR19B, or PR19C with no admitted
-model. PR19D and PR19E proceed only when the pinned Model 0 satisfies the
-precommitted rights, independence, chronology, reproducibility, calibration,
-and offline-performance requirements. A later prospective finding may favor
-Kalshi, favor the native model, or remain insufficient to distinguish them.
+**Gate:** PR19B closes with one fixed feasibility classification and no admitted
+model. PR19 may validly close after PR19A, PR19B, or PR19C with no admitted
+model. PR19D and PR19E proceed only after a separately authorized,
+rights-cleared point-in-time candidate satisfies its own precommitted admission
+requirements; PR19B signal is not a substitute. A later prospective finding may
+favor Kalshi, favor the native model, or remain insufficient to distinguish them.
 
 ### PR20 — Current Scientific Applicability and Policy Recommendation
 

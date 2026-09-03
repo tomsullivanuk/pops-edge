@@ -29,6 +29,7 @@ Downloads/
 # Archives and local backups
 archive/
 backup_stable/
+artifacts/pr19b_feasibility_2026/
 
 # Lock files
 *.lock

@@ -810,7 +810,13 @@ repository's code, artifacts, data, and dependency lock. The
 [Model 0 protocol](docs/PR19A_MODEL_0_PROTOCOL_v1.1.0.md) owns the canonical
 estimand, T-6h information boundary, fixed team-level feature set,
 chronological split, simple model and calibration method, and deterministic
-PR19B/PR19C gates. These documents introduce no executable model contract.
+formal-admission gates as historically approved in PR19A. The Product Owner's
+[PR19B feasibility amendment](docs/PR19B_FEASIBILITY_PROTOCOL_AND_RESULT_v1.1.0.md)
+separately authorizes one development-only 2026 archive study using the same
+three feature formulas, a conservative eight-hour scheduled-start proxy, fixed
+2026 chronological splits, and a one-look signal classifier. It does not amend
+the historical PR19A record into current source admission and cannot admit or
+activate a model.
 
 Point-in-time MLB source observations remain Evidence. Feature snapshots,
 training matrices, fitted estimators, calibration artifacts, manifests, and
@@ -831,6 +837,16 @@ and contributes honestly to failure-inclusive Coverage. Local self-hosting,
 manual intervention, and no automatic recovery are accepted at the current
 stage; model ensembles, online learning, scheduled retraining, additional MLB
 markets, cloud hosting, wagering, and production authority remain deferred.
+
+The feasibility adapter may consume only the existing archive's immutable MLB
+identity, schedule, status, score, and outcome material through an explicit
+source and field allowlist. Kalshi availability, mappings, candles, prices,
+liquidity, and outcomes are outside its transitive population, feature, fitting,
+calibration, metric, and classification inputs. Its feature rows, seals, model
+bundle, predictions, metrics, and result remain development-only Derived
+Analysis. Future rights-cleared point-in-time dataset admission, prospective
+Forecast Observation collection, and comparative research retain separate
+Product Owner gates.
 
 ## Forecast Intelligence
 
