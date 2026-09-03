@@ -1,5 +1,18 @@
 # Changelog
 
+## PR19B — development-only native MLB feasibility
+
+- Recorded the Product Owner amendment that preserves PR19A's 2021–2025 formal
+  admission protocol as historical while authorizing one separate 2026
+  development-only feasibility study from existing archived non-market MLB facts.
+- Added a dependency-free deterministic archive adapter, three-feature builder,
+  fixed logistic and validation-sigmoid fit, baselines, scoring, paired bootstrap,
+  one-look signal classifier, and content-addressed seals.
+- Kept Kalshi and all market-derived material outside the native dataset's
+  transitive inputs; the study makes no provider call, archive repair, Evidence,
+  Probability Source admission, activation, Policy, Governance, or production
+  change.
+
 ## PR19A — native-model rights and methodology
 
 - Pinned and evaluated `gmalbert/baseball-predictions` without copying or

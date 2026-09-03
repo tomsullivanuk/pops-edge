@@ -30,10 +30,14 @@ It delivers Comparative Performance Reports and the Forecast Intelligence Worksp
 After the standalone Kalshi studies, v1.1.0 evaluates two independently gated
 challenger paths in parallel: PR18 admits and collects an external supplier only
 when access, retention, identity, chronology, and market-independence authority
-are sufficient; PR19 determines whether one self-hosted, market-independent,
-point-in-time native MLB model is scientifically admissible. Either track may
-close without a challenger. Current Scientific Applicability and downstream
-Policy work wait until both tracks have formally closed.
+are sufficient; PR19 first uses the existing 2026 archive for one bounded,
+development-only, market-independent native MLB feasibility look. That PR19B
+study can establish only whether the deliberately simple Model 0 shows basic
+predictive signal; it cannot admit a Probability Source or establish prospective
+validity. Any future rights-cleared point-in-time admission and prospective
+collection remain separately gated. Either track may close without a challenger.
+Current Scientific Applicability and downstream Policy work wait until both
+tracks have formally closed.
 
 ### Horizon 2 — Richer Forecast Intelligence
 
