@@ -66,3 +66,18 @@ Their check reads bounded marker metadata and selected source material, without
 loading unrelated historical or publication payloads. The historical cutoff
 exclusion specifically matches the actual supporting-tagged Kalshi writer with
 no Protocol ID, for both successful and failed acquisitions.
+
+
+## Supporting replay preparation
+
+Supporting completion/correction and acquisition checks reuse successful work
+only within the current verified replay. Identical catalog page bytes and merger
+inputs share a derived union for that invocation; fresh source verification and
+contract/graph reconstruction remain mandatory. The in-memory memo is discarded
+on exit, including failure. No additional cache file or rebuild/version migration
+is introduced, and the existing work limits are unchanged.
+
+The commissioning benchmark must include supporting sessions with legacy roots,
+correction envelopes, and large paginated catalogs. Unrelated historical manifest
+counts alone do not establish preparation fitness. A permitted read-only benchmark
+must not invoke the mutating rebuild command or change the activated namespace.

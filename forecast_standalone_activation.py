@@ -285,6 +285,17 @@ def acquire_kalshi_catalog_pages(fetch:Callable[[str],bytes],*,maximum_pages:int
 
 def merge_kalshi_catalog_pages(pages:Iterable[KalshiCatalogPage])->bytes:
     """Produce a deterministic catalog union without concealing page conflicts."""
+    return _catalog_union_bytes(_encoded_kalshi_catalog_pages(pages))
+
+
+def _catalog_union_bytes(markets):
+    # Each value was already produced by canonical_bytes(market). Fixed sorted
+    # envelope keys and sorted market identities reproduce canonical_bytes of
+    # the full union without recursively serializing every market a second time.
+    return b'{"cursor":"","markets":[' + b','.join(markets[key] for key in sorted(markets)) + b']}'
+
+
+def _encoded_kalshi_catalog_pages(pages):
     ordered=tuple(sorted(pages,key=lambda x:x.position))
     if not ordered or ordered[0].position!=0 or ordered[0].request_cursor!="":raise OperationsError("pagination-incomplete","catalog chain lacks its first page")
     for prior,current in zip(ordered,ordered[1:]):
@@ -299,8 +310,7 @@ def merge_kalshi_catalog_pages(pages:Iterable[KalshiCatalogPage])->bytes:
             encoded=canonical_bytes(market);prior=markets.get(identity)
             if prior is not None and prior!=encoded:raise OperationsError("pagination-conflict","provider market conflicts across pages")
             markets[identity]=encoded
-    union=[json.loads(markets[key]) for key in sorted(markets)]
-    return canonical_bytes({"markets":union,"cursor":""})
+    return markets
 
 
 def _market_settlement_at(market:Mapping[str,Any])->datetime|None:
@@ -321,11 +331,13 @@ def merge_retrospective_catalog_pages(pages:Iterable[KalshiCatalogPage],market_s
         selected=tuple(sorted((x for x in values if x.partition==partition),key=lambda x:x.partition_position if x.partition_position is not None else -1))
         if not selected or any(x.partition_position!=position for position,x in enumerate(selected)):raise OperationsError("pagination-incomplete",f"{partition} catalog partition is incomplete")
         chain=tuple(KalshiCatalogPage(x.partition_position,x.request_cursor,x.next_cursor,x.raw,x.markets) for x in selected)
-        partition_markets[partition]={((item.get("ticker") or item.get("id"))):item for item in json.loads(merge_kalshi_catalog_pages(chain))["markets"]}
+        partition_markets[partition]=_encoded_kalshi_catalog_pages(chain)
     if any(x.partition not in {"historical","live"} for x in values):raise OperationsError("pagination-incomplete","retrospective catalog has a foreign partition")
     markets={}
     for identity in sorted(set(partition_markets["historical"])|set(partition_markets["live"])):
-        historical=partition_markets["historical"].get(identity);live=partition_markets["live"].get(identity)
+        historical_bytes=partition_markets["historical"].get(identity);live_bytes=partition_markets["live"].get(identity)
+        historical=json.loads(historical_bytes) if historical_bytes is not None else None
+        live=json.loads(live_bytes) if live_bytes is not None else None
         if historical is None:
             settled=_market_settlement_at(live)
             if settled is not None and settled<market_settled_at:raise OperationsError("partition-integrity","live-only market belongs to historical storage")
@@ -334,7 +346,7 @@ def merge_retrospective_catalog_pages(pages:Iterable[KalshiCatalogPage],market_s
             settled=_market_settlement_at(historical)
             if settled is None or settled>=market_settled_at:raise OperationsError("partition-integrity","historical-only market conflicts with cutoff authority")
             selected=historical
-        elif canonical_bytes(historical)==canonical_bytes(live):
+        elif historical_bytes==live_bytes:
             settled=_market_settlement_at(historical)
             if settled is None:raise OperationsError("partition-integrity","duplicated market lacks settlement authority")
             selected=historical if settled<market_settled_at else live
@@ -347,8 +359,8 @@ def merge_retrospective_catalog_pages(pages:Iterable[KalshiCatalogPage],market_s
                 valid=tuple(item for item,consistent in candidates if consistent)
                 if len(valid)!=1:raise OperationsError("partition-integrity","conflicting duplicate settlement authority is ambiguous")
                 selected=valid[0]
-        markets[identity]=canonical_bytes(selected)
-    return canonical_bytes({"markets":[json.loads(markets[key]) for key in sorted(markets)],"cursor":""})
+        markets[identity]=historical_bytes if selected is historical else live_bytes
+    return _catalog_union_bytes(markets)
 
 
 def required_mlb_query_dates(*,trusted_at:datetime,histories:Iterable[Any]=(),purpose:str="schedule",lookback_days:int=MLB_CORRECTION_LOOKBACK_DAYS)->tuple[date,...]:
@@ -794,6 +806,13 @@ def publish_supporting_session_correction(*,archive:NamespaceArchive,session_id:
 
 
 def verify_supporting_session_completion(archive:NamespaceArchive,session_id:str,*,allow_legacy:bool=False,_candidate_completion:Mapping[str,Any]|None=None)->Mapping[str,Any]:
+    verify=lambda: _verify_supporting_session_completion(archive,session_id,allow_legacy=allow_legacy,_candidate_completion=_candidate_completion)
+    memo=getattr(archive,"memoized_supporting_verification",None)
+    if memo is None or _candidate_completion is not None:return verify()
+    return memo(("completion",session_id,allow_legacy),verify)
+
+
+def _verify_supporting_session_completion(archive:NamespaceArchive,session_id:str,*,allow_legacy:bool=False,_candidate_completion:Mapping[str,Any]|None=None)->Mapping[str,Any]:
     """Fully verify the sole manifest-last authority for one supporting session."""
     entries=tuple(archive.entries());by_id={entry["manifest_entry_id"]:entry for entry in entries};normalized=[]
     for entry in entries:
@@ -854,7 +873,7 @@ def verify_supporting_session_completion(archive:NamespaceArchive,session_id:str
     if cutoff!=reported_cutoff or _archived_datetime(kalshi.get("retrospective_cutoff_at"),"Kalshi cutoff")!=cutoff:raise OperationsError("supporting-session-conflict","cutoff timestamps conflict")
     descriptors=tuple({key:page[key] for key in ("manifest_entry_id","partition","partition_position","request_identity","endpoint","raw_sha256") if key in page} for page in kalshi.get("pages",()))
     if completion.get("catalog_pages")!=list(descriptors):raise OperationsError("supporting-session-conflict","completion catalog page descriptors conflict")
-    if _canonical_json_digest(mlb_union)!=completion.get("mlb_union_sha256") or _canonical_json_digest(kalshi_union)!=completion.get("kalshi_union_sha256"):raise OperationsError("supporting-session-conflict","completion union hashes conflict")
+    if hashlib.sha256(mlb_union).hexdigest()!=completion.get("mlb_union_sha256") or hashlib.sha256(kalshi_union).hexdigest()!=completion.get("kalshi_union_sha256"):raise OperationsError("supporting-session-conflict","completion union hashes conflict")
     expected_contracts=tuple(sorted(hashlib.sha256(payload.encode()).hexdigest() for payload in mlb_contracts+kalshi_contracts))
     if completion.get("contract_sha256s")!=list(expected_contracts):raise OperationsError("supporting-session-conflict","completion contract digests conflict")
     session_pages=tuple((entry,value) for entry,value in normalized if value.get("record_kind")=="pr17c2-supporting-session-page" and value.get("session_id")==session_id)
@@ -870,6 +889,12 @@ def verify_supporting_session_completion(archive:NamespaceArchive,session_id:str
 
 
 def verify_supporting_session_correction(archive:NamespaceArchive,session_id:str)->Mapping[str,Any]:
+    verify=lambda: _verify_supporting_session_correction(archive,session_id)
+    memo=getattr(archive,"memoized_supporting_verification",None)
+    return verify() if memo is None else memo(("correction",session_id),verify)
+
+
+def _verify_supporting_session_correction(archive:NamespaceArchive,session_id:str)->Mapping[str,Any]:
     """Verify one unbranched correction and its immutable predecessor lineage."""
     entries=tuple(archive.entries());by_id={entry["manifest_entry_id"]:entry for entry in entries};values=[]
     for entry in entries:
@@ -896,7 +921,7 @@ def verify_supporting_session_correction(archive:NamespaceArchive,session_id:str
     for field in ("requested_date_window","command_started_at","provider_calls","cutoff_manifest_entry_id","cutoff_raw_sha256","cutoff_at"):
         if correction.get(field)!=root_value.get(field):raise OperationsError("supporting-session-correction-conflict",f"correction changes preserved {field}")
     descriptors=tuple({key:page[key] for key in ("manifest_entry_id","partition","partition_position","request_identity","endpoint","raw_sha256") if key in page} for page in kalshi["pages"])
-    if correction.get("catalog_pages")!=list(descriptors) or correction.get("mlb_union_sha256")!=_canonical_json_digest(mlb_union) or correction.get("kalshi_union_sha256")!=_canonical_json_digest(kalshi_union):raise OperationsError("supporting-session-correction-conflict","corrected pages or unions conflict")
+    if correction.get("catalog_pages")!=list(descriptors) or correction.get("mlb_union_sha256")!=hashlib.sha256(mlb_union).hexdigest() or correction.get("kalshi_union_sha256")!=hashlib.sha256(kalshi_union).hexdigest():raise OperationsError("supporting-session-correction-conflict","corrected pages or unions conflict")
     expected_contracts=tuple(sorted(hashlib.sha256(payload.encode()).hexdigest() for payload in mlb_contracts+kalshi_contracts))
     if correction.get("contract_sha256s")!=list(expected_contracts) or correction.get("union_rule")!=expected_union or correction.get("reconciliation_rule")!="kalshi-historical-cutoff-settlement-ts-1":raise OperationsError("supporting-session-correction-conflict","corrected contracts or rules conflict")
     return {"session_id":session_id,"completion_manifest_id":correction_entry["manifest_entry_id"],"predecessor_completion_manifest_id":root_entry["manifest_entry_id"],"mlb_manifest_id":mlb_entry["manifest_entry_id"],"kalshi_manifest_id":kalshi_entry["manifest_entry_id"],"provider_calls":0,"contracts":len(mlb_contracts)+len(kalshi_contracts),"derivation_rule":correction_derivation,"correction_reason":APPROVED_SUPPORTING_CORRECTION_REASON}
@@ -976,6 +1001,30 @@ def complete_supporting_session_from_archive(*,archive:NamespaceArchive,session_
 
 
 def verify_acquisition_bundle(archive:NamespaceArchive,value:Mapping[str,Any],*,include_union:bool=False)->Any:
+    memo=getattr(archive,"memoized_supporting_verification",None)
+    if memo is None:return _verify_acquisition_bundle(archive,value,include_union=include_union)
+    # Keep the exact parsed object alive with the result: an object-id key must
+    # never alias a later temporary candidate. Stored unions are verified here,
+    # never trusted from the projection, and contract derivation is not cached.
+    _,result=memo(("acquisition",id(value)),lambda: (value,_verify_acquisition_bundle(archive,value,include_union=True)))
+    return result if include_union else result[1]
+
+
+def _verified_catalog_union(archive, pages, cutoff=None):
+    """Memo key includes every merger input, including exact raw page bytes.
+
+    Page markets are decoded directly from these raw bytes immediately above
+    this call. Per-envelope page ownership and chronology are still verified.
+    """
+    verify=lambda: merge_kalshi_catalog_pages(pages) if cutoff is None else merge_retrospective_catalog_pages(pages,cutoff)
+    memo=getattr(archive,"memoized_supporting_verification",None)
+    if memo is None:return verify()
+    key=("catalog-union",cutoff,tuple((p.position,p.request_cursor,p.next_cursor,p.raw,
+                                     p.partition,p.partition_position) for p in pages))
+    return memo(key,verify)
+
+
+def _verify_acquisition_bundle(archive:NamespaceArchive,value:Mapping[str,Any],*,include_union:bool=False)->Any:
     """Replay gate for page completeness, lineage, raw bytes and union identity."""
     if value.get("schema_version")!="1" or value.get("union_rule") not in SUPPORTED_ACQUISITION_UNION_RULES:raise OperationsError("acquisition-incompatible","unknown acquisition envelope")
     provider=value.get("provider");pages=value.get("pages");group=value.get("acquisition_id")
@@ -1038,8 +1087,8 @@ def verify_acquisition_bundle(archive:NamespaceArchive,value:Mapping[str,Any],*,
                 try:reported=datetime.fromisoformat(json.loads(cutoff_raw)["market_settled_ts"].replace("Z","+00:00"))
                 except (KeyError,TypeError,ValueError,json.JSONDecodeError) as exc:raise OperationsError("acquisition-page-conflict","retrospective cutoff raw response is malformed") from exc
                 if reported!=cutoff:raise OperationsError("acquisition-page-conflict","retrospective cutoff response conflicts with envelope")
-            derived=merge_retrospective_catalog_pages(typed_pages,cutoff)
-        else:derived=merge_kalshi_catalog_pages(typed_pages)
+            derived=_verified_catalog_union(archive,typed_pages,cutoff)
+        else:derived=_verified_catalog_union(archive,typed_pages)
     else:
         for page,raw in zip(pages,raw_pages):
             payload=json.loads(raw);reported={str(x.get("date")) for x in payload.get("dates",()) if isinstance(x,dict)}
@@ -1048,7 +1097,9 @@ def verify_acquisition_bundle(archive:NamespaceArchive,value:Mapping[str,Any],*,
     if value.get("family") in {"reconcile-prospective-schedule","reconcile-prospective-schedule-receipt"}:
         from forecast_standalone_schedule_reconciliation import verify_schedule_bundle
         verify_schedule_bundle(archive,value,raw_pages)
-    if _canonical_json_digest(derived)!=value.get("normalized_union_sha256"):raise OperationsError("acquisition-union-conflict","normalized union is inconsistent with pages")
+    # All branches above return canonical union bytes; hashing those exact bytes
+    # is equivalent to reparsing and canonicalizing them again.
+    if hashlib.sha256(derived).hexdigest()!=value.get("normalized_union_sha256"):raise OperationsError("acquisition-union-conflict","normalized union is inconsistent with pages")
     contracts=value.get("contracts")
     if not isinstance(contracts,list):raise OperationsError("acquisition-incomplete","typed contracts are absent")
     return (derived,tuple(contracts)) if include_union else tuple(contracts)

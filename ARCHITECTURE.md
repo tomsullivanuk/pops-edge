@@ -1867,3 +1867,21 @@ Builder version 2 requires explicit offline rebuild for older projections; that
 rebuild performs full archive reconciliation outside the mutation lock, refuses
 orphans or unresolved markers, and never clears or repairs them. This ensures
 pre-marker partial writes cannot be bypassed by upgrading the collector.
+
+Prospective source replay reuses successful supporting completion, correction,
+and acquisition verification only inside one immutable replay invocation. The
+memo is cleared on success or failure; ordinary archive writers and full replay
+without that source view retain independent verification. Acquisition memo keys
+retain the exact parsed object, and catalog-union keys include exact page bytes,
+positions, cursors, partitions and cutoff. Each envelope still verifies its own
+page ownership, chronology, completeness and union identity. Boundary-effective
+contract derivation and scientific graph decisions are never memoized.
+
+Catalog merging retains each market's already-canonical bytes through partition
+selection and writes the same sorted canonical union envelope without recursively
+serializing those markets again. Verified canonical unions are hashed directly;
+provider-supplied material still undergoes strict canonicalization. Every later
+invocation freshly verifies all selected immutable source bytes, retains the same
+supporting closure, and uses the unchanged 20-second, 8,192-object and 256-MiB
+bounds. This local performance correction creates no persisted cache, scientific
+contract, recovery authority, or deployment activation.

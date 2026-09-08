@@ -56,6 +56,7 @@ class ProspectiveSourceBoundary(NamespaceArchive):
         self._bytes: dict[tuple[str, str], bytes] = {}
         self._json: dict[tuple[str, str], Any] = {}
         self._integrity = None
+        self._supporting_verification = None
         self._signatures = {}
         self._started = time.monotonic()
         self.source_bytes = 0
@@ -92,6 +93,16 @@ class ProspectiveSourceBoundary(NamespaceArchive):
             self._json[key] = json.loads(self.read_verified(family, identity))
         return self._json[key]
 
+    def memoized_supporting_verification(self, key, verify):
+        """Reuse successful canonical checks only during one immutable replay."""
+        if self._supporting_verification is None:
+            return verify()
+        if time.monotonic() - self._started > 20:
+            raise OperationsError("projection-budget-exceeded", "source verification exceeded preparation budget")
+        if key not in self._supporting_verification:
+            self._supporting_verification[key] = verify()
+        return self._supporting_verification[key]
+
     def prospective_entries(self):
         if self._integrity is None:
             self._integrity = reconcile_archive(self, _entries=self._entries)
@@ -109,6 +120,7 @@ def capture_boundary(archive):
 
 
 def replay_boundary(boundary, at):
+    boundary._supporting_verification = {}
     try:
         if any(datetime.fromisoformat(entry["acquired_at"]["datetime_utc"]) > at for entry in boundary.entries()):
             raise OperationsError("projection-invalid", "required publication is future-effective")
@@ -117,6 +129,8 @@ def replay_boundary(boundary, at):
         raise
     except (OSError, ValueError) as exc:
         raise OperationsError("projection-invalid", "required source cannot be verified") from exc
+    finally:
+        boundary._supporting_verification = None
 
 
 def projection_path(archive):
