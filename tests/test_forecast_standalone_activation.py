@@ -259,7 +259,7 @@ class ActivationTests(unittest.TestCase):
             state.append(OperationalHeartbeat("1","capture-prospective",at,at,"success",1,1,1,None));state.append(OperationalHeartbeat("1","sync-secondary",at,at,"success",0,0,0,None))
             for command in ("refresh-supporting","reconcile-outcomes","maintain"):state.append(OperationalHeartbeat("1",command,at,at,"success",0,0,0,None))
             populated=health_from_operational_state(archive=archive,state=state,trusted_at=at,free_disk=lambda _:1_000_000_000)
-            self.assertTrue(populated.ready);self.assertEqual(populated.provider_calls,1)
+            self.assertFalse(populated.ready);self.assertIn("prospective-projection:absent",populated.recent_failures);self.assertEqual(populated.provider_calls,1)
             self.assertFalse(health_from_operational_state(archive=archive,state=state,trusted_at=at,free_disk=lambda _:1).ready)
             state.append(OperationalHeartbeat("1","health-report",at+timedelta(days=2),at+timedelta(days=2),"success",0,0,0,None))
             self.assertFalse(health_from_operational_state(archive=archive,state=state,trusted_at=at+timedelta(days=2),free_disk=lambda _:1_000_000_000).ready)
@@ -285,27 +285,23 @@ class ActivationTests(unittest.TestCase):
             material={"activation_at":"2026-09-05T00:00:00-04:00","config_id":"render","fixture_response_path":str(fixture),"lock_timeout_seconds":1,"log_root":str(root/"logs"),"mode":"activated","namespace":"render","primary_root":str(root/"activated/render/primary"),"provider_base_url":"https://fixture.invalid","research_protocol_ids":[protocol.standalone_probability_source_protocol_id],"retry_policy":{"maximum_attempts":1,"request_timeout_seconds":1,"total_timeout_seconds":1,"backoff_seconds":[],"maximum_retry_after_seconds":0},"schedule_parameters":{"fixture_trusted_at":trusted},"secondary_root":str(root/"activated/render/secondary")}
             config_path.write_text(json.dumps(material));config=DeploymentConfig.from_json(config_path);execute("initialize-activation",config,clock=lambda:datetime(2026,8,28,tzinfo=timezone.utc));paths=render_launchd_jobs(repository_root=repo,python_executable=Path(__import__('sys').executable),config_path=config_path,output_root=root/"rendered")
             self.assertEqual(len(paths),6)
-            for path in paths:
+            for job_number,path in enumerate(paths):
+                material["schedule_parameters"]["fixture_trusted_at"]=(datetime.fromisoformat(trusted)+timedelta(seconds=job_number)).isoformat()
+                config_path.write_text(json.dumps(material))
                 value=plistlib.loads(Path(path).read_bytes());self.assertTrue(all(Path(x).is_absolute() for x in value["ProgramArguments"] if "/" in x));self.assertEqual(value["ProgramArguments"][3],str(config_path.resolve()))
-                completed=subprocess.run(value["ProgramArguments"],cwd="/",capture_output=True,text=True,check=False)
+                arguments=value["ProgramArguments"]
+                arguments[arguments.index("--trusted-at")+1]=material["schedule_parameters"]["fixture_trusted_at"]
+                completed=subprocess.run(arguments,cwd="/",capture_output=True,text=True,check=False)
                 self.assertEqual(completed.returncode,0,(completed.stdout,completed.stderr));self.assertNotIn("fixture-private",completed.stdout+completed.stderr)
             with self.assertRaisesRegex(OperationsError,"absolute"):render_launchd_jobs(repository_root=Path("."),python_executable=Path(__import__('sys').executable),config_path=config_path,output_root=root/"other")
 
-    def test_activation_precheck_does_not_freeze_downstream_clock(self):
+    def test_activation_delegates_one_resolution_and_preserves_clock(self):
         class Archive: config=type("Config",(),{"identity":"id","namespace":"n"})()
-        values=iter((APPROVED_ACTIVATION_AT,APPROVED_ACTIVATION_AT,APPROVED_ACTIVATION_AT+timedelta(seconds=2),APPROVED_ACTIVATION_AT+timedelta(seconds=5)))
-        seen=[]
-        def downstream(*,archive,transport_factory,clock,observation_adapter=None):
-            seen.extend((clock(),clock(),clock()))
-            from forecast_standalone_operations import ProspectiveDiscoveryResult
-            return ProspectiveDiscoveryResult("id","n",seen[0],(),0,(),(),"no-due-work")
-        with patch("forecast_standalone_activation.resolve_activated_authority",return_value=(object(),object())),patch("forecast_standalone_activation.discover_and_capture_prospective",side_effect=downstream):
-            invoke_activated_prospective(archive=Archive(),transport_factory=lambda *a:None,clock=lambda:next(values))
-        self.assertEqual(seen,[APPROVED_ACTIVATION_AT,APPROVED_ACTIVATION_AT+timedelta(seconds=2),APPROVED_ACTIVATION_AT+timedelta(seconds=5)])
-        early=iter((APPROVED_ACTIVATION_AT-timedelta(microseconds=1),APPROVED_ACTIVATION_AT+timedelta(seconds=1)))
-        with patch("forecast_standalone_activation.resolve_activated_authority",return_value=(object(),object())),patch("forecast_standalone_activation.discover_and_capture_prospective") as capture:
-            result=invoke_activated_prospective(archive=Archive(),transport_factory=lambda *a:None,clock=lambda:next(early))
-        self.assertEqual(result.provider_request_count,0);capture.assert_not_called()
+        clock=lambda:APPROVED_ACTIVATION_AT
+        with patch("forecast_standalone_activation.resolve_activated_authority") as replay, patch("forecast_standalone_activation.discover_and_capture_prospective") as capture:
+            invoke_activated_prospective(archive=Archive(),transport_factory=lambda *a:None,clock=clock)
+        replay.assert_not_called()
+        self.assertIs(capture.call_args.kwargs["clock"],clock)
 
     def test_canonical_activation_initialization_is_idempotent(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -1,0 +1,436 @@
+"""Bounded, source-only discovery for prospective Operations.
+
+The on-disk projection contains source identities, never scientific values.
+Every reader checks its completeness against a stable manifest boundary and
+reconstructs authority using the ordinary acquisition and graph validators.
+"""
+from __future__ import annotations
+
+import json
+import fcntl
+import os
+import time
+import uuid
+from contextlib import contextmanager
+from datetime import datetime
+from typing import Any
+
+from forecast_standalone_operations import (
+    NamespaceArchive, OperationsError, canonical_bytes, reconcile_archive,
+    replay_pr17_archive, sha256_bytes, ManifestEntry,
+)
+
+# Only these closed command families are independent of supporting / prospective
+# authority. Supporting sessions (including retrospective ones) are deliberately
+# retained: they can provide cross-activation predecessors.
+INDEPENDENT_COMMANDS = frozenset({
+    "acquire-retrospective", "acquire-retrospective-cutoff",
+    "publish-retrospective-analysis", "reconcile-outcomes-failure",
+})
+MAX_SOURCE_BYTES = 256 * 1024 * 1024
+MAX_SOURCE_OBJECTS = 8192
+MAX_PROJECTION_BYTES = 2 * 1024 * 1024
+SCHEMA_VERSION = "1"
+BUILDER_VERSION = "canonical-supporting-closure-2"
+
+
+def relevant_entries(entries):
+    def independent(entry):
+        command = entry["command"]
+        if command == "acquire-retrospective-cutoff":
+            return (entry["design_authority"] == "supporting" and
+                    entry.get("provider_id") == "kalshi" and entry.get("protocol_id") is None)
+        if command == "reconcile-outcomes-failure":
+            return entry.get("normalized_object_id") is None
+        return (command in INDEPENDENT_COMMANDS and
+                entry["design_authority"] == "retrospective")
+    return tuple(entry for entry in entries if not independent(entry))
+
+
+class ProspectiveSourceBoundary(NamespaceArchive):
+    """Read-only immutable source view; verified bytes live for one invocation."""
+
+    def __init__(self, archive, entries):
+        super().__init__(archive.config)
+        self._entries = tuple(entries)
+        self._bytes: dict[tuple[str, str], bytes] = {}
+        self._json: dict[tuple[str, str], Any] = {}
+        self._integrity = None
+        self._signatures = {}
+        self._started = time.monotonic()
+        self.source_bytes = 0
+
+    def _ensure_mutable(self):
+        raise OperationsError("projection-read-only", "source boundary cannot publish")
+
+    def entries(self):
+        return self._entries
+
+    def read_verified(self, family, identity):
+        key = (family, identity.split(":")[-1])
+        if time.monotonic() - self._started > 20:
+            raise OperationsError("projection-budget-exceeded", "source verification exceeded preparation budget")
+        if key not in self._bytes:
+            path = self._path(family, identity)
+            if (len(self._bytes) >= MAX_SOURCE_OBJECTS or
+                    self.source_bytes + path.stat().st_size > MAX_SOURCE_BYTES):
+                raise OperationsError("projection-budget-exceeded", "explicit rebuild/design inspection required")
+            before = _signature(path)
+            body = super().read_verified(family, identity)
+            if before != _signature(path):
+                raise OperationsError("projection-invalid", "source changed during verification")
+            self._signatures[key] = before
+            self.source_bytes += len(body)
+            self._bytes[key] = body
+        return self._bytes[key]
+
+    def read_json_verified(self, family, identity):
+        if time.monotonic() - self._started > 20:
+            raise OperationsError("projection-budget-exceeded", "source verification exceeded preparation budget")
+        key = (family, identity.split(":")[-1])
+        if key not in self._json:
+            self._json[key] = json.loads(self.read_verified(family, identity))
+        return self._json[key]
+
+    def prospective_entries(self):
+        if self._integrity is None:
+            self._integrity = reconcile_archive(self, _entries=self._entries)
+        if self._integrity.blocking:
+            raise OperationsError("projection-invalid", "required source acquisition is incomplete or corrupt")
+        return self._entries
+
+
+def capture_boundary(archive):
+    with archive.mutation_lock():
+        entries = relevant_entries(archive.entries())
+    if len(entries) > MAX_SOURCE_OBJECTS:
+        raise OperationsError("projection-budget-exceeded", "too many required source manifests")
+    return ProspectiveSourceBoundary(archive, entries)
+
+
+def replay_boundary(boundary, at):
+    try:
+        if any(datetime.fromisoformat(entry["acquired_at"]["datetime_utc"]) > at for entry in boundary.entries()):
+            raise OperationsError("projection-invalid", "required publication is future-effective")
+        return replay_pr17_archive(boundary, analysis_boundary=at)
+    except OperationsError:
+        raise
+    except (OSError, ValueError) as exc:
+        raise OperationsError("projection-invalid", "required source cannot be verified") from exc
+
+
+def projection_path(archive):
+    return archive.root / "prospective-projection.json"
+
+
+def _material(archive, entries):
+    return {"schema_version": SCHEMA_VERSION, "builder_version": BUILDER_VERSION,
+            "namespace": archive.config.namespace, "mode": archive.config.mode.value,
+            "source_manifest_ids": sorted(x["manifest_entry_id"] for x in entries)}
+
+
+def _read(archive):
+    try:
+        with projection_path(archive).open("rb") as handle:
+            body = handle.read(MAX_PROJECTION_BYTES + 1)
+        if len(body) > MAX_PROJECTION_BYTES:
+            raise ValueError("oversized projection")
+        envelope = json.loads(body)
+    except FileNotFoundError:
+        raise OperationsError("projection-absent", "run rebuild-prospective-projection") from None
+    except (ValueError, OSError):
+        raise OperationsError("projection-invalid", "projection cannot be decoded") from None
+    try:
+        value = envelope["projection"]
+        if (set(envelope) != {"projection", "sha256"} or
+                sha256_bytes(canonical_bytes(value)) != envelope["sha256"] or
+                set(value) != set(_material(archive, ())) or
+                value["schema_version"] != SCHEMA_VERSION or
+                value["builder_version"] != BUILDER_VERSION or
+                value["namespace"] != archive.config.namespace or
+                value["mode"] != archive.config.mode.value or
+                not isinstance(value["source_manifest_ids"], list) or
+                value["source_manifest_ids"] != sorted(set(value["source_manifest_ids"]))):
+            raise ValueError
+    except (KeyError, TypeError, ValueError):
+        raise OperationsError("projection-invalid", "projection content or version is invalid") from None
+    return value
+
+
+def assert_boundary(archive, boundary):
+    """Caller owns the mutation lock. No scientific/object replay occurs here."""
+    entries = relevant_entries(archive.entries())
+    if _material(archive, entries) != _material(archive, boundary.entries()):
+        raise OperationsError("projection-stale", "relevant publication changed during preparation")
+    # Detect source changes after their verified reads, without rehashing under
+    # the lock. The next invocation always reads and hashes the source anew.
+    for key, signature in boundary._signatures.items():
+        if _signature(boundary._path(*key)) != signature:
+            raise OperationsError("projection-invalid", "required source changed during preparation")
+
+
+def note_capture(archive, boundary, entry):
+    """Extend only the owning collector's boundary with its published result.
+
+    Provider latency is not part of the source-reconstruction budget and must
+    never prevent preservation of an actual call's immutable disposition.
+    """
+    boundary._entries += (json.loads(canonical_bytes(entry)),)
+    identities = [("normalized", entry.normalized_object_id)]
+    if entry.raw_object_sha256:
+        identities.append(("raw", entry.raw_object_sha256))
+    for family, identity in identities:
+        path = archive._path(family, identity)
+        before = _signature(path)
+        archive.read_verified(family, identity)
+        if before != _signature(path):
+            raise OperationsError("projection-invalid", "published capture source changed")
+        boundary._signatures[(family, identity.split(":")[-1])] = before
+
+
+def _signature(path):
+    value = path.stat()
+    return value.st_dev, value.st_ino, value.st_size, value.st_mtime_ns, value.st_ctime_ns
+
+
+def _publish(archive, boundary):
+    value = _material(archive, boundary.entries())
+    body = canonical_bytes({"projection": value, "sha256": sha256_bytes(canonical_bytes(value))})
+    temporary = archive.root / f".prospective-{uuid.uuid4().hex}.partial"
+    try:
+        with temporary.open("xb") as handle:
+            handle.write(body)
+            handle.flush()
+            os.fsync(handle.fileno())
+        with archive.mutation_lock():
+            assert_boundary(archive, boundary)
+            os.replace(temporary, projection_path(archive))
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def rebuild_projection(archive, at):
+    integrity = reconcile_archive(archive)
+    if not integrity.healthy:
+        raise OperationsError("capture-persistence-unsafe", "offline rebuild requires a healthy archive")
+    boundary = capture_boundary(archive)
+    if check_capture_persistence(archive, boundary.entries()):
+        raise OperationsError("prospective-publication-ambiguous", "rebuild cannot clear interrupted capture")
+    state = replay_boundary(boundary, at)
+    _publish(archive, boundary)
+    return state
+
+
+def load_projection(archive, at):
+    recorded = _read(archive)
+    boundary = capture_boundary(archive)
+    boundary.blocked_opportunities = check_capture_persistence(archive, boundary.entries())
+    current = _material(archive, boundary.entries())
+    # A removed source cannot be treated as ordinary append-only refresh.
+    if not set(recorded["source_manifest_ids"]) <= set(current["source_manifest_ids"]):
+        raise OperationsError("projection-invalid", "required source manifest disappeared")
+    state = replay_boundary(boundary, at)
+    if recorded != current:
+        _publish(archive, boundary)
+    return boundary, state
+
+
+def projection_status(archive, at):
+    try:
+        recorded = _read(archive)
+        boundary = capture_boundary(archive)
+        if check_capture_persistence(archive, boundary.entries()):return "invalid"
+        if recorded != _material(archive, boundary.entries()):
+            return "stale"
+        replay_boundary(boundary, at)
+        return "current"
+    except OperationsError as exc:
+        return "absent" if exc.code == "projection-absent" else "invalid"
+    except (OSError, ValueError):
+        return "invalid"
+
+
+@contextmanager
+def collector_lock(archive):
+    """Serialize collectors only; supporting publication remains independent."""
+    archive._ensure_mutable()
+    with (archive.root / "prospective-collector.lock").open("a+b") as handle:
+        try:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise OperationsError("prospective-collector-busy", "another collector owns capture") from None
+        try:
+            yield
+        finally:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+
+
+def _sync_directory(path):
+    descriptor = os.open(path, os.O_RDONLY)
+    try:
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+
+
+def _sync_object_directory(path):
+    _sync_directory(path.parent)
+    _sync_directory(path.parent.parent)
+
+
+def _read_transaction(path):
+    try:
+        with path.open("rb") as handle:
+            body = handle.read(8193)
+        if len(body) > 8192: raise ValueError
+        envelope = json.loads(body)
+        value = envelope["transaction"]
+        if (set(envelope) != {"transaction", "sha256"} or not isinstance(value, dict) or
+                value.get("schema_version") != "1" or
+                envelope["sha256"] != sha256_bytes(canonical_bytes(value))):
+            raise ValueError
+        return value
+    except (OSError, ValueError, TypeError, KeyError) as exc:
+        raise OperationsError("prospective-publication-ambiguous", "transaction marker is invalid") from exc
+
+
+def _write_transaction(archive, path, value):
+    """Caller holds mutation lock. The fence is durable before transport/writes."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.parent / (".transaction-" + uuid.uuid4().hex)
+    try:
+        with temporary.open("xb") as handle:
+            handle.write(canonical_bytes({"transaction": value, "sha256": sha256_bytes(canonical_bytes(value))}))
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, path)
+        _sync_directory(path.parent)
+        _sync_directory(archive.root)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def check_capture_persistence(archive, entries):
+    """Bounded metadata-only check; scientific verification still follows it.
+
+    Unresolved request or publication ambiguity stops capture, including no-call
+    dispositions: an unknown prior request must not be relabeled as a miss.
+    """
+    by_id = {entry["manifest_entry_id"]: entry for entry in entries}
+    blocked = set()
+    root = archive.root / "prospective-publications"
+    for number, path in enumerate(root.glob("*.json")):
+        if number >= MAX_SOURCE_OBJECTS:
+            raise OperationsError("projection-budget-exceeded", "too many prospective publication intents")
+        value = _read_transaction(path)
+        expected = {"schema_version", "kind", "namespace", "mode", "invocation_id", "manifest_entry_id", "opportunity_id"}
+        if (set(value) != expected or value["kind"] != "prospective-publication" or
+                value["namespace"] != archive.config.namespace or value["mode"] != archive.config.mode.value or
+                any(not isinstance(value[k], str) or not value[k] for k in ("invocation_id", "manifest_entry_id", "opportunity_id")) or path.stem != sha256_bytes(value["invocation_id"].encode())):
+            raise OperationsError("prospective-publication-ambiguous", "publication intent identity is invalid")
+        entry = by_id.get(value["manifest_entry_id"])
+        if entry is None or entry["command"] != "capture-prospective" or entry["invocation_id"] != value["invocation_id"] or f"opportunity:{value['opportunity_id']}" not in entry["diagnostics"]:
+            blocked.add(value["opportunity_id"])
+    for number, path in enumerate((archive.root / "prospective-requests").glob("*.json")):
+        if number >= MAX_SOURCE_OBJECTS:
+            raise OperationsError("projection-budget-exceeded", "too many prospective request fences")
+        value = _read_transaction(path)
+        expected = {"schema_version", "kind", "namespace", "mode", "nonce", "protocol_id", "opportunity_id", "state", "manifest_entry_id"}
+        if (set(value) != expected or value["kind"] != "prospective-request" or
+                value["namespace"] != archive.config.namespace or value["mode"] != archive.config.mode.value or
+                any(not isinstance(value[k], str) or not value[k] for k in ("nonce", "protocol_id", "opportunity_id", "state")) or
+                (value["manifest_entry_id"] is not None and not isinstance(value["manifest_entry_id"], str)) or
+                path != _request_path(archive, value["protocol_id"], value["opportunity_id"])):
+            raise OperationsError("prospective-publication-ambiguous", "request fence identity is invalid")
+        if value["state"] == "no-transport" and value["manifest_entry_id"] is None:
+            continue
+        entry = by_id.get(value["manifest_entry_id"])
+        if (value["state"] != "publication" or entry is None or entry["command"] != "capture-prospective" or
+                entry["protocol_id"] != value["protocol_id"] or
+                f"opportunity:{value['opportunity_id']}" not in entry["diagnostics"]):
+            blocked.add(value["opportunity_id"])
+    return frozenset(blocked)
+
+
+def _request_path(archive, protocol_id, opportunity_id):
+    digest = sha256_bytes(canonical_bytes((protocol_id, opportunity_id)))
+    return archive.root / "prospective-requests" / (digest + ".json")
+
+
+def begin_request(archive, protocol_id, opportunity_id):
+    """Called under both collector ownership and the short mutation lock."""
+    if opportunity_id in check_capture_persistence(archive, archive.entries()):
+        raise OperationsError("prospective-publication-ambiguous", "prior request cannot be repeated")
+    value = {"schema_version": "1", "kind": "prospective-request", "namespace": archive.config.namespace,
+             "mode": archive.config.mode.value, "nonce": uuid.uuid4().hex, "protocol_id": protocol_id,
+             "opportunity_id": opportunity_id, "state": "pending", "manifest_entry_id": None}
+    _write_transaction(archive, _request_path(archive, protocol_id, opportunity_id), value)
+    return value
+
+
+def _finish_request(archive, fence, manifest_id):
+    path = _request_path(archive, fence["protocol_id"], fence["opportunity_id"])
+    if _read_transaction(path) != fence:
+        raise OperationsError("prospective-publication-ambiguous", "request ownership changed")
+    _write_transaction(archive, path, {**fence, "state": "publication" if manifest_id else "no-transport",
+                                      "manifest_entry_id": manifest_id})
+
+
+def cancel_unissued_request(archive, fence):
+    """Only the live owner knows that transport has not yet been entered."""
+    with archive.mutation_lock():
+        _finish_request(archive, fence, None)
+
+
+def publish_capture(archive, *, normalized, entry_values, raw_body=None, request_fence=None):
+    """Manifest-identical bounded publication after canonical capture validation.
+
+    A durable intent precedes object writes. An interrupted intent cannot be
+    retried or adopted; only an exact completed manifest proves idempotence.
+    """
+    opportunities = tuple(x.removeprefix("opportunity:") for x in entry_values["diagnostics"] if x.startswith("opportunity:"))
+    if len(opportunities) != 1 or entry_values["command"] != "capture-prospective":
+        raise OperationsError("capture-persistence-invalid", "capture publication requires one opportunity")
+    opportunity_id = opportunities[0]
+    body = canonical_bytes(normalized)
+    digest = sha256_bytes(body)
+    raw_digest = sha256_bytes(raw_body) if raw_body is not None else None
+    entry = ManifestEntry.create(**entry_values, namespace=archive.config.namespace,
+                                 operating_mode=archive.config.mode,
+                                 raw_object_sha256=raw_digest,
+                                 normalized_object_id=f"normalized:{digest}",
+                                 normalized_schema_version=str(normalized["schema_version"]))
+    with archive.mutation_lock():
+        prior = tuple(x for x in archive.entries() if x["invocation_id"] == entry.invocation_id)
+        if any(x["manifest_entry_id"] != entry.manifest_entry_id for x in prior):
+            raise OperationsError("immutable-conflict", "prospective invocation has conflicting content")
+        intent = {"schema_version": "1", "kind": "prospective-publication", "namespace": archive.config.namespace,
+                  "mode": archive.config.mode.value, "invocation_id": entry.invocation_id,
+                  "manifest_entry_id": entry.manifest_entry_id, "opportunity_id": opportunity_id}
+        path = archive.root / "prospective-publications" / (sha256_bytes(entry.invocation_id.encode()) + ".json")
+        if path.exists():
+            if _read_transaction(path) != intent:
+                raise OperationsError("immutable-conflict", "prospective publication intent conflicts")
+            if not prior:
+                raise OperationsError("prospective-publication-ambiguous", "publication interrupted before manifest")
+        elif not prior:
+            _write_transaction(archive, path, intent)
+        if prior:
+            if archive._path("manifest", entry.manifest_entry_id).read_bytes() != canonical_bytes(entry):
+                raise OperationsError("immutable-conflict", "completed prospective manifest conflicts")
+            if raw_body is not None: archive.read_verified("raw", raw_digest)
+            archive.read_verified("normalized", digest)
+            return entry
+        if request_fence is not None:
+            _finish_request(archive, request_fence, entry.manifest_entry_id)
+        if raw_body is not None:
+            path = archive._path("raw", raw_digest)
+            archive._publish(path, raw_body)
+            _sync_object_directory(path)
+        path = archive._path("normalized", digest)
+        archive._publish(path, body)
+        _sync_object_directory(path)
+        path = archive._path("manifest", entry.manifest_entry_id)
+        archive._publish(path, canonical_bytes(entry))
+        _sync_object_directory(path)
+    return entry

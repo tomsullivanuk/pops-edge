@@ -115,6 +115,8 @@ def initialize_activation(archive:NamespaceArchive,at:datetime)->tuple[str,str]:
         for contract in contracts:
             if contract in existing:continue
             normalized=pr17_contract_bundle(contract);raw=canonical_bytes(normalized);design=DesignAuthority.PROSPECTIVE if contract is protocol else DesignAuthority.RETROSPECTIVE if contract is retrospective else DesignAuthority.SUPPORTING;values=_entry_values(archive=archive,command="initialize-activation",request_id=request_identity({"contract_type":type(contract).__name__,"contract_sha256":hashlib.sha256(contract.to_json().encode()).hexdigest()}),invoked_at=at,endpoint="local://canonical-pr17c1-authority",disposition=Disposition.SUCCESS,protocol_id=getattr(contract,"standalone_probability_source_protocol_id",None),design=design,diagnostics=("canonical reviewed PR17C authority",),provider_effective_at=getattr(contract,"decision_effective_at",None));values["provider_id"]="canonical-pr17c-authority";archive._commit_locked(raw_body=raw,normalized=normalized,entry_values=values)
+    from forecast_prospective_projection import rebuild_projection
+    rebuild_projection(archive,at)
     return activation.standalone_research_activation_boundary_id,protocol.standalone_probability_source_protocol_id
 
 
@@ -797,7 +799,7 @@ def verify_supporting_session_completion(archive:NamespaceArchive,session_id:str
     for entry in entries:
         identity=entry.get("normalized_object_id")
         if not identity:continue
-        try:value=json.loads(archive.read_verified("normalized",identity))
+        try:value=archive.read_json_verified("normalized",identity)
         except (UnicodeDecodeError,json.JSONDecodeError,TypeError) as exc:raise OperationsError("supporting-session-conflict","archived normalized material is malformed") from exc
         normalized.append((entry,value))
     completions=tuple((entry,value) for entry,value in normalized if value.get("record_kind")=="pr17c2-supporting-session-completion" and value.get("session_id")==session_id);corrections=tuple((entry,value) for entry,value in normalized if value.get("record_kind")=="pr17c2-supporting-session-correction" and value.get("session_id")==session_id)
@@ -872,7 +874,7 @@ def verify_supporting_session_correction(archive:NamespaceArchive,session_id:str
     entries=tuple(archive.entries());by_id={entry["manifest_entry_id"]:entry for entry in entries};values=[]
     for entry in entries:
         identity=entry.get("normalized_object_id")
-        if identity:values.append((entry,json.loads(archive.read_verified("normalized",identity))))
+        if identity:values.append((entry,archive.read_json_verified("normalized",identity)))
     roots=tuple((entry,value) for entry,value in values if value.get("record_kind")=="pr17c2-supporting-session-completion" and value.get("session_id")==session_id)
     corrections=tuple((entry,value) for entry,value in values if value.get("record_kind")=="pr17c2-supporting-session-correction" and value.get("session_id")==session_id)
     if len(roots)!=1 or len(corrections)!=1:raise OperationsError("supporting-session-correction-conflict","correction lineage is missing, duplicated, or branched")
@@ -885,7 +887,7 @@ def verify_supporting_session_correction(archive:NamespaceArchive,session_id:str
     for provider,field in (("mlb-stats-api","mlb_acquisition_manifest_id"),("kalshi","kalshi_acquisition_manifest_id")):
         entry=by_id.get(correction.get(field))
         if entry is None or not entry.get("normalized_object_id"):raise OperationsError("supporting-session-correction-conflict",f"corrected {provider} manifest is absent")
-        value=json.loads(archive.read_verified("normalized",entry["normalized_object_id"]));expected_id=f"{session_id}:{provider}{suffix}"
+        value=archive.read_json_verified("normalized",entry["normalized_object_id"]);expected_id=f"{session_id}:{provider}{suffix}"
         id_field="mlb_acquisition_id" if provider=="mlb-stats-api" else "kalshi_acquisition_id"
         if value.get("acquisition_id")!=expected_id or correction.get(id_field)!=expected_id or value.get("supporting_session_id")!=session_id or value.get("correction_reason")!=APPROVED_SUPPORTING_CORRECTION_REASON or value.get("derivation_rule")!=correction_derivation or value.get("union_rule")!=expected_union:raise OperationsError("supporting-session-correction-conflict",f"corrected {provider} identity conflicts")
         union,contracts=verify_acquisition_bundle(archive,value,include_union=True);bundles[provider]=(entry,value,union,contracts)
@@ -1004,7 +1006,7 @@ def verify_acquisition_bundle(archive:NamespaceArchive,value:Mapping[str,Any],*,
         if entry.get("provider_id")!=provider or entry.get("raw_object_sha256")!=page.get("raw_sha256") or entry.get("endpoint")!=page.get("endpoint"):raise OperationsError("acquisition-page-conflict","foreign or altered page authority")
         raw=archive.read_verified("raw",page["raw_sha256"])
         if hashlib.sha256(raw).hexdigest()!=page["raw_sha256"]:raise OperationsError("acquisition-page-conflict","page digest conflicts")
-        page_normalized=json.loads(archive.read_verified("normalized",entry["normalized_object_id"]));
+        page_normalized=archive.read_json_verified("normalized",entry["normalized_object_id"]);
         linked=page_normalized.get("acquisition_id")==group or (value.get("page_record_kind")=="pr17c2-supporting-session-page" and group.startswith(page_normalized.get("session_id","")+":"))
         if not linked or page_normalized.get("request_identity")!=page.get("request_identity") or page_normalized.get("partition")!=page.get("partition") or page_normalized.get("partition_position")!=page.get("partition_position"):raise OperationsError("acquisition-page-conflict","cross-acquisition page substitution")
         started,completed=dt(page.get("started_at")),dt(page.get("completed_at"))
@@ -1017,7 +1019,7 @@ def verify_acquisition_bundle(archive:NamespaceArchive,value:Mapping[str,Any],*,
     for entry_id,entry in entries.items():
         normalized_id=entry.get("normalized_object_id")
         if not normalized_id:continue
-        candidate=json.loads(archive.read_verified("normalized",normalized_id))
+        candidate=archive.read_json_verified("normalized",normalized_id)
         if candidate.get("record_kind")=="pr17c1-provider-page" and candidate.get("acquisition_id")==group:group_pages.add(entry_id)
         if value.get("page_record_kind")=="pr17c2-supporting-session-page" and candidate.get("record_kind")=="pr17c2-supporting-session-page" and group.startswith(candidate.get("session_id","")+":") and candidate.get("provider")==provider and candidate.get("purpose")!="historical-cutoff":group_pages.add(entry_id)
     if group_pages!=referenced:raise OperationsError("acquisition-page-conflict","acquisition has missing or unreferenced pages")
@@ -1092,13 +1094,13 @@ def reconcile_outcomes_from_raw(*,archive:NamespaceArchive|None,mlb_raw:bytes,co
     return {"changed":len(changed),"mlb_pages":len(pages),"outcome_manifest_id":acquisition["manifest_entry_id"],"disposition":"success" if changed else "unchanged"}
 
 
-def resolve_activated_authority(archive:NamespaceArchive,at:datetime)->tuple[Any,Any]:
+def resolve_activated_authority(archive:NamespaceArchive,at:datetime,*,state=None)->tuple[Any,Any]:
     """Resolve exactly one archived prospective Protocol and its approved boundary."""
     from forecast_standalone_research import StandaloneDesignTag
     if at.tzinfo is None or at.utcoffset() is None:raise OperationsError("trusted-clock-invalid","trusted time must be timezone-aware")
     if archive.config.mode is not OperatingMode.ACTIVATED or archive.config.activation_at!=APPROVED_ACTIVATION_AT:raise OperationsError("activation-authority-invalid","activated namespace configuration is absent")
     from forecast_standalone_operations import replay_pr17_archive
-    state=replay_pr17_archive(archive,analysis_boundary=at)
+    if state is None:state=replay_pr17_archive(archive,analysis_boundary=at)
     configured=set(archive.config.research_protocol_ids)
     protocols=tuple(x for x in state.bucket("protocols") if x.design_tag is StandaloneDesignTag.PROSPECTIVE and x.standalone_probability_source_protocol_id in configured)
     if len(protocols)!=1:raise OperationsError("activation-authority-invalid","exactly one configured prospective Protocol is required")
@@ -1108,12 +1110,6 @@ def resolve_activated_authority(archive:NamespaceArchive,at:datetime)->tuple[Any
 
 
 def invoke_activated_prospective(*,archive:NamespaceArchive,transport_factory:Callable[[Any,Any],Any],clock:Callable[[],datetime],observation_adapter=None)->ProspectiveDiscoveryResult:
-    now=clock()
-    resolve_activated_authority(archive,now)
-    if now<APPROVED_ACTIVATION_AT:
-        return ProspectiveDiscoveryResult(archive.config.identity,archive.config.namespace,now,(),0,(),(),"pre-activation-no-call")
-    # The downstream workflow owns immediately-pre-request authorization,
-    # request-start, and completion reads.  Never freeze the precheck value.
     return discover_and_capture_prospective(archive=archive,transport_factory=transport_factory,clock=clock,observation_adapter=observation_adapter)
 
 
@@ -1376,6 +1372,9 @@ def health_from_operational_state(*,archive:NamespaceArchive,state:OperationalSt
     collector=latest.get("capture-prospective");secondary=latest.get("sync-secondary")
     age=lambda command:None if command not in latest else int((trusted_at-latest[command].completed_at).total_seconds())
     failures=tuple(sorted(f"{x.command}:{x.failure_code or x.disposition}" for x in entries if (trusted_at-x.completed_at).total_seconds()<=90_000 and (x.failure_code or x.disposition not in ("success","completed","unchanged","no-due-work","pre-activation-no-call"))))
+    from forecast_prospective_projection import projection_status
+    projection=projection_status(archive,trusted_at)
+    if projection!="current":failures=tuple(sorted((*failures,f"prospective-projection:{projection}")))
     base=build_health_report(archive=archive,trusted_at=trusted_at,scheduler_at=collector.completed_at if collector else None,last_collector_at=collector.completed_at if collector else None,due_opportunities=collector.due_opportunities if collector else None,provider_calls=collector.provider_calls if collector else None,typed_dispositions=collector.typed_dispositions if collector else None,secondary_synced_at=secondary.completed_at if secondary and secondary.disposition=="success" else None,free_disk_bytes=free_disk(archive.root),recent_failures=failures)
     supporting,outcome=age("refresh-supporting"),age("reconcile-outcomes")
     inspection=age("inspect") if age("inspect") is not None else age("maintain");index_age=age("rebuild-index") if age("rebuild-index") is not None else age("maintain")
