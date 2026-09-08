@@ -701,6 +701,9 @@ class NamespaceArchive:
         if sha256_bytes(body) != digest: raise OperationsError("archive-corrupt", str(path))
         return body
 
+    def read_json_verified(self, family: str, identity: str) -> Any:
+        return json.loads(self.read_verified(family, identity))
+
     def entries(self) -> tuple[Mapping[str, Any], ...]:
         if not self.manifest_root.exists(): return ()
         values=[]
@@ -765,9 +768,10 @@ class ArchiveIntegrityResult:
     def blocking(self)->bool:return bool(self.referenced_missing or self.referenced_corrupt or self.malformed or self.incompatible or self.partial)
 
 
-def reconcile_archive(archive:NamespaceArchive)->ArchiveIntegrityResult:
+def reconcile_archive(archive:NamespaceArchive,*,_entries=None)->ArchiveIntegrityResult:
     valid=[];malformed=[];incompatible=[]
-    paths=tuple(sorted(archive.manifest_root.glob("*/*.json"))) if archive.manifest_root.exists() else ()
+    paths=tuple(sorted(archive.manifest_root.glob("*/*.json"))) if _entries is None and archive.manifest_root.exists() else ()
+    if _entries is not None:valid.extend(_entries)
     for path in paths:
         try:valid.append(archive._decode_manifest_path(path))
         except OperationsError as exc:
@@ -778,24 +782,27 @@ def reconcile_archive(archive:NamespaceArchive)->ArchiveIntegrityResult:
     for item in valid:
         normalized_id=item.get("normalized_object_id")
         if not normalized_id:continue
-        try:value=json.loads(archive._path("normalized",normalized_id).read_bytes())
+        try:value=(json.loads(archive._path("normalized",normalized_id).read_bytes()) if _entries is None else archive.read_json_verified("normalized",normalized_id))
         except (FileNotFoundError,UnicodeDecodeError,json.JSONDecodeError):continue
         if value.get("record_kind")=="pr17c2-supporting-session-page" and value.get("schema_version")=="2":
             for attempt in value.get("attempts",()):
                 if isinstance(attempt,dict) and isinstance(attempt.get("raw_sha256"),str):expected_raw.add(attempt["raw_sha256"])
-    actual_raw={p.name:p for p in sorted(archive.raw_root.glob("*/*")) if p.is_file()} if archive.raw_root.exists() else {}
-    actual_normalized={p.stem:p for p in sorted(archive.normalized_root.glob("*/*.json")) if p.is_file()} if archive.normalized_root.exists() else {}
+    actual_raw={p.name:p for p in sorted(archive.raw_root.glob("*/*")) if p.is_file()} if _entries is None and archive.raw_root.exists() else {}
+    actual_normalized={p.stem:p for p in sorted(archive.normalized_root.glob("*/*.json")) if p.is_file()} if _entries is None and archive.normalized_root.exists() else {}
+    if _entries is not None:
+        actual_raw={digest:archive._path("raw",digest) for digest in expected_raw if archive._path("raw",digest).exists()}
+        actual_normalized={digest:archive._path("normalized",digest) for digest in expected_normalized if archive._path("normalized",digest).exists()}
     missing=[];corrupt=[];referenced=[]
     for family,expected,actual in (("raw",expected_raw,actual_raw),("normalized",expected_normalized,actual_normalized)):
         for digest in sorted(expected):
             label=f"{family}:{digest}";path=actual.get(digest)
             if path is None:missing.append(label)
-            elif sha256_bytes(path.read_bytes())!=digest:corrupt.append(label)
+            elif sha256_bytes(archive.read_verified(family,digest) if _entries is not None else path.read_bytes())!=digest:corrupt.append(label)
             else:referenced.append(label)
     orphaned=tuple(sorted([f"raw:{key}" for key in set(actual_raw)-expected_raw]+[f"normalized:{key}" for key in set(actual_normalized)-expected_normalized]))
     malformed_paths=[]
     for family,root,suffix in (("raw",archive.raw_root,""),("normalized",archive.normalized_root,".json"),("manifest",archive.manifest_root,".json")):
-        if not root.exists():continue
+        if _entries is not None or not root.exists():continue
         for path in sorted(p for p in root.rglob("*") if p.is_file()):
             name=path.name[:-len(suffix)] if suffix and path.name.endswith(suffix) else path.name
             if len(name)!=64 or any(ch not in "0123456789abcdef" for ch in name) or path.parent.name!=name[:2] or (suffix and not path.name.endswith(suffix)):
@@ -804,7 +811,7 @@ def reconcile_archive(archive:NamespaceArchive)->ArchiveIntegrityResult:
     for item in valid:
         identity=item.get("normalized_object_id")
         if not identity or identity.split(":")[-1] not in actual_normalized:continue
-        try:value=json.loads(actual_normalized[identity.split(":")[-1]].read_bytes())
+        try:value=(json.loads(actual_normalized[identity.split(":")[-1]].read_bytes()) if _entries is None else archive.read_json_verified("normalized",identity))
         except (OSError,json.JSONDecodeError):continue
         group=value.get("acquisition_id");kind=value.get("record_kind")
         if not isinstance(group,str):continue
@@ -825,7 +832,7 @@ def reconcile_archive(archive:NamespaceArchive)->ArchiveIntegrityResult:
             page_values=[]
             for item in valid:
                 if item["manifest_entry_id"] not in pages:continue
-                page_values.append((item,json.loads(actual_normalized[item["normalized_object_id"].split(":")[-1]].read_bytes())))
+                page_values.append((item,json.loads(actual_normalized[item["normalized_object_id"].split(":")[-1]].read_bytes()) if _entries is None else archive.read_json_verified("normalized",item["normalized_object_id"])))
             providers={value.get("provider") for _,value in page_values};families={item.get("command","")[:-5] for item,_ in page_values if item.get("command","").endswith("-page")}
             expected_authority=[{"position":value.get("position"),"request_identity":value.get("request_identity"),"endpoint":value.get("endpoint"),"raw_sha256":value.get("raw_sha256"),"started_at":value.get("started_at"),"completed_at":value.get("completed_at")} for _,value in sorted(page_values,key=lambda pair:pair[1].get("position",-1))]
             latest=max((datetime.fromisoformat(item["acquired_at"]["datetime_utc"]) for item,_ in page_values),default=None)
@@ -843,7 +850,7 @@ def reconcile_archive(archive:NamespaceArchive)->ArchiveIntegrityResult:
         if item.get("normalized_object_id"):labels.add(item["normalized_object_id"])
         if not labels&bad:authoritative.append(item["manifest_entry_id"])
     return ArchiveIntegrityResult(tuple(referenced),tuple(missing),tuple(corrupt),orphaned,
-        tuple(sorted(set(malformed+malformed_paths))),tuple(sorted(incompatible)),tuple(sorted(set(archive.temporary_files())|set(acquisition_partial))),tuple(sorted(authoritative)))
+        tuple(sorted(set(malformed+malformed_paths))),tuple(sorted(incompatible)),tuple(sorted(set(archive.temporary_files() if _entries is None else ())|set(acquisition_partial))),tuple(sorted(authoritative)))
 
 
 def reconcile_incomplete_acquisitions(archive:NamespaceArchive,*,reconciled_at:datetime)->tuple[str,...]:
@@ -871,6 +878,8 @@ def reconcile_incomplete_acquisitions(archive:NamespaceArchive,*,reconciled_at:d
 
 
 def authoritative_entries(archive:NamespaceArchive)->tuple[Mapping[str,Any],...]:
+    if hasattr(archive,"prospective_entries"):
+        return archive.prospective_entries()
     integrity=reconcile_archive(archive)
     if integrity.blocking:raise OperationsError("archive-integrity-failure",canonical_bytes(integrity).decode())
     allowed=set(integrity.authoritative_manifest_ids)
@@ -1131,7 +1140,7 @@ def archive_pr17_authority(archive:NamespaceArchive,contracts:Iterable[Any],*,re
 def _contracts_from_entry(archive:NamespaceArchive,entry:Mapping[str,Any],prior_objects:Iterable[Any]=(),excluded_supporting_sessions:Iterable[str]=(),_exclude_retrospective_publications:bool=False)->tuple[Any,...]:
     identity=entry.get("normalized_object_id")
     if not identity:return ()
-    value=json.loads(archive.read_verified("normalized",identity))
+    value=archive.read_json_verified("normalized",identity)
     if value.get("record_kind")=="pr17c3-retrospective-publication" or entry.get("command")=="publish-retrospective-analysis":
         if _exclude_retrospective_publications:return ()
         from forecast_standalone_publication import _published,verify_publication
@@ -1172,7 +1181,7 @@ def _contracts_from_entry(archive:NamespaceArchive,entry:Mapping[str,Any],prior_
             for candidate_entry in authoritative_entries(archive):
                 normalized_id=candidate_entry.get("normalized_object_id")
                 if not normalized_id:continue
-                candidate=json.loads(archive.read_verified("normalized",normalized_id))
+                candidate=archive.read_json_verified("normalized",normalized_id)
                 if candidate.get("record_kind")=="pr17c1-acquisition-bundle" and candidate.get("acquisition_id")==dependencies[0] and candidate.get("provider")=="mlb-stats-api":mlb_union,_=verify_acquisition_bundle(archive,candidate,include_union=True);mlb_union_rule=candidate.get("union_rule");break
             if mlb_union is None:raise OperationsError("acquisition-dependency-conflict","MLB dependency is absent")
             expected=tuple(x for x in refresh_supporting_from_raw(archive=None,mlb_raw=mlb_union,kalshi_raw=union,collected_at=started,prior_state=prior,derive_only=True,acquisition_command=family,union_rule=mlb_union_rule) if type(x).__name__=="ProviderMarketSeries")
@@ -1296,10 +1305,23 @@ def discover_and_capture_prospective(*,archive:NamespaceArchive,
         CapturedValid,Missed,ProspectiveCaptureAttempt,SkippedAfterSuccess,StandaloneDesignTag,
         reconcile_prospective_snapshot,resolve_standalone_schedule_authority,slot_for_time)
     from market_contracts import MarketObservation
+    from forecast_prospective_projection import collector_lock, load_projection, assert_boundary, publish_capture, note_capture, begin_request, cancel_unissued_request
     now=clock();_utc(now,"trusted execution clock")
-    created=[];snapshots=[];due=[];calls=0
-    with archive.mutation_lock():
-        state=replay_pr17_archive(archive,analysis_boundary=now)
+    created=[];snapshots=[];due=[];calls=0;blocked=[]
+    with collector_lock(archive):
+        boundary,state=load_projection(archive,now)
+        prepared_at=clock();_utc(prepared_at,"prepared execution clock")
+        if prepared_at<now:raise OperationsError("trusted-clock-reversed","preparation clock reversed")
+        now=prepared_at
+        if archive.config.mode is OperatingMode.ACTIVATED:
+            from forecast_standalone_activation import resolve_activated_authority
+            resolve_activated_authority(archive,now,state=state)
+            if now<APPROVED_ACTIVATION_AT:
+                return ProspectiveDiscoveryResult(archive.config.identity,archive.config.namespace,now,(),0,(),(),"pre-activation-no-call")
+        def persist(**values):
+            entry=publish_capture(archive,**values)
+            note_capture(archive,boundary,entry)
+            return entry
         protocols=tuple(item for item in state.bucket("protocols") if item.design_tag is StandaloneDesignTag.PROSPECTIVE)
         configured=set(archive.config.research_protocol_ids)
         protocols=tuple(item for item in protocols if item.standalone_probability_source_protocol_id in configured)
@@ -1310,6 +1332,8 @@ def discover_and_capture_prospective(*,archive:NamespaceArchive,
         series_values=state.bucket("market_series");existing=list(state.bucket("attempts"));existing_snapshots=list(state.bucket("snapshots"))
         opportunities=tuple(x for x in state.bucket("opportunities") if x.protocol_id==protocol.standalone_probability_source_protocol_id)
         for opportunity in sorted(opportunities,key=lambda item:item.research_capture_opportunity_id):
+            if opportunity.research_capture_opportunity_id in boundary.blocked_opportunities:
+                blocked.append(opportunity.research_capture_opportunity_id);continue
             context=contexts.get(opportunity.research_capture_opportunity_id);result=results.get(opportunity.research_capture_opportunity_id)
             if context is None or result is None or result.analysis_boundary>now:raise OperationsError("prospective-authority-invalid","eligibility authority is absent or future-effective")
             if result.disposition is not PopulationEligibilityDisposition.ELIGIBLE or result.validation_status is not PopulationEligibilityValidationStatus.VALID:continue
@@ -1325,40 +1349,52 @@ def discover_and_capture_prospective(*,archive:NamespaceArchive,
             owned=[item for item in existing if item.opportunity_id==opportunity.research_capture_opportunity_id]
             if any(item.effective_at>now for item in owned):raise OperationsError("prospective-authority-invalid","future-effective attempt authority")
             by_slot={item.slot:item for item in owned};success=next((item for item in owned if isinstance(item.result,CapturedValid)),None)
+            if any(item.opportunity_id==opportunity.research_capture_opportunity_id and item.effective_at>now for item in existing_snapshots):
+                raise OperationsError("prospective-authority-invalid","future-effective Snapshot authority")
             if existing_snapshots and any(item.opportunity_id==opportunity.research_capture_opportunity_id for item in existing_snapshots):continue
+            transport=None
+            if target<=now<=target+timedelta(minutes=5) and success is None and series is not None:
+                transport=transport_factory(opportunity,series)
+            request_fence=None
             at_terminal=now>target+timedelta(minutes=5);current=None;decision_time=now
             if not at_terminal and now>=target:
                 due.append(opportunity.research_capture_opportunity_id)
-                request_start=clock();_utc(request_start,"request authorization")
+                with archive.mutation_lock():
+                    assert_boundary(archive,boundary)
+                    if transport is not None:
+                        request_fence=begin_request(archive,protocol.standalone_probability_source_protocol_id,opportunity.research_capture_opportunity_id)
+                    request_start=clock();_utc(request_start,"request authorization")
                 if request_start<now:raise OperationsError("trusted-clock-reversed","request authorization precedes discovery")
-                # Re-resolve the exact authority at the fresh pre-request boundary while the namespace lock is held.
+                # Re-resolve immutable authority at the fresh pre-request boundary.
                 refreshed_schedule,refreshed_target=resolve_standalone_schedule_authority(protocol=protocol,activation=activation,opportunity=opportunity,
                     eligibility_context=context,eligibility_result=result,outcome_history=history,analysis_boundary=request_start)
                 if (refreshed_schedule.observation_id,refreshed_target)!=(schedule.observation_id,target):raise OperationsError("prospective-authority-invalid","authority changed before request authorization")
                 decision_time=request_start;at_terminal=request_start>target+timedelta(minutes=5)
                 if not at_terminal:current=slot_for_time(target,request_start)
+                if request_fence is not None and (at_terminal or current in by_slot):
+                    cancel_unissued_request(archive,request_fence);request_fence=None
             elapsed=max(-1,min(4,int((decision_time-target).total_seconds()//60))) if decision_time>=target else -1
             upper=4 if at_terminal else elapsed
 
             def persist_no_call(slot:int,at:datetime)->Any:
                 nonlocal success
-                invocation=max(at,target+timedelta(minutes=slot));attempt_result=SkippedAfterSuccess(success.prospective_capture_attempt_id) if success else Missed()
+                invocation=max(at,target+timedelta(minutes=slot));attempt_result=SkippedAfterSuccess(success.prospective_capture_attempt_id) if success and success.slot<slot else Missed()
                 attempt=ProspectiveCaptureAttempt.create(protocol_id=protocol.standalone_probability_source_protocol_id,opportunity_id=opportunity.research_capture_opportunity_id,
                     schedule_observation_id=schedule.observation_id,canonical_event_id=schedule.canonical_event_id,proposition_id=proposition,home_participant_id=schedule.home_participant_id,
                     provider_market_id=provider_market_id,target_at=target,slot=slot,invocation_at=invocation,provider_call_occurred=False,result=attempt_result,
                     effective_at=invocation,diagnostics=("authority-derived no-call disposition",mapping_diagnostic),provenance=result.provenance)
                 values=_entry_values(archive=archive,command="capture-prospective",request_id=request_identity({"opportunity_id":opportunity.research_capture_opportunity_id,"slot":slot,"no_call":type(attempt_result).__name__}),invoked_at=invocation,
-                    endpoint=archive.config.provider_base_url,disposition=Disposition.SKIPPED_AFTER_SUCCESS if success else Disposition.MISSED,protocol_id=protocol.standalone_probability_source_protocol_id,
+                    endpoint=archive.config.provider_base_url,disposition=Disposition.SKIPPED_AFTER_SUCCESS if isinstance(attempt_result,SkippedAfterSuccess) else Disposition.MISSED,protocol_id=protocol.standalone_probability_source_protocol_id,
                     design=DesignAuthority.PROSPECTIVE,diagnostics=(f"opportunity:{opportunity.research_capture_opportunity_id}",f"slot:{slot}","canonical no-call"))
-                archive._commit_normalized_locked(normalized=pr17_contract_bundle(attempt),entry_values=values)
+                persist(normalized=pr17_contract_bundle(attempt),entry_values=values)
                 existing.append(attempt);owned.append(attempt);by_slot[slot]=attempt;created.append(attempt.prospective_capture_attempt_id)
                 return attempt
 
             completion_time=decision_time
-            for slot in range(upper+1):
+            slots=([current] if current is not None else [])+[slot for slot in range(upper+1) if slot!=current]
+            for slot in slots:
                 if slot in by_slot:continue
                 if slot==current and success is None and series is not None:
-                    transport=transport_factory(opportunity,series)
                     decoded_observation:dict[str,MarketObservation]={}
                     def validate(value:Mapping[str,Any])->Mapping[str,Any]:
                         payload=value.get("contract_json")
@@ -1397,8 +1433,8 @@ def discover_and_capture_prospective(*,archive:NamespaceArchive,
                     values=_entry_values(archive=archive,command="capture-prospective",request_id=request_id,invoked_at=completed,endpoint=archive.config.provider_base_url,
                         disposition=acquired.disposition,protocol_id=protocol.standalone_probability_source_protocol_id,design=DesignAuthority.PROSPECTIVE,
                         diagnostics=(f"opportunity:{opportunity.research_capture_opportunity_id}",f"slot:{slot}","authority-derived trusted-clock capture"),provider_effective_at=completed)
-                    if acquired.raw_body is None:archive._commit_normalized_locked(normalized=normalized,entry_values=values)
-                    else:archive._commit_locked(raw_body=acquired.raw_body,normalized=normalized,entry_values=values)
+                    if acquired.raw_body is None:persist(normalized=normalized,entry_values=values,request_fence=request_fence)
+                    else:persist(raw_body=acquired.raw_body,normalized=normalized,entry_values=values,request_fence=request_fence)
                 else:attempt=persist_no_call(slot,decision_time)
                 if slot==current and success is None and series is not None:
                     existing.append(attempt);owned.append(attempt);by_slot[slot]=attempt;created.append(attempt.prospective_capture_attempt_id)
@@ -1416,7 +1452,11 @@ def discover_and_capture_prospective(*,archive:NamespaceArchive,
                 values=_entry_values(archive=archive,command="capture-prospective",request_id=request_identity({"snapshot_id":snapshot.prospective_standalone_snapshot_id}),invoked_at=completion_time,
                     endpoint="local://snapshot-replay",disposition=Disposition.SKIPPED_AFTER_SUCCESS if success else Disposition.MISSED,protocol_id=protocol.standalone_probability_source_protocol_id,
                     design=DesignAuthority.PROSPECTIVE,diagnostics=(f"opportunity:{opportunity.research_capture_opportunity_id}","terminal-snapshot"))
-                archive._commit_normalized_locked(normalized=pr17_contract_bundle(snapshot),entry_values=values);snapshots.append(snapshot.prospective_standalone_snapshot_id)
+                persist(normalized=pr17_contract_bundle(snapshot),entry_values=values);snapshots.append(snapshot.prospective_standalone_snapshot_id)
+    if blocked:
+        error=OperationsError("prospective-publication-ambiguous",f"{len(blocked)} opportunity/ies fenced; no attempt invented")
+        error.provider_calls=calls
+        raise error
     return ProspectiveDiscoveryResult(archive.config.identity,archive.config.namespace,now,tuple(sorted(due)),calls,tuple(sorted(created)),tuple(sorted(snapshots)),"completed" if (created or snapshots) else "no-due-work")
 
 

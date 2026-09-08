@@ -89,7 +89,9 @@ class OperationsTest(unittest.TestCase):
         g=build_synthetic_bundle();at=g["observation"].collected_at
         context,result=create_standalone_eligibility_authority(protocol=g["prospective"],opportunity=g["opportunity"],outcome_history=g["legacy"]["outcome_history"],classification=g["prospective_classification"],classifications=(g["prospective_classification"],),analysis_boundary=g["prospective_target"],provenance=g["provenance"])
         self.config=replace(self.config,research_protocol_ids=(g["prospective"].standalone_probability_source_protocol_id,));self.archive=NamespaceArchive(self.config)
-        archive_pr17_authority(self.archive,(g["activation"],g["prospective"],g["opportunity"],g["prospective_classification"],context,result,g["legacy"]["outcome_history"],g["series"]),recorded_at=at)
+        archive_pr17_authority(self.archive,(g["activation"],g["prospective"],g["opportunity"],g["prospective_classification"],context,result,g["legacy"]["outcome_history"],g["series"]),recorded_at=g["prospective_target"])
+        from forecast_prospective_projection import rebuild_projection
+        rebuild_projection(self.archive,at)
         return g,at
 
     def prospective_response_at(self,g,at):
@@ -352,12 +354,12 @@ class OperationsTest(unittest.TestCase):
         for label,start_offset,completion_offset in (("same",timedelta(seconds=10),timedelta(seconds=20)),("next",timedelta(seconds=59),timedelta(seconds=61))):
             with self.subTest(completion_offset=completion_offset):
                 self.select_namespace(label);g,_=self.seed_prospective();target=g["prospective_target"];start=target+start_offset;completed=target+completion_offset
-                transport=SequenceTransport(self.prospective_response_at(g,start));clock=SequenceClock(start,start,completed)
+                transport=SequenceTransport(self.prospective_response_at(g,start));clock=SequenceClock(start,start,start,completed)
                 outcome=discover_and_capture_prospective(archive=self.archive,transport_factory=lambda _o,_s:transport,clock=clock)
                 state=replay_pr17_archive(self.archive,analysis_boundary=completed);attempt=next(x for x in state.bucket("attempts") if x.provider_call_occurred)
                 entry=next(x for x in authoritative_entries(self.archive) if f"slot:{attempt.slot}" in x["diagnostics"] and x["disposition"]==Disposition.SUCCESS.value)
                 self.assertEqual((outcome.provider_request_count,len(transport.calls),attempt.slot),(1,1,0));self.assertEqual((attempt.invocation_at,attempt.effective_at),(start,completed));self.assertEqual(datetime.fromisoformat(entry["acquired_at"]["datetime_utc"]),completed)
-                repeated=SequenceTransport();repeat_clock=SequenceClock(completed,completed)
+                repeated=SequenceTransport();repeat_clock=SequenceClock(completed,completed,completed)
                 discover_and_capture_prospective(archive=self.archive,transport_factory=lambda _o,_s:repeated,clock=repeat_clock)
                 self.assertEqual(len(repeated.calls),0)
 
@@ -366,7 +368,7 @@ class OperationsTest(unittest.TestCase):
         for slot,completion_offset,terminal in cases:
             with self.subTest(slot=slot):
                 self.select_namespace(f"cross-{slot}");g,_=self.seed_prospective();target=g["prospective_target"];start=target+timedelta(minutes=slot,seconds=30);completed=target+completion_offset
-                transport=SequenceTransport(TimeoutError());clock=SequenceClock(start,start,completed)
+                transport=SequenceTransport(TimeoutError());clock=SequenceClock(start,start,start,completed)
                 outcome=discover_and_capture_prospective(archive=self.archive,transport_factory=lambda _o,_s:transport,clock=clock)
                 state=replay_pr17_archive(self.archive,analysis_boundary=completed);called=[x for x in state.bucket("attempts") if x.provider_call_occurred]
                 self.assertEqual((outcome.provider_request_count,len(transport.calls),len(called)),(1,1,1));self.assertEqual((called[0].slot,called[0].invocation_at,called[0].effective_at),(slot,start,completed))
@@ -375,23 +377,23 @@ class OperationsTest(unittest.TestCase):
 
     def test_35_fresh_authorization_advances_slot_or_closes_window_without_stale_call(self):
         g,_=self.seed_prospective();target=g["prospective_target"];transport=SequenceTransport(self.prospective_response_at(g,target+timedelta(minutes=1,seconds=1)))
-        clock=SequenceClock(target+timedelta(seconds=59),target+timedelta(minutes=1,seconds=1),target+timedelta(minutes=1,seconds=2))
+        clock=SequenceClock(target+timedelta(seconds=59),target+timedelta(seconds=59),target+timedelta(minutes=1,seconds=1),target+timedelta(minutes=1,seconds=2))
         outcome=discover_and_capture_prospective(archive=self.archive,transport_factory=lambda _o,_s:transport,clock=clock)
         state=replay_pr17_archive(self.archive,analysis_boundary=clock.calls[-1]);self.assertEqual((outcome.provider_request_count,len(transport.calls)),(1,1))
         self.assertFalse(next(x for x in state.bucket("attempts") if x.slot==0).provider_call_occurred);self.assertEqual(next(x for x in state.bucket("attempts") if x.provider_call_occurred).slot,1)
 
-        self.select_namespace("closed");g,_=self.seed_prospective();target=g["prospective_target"];closed=SequenceTransport();clock=SequenceClock(target+timedelta(minutes=4,seconds=59),target+timedelta(minutes=5,microseconds=1))
+        self.select_namespace("closed");g,_=self.seed_prospective();target=g["prospective_target"];closed=SequenceTransport();clock=SequenceClock(target+timedelta(minutes=4,seconds=59),target+timedelta(minutes=4,seconds=59),target+timedelta(minutes=5,microseconds=1))
         outcome=discover_and_capture_prospective(archive=self.archive,transport_factory=lambda _o,_s:closed,clock=clock);state=replay_pr17_archive(self.archive,analysis_boundary=clock.calls[-1])
         self.assertEqual((outcome.provider_request_count,len(closed.calls),len(state.bucket("attempts")),len(state.bucket("snapshots"))),(0,0,5,1))
 
     def test_36_invalid_cross_boundary_and_clock_reversal_never_lose_or_duplicate_calls(self):
         g,_=self.seed_prospective();target=g["prospective_target"];start=target+timedelta(seconds=59);completed=target+timedelta(minutes=1,seconds=1)
-        transport=SequenceTransport(HTTPResponse(200,b"{}",{}));outcome=discover_and_capture_prospective(archive=self.archive,transport_factory=lambda _o,_s:transport,clock=SequenceClock(start,start,completed))
+        transport=SequenceTransport(HTTPResponse(200,b"{}",{}));outcome=discover_and_capture_prospective(archive=self.archive,transport_factory=lambda _o,_s:transport,clock=SequenceClock(start,start,start,completed))
         state=replay_pr17_archive(self.archive,analysis_boundary=completed);called=[x for x in state.bucket("attempts") if x.provider_call_occurred]
         self.assertEqual((outcome.provider_request_count,len(transport.calls),called[0].slot,type(called[0].result).__name__),(1,1,0,"CapturedInvalid"));self.assertEqual(state.bucket("market_observations"),())
 
         self.select_namespace("reversal");g,_=self.seed_prospective();target=g["prospective_target"];transport=SequenceTransport(self.prospective_response_at(g,target))
-        with self.assertRaisesRegex(OperationsError,"trusted-clock-reversed"):discover_and_capture_prospective(archive=self.archive,transport_factory=lambda _o,_s:transport,clock=SequenceClock(target,target,target-timedelta(seconds=1)))
+        with self.assertRaisesRegex(OperationsError,"trusted-clock-reversed"):discover_and_capture_prospective(archive=self.archive,transport_factory=lambda _o,_s:transport,clock=SequenceClock(target,target,target,target-timedelta(seconds=1)))
         self.assertEqual(len(transport.calls),1);self.assertEqual(replay_pr17_archive(self.archive,analysis_boundary=target).bucket("attempts"),())
 
     def test_37_observation_interval_validation_is_persisted_and_boundary_inclusive(self):
@@ -400,7 +402,7 @@ class OperationsTest(unittest.TestCase):
             with self.subTest(label=label):
                 self.select_namespace(f"chronology-{label}");g,_=self.seed_prospective();target=g["prospective_target"]
                 started=target+timedelta(seconds=30);completed=target+timedelta(seconds=40);response=self.prospective_response_at(g,target+timedelta(seconds=observation_second));transport=SequenceTransport(response)
-                outcome=discover_and_capture_prospective(archive=self.archive,transport_factory=lambda _o,_s:transport,clock=SequenceClock(started,started,completed))
+                outcome=discover_and_capture_prospective(archive=self.archive,transport_factory=lambda _o,_s:transport,clock=SequenceClock(started,started,started,completed))
                 state=replay_pr17_archive(self.archive,analysis_boundary=completed);called=[x for x in state.bucket("attempts") if x.provider_call_occurred]
                 self.assertEqual((outcome.provider_request_count,len(transport.calls),len(called)),(1,1,1));attempt=called[0]
                 self.assertEqual((attempt.slot,attempt.invocation_at,attempt.effective_at),(0,started,completed));self.assertEqual(type(attempt.result).__name__,"CapturedValid" if valid else "CapturedInvalid")
@@ -410,7 +412,7 @@ class OperationsTest(unittest.TestCase):
                 if not valid:
                     self.assertEqual((attempt.result.raw_acquisition_reference,attempt.result.raw_sha256),(f"raw:{entry['raw_object_sha256']}",entry["raw_object_sha256"]));self.assertEqual(entry["disposition"],Disposition.VALIDATION_FAILURE.value)
                     self.assertTrue(any("outside the inclusive trusted request interval" in item for item in attempt.diagnostics))
-                repeated=SequenceTransport();discover_and_capture_prospective(archive=self.archive,transport_factory=lambda _o,_s:repeated,clock=SequenceClock(completed,completed))
+                repeated=SequenceTransport();discover_and_capture_prospective(archive=self.archive,transport_factory=lambda _o,_s:repeated,clock=SequenceClock(completed,completed,completed))
                 self.assertEqual(len(repeated.calls),0)
 
     def test_38_provider_contract_decode_failures_are_typed_persisted_and_replayable(self):
@@ -481,19 +483,19 @@ class OperationsTest(unittest.TestCase):
             with self.subTest(label=label):
                 self.select_namespace(f"decode-{label}");g,_=self.seed_prospective();started=target+timedelta(seconds=20);completed=target+timedelta(seconds=40)
                 body=json.dumps({"contract_json":contract_json},sort_keys=True).encode();transport=SequenceTransport(HTTPResponse(200,body,{}))
-                outcome=discover_and_capture_prospective(archive=self.archive,transport_factory=lambda _o,_s:transport,clock=SequenceClock(started,started,completed));state=replay_pr17_archive(self.archive,analysis_boundary=completed)
+                outcome=discover_and_capture_prospective(archive=self.archive,transport_factory=lambda _o,_s:transport,clock=SequenceClock(started,started,started,completed));state=replay_pr17_archive(self.archive,analysis_boundary=completed)
                 called=[x for x in state.bucket("attempts") if x.provider_call_occurred];self.assertEqual((outcome.provider_request_count,len(transport.calls),len(called)),(1,1,1));attempt=called[0]
                 self.assertEqual((attempt.slot,attempt.invocation_at,attempt.effective_at,type(attempt.result).__name__),(0,started,completed,"CapturedInvalid"));self.assertEqual(attempt.result.validation_failures,(category,));self.assertEqual(state.bucket("market_observations"),())
-                entry=next(x for x in authoritative_entries(self.archive) if x["raw_object_sha256"]);self.assertEqual((entry["disposition"],datetime.fromisoformat(entry["acquired_at"]["datetime_utc"])),(Disposition.MALFORMED_RESPONSE.value if category is AttemptValidationFailure.MALFORMED else (Disposition.INCOMPLETE_RESPONSE.value if category is AttemptValidationFailure.INCOMPLETE else Disposition.VALIDATION_FAILURE.value),completed))
+                entry=next(x for x in authoritative_entries(self.archive) if x["command"]=="capture-prospective" and x["raw_object_sha256"]);self.assertEqual((entry["disposition"],datetime.fromisoformat(entry["acquired_at"]["datetime_utc"])),(Disposition.MALFORMED_RESPONSE.value if category is AttemptValidationFailure.MALFORMED else (Disposition.INCOMPLETE_RESPONSE.value if category is AttemptValidationFailure.INCOMPLETE else Disposition.VALIDATION_FAILURE.value),completed))
                 self.assertEqual(self.archive.read_verified("raw",f"raw:{entry['raw_object_sha256']}"),body);self.assertEqual((attempt.result.raw_acquisition_reference,attempt.result.raw_sha256),(f"raw:{entry['raw_object_sha256']}",entry["raw_object_sha256"]))
-                repeated=SequenceTransport();discover_and_capture_prospective(archive=self.archive,transport_factory=lambda _o,_s:repeated,clock=SequenceClock(completed,completed));self.assertEqual(len(repeated.calls),0)
+                repeated=SequenceTransport();discover_and_capture_prospective(archive=self.archive,transport_factory=lambda _o,_s:repeated,clock=SequenceClock(completed,completed,completed));self.assertEqual(len(repeated.calls),0)
 
         from forecast_standalone_operations import _validate_provider_serialization
         for marker in ({"__date__":"2026-06-01"},{"__datetime__":"2026-06-01T19:00:00+00:00"},{"__decimal__":"0.5"},{"__non_finite_decimal__":"positive-infinity"},{"__non_finite_decimal__":"negative-infinity"},{"__enum__":"MarketStatus:open"}):
             _validate_provider_serialization(marker)
 
         self.select_namespace("decode-secret");g,_=self.seed_prospective();secret_contract=changed(lambda x:x.__setitem__("authorization","must-not-persist"));body=json.dumps({"contract_json":secret_contract},sort_keys=True).encode();transport=SequenceTransport(HTTPResponse(200,body,{}));started=target+timedelta(seconds=20);completed=target+timedelta(seconds=40);raw_before=tuple(sorted(self.archive.raw_root.glob("*/*")))
-        outcome=discover_and_capture_prospective(archive=self.archive,transport_factory=lambda _o,_s:transport,clock=SequenceClock(started,started,completed));state=replay_pr17_archive(self.archive,analysis_boundary=completed);called=[x for x in state.bucket("attempts") if x.provider_call_occurred]
+        outcome=discover_and_capture_prospective(archive=self.archive,transport_factory=lambda _o,_s:transport,clock=SequenceClock(started,started,started,completed));state=replay_pr17_archive(self.archive,analysis_boundary=completed);called=[x for x in state.bucket("attempts") if x.provider_call_occurred]
         self.assertEqual((outcome.provider_request_count,len(transport.calls),len(called),type(called[0].result).__name__),(1,1,1,"AcquisitionFailed"));entry=next(x for x in authoritative_entries(self.archive) if f"slot:{called[0].slot}" in x["diagnostics"]);self.assertIsNone(entry["raw_object_sha256"]);self.assertEqual(tuple(sorted(self.archive.raw_root.glob("*/*"))),raw_before)
 
         transport=SequenceTransport(HTTPResponse(200,b"{}",{}))
@@ -532,13 +534,13 @@ class OperationsTest(unittest.TestCase):
         for index,(label,path,value) in enumerate(mutations):
             with self.subTest(label=label):
                 self.select_namespace(f"schema-{index}");g,_=self.seed_prospective();contract_json=mutation(path,value);body=json.dumps({"contract_json":contract_json},sort_keys=True).encode();transport=SequenceTransport(HTTPResponse(200,body,{}));started=target+timedelta(seconds=20);completed=target+timedelta(seconds=40)
-                outcome=discover_and_capture_prospective(archive=self.archive,transport_factory=lambda _o,_s:transport,clock=SequenceClock(started,started,completed));state=replay_pr17_archive(self.archive,analysis_boundary=completed);called=[x for x in state.bucket("attempts") if x.provider_call_occurred]
+                outcome=discover_and_capture_prospective(archive=self.archive,transport_factory=lambda _o,_s:transport,clock=SequenceClock(started,started,started,completed));state=replay_pr17_archive(self.archive,analysis_boundary=completed);called=[x for x in state.bucket("attempts") if x.provider_call_occurred]
                 self.assertEqual((outcome.provider_request_count,len(transport.calls),len(called)),(1,1,1));attempt=called[0];self.assertEqual((attempt.slot,attempt.invocation_at,attempt.effective_at,type(attempt.result).__name__),(0,started,completed,"CapturedInvalid"));self.assertEqual(attempt.result.validation_failures,(AttemptValidationFailure.MAPPING,));self.assertEqual(state.bucket("market_observations"),())
-                entry=next(x for x in authoritative_entries(self.archive) if x["raw_object_sha256"]);self.assertEqual((entry["disposition"],datetime.fromisoformat(entry["acquired_at"]["datetime_utc"])),(Disposition.VALIDATION_FAILURE.value,completed));self.assertEqual(self.archive.read_verified("raw",f"raw:{entry['raw_object_sha256']}"),body);self.assertEqual(attempt.result.raw_acquisition_reference,f"raw:{entry['raw_object_sha256']}")
-                repeated=SequenceTransport();discover_and_capture_prospective(archive=self.archive,transport_factory=lambda _o,_s:repeated,clock=SequenceClock(completed,completed));self.assertEqual(len(repeated.calls),0)
+                entry=next(x for x in authoritative_entries(self.archive) if x["command"]=="capture-prospective" and x["raw_object_sha256"]);self.assertEqual((entry["disposition"],datetime.fromisoformat(entry["acquired_at"]["datetime_utc"])),(Disposition.VALIDATION_FAILURE.value,completed));self.assertEqual(self.archive.read_verified("raw",f"raw:{entry['raw_object_sha256']}"),body);self.assertEqual(attempt.result.raw_acquisition_reference,f"raw:{entry['raw_object_sha256']}")
+                repeated=SequenceTransport();discover_and_capture_prospective(archive=self.archive,transport_factory=lambda _o,_s:repeated,clock=SequenceClock(completed,completed,completed));self.assertEqual(len(repeated.calls),0)
 
         self.select_namespace("schema-missing");g,_=self.seed_prospective();contract_json=mutation(("provenance",),None,remove=True);transport=SequenceTransport(HTTPResponse(200,json.dumps({"contract_json":contract_json}).encode(),{}));started=target+timedelta(seconds=20);completed=target+timedelta(seconds=40)
-        discover_and_capture_prospective(archive=self.archive,transport_factory=lambda _o,_s:transport,clock=SequenceClock(started,started,completed));entry=next(x for x in authoritative_entries(self.archive) if x["command"]=="capture-prospective");self.assertEqual((len(transport.calls),entry["disposition"]),(1,Disposition.INCOMPLETE_RESPONSE.value))
+        discover_and_capture_prospective(archive=self.archive,transport_factory=lambda _o,_s:transport,clock=SequenceClock(started,started,started,completed));entry=next(x for x in authoritative_entries(self.archive) if x["command"]=="capture-prospective");self.assertEqual((len(transport.calls),entry["disposition"]),(1,Disposition.INCOMPLETE_RESPONSE.value))
 
 
 if __name__=="__main__":unittest.main()

@@ -155,7 +155,13 @@ def execute(command,config,*,clock=lambda:datetime.now(timezone.utc),transport_f
             if not inspection.ready:raise OperationsError("integrity-unsafe","archive inspection refused index rebuild")
             digest=rebuild_index(archive);index_state,_=index_health(archive)
             if index_state!="healthy":raise OperationsError("index-rebuild-failed","post-rebuild index is not healthy")
+            from forecast_prospective_projection import rebuild_projection
+            if config.research_protocol_ids:rebuild_projection(archive,started)
             output={"configuration_id":config.identity,"disposition":"success","inspection":"verified","index_state":index_state,"index_sha256":digest}
+        elif command=="rebuild-prospective-projection":
+            from forecast_prospective_projection import rebuild_projection
+            rebuild_projection(archive,started);calls=0
+            output={"configuration_id":config.identity,"disposition":"success","prospective_projection":"current","provider_calls":0}
         elif command=="rebuild-index":output={"index_sha256":rebuild_index(archive),"disposition":"success"}
         elif command=="sync-secondary":output={**sync_secondary(archive),"disposition":"success"}
         elif command=="health-report":
@@ -179,7 +185,7 @@ def execute(command,config,*,clock=lambda:datetime.now(timezone.utc),transport_f
 
 def main(argv=None)->int:
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument("--config",type=Path);parser.add_argument("--fixture",type=Path);parser.add_argument("--trusted-at")
-    parser.add_argument("command",choices=("initialize-activation","capture-prospective","refresh-supporting","refresh-retrospective-supporting","complete-retrospective-supporting-session","correct-retrospective-supporting-session","acquire-retrospective","reconcile-outcomes","reconcile-acquisitions","inspect","maintain","rebuild-index","sync-secondary","health-report","render-launchd","publish-retrospective-analysis","inspect-retrospective-publication","reconcile-prospective-schedule"));parser.add_argument("--output",type=Path);parser.add_argument("--maximum-opportunities",type=int);parser.add_argument("--start-date");parser.add_argument("--end-date");parser.add_argument("--session-id");parser.add_argument("--reason")
+    parser.add_argument("command",choices=("initialize-activation","capture-prospective","refresh-supporting","refresh-retrospective-supporting","complete-retrospective-supporting-session","correct-retrospective-supporting-session","acquire-retrospective","reconcile-outcomes","reconcile-acquisitions","inspect","maintain","rebuild-index","rebuild-prospective-projection","sync-secondary","health-report","render-launchd","publish-retrospective-analysis","inspect-retrospective-publication","reconcile-prospective-schedule"));parser.add_argument("--output",type=Path);parser.add_argument("--maximum-opportunities",type=int);parser.add_argument("--start-date");parser.add_argument("--end-date");parser.add_argument("--session-id");parser.add_argument("--reason")
     parser.add_argument("--protocol-id");parser.add_argument("--source-snapshot")
     args=parser.parse_args(argv)
     try:

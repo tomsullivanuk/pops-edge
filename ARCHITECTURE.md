@@ -502,7 +502,10 @@ is authoritative; index and secondary failures remain visible Operations state
 without rewriting primary authority. Status, preflight, and inspection share one
 typed deterministic diagnostic representation and make no scientific claim.
 
-Provider calls occur only after acquiring the namespace lock. Prospective slots
+Prospective collectors serialize through a separate local collector lock; their
+short archive-boundary checks and immutable publications use the namespace
+mutation lock. Provider I/O and prospective reconstruction do not hold the
+mutation lock. Other acquisition commands retain their existing locking paths. Prospective slots
 invoke the PR17B1 timing function and allow one request with redirects and hidden
 retries disabled. A fresh trusted request-start timestamp fixes the authorized
 slot and becomes the typed attempt's invocation time. The trusted completion
@@ -534,7 +537,7 @@ and PR17B1 replay remain the sole owners of scientific semantics.
 The persistence adapter stores exact version-dispatched PR17B1 serializations in
 an operational envelope. Replay reconstructs those existing contract types and
 invokes their resolvers and graph validator; an operational string never stands
-in for typed authority. Prospective discovery is a locked archive query driven
+in for typed authority. Prospective discovery is a stable-boundary archive query driven
 by a trusted execution clock. The scheduled command accepts configuration only,
 and its wrapper contains no scientific identity or timestamp.
 
@@ -1768,3 +1771,99 @@ Completeness claims must retain that distinction, and the fixed study boundary,
 existing publication bytes, original source history and statistical methods remain
 unchanged. The approved laptop deployment tolerates sleep/network gaps; it does
 not require wake prevention or an always-on service.
+
+
+### PR17C1 bounded prospective source projection
+
+`forecast_prospective_projection.py` owns one local, rebuildable Operations file,
+`prospective-projection.json`. It contains only the exact selected manifest IDs,
+namespace/mode, schema/builder versions, and a content checksum. It contains no
+scientific values or cached validation assertions. An index checksum is never
+sufficient for a call: each invocation independently selects the complete source
+set from verified manifest metadata and performs canonical page, acquisition,
+correction, and graph reconstruction from freshly digest-verified source bytes.
+Parsed objects and verified bytes are reused only within that invocation.
+
+The stable source boundary is captured under the existing mutation lock. Long
+reconstruction then runs outside it. Supporting histories are shared across the
+activation boundary, so the selected dependency scope deliberately retains all
+supporting sessions, pages, corrections, histories and classifications, including
+retrospective supporting predecessors. It excludes the closed independent
+`acquire-retrospective`, `acquire-retrospective-cutoff`, and
+`publish-retrospective-analysis` command families. Their payloads, reports, and
+recursive publication validation are never loaded by the collector. The cutoff
+exception matches its actual writer: `supporting`, provider `kalshi`, and no
+Protocol ID; a differently tagged cutoff remains in the required set. Failed
+Outcome-only acquisitions (`reconcile-outcomes-failure`) have no scientific
+contracts and do not affect the projection. Unknown command families remain in
+the required set rather than being silently excluded.
+
+The four observable lifecycle states are:
+
+- **Absent:** no projection exists; capture refuses calls. Explicit initialization
+  or `rebuild-prospective-projection` constructs it offline.
+- **Current:** the versioned manifest set matches the relevant archive boundary,
+  and required source authority verifies. The persisted file alone cannot prove
+  current scientific authority.
+- **Stale:** relevant append-only publication has changed the source set. The next
+  invocation may perform bounded canonical refresh, then atomically replace the
+  derived file before final request authorization. There is no dependency on the
+  next daily maintenance run.
+- **Invalid:** content/version validation, removed dependencies, or required source
+  verification fails. No call is authorized from invalid source authority.
+  Unresolved transaction markers separately fence their affected opportunities;
+  independent opportunities can continue. Full audit and explicit rebuild remain
+  available; neither rewrites archive material.
+
+Initialization and configured daily maintenance build the projection. Every
+supporting-session publication/correction, manual schedule receipt/completion,
+relevant Outcome publication, acquisition abandonment, and prospective
+attempt/Snapshot publication participates automatically through the independently
+checked source set. No per-writer mutable notification is trusted for completeness.
+Unrelated retrospective acquisitions/publications and failed Outcome-only
+observations do not invalidate it. Ordinary full audit, replay, publication
+verification, index, and secondary-copy authority remain unchanged.
+
+The local refresh admits at most 8,192 source manifests/objects and 256 MiB of
+unique source bytes, with a 20-second cooperative verification budget. Exceeding
+these bounds fails visibly; it never falls back to an unbounded collector rebuild.
+The limits bound supporting dependency verification, not study membership or
+Coverage: no scientific population is truncated. Manifest metadata discovery
+still scales with archive manifest count. The deployment-scale benchmark and
+object-read assertions gate fitness for the current local archive; growth beyond
+these operational bounds requires a reviewed optimization, not raising scientific
+capture tolerances or dropping predecessors.
+
+Immediately before transport, the collector checks the relevant manifest set and
+verified-source file signatures under a short mutation lock, obtains fresh trusted
+time, and resolves the exact schedule/target and current slot against the verified
+immutable graph. Transport construction precedes that check. Current-slot work
+precedes disk publication of earlier missed slots; the earlier slots remain
+`Missed`, even after a later successful call. A separate nonblocking collector
+lock prevents concurrent collectors from making duplicate calls without blocking
+supporting publication during provider I/O. Capture result publication uses the
+same canonical manifest and object serialization, without an unrelated namespace
+reconciliation in its commit path. Full maintenance still diagnoses orphans and
+unrelated corruption. Source-change and projection failures remain explicit in
+capture heartbeats and health reports.
+
+The prospective writer also owns narrow durable Operations markers under
+`prospective-requests/` and `prospective-publications/`. A request fence is
+atomically written and synchronized before the final trusted clock and transport;
+a publication intent is synchronized before any raw or normalized object write.
+Objects and their directories are synchronized before publishing the canonical
+manifest. Only that completed, verified manifest proves publication completion.
+The same completed invocation and bytes are idempotent; conflicting invocation
+content fails closed. Partial publication is never automatically adopted.
+
+An unresolved marker fences its opportunity, including no-call dispositions, so
+an unknown request cannot be repeated or silently represented as `Missed`.
+Other independent opportunities may continue. A live owner may record
+`no-transport` only when its fresh time check prevents entering transport; a
+restart has no such knowledge. Ambiguity remains visible in health and capture
+errors. These markers grant no scientific authority and are not disposable in
+the manner of the source projection. There is no automatic recovery subsystem.
+Builder version 2 requires explicit offline rebuild for older projections; that
+rebuild performs full archive reconciliation outside the mutation lock, refuses
+orphans or unresolved markers, and never clears or repairs them. This ensures
+pre-marker partial writes cannot be bypassed by upgrading the collector.
