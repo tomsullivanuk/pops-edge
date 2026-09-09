@@ -1,4 +1,10 @@
-# Pops' Edge v1.1.0 — Empirical Decision Foundation
+# Pops' Edge v1.2.0 — Empirical Decision Foundation
+
+> September 8, 2026 amendment: the Product Owner reassigned NFL to v1.1.0
+> and this planned MLB programme to v1.2.0. This historical filename and all
+> PR identifiers remain stable. References below to the original v1.1.0 MLB
+> scope mean the programme now targeting v1.2.0; completed records are unchanged.
+> See [release allocation](RELEASE_ALLOCATION_2026-09-08.md).
 
 ## Release intent
 

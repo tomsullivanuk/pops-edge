@@ -1,5 +1,13 @@
 # Pops' Edge Developer Guide
 
+> NFL v1.1.0 amendment: the owner authorized a separate local screenshot-import
+> and personal comparison workflow. Verified transcription is source evidence,
+> not a canonical NFL event, Policy Forecast, Market Edge, or wagering authority.
+> The initial slice stops before schedule mapping, market collection and valuation.
+> Existing World Cup/MLB contracts and operational paths remain unchanged.
+> See [NFL release plan](docs/NFL_RELEASE_PLAN_v1.1.0.md).
+
+
 Pops' Edge is the durable product name. The workflows documented below are the
 World Cup implementation shipped as v1.0.0. World Cup-prefixed artifacts remain
 unchanged for baseline compatibility.

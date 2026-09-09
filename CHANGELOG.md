@@ -1,5 +1,12 @@
 # Changelog
 
+> Release allocation, September 8, 2026: v1.1.0 is the NFL comparison board;
+> the previously planned v1.1.0 MLB programme now targets v1.2.0. Historical
+> sections and PR numbers below remain unchanged. See
+> [release allocation](docs/RELEASE_ALLOCATION_2026-09-08.md) and
+> [NFL acceptance gates](docs/NFL_RELEASE_PLAN_v1.1.0.md).
+
+
 ## PR19B — development-only native MLB feasibility
 
 - Recorded the Product Owner amendment that preserves PR19A's 2021–2025 formal

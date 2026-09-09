@@ -1,5 +1,12 @@
 # Pops' Edge Roadmap
 
+> Release allocation, September 8, 2026: v1.1.0 is the NFL comparison board;
+> the previously planned v1.1.0 MLB programme now targets v1.2.0. Historical
+> sections and PR numbers below remain unchanged. See
+> [release allocation](docs/RELEASE_ALLOCATION_2026-09-08.md) and
+> [NFL acceptance gates](docs/NFL_RELEASE_PLAN_v1.1.0.md).
+
+
 ## Purpose
 
 The Roadmap describes Pops' Edge's evolution across releases. It derives from the [Empirical Research Methodology](EMPIRICAL_RESEARCH_METHODOLOGY.md), [Product](docs/PRODUCT.md), [Architecture](ARCHITECTURE.md), and release plans without replacing them or defining implementation sequence.
