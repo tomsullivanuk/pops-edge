@@ -1,5 +1,13 @@
 # Pops' Edge Architecture
 
+> NFL v1.1.0 amendment: the owner authorized a separate local screenshot-import
+> and personal comparison workflow. Verified transcription is source evidence,
+> not a canonical NFL event, Policy Forecast, Market Edge, or wagering authority.
+> The initial slice stops before schedule mapping, market collection and valuation.
+> Existing World Cup/MLB contracts and operational paths remain unchanged.
+> See [NFL release plan](docs/NFL_RELEASE_PLAN_v1.1.0.md).
+
+
 ## Purpose and authority
 
 This document defines how Pops' Edge realizes the capabilities in [`docs/PRODUCT.md`](docs/PRODUCT.md). Architecture realizes the Product; it does not redefine it.

@@ -1,5 +1,12 @@
 # Pops' Edge Release Checklist
 
+> Release allocation, September 8, 2026: v1.1.0 is the NFL comparison board;
+> the previously planned v1.1.0 MLB programme now targets v1.2.0. Historical
+> sections and PR numbers below remain unchanged. See
+> [release allocation](docs/RELEASE_ALLOCATION_2026-09-08.md) and
+> [NFL acceptance gates](docs/NFL_RELEASE_PLAN_v1.1.0.md).
+
+
 Use this checklist during release hardening. Completing documentation does not
 authorize a commit, tag, push, hosted release, or rename.
 

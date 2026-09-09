@@ -1,7 +1,8 @@
 # Pops' Edge
 
 **Current release:** v1.0.0<br>
-**Next release:** v1.1.0
+**Next release:** v1.1.0 — NFL comparison board<br>
+**Following release:** v1.2.0 — MLB empirical decision foundation
 
 Pops' Edge is a quantitative decision platform whose Mission is to identify
 opportunities with demonstrable statistical advantage. Sports wagering is its
@@ -33,9 +34,17 @@ PR1 does not change any v1.0.0 calculations, reports, filenames, market
 coverage, or operating workflows. Detailed baseline behavior remains in
 [DEVELOPER.md](DEVELOPER.md).
 
-### v1.1.0 — MLB Research and Multi-Sport Foundation
+### v1.1.0 — NFL comparison board (in development)
 
-v1.1.0 adds MLB research and the first reusable multi-sport boundaries while
+Weekly owner-provided ELWAY screenshots, verified local import, and a later
+manually refreshed Kalshi game-winner comparison board. The first slice provides
+image review and immutable verified transcriptions only; no market retrieval or
+valuation is activated. See [NFL plan](docs/NFL_RELEASE_PLAN_v1.1.0.md) and
+[import guide](docs/NFL_IMPORT_GUIDE.md).
+
+### v1.2.0 — MLB Research and Multi-Sport Foundation (planned)
+
+v1.2.0 adds MLB research and the first reusable multi-sport boundaries while
 preserving the World Cup baseline. The release uses bounded, reviewable pull
 requests, including documentation checkpoints when durable architecture must
 be settled before implementation. The scope, sequencing, gates, and release
@@ -147,6 +156,10 @@ Retrospective archive acquisition remains retrospective even though its
 standalone Protocol is fixed before querying and analysis. Historical effective
 time and later acquisition time remain distinct, and this Evidence cannot repair
 or enter prospective research or support paired authority.
+
+Historical v1.1.0 filenames and PR references below identify the MLB programme
+now targeting v1.2.0. They are retained for traceability, as recorded in the
+[release allocation amendment](docs/RELEASE_ALLOCATION_2026-09-08.md).
 
 ## Documentation
 
