@@ -6,11 +6,12 @@ Reproduce the personal World Cup workflow with weekly owner-supplied ELWAY
 screenshots and manually refreshed Kalshi game-winner comparisons. Preserve
 World Cup behaviour and parallel MLB work. See the [version amendment](RELEASE_ALLOCATION_2026-09-08.md).
 
-The Product Owner authorized NFL-1 implementation in this task. No commit,
-push, PR, merge, deployment, provider collection, trade or release is authorized
-by that implementation instruction.
+NFL-1 was merged in PR #31. On September 9, 2026, the Product Owner authorized
+moving on to Kalshi retrieval (NFL-2A), including the manual public-data smoke
+check. That instruction does not authorize commit, push, PR, merge, deployment,
+trade or release for NFL-2A.
 
-## NFL-1 — Verified screenshot import (current slice)
+## NFL-1 — Verified screenshot import (merged)
 
 Deliver a local PNG/JPEG importer using Apple Vision, an editable local HTML
 review beside the original image, immutable source/verification records and
@@ -49,16 +50,25 @@ neutral marker, omitted rows, unverified rows, metadata, invalid values, duplica
 teams, timestamps, source tampering, idempotency and correction retention; inspect
 rendered review; run existing baseline tests and syntax checks offline.
 
-## NFL-2 — Kalshi comparison command (deferred)
+## NFL-2A — Public Kalshi retrieval (current slice)
+
+Collect a manually selected provider-rule date window of full-game winner
+markets, preserving series metadata, paginated catalogs, raw order books and
+request chronology. Replay derived offers offline. See the
+[acceptance boundary](NFL_RETRIEVAL_SLICE.md) and [guide](NFL_RETRIEVAL_GUIDE.md).
+This is a separate acquisition slice; complete retrieval does not establish
+schedule coverage, pregame eligibility or comparison authority.
+
+## NFL-2B — Schedule matching and comparison board (deferred)
 
 Add authoritative schedule mapping, validated full-game settlement semantics,
-applicable fee model and read-only price/book retrieval, followed by the ranked
-local board. A half-payout on ties requires explicit payoff derivation separate
+applicable fee model and the ranked local board using explicit retrieved runs.
+A half-payout on ties requires explicit payoff derivation separate
 from win probabilities. Preserve source precision and quote chronology. Resolve
 schedule source, actual market rules/fees, and comparison-surface policy status
 before implementation; do not silently extend MLB binary assumptions.
 
 Spreads, totals, futures, bankroll/Kelly advice, automatic execution, hosted
 services, scheduled scraping, research activation and PELE analysis are excluded.
-A v1.1.0 release requires completion and review of both slices and separate
+A v1.1.0 release requires completion and review of all slices and separate
 release authorization. NFL-1 alone is not a completed NFL board release.
