@@ -38,9 +38,12 @@ coverage, or operating workflows. Detailed baseline behavior remains in
 
 Weekly owner-provided ELWAY screenshots, verified local import, and a later
 manually refreshed Kalshi game-winner comparison board. The first slice provides
-image review and immutable verified transcriptions only; no market retrieval or
-valuation is activated. See [NFL plan](docs/NFL_RELEASE_PLAN_v1.1.0.md) and
-[import guide](docs/NFL_IMPORT_GUIDE.md).
+image review and immutable verified transcriptions. A separate manual command
+now captures public Kalshi game-winner catalogs and order books, with exact raw
+responses and offline replay. Schedule matching and valuation remain deferred.
+See [NFL plan](docs/NFL_RELEASE_PLAN_v1.1.0.md),
+[import guide](docs/NFL_IMPORT_GUIDE.md), and
+[retrieval guide](docs/NFL_RETRIEVAL_GUIDE.md).
 
 ### v1.2.0 — MLB Research and Multi-Sport Foundation (planned)
 
