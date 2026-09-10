@@ -1,5 +1,29 @@
 # Pops' Edge Architecture
 
+> Superseding NFL workflow amendment: owner authorized inbox-only selection and
+> one Generate Bet Sheet action across every workbook week. No manual Excel
+> review/confirmation gate. New Excel records describe automated validation,
+> never human attestation; earlier verified records remain unchanged. Week
+> selection is a display filter only. Provider collectors remain weekly bounded;
+> generation iterates all weeks, reporting per-week failure and original capture
+> times. See NFL_REFRESH_GUIDE.md for current workflow and accepted limitations.
+
+> NFL refresh amendment, September 10, 2026: the owner authorized a local
+> Excel-based refresh application, all-workbook-week selection, and activity
+> settlement display. Explicit per-source/week owner confirmation replaces
+> screenshot row checkboxes only for Excel imports. Raw workbook values and
+> original source precision are retained; automatic parsing is not verification.
+> The inbox is ~/PopsEdge/Downloads/NFL; archives are ~/PopsEdge/Data/NFL.
+> See the NFL refresh guide for accepted limitations and operation. This does not
+> authorize order execution, research claims, deployment or release.
+
+> NFL-2B amendment, September 9, 2026: authorized local game matching and a
+> personal comparison board using explicit ELWAY, NFL.com schedule and Kalshi
+> captures. This surface reports model-versus-cost differences for manual review;
+> it does not execute Forecast Policy, issue bet signals or establish Market Edge.
+> The [NFL-2B boundary](docs/NFL_BOARD_SLICE.md) records schedule identity, supported
+> settlement/fee assumptions, rounding ranges, freshness guards and exclusions.
+
 > NFL v1.1.0 amendment: the owner authorized a separate local screenshot-import
 > and personal comparison workflow. Verified transcription is source evidence,
 > not a canonical NFL event, Policy Forecast, Market Edge, or wagering authority.
@@ -1895,3 +1919,12 @@ invocation freshly verifies all selected immutable source bytes, retains the sam
 supporting closure, and uses the unchanged 20-second, 8,192-object and 256-MiB
 bounds. This local performance correction creates no persisted cache, scientific
 contract, recovery authority, or deployment activation.
+
+
+September 10 full-season display amendment: the owner requested all workbook
+games in one Bet Sheet with combined week/team/after-fee-threshold/completed-game
+filters. This is a read-only composite presentation
+over immutable weekly captures and workbook-only placeholders. Per-game source
+times remain visible; no single fresh capture is implied. Completion requires
+explicit final status or supported settlement, not elapsed kickoff. The newest
+activity export alone is reparsed across known games; exports are not accumulated.

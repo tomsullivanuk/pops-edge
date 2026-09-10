@@ -1,5 +1,22 @@
 # Pops' Edge v1.1.0 — NFL comparison workflow
 
+> Superseding NFL workflow amendment: owner authorized inbox-only selection and
+> one Refresh Bet Sheet action across every workbook week. No manual Excel
+> review/confirmation gate. New Excel records describe automated validation,
+> never human attestation; earlier verified records remain unchanged. Week
+> selection is a display filter only. Provider collectors remain weekly bounded;
+> generation iterates all weeks, reporting per-week failure and original capture
+> times. See NFL_REFRESH_GUIDE.md for current workflow and accepted limitations.
+
+> NFL refresh amendment, September 10, 2026: the owner authorized a local
+> Excel-based refresh application, all-workbook-week selection, and activity
+> settlement display. Explicit per-source/week owner confirmation replaces
+> screenshot row checkboxes only for Excel imports. Raw workbook values and
+> original source precision are retained; automatic parsing is not verification.
+> The inbox is ~/PopsEdge/Downloads/NFL; archives are ~/PopsEdge/Data/NFL.
+> See the NFL refresh guide for accepted limitations and operation. This does not
+> authorize order execution, research claims, deployment or release.
+
 ## Objective and authorization
 
 Reproduce the personal World Cup workflow with weekly owner-supplied ELWAY
@@ -50,7 +67,7 @@ neutral marker, omitted rows, unverified rows, metadata, invalid values, duplica
 teams, timestamps, source tampering, idempotency and correction retention; inspect
 rendered review; run existing baseline tests and syntax checks offline.
 
-## NFL-2A — Public Kalshi retrieval (current slice)
+## NFL-2A — Public Kalshi retrieval (merged PR #32)
 
 Collect a manually selected provider-rule date window of full-game winner
 markets, preserving series metadata, paginated catalogs, raw order books and
@@ -59,14 +76,19 @@ request chronology. Replay derived offers offline. See the
 This is a separate acquisition slice; complete retrieval does not establish
 schedule coverage, pregame eligibility or comparison authority.
 
-## NFL-2B — Schedule matching and comparison board (deferred)
+## NFL-2B — Schedule matching and comparison board (current slice)
 
-Add authoritative schedule mapping, validated full-game settlement semantics,
-applicable fee model and the ranked local board using explicit retrieved runs.
+The owner authorized this slice on September 9, 2026. Add official NFL.com
+weekly schedule mapping, supported full-game settlement semantics, a bounded
+one-contract fee illustration and a ranked personal comparison board using
+explicit verified forecasts and retrieved runs. See
+[acceptance boundary](NFL_BOARD_SLICE.md) and [board guide](NFL_BOARD_GUIDE.md).
 A half-payout on ties requires explicit payoff derivation separate
-from win probabilities. Preserve source precision and quote chronology. Resolve
-schedule source, actual market rules/fees, and comparison-surface policy status
-before implementation; do not silently extend MLB binary assumptions.
+from win probabilities. Preserve source precision and quote chronology.
+NFL.com supplies official game IDs and kickoff data; exact inspected market
+rules and published standard taker fees govern the bounded illustration. This
+is a manual comparison surface, not an executable Forecast Policy, demonstrated
+Market Edge or wagering recommendation. Do not extend MLB binary assumptions.
 
 Spreads, totals, futures, bankroll/Kelly advice, automatic execution, hosted
 services, scheduled scraping, research activation and PELE analysis are excluded.
