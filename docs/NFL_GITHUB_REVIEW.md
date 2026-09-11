@@ -1,5 +1,9 @@
 # NFL GitHub transfer review
 
+> Historical pre-merge transfer record. PR #33 subsequently received
+> [independent approval](NFL_PR33_INDEPENDENT_REVIEW.md) and merged at `d94e171`.
+> The original authorization and next-step wording below records that earlier stage.
+
 Accepted scope: preserve the Product Owner-approved local NFL comparison and
 refresh candidate on its feature branch in GitHub. The owner accepted the UI and
 authorized this transfer. Base: main e8d7469c7decabe52fa1eac444783837fd1b4e23.

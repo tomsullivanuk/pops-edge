@@ -1,5 +1,9 @@
 # MLB Source Research for Pops' Edge v1.1.0
 
+> Release allocation: this MLB programme now targets v1.2.0. The historical
+> filename and dated source/rights findings remain unchanged. See
+> [release allocation](RELEASE_ALLOCATION_2026-09-08.md).
+
 **Status:** PR2 decision, 2026-07-28
 **Production status:** no recurring MLB collection is authorized yet
 

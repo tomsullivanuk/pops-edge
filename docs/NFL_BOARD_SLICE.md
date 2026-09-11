@@ -3,18 +3,19 @@
 The owner authorized progressing to game matching and the NFL comparison board
 on September 9, 2026. This slice implements a manually refreshed, local comparison
 surface, without stake sizing, bet signals, orders or research/Policy authority.
-Commit, push, merge and deployment require subsequent authorization.
+The slice merged through PR #33; deployment and release remain separate actions.
 
 ## Must hold
 
 - Independently collect the official NFL weekly schedule from NFL.com, retaining
   raw HTML, request chronology and hashes. Parse exactly one matching weekly
   game-details query; validate season, REG week, unique official game IDs/teams,
-  explicit timezone-aware kickoff and neutral status. Fail visibly if layout or
-  scope changes. NFL game ID is identity; aliases never infer ambiguous teams.
-- Validate the selected verified ELWAY transcription against its preserved image
-  receipt and checked review. Match exact season/week/home/away/neutral fields.
-  No fuzzy mapping, automatic reversal or implicit latest-file choice.
+  explicit timezone-aware kickoff when known and neutral status (TBD handling
+  below). Fail visibly if layout or scope changes. NFL game ID is identity; aliases never infer ambiguous teams.
+- Validate the selected ELWAY record against its preserved source: image receipt
+  and checked review for legacy imports, or workbook bytes and automated
+  validation for Excel. Match exact season/week/home/away/neutral fields. Each
+  comparison binds an explicit source; no fuzzy mapping or automatic reversal.
 - Replay the selected Kalshi run. Match full-game rules by both participants and
   original date in America/New_York to scheduled kickoff. Require exact inspected
   primary and secondary rule templates for comparisons, not substring matching.
@@ -44,8 +45,9 @@ Commit, push, merge and deployment require subsequent authorization.
   settlement is not forecast by ELWAY; exclude non-scheduled/date-mismatched games.
 - Preserve complete inputs in an immutable board bundle with explicit generated
   time, hashes and derived JSON/HTML. Offline replay revalidates and regenerates
-  the derivation. The HTML is a saved snapshot, with browser-time age/kickoff
-  warnings; it never silently refreshes prices or claims it is live.
+  the derivation. Standalone weekly HTML has age/kickoff warnings. The season
+  view has the load-time-only limitation below. Neither silently refreshes
+  prices or claims live acquisition.
 
 ## Accepted limitations and deferred scope
 
@@ -75,32 +77,36 @@ kickoff exclusion, missing coverage and deterministic ranks. Exercise owner’s
 verified Week 1 forecast plus separately captured schedule and fresh books.
 Inspect the generated HTML, run focused/full regressions and whitespace/syntax.
 
-## Bet-sheet presentation amendment — September 9, 2026
+## Current presentation and input extensions
 
-The owner requested a refactor matching the World Cup Bet Sheet, focused on the
-largest ELWAY–Kalshi discrepancies. Replace game cards with a compact sortable
-table, one row per team outcome. Default order is descending signed difference
-between central tie-adjusted ELWAY contract value and the lowest usable observed
-offer, before fees. The separate After fee column shows central value minus
-one-contract cost; Details retains rounding ranges and all quote routes.
-Original ELWAY win percentages remain separate from contract values. A positive
-raw difference is not automatically positive after fees.
+PR #33 merged the later owner-approved Excel, activity and full-season workflow.
+The original acquisition/measurement invariants above remain; these extensions
+supersede the earlier screenshot-only and card/presentation assumptions:
 
-The data bundle retains conservative after-fee game scores for traceability;
-the table's before-fee order is a deterministic presentation derived from its
-underlying routes. This supersedes earlier text describing the default visual
-order by after-fee lower bound. All missing/stale/game-status guards remain.
-Show both outcomes, a positive-difference filter, team search and sortable column
-headings. Use available depth rather than historical volume. Positions, Kelly
-and stake columns from the reference sheet remain outside this NFL slice.
-Existing snapshots may be re-rendered as a new presentation without refreshing
-or backdating their data. Preserve original source/build times and record the
-new render time separately. Never overwrite the original snapshot.
+- Excel records validate automatically against preserved workbook bytes and
+  never attest human review. Legacy screenshot records retain manual verification.
+- Schedule rows may have TBD kickoff. Keep them in the correct week without a
+  price comparison; never invent a timestamp. The app processes every workbook
+  week and reports real partial failures independently of TBD dates.
+- The visible table sorts central signed difference after the one-contract fee.
+  Internal conservative game ranks remain for replay; they do not control the
+  table's initial sort. Routes select lower usable price, then total cost and
+  contract identity. No depth pooling or sizing is introduced.
+- Main comparison columns are ELWAY Contract, Kalshi price and Difference after
+  fee. Original probabilities and ranges remain in Details. Dollars display to
+  two decimals; times round to the nearest minute; calculations retain precision.
+- The app filters by week, team, completion and strict after-fee thresholds. There
+  is no text search or individual-game omission in the season view. Standalone
+  weekly CLI HTML retains its own search/positive controls.
+- Recorded wager (incl. fees) combines each trade's contract/cost; multiple trades
+  appear separately, absent matches are blank. Supported settlements show gross
+  payout without implying realized profit or confirmed holdings. See the
+  [activity boundary](NFL_ACTIVITY_SLICE.md).
+- Season-view freshness is checked on load/reload. The original standalone
+  weekly warning remains, but the season view has no ongoing browser-time expiry.
+  This known P2 limitation and manual reload/refresh path were accepted by the
+  [independent review](NFL_PR33_INDEPENDENT_REVIEW.md). It is not live retrieval.
 
-
-NFL activity extension, September 9, 2026: the owner explicitly requested wager
-identification from a supplied Kalshi activity CSV. Add read-only recorded-trade
-markers and details, with separate provenance/import time and exact contract-to-
-outcome matching. This supersedes the earlier exclusion only for activity display;
-current-balance reconciliation, positions-based recommendations, P&L, execution
-and sizing remain deferred. See the NFL_ACTIVITY_SLICE.md acceptance boundary.
+Current operator details are in the [refresh guide](NFL_REFRESH_GUIDE.md).
+Existing source bundles are not rewritten by a presentation update. These
+changes do not authorize research activation, execution, release or deployment.
