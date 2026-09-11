@@ -118,3 +118,10 @@ Sequence: documentation/source feasibility; evidence and scoring; presentation.
 The first slice is locally implemented for review. Later code, integration and
 activation remain separate gates. No release version or PR number is assigned;
 MLB stays v1.2. Wager History is independent.
+
+### Model Performance evidence/scoring candidate
+
+The local [capture/scoring implementation](NFL_MODEL_PERFORMANCE_IMPLEMENTATION.md)
+is prepared for review. It supplies an explicit service/CLI and offline replay;
+it is not activated or connected to the deployed Bet Sheet. Presentation,
+integration and commissioning remain separate gates.
