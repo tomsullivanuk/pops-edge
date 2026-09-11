@@ -1,5 +1,29 @@
 # PRODUCT
 
+> Superseding NFL workflow amendment: owner authorized inbox-only selection and
+> one Refresh Bet Sheet action across every workbook week. No manual Excel
+> review/confirmation gate. New Excel records describe automated validation,
+> never human attestation; earlier verified records remain unchanged. Week
+> selection is a display filter only. Provider collectors remain weekly bounded;
+> generation iterates all weeks, reporting per-week failure and original capture
+> times. See NFL_REFRESH_GUIDE.md for current workflow and accepted limitations.
+
+> NFL refresh amendment, September 10, 2026: the owner authorized a local
+> Excel-based refresh application, all-workbook-week selection, and activity
+> settlement display. Explicit per-source/week owner confirmation replaces
+> screenshot row checkboxes only for Excel imports. Raw workbook values and
+> original source precision are retained; automatic parsing is not verification.
+> The inbox is ~/PopsEdge/Downloads/NFL; archives are ~/PopsEdge/Data/NFL.
+> See the NFL refresh guide for accepted limitations and operation. This does not
+> authorize order execution, research claims, deployment or release.
+
+> NFL-2B amendment, September 9, 2026: authorized local game matching and a
+> personal comparison board using explicit ELWAY, NFL.com schedule and Kalshi
+> captures. This surface reports model-versus-cost differences for manual review;
+> it does not execute Forecast Policy, issue bet signals or establish Market Edge.
+> The [NFL-2B boundary](NFL_BOARD_SLICE.md) records schedule identity, supported
+> settlement/fee assumptions, rounding ranges, freshness guards and exclusions.
+
 > NFL v1.1.0 amendment: the owner authorized a separate local screenshot-import
 > and personal comparison workflow. Verified transcription is source evidence,
 > not a canonical NFL event, Policy Forecast, Market Edge, or wagering authority.
@@ -644,3 +668,31 @@ Related observations must reconcile before publication; partial receipts remain
 visible without silently changing population membership. Outcome-first discovery
 may be explicitly deferred without poisoning the prior scientific graph, allowing
 later manual schedule reconciliation and independent outcome collection.
+
+
+NFL activity extension, September 9, 2026: the owner explicitly requested wager
+identification from a supplied Kalshi activity CSV. Add read-only recorded-trade
+markers and details, with separate provenance/import time and exact contract-to-
+outcome matching. This supersedes the earlier exclusion only for activity display;
+current-balance reconciliation, positions-based recommendations, P&L, execution
+and sizing remain deferred. See the NFL_ACTIVITY_SLICE.md acceptance boundary.
+
+
+September 10 full-season display amendment: the owner requested all workbook
+games in one Bet Sheet with combined week/team/positive-difference/completed-game
+and individual-game exclusion filters. This is a read-only composite presentation
+over immutable weekly captures and workbook-only placeholders. Per-game source
+times remain visible; no single fresh capture is implied. Completion requires
+explicit final status or supported settlement, not elapsed kickoff. The newest
+activity export alone is reparsed across known games; exports are not accumulated.
+
+
+TBD-date amendment: confirmed official schedule rows with missing kickoff times
+are informational, not failed refreshes. An entirely undated week records its
+schedule reference in pending_dates and skips price capture without inventing a
+date window. The refresh completes normally if no actual errors occur. Full-season
+rendering uses replay-validated latest schedule-only captures to keep undated games
+in their official week with Date/time TBD. They remain incomplete/unpriced and do
+not pass positive filters. Mixed dated/TBD weeks retain their existing valid
+comparisons, with individual undated games labeled TBD. The redundant import-tab
+heading was removed. Prior snapshots/failed-attempt records are not rewritten.

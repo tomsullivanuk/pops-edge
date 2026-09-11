@@ -40,10 +40,14 @@ Weekly owner-provided ELWAY screenshots, verified local import, and a later
 manually refreshed Kalshi game-winner comparison board. The first slice provides
 image review and immutable verified transcriptions. A separate manual command
 now captures public Kalshi game-winner catalogs and order books, with exact raw
-responses and offline replay. Schedule matching and valuation remain deferred.
+responses and offline replay. The next local command matches an official NFL
+weekly schedule and produces
+a saved personal comparison board with tie-aware payout ranges and estimated
+one-contract fees. It provides no stake sizing or bet signals.
 See [NFL plan](docs/NFL_RELEASE_PLAN_v1.1.0.md),
-[import guide](docs/NFL_IMPORT_GUIDE.md), and
-[retrieval guide](docs/NFL_RETRIEVAL_GUIDE.md).
+[import guide](docs/NFL_IMPORT_GUIDE.md),
+[retrieval guide](docs/NFL_RETRIEVAL_GUIDE.md), and
+[board guide](docs/NFL_BOARD_GUIDE.md).
 
 ### v1.2.0 — MLB Research and Multi-Sport Foundation (planned)
 
@@ -278,3 +282,11 @@ Every request preserves its real trusted start/completion interval. Incomplete o
 Replay independently reconstructs the complete scientific contract set from verified pages and boundary-effective predecessor authority, requiring exact canonical equality rather than trusting the envelope serialization.
 
 After a restart, `reconcile-acquisitions` can immutably abandon an unambiguous incomplete group. Its pages remain visible in primary and secondary audit storage but never become scientific inputs; the replacement is a fresh acquisition with later truthful chronology and a distinct identity.
+
+
+## Local NFL refresh app
+
+The owner-authorized Excel import, full-season public price refresh and
+settlement display are described in [the refresh guide](docs/NFL_REFRESH_GUIDE.md).
+Run `python nfl_refresh.py` or open `Open NFL Bet Sheet.command`. This is a local
+candidate; prior CLI imports remain supported.

@@ -1,5 +1,12 @@
 # Pops' Edge Developer Guide
 
+> NFL-2B amendment, September 9, 2026: authorized local game matching and a
+> personal comparison board using explicit ELWAY, NFL.com schedule and Kalshi
+> captures. This surface reports model-versus-cost differences for manual review;
+> it does not execute Forecast Policy, issue bet signals or establish Market Edge.
+> The [NFL-2B boundary](docs/NFL_BOARD_SLICE.md) records schedule identity, supported
+> settlement/fee assumptions, rounding ranges, freshness guards and exclusions.
+
 > NFL v1.1.0 amendment: the owner authorized a separate local screenshot-import
 > and personal comparison workflow. Verified transcription is source evidence,
 > not a canonical NFL event, Policy Forecast, Market Edge, or wagering authority.
@@ -1428,3 +1435,11 @@ publication, acquisition, scheduler, or final-report capability. No authoritativ
 V3 aggregate was present in the reviewed archive. If an external archive contains
 an old noncanonical aggregate, preserve its serialized history and resolve
 versioned reconstruction explicitly before applying this correction there.
+
+
+## Local NFL refresh app
+
+The owner-authorized Excel import, full-season public price refresh and
+settlement display are described in [the refresh guide](docs/NFL_REFRESH_GUIDE.md).
+Run `python nfl_refresh.py` or open `Open NFL Bet Sheet.command`. This is a local
+candidate; prior CLI imports remain supported.
