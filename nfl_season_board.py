@@ -51,6 +51,7 @@ def assemble(data_root,folders,candidate=None,now=None):
     trades=activity['trades'] if activity else []
     settlements=activity.get('settlements',[]) if activity else []
     completed={t['game_id'] for t in settlements if not t['needs_review']}
+    completed.update(e['game_id'] for e in (activity or {}).get('settlement_events',[]))
     games=[]
     for row in candidate['rows']:
         key=(row['week'],row['home'],row['away']);pair=saved.get(key)

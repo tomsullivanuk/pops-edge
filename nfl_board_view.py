@@ -45,6 +45,7 @@ def sheet_rows(data):
     """Largest model-minus-total-cost discrepancy first; missing last."""
     rows=[]
     settled_games={s['game_id'] for s in data.get('activity',{}).get('settlements',[])}
+    settled_games.update(e['game_id'] for e in data.get('activity',{}).get('settlement_events',[]))
     for game in data['games']:
         for outcome in game['outcomes']:
             usable=[r for r in outcome['routes'] if r['usable'] and game['game_id'] not in settled_games]
@@ -63,20 +64,23 @@ def render(data):
         value=o['payout'];kick=g['kickoff'];details=[]
         wagers=[t for t in recorded if t['game_id']==g['game_id'] and t['team']==o['team']]
         settlements=[t for t in (activity or {}).get('settlements',[]) if t['game_id']==g['game_id'] and t['team']==o['team']]
+        closed=any(e['game_id']==g['game_id'] for e in (activity or {}).get('settlement_events',[]))
+        unresolved_close=closed and not settlements
         paid=sum((Decimal(t['payout']) for t in settlements),Decimal(0)) if settlements and not any(t['needs_review'] for t in settlements) else None
         settled_label='Settled · '+('/'.join(sorted({t['result'] for t in settlements}))) if settlements else 'Recorded'
-        summary=wager_summary(wagers,value)
+        summary=None if closed else wager_summary(wagers,value)
         settlement_details=''.join('<li>'+esc(t['side'].upper()+' '+t['yes_team'])+' · '+esc(t['result'])+' · payout '+dollars(t['payout'])+' · '+esc(display_time(t['at']))+(' · cost basis differs or trade history incomplete; realized profit unavailable' if not t['cost_reconciled'] else '')+(' · payout needs review' if t['needs_review'] else '')+'</li>' for t in settlements)
         wager_label=', '.join(sorted({t['side'].upper()+' '+t['yes_team'] for t in wagers+settlements})) if wagers or settlements else 'None in export' if activity else 'Not loaded'
         wager_lines=[]
         for t in wagers:
             amount=Decimal(t['quantity'])*Decimal(t['price'])+Decimal(t['fee'])
-            wager_lines.append('<div><b>'+esc(t['side'].upper()+' '+t['yes_team'])+'</b> · '+('Review needed' if t['needs_review'] else dollars(amount))+'</div>')
+            wager_lines.append('<div><b>'+esc(t['side'].upper()+' '+t['yes_team'])+'</b> · '+('Cash-flow review needed' if unresolved_close else 'Review needed' if t['needs_review'] else dollars(amount))+'</div>')
         for t in settlements:
             if not any(w['ticker']==t['ticker'] and w['side']==t['side'] for w in wagers):
                 wager_lines.append('<div><b>'+esc(t['side'].upper()+' '+t['yes_team'])+'</b> · Amount unavailable</div>')
         wager_cell=''.join(wager_lines)
-        if settlements:wager_cell+='<small>'+esc(settled_label)+'</small>'
+        if closed and wagers:wager_cell+='<small>Closed · market settled</small>'
+        elif settlements:wager_cell+='<small>'+esc(settled_label)+'</small>'
         wager_details=''.join('<li><b>'+esc(t['side'].upper()+' '+t['yes_team'])+'</b> · '+esc(t['ticker'])+' · reported quantity '+esc(t['quantity'])+' · recorded price '+dollars(t['price'])+' · recorded fee '+dollars(t['fee'])+' · '+esc(display_time(t['at']))+(' · settlement appears later in export' if t['settlement_seen'] else '')+(' · duplicate rows: needs review' if t['needs_review'] else '')+'</li>' for t in wagers)
         for q in o['routes']:
             cost=q['cost']
@@ -102,6 +106,7 @@ def render(data):
         ident=g['game_id']+'-'+o['team']
         body.append('<tbody data-id="'+esc(ident)+'" data-search="'+esc(g['away']+' '+g['home']+' '+o['team'])+'" data-gap="'+esc(gap if gap is not None else '')+'"><tr class="quote">'+''.join(cells)+'</tr><tr class="detail" hidden><td colspan="10">'+
                     ('<p class="reason">'+esc(reasons)+'</p>' if reasons else '')+
+                    ('<p>Market settled. Cash-out proceeds and realized profit are not established by this export; original trade records remain below.</p>' if unresolved_close and wagers else '')+
                     '<p>ELWAY win: '+esc(o['displayed_win'] or '—')+'. '+('Difference before fee: '+dollars(Decimal(value['central'])-Decimal(r['cost']['price']),True)+'.' if r else '')+'</p>'+
                     '<p>'+esc(g['venue'] or '')+' · kickoff '+esc(display_time(kick))+'</p>'+
                     ('<p>ELWAY payout range: <b>'+dollars(value['low'])+'–'+dollars(value['high'])+'</b>. '+
