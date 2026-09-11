@@ -1113,13 +1113,22 @@ def reconcile_outcomes_from_raw(*,archive:NamespaceArchive|None,mlb_raw:bytes,co
     try:payload=json.loads(mlb_raw,object_pairs_hook=lambda pairs:_unique_object(pairs,"MLB"))
     except (UnicodeDecodeError,json.JSONDecodeError) as exc:raise OperationsError("malformed-response","MLB response is malformed") from exc
     response=MLBStatsAPIResponse("https://statsapi.mlb.com/api/v1/schedule",(),collected_at,200,"https://statsapi.mlb.com/api/v1/schedule",payload,mlb_raw);facts=MLBStatsAPIAdapter().parse_response(response);games=tuple(x.game for x in facts.games if x.game)
-    results=MLBOutcomeAdapter().parse_response(response,canonical_games=games);state=prior_state or replay_pr17_archive(archive,analysis_boundary=collected_at);prior={x.canonical_event_id:x for x in state.bucket("outcome_histories")};changed=[]
+    results=MLBOutcomeAdapter().parse_response(response,canonical_games=games);state=prior_state or replay_pr17_archive(archive,analysis_boundary=collected_at);prior={x.canonical_event_id:x for x in state.bucket("outcome_histories")};changed=[];ignored_replayed_predecessors=0
+    def semantic(item):return (item.provider_status,item.scheduled_start,item.away_score,item.home_score,item.winning_participant_id,item.unresolved)
     for result in results:
         if result.observation is None:raise OperationsError("provider-data-invalid","MLB outcome is invalid")
         observation=result.observation;history=prior.get(observation.canonical_event_id)
         if history is not None:
-            latest=history.latest;semantic=(latest.provider_status,latest.scheduled_start,latest.away_score,latest.home_score,latest.winning_participant_id,latest.unresolved);current=(observation.provider_status,observation.scheduled_start,observation.away_score,observation.home_score,observation.winning_participant_id,observation.unresolved)
-            if semantic==current:continue
+            latest=history.latest;latest_semantic=semantic(latest);current=semantic(observation)
+            if latest_semantic==current:continue
+            # A whole-date query can return the original postponed record after
+            # the same event's rescheduled final is already authoritative.  That
+            # exact earlier state is not a new Outcome or Schedule transition.
+            # Keep the raw page in the acquisition, but do not append a regressive
+            # duplicate.  A genuinely new state still reaches graph validation.
+            if (history.latest_authoritative_final is not None and not observation.authoritative_final
+                    and current in {semantic(item) for item in history.observations[:-1]}):
+                ignored_replayed_predecessors+=1;continue
             history=history.append(observation)
         else:history=OutcomeHistory(observation.canonical_event_id,"mlb-stats-api",(observation,))
         changed.append(history)
@@ -1142,7 +1151,7 @@ def reconcile_outcomes_from_raw(*,archive:NamespaceArchive|None,mlb_raw:bytes,co
             archive.record_failure(entry_values=values,raw_body=raw)
         raise OperationsError("outcome-authority-deferred","Outcome material preserved without scientific authority; reconcile bounded missing schedule dates and retry independently") from exc
     with archive.mutation_lock():acquisition=publish_verified_acquisition(archive=archive,provider="mlb-stats-api",union_raw=mlb_raw,pages=pages,contracts=changed,collected_at=collected_at,protocol_id=None,command="reconcile-outcomes")
-    return {"changed":len(changed),"mlb_pages":len(pages),"outcome_manifest_id":acquisition["manifest_entry_id"],"disposition":"success" if changed else "unchanged"}
+    return {"changed":len(changed),"ignored_replayed_terminal_predecessors":ignored_replayed_predecessors,"mlb_pages":len(pages),"outcome_manifest_id":acquisition["manifest_entry_id"],"disposition":"success" if changed else "unchanged"}
 
 
 def resolve_activated_authority(archive:NamespaceArchive,at:datetime,*,state=None)->tuple[Any,Any]:

@@ -635,6 +635,32 @@ class ActivationTests(unittest.TestCase):
             histories=tuple(x for x in contracts if type(x).__name__=="OutcomeHistory");self.assertEqual(len(histories),1)
             self.assertEqual([(x.scheduled_start.date().isoformat(),x.provider_status.value) for x in histories[0].observations],[(original_day,"postponed"),(makeup_day,"final")]);self.assertEqual(histories[0].latest.home_score,3)
 
+    def test_outcome_reconciliation_ignores_replayed_predecessor_after_final(self):
+        original_day="2026-05-23";makeup_day="2026-05-24";game_pk=824840
+        original=self._reschedule_game(game_pk,original_day,"2026-05-23T20:05:00Z","Postponed",rescheduleDate="2026-05-24T22:05:00Z",rescheduleGameDate=makeup_day)
+        makeup=self._reschedule_game(game_pk,makeup_day,"2026-05-24T22:05:00Z","Final",rescheduledFrom="2026-05-23T20:05:00Z",rescheduledFromDate=original_day)
+        established=merge_mlb_schedule_responses((self._schedule_page(original_day,original),self._schedule_page(makeup_day,makeup)))
+        empty=SimpleNamespace(bucket=lambda _:())
+        contracts=refresh_supporting_from_raw(archive=None,mlb_raw=established,kalshi_raw=b'{"cursor":"","markets":[]}',collected_at=datetime(2026,8,30,tzinfo=timezone.utc),prior_state=empty,derive_only=True)
+        history=next(x for x in contracts if type(x).__name__=="OutcomeHistory")
+        state=SimpleNamespace(bucket=lambda name:(history,) if name=="outcome_histories" else ())
+        changed=reconcile_outcomes_from_raw(archive=None,mlb_raw=self._schedule_page(original_day,original),collected_at=datetime(2026,9,11,tzinfo=timezone.utc),prior_state=state,derive_only=True)
+        self.assertEqual(changed,())
+
+    def test_outcome_reconciliation_keeps_corrected_final_and_unseen_schedule_state(self):
+        original_day="2026-05-23";makeup_day="2026-05-24";game_pk=824840
+        original=self._reschedule_game(game_pk,original_day,"2026-05-23T20:05:00Z","Postponed",rescheduleDate="2026-05-24T22:05:00Z",rescheduleGameDate=makeup_day)
+        makeup=self._reschedule_game(game_pk,makeup_day,"2026-05-24T22:05:00Z","Final",rescheduledFrom="2026-05-23T20:05:00Z",rescheduledFromDate=original_day)
+        established=merge_mlb_schedule_responses((self._schedule_page(original_day,original),self._schedule_page(makeup_day,makeup)))
+        contracts=refresh_supporting_from_raw(archive=None,mlb_raw=established,kalshi_raw=b'{"cursor":"","markets":[]}',collected_at=datetime(2026,8,30,tzinfo=timezone.utc),prior_state=SimpleNamespace(bucket=lambda _:()),derive_only=True)
+        history=next(x for x in contracts if type(x).__name__=="OutcomeHistory");state=SimpleNamespace(bucket=lambda name:(history,) if name=="outcome_histories" else ())
+        corrected=copy.deepcopy(makeup);corrected["teams"]["away"]["score"]=4;corrected["teams"]["home"]["score"]=3;corrected["teams"]["away"]["isWinner"]=True;corrected["teams"]["home"]["isWinner"]=False
+        changed=reconcile_outcomes_from_raw(archive=None,mlb_raw=self._schedule_page(makeup_day,corrected),collected_at=datetime(2026,9,11,tzinfo=timezone.utc),prior_state=state,derive_only=True)
+        self.assertEqual((len(changed),changed[0].latest.away_score,changed[0].latest.home_score),(1,4,3))
+        unseen=self._reschedule_game(game_pk,"2026-05-25","2026-05-25T22:05:00Z","Scheduled")
+        changed=reconcile_outcomes_from_raw(archive=None,mlb_raw=self._schedule_page("2026-05-25",unseen),collected_at=datetime(2026,9,11,tzinfo=timezone.utc),prior_state=state,derive_only=True)
+        self.assertEqual((len(changed),changed[0].latest.scheduled_start.isoformat()),(1,"2026-05-25T22:05:00+00:00"))
+
     def test_multidate_identical_duplicate_is_safely_deduplicated(self):
         game=self._reschedule_game(824621,"2026-04-02","2026-04-02T23:05:00Z","Scheduled")
         page=self._schedule_page("2026-04-02",game);merged=merge_mlb_schedule_responses((page,page))
