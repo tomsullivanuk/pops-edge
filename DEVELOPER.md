@@ -1394,6 +1394,14 @@ undocumented always-online or command-order requirement is imposed. Conflicting
 preserved receipts and irrecoverable historical states fail closed; this is not an
 archive-repair mechanism or a promise of automatic recovery.
 
+Whole-date Outcome reads can include an original postponed record even after its
+rescheduled final is authoritative. If that incoming non-final semantic state is
+an exact repeat of the earlier recorded predecessor, retain the raw page but do
+not append the regressive duplicate to `OutcomeHistory`. Do append corrected
+finals. Do not filter a genuinely unseen Schedule state: complete-graph validation
+must continue to reject it until independent Schedule authority exists. The CLI
+reports the count as `ignored_replayed_terminal_predecessors`.
+
 Tests inject transports into `load_live_supporting` and `reconcile_schedule`, use
 temporary activated fixture namespaces, and never access real providers/Keychain.
 `--fixture <directory>` uses `mlb-YYYY-MM-DD.json` for each manual date. Verify both

@@ -1791,6 +1791,14 @@ is preserved under `reconcile-outcomes-failure`, the operation raises
 The still-valid prior graph permits later manual schedule reconciliation and an
 independent Outcome retry. Existing corrupt archives are not repaired or bypassed.
 
+A whole-date Outcome read may repeat an original postponed record after its
+rescheduled final is already authoritative. When the incoming non-final semantic
+state exactly matches that earlier recorded predecessor, it is duplicate lineage,
+not a new Schedule transition: the raw page remains in the immutable acquisition,
+but no regressive Outcome observation is appended. Corrected finals remain
+append-only corrections, and any genuinely new Schedule state still reaches the
+complete-graph validation gate and fails closed without Schedule authority.
+
 The operation provides calendar acquisition accounting only. Later acquisition
 cannot certify never-observed historical schedule states or repair quotes.
 Completeness claims must retain that distinction, and the fixed study boundary,
