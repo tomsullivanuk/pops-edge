@@ -105,3 +105,16 @@ All three slices are merged through PR #33 (`d94e171`), whose independent
 review found no blocking issues. Product/source version is v1.1.0. Release-tag
 publication and deployment remain separate authorization steps; neither follows
 automatically from the merge.
+
+## Model Performance follow-on — authorized documentation slice
+
+The owner approved the [weekly protocol](NFL_MODEL_PERFORMANCE_PROTOCOL.md):
+fee-free squared contract-value error, import-triggered Kalshi capture and
+a weekly baseline frozen before the first game. This follow-on supersedes the
+blanket outcome-scoring exclusion only for the approved design scope. It does
+not activate research or change the deployed v1.1.0 release.
+
+Sequence: documentation/source feasibility; evidence and scoring; presentation.
+The first slice is locally implemented for review. Later code, integration and
+activation remain separate gates. No release version or PR number is assigned;
+MLB stays v1.2. Wager History is independent.

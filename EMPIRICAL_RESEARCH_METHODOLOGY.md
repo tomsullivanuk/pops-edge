@@ -5196,3 +5196,21 @@ calendar acquisition and unrecoverable schedule history alongside missed/failed
 captures and the selection limitations caused by laptop availability. Neither a
 successful reconciliation nor an operational health result proves complete
 prospective Evidence or creates any downstream Policy authority.
+
+## NFL descriptive contract-value Measurement amendment
+
+The Product Owner approved a fee-free NFL comparison of ELWAY contract value
+and import-time Kalshi bid–ask midpoint against payouts 1/0/0.5, using squared
+error on identical paired games. This bounded descriptive endpoint is an
+explicit exception to using binary probability/Brier representations for the
+NFL Model Performance tab; it does not replace any MLB research protocol,
+claim, burden of proof or Policy authority. It measures expected payout, not
+a complete win/loss/tie distribution. No log-loss or binary-Brier label applies.
+
+The latest qualifying weekly forecast and its associated import-time market
+observations freeze before the week's first game. Reimports do not reset prices.
+All Evidence, chronology, correction, coverage and prospective no-backfill
+requirements continue to apply. The [NFL weekly protocol](docs/NFL_MODEL_PERFORMANCE_PROTOCOL.md)
+specifies the approved selection and measurement contract. This amendment
+defines design authority only; collection/scoring activation requires a separate
+effective record and authorization.
