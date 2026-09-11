@@ -108,3 +108,10 @@ payout illustrations; original trade rows remain in Details. Opposite-side trade
 alone do not establish a cash-out, and no realized profit is inferred. Legacy v1/v2
 bundles retain their original parser for replay. This correction is not installed
 in the pinned v1.1.0 release until separately integrated and deployed.
+
+## Planned Model Performance capture
+
+The [approved weekly design](NFL_MODEL_PERFORMANCE_PROTOCOL.md) will capture
+Kalshi alongside a new ELWAY import and preserve a separate weekly research
+baseline. Ordinary odds refreshes will not reset that baseline. This is not yet
+implemented or activated; the currently deployed refresh workflow is unchanged.

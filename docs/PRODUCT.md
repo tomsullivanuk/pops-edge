@@ -690,3 +690,14 @@ Historical failures remain visible after valid recovery; current readiness is no
 proof of complete Coverage. No scientific matching, selection, settlement, capture
 window, Policy, Governance or prospective no-backfill rule changes. See the PR30
 section of `ARCHITECTURE.md` and `operations/PROSPECTIVE_PROJECTION.md`.
+
+## NFL Model Performance — approved design, not yet implemented
+
+Add a descriptive comparison tab, independent of Wager History. Compare weekly
+ELWAY and Kalshi contract-value error on all common eligible games, without fees
+or selection by owner wagers. Capture Kalshi when a new weekly workbook is
+imported; freeze the latest qualifying weekly baseline before its first game.
+Show paired sample sizes, source times, cumulative error and coverage gaps.
+Results do not declare a Market Edge or change Policy. See the
+[weekly protocol](NFL_MODEL_PERFORMANCE_PROTOCOL.md). Release assignment,
+application implementation and activation remain separate from this document.

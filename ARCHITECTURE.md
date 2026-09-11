@@ -1877,3 +1877,20 @@ over immutable weekly captures and workbook-only placeholders. Per-game source
 times remain visible; no single fresh capture is implied. Completion requires
 explicit final status or supported settlement, not elapsed kickoff. The newest
 activity export alone is reparsed across known games; exports are not accumulated.
+
+## NFL Model Performance — documentation-stage extension
+
+The [weekly contract](docs/NFL_MODEL_PERFORMANCE_PROTOCOL.md) governs a new
+versioned derivation, separate from existing MLB binary evaluation. Preserve raw
+workbooks, schedule responses, catalogs and books; append candidate/attempt,
+weekly selection, outcome and measurement records. Derive a frozen weekly
+view by boundary; no continuously running freeze service is necessary.
+Semantic forecast identity prevents Excel metadata re-saves from resetting
+prices. Official summary outcome parsing must be versioned separately from
+legacy schedule replay. See [observed source fields](docs/NFL_MODEL_PERFORMANCE_SOURCE_FEASIBILITY.md).
+
+Keep acquisition, outcome evidence, derived squared-error measurement and tab
+presentation separate. Partial capture retains independent valid observations
+and complete coverage diagnostics. Reports pin protocol and analysis boundary;
+corrections append. Neither existing Bet Sheet bundles nor MLB schemas change.
+This is design documentation, not an installed collector or scoring engine.
