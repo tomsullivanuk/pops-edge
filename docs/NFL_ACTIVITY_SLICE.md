@@ -47,3 +47,14 @@ ELWAY Contract and Difference after fee are the compact comparison columns.
 The latter controls default sorting and threshold filters. Original probabilities,
 before-fee differences and all routes remain in Details. See the
 [refresh guide](NFL_REFRESH_GUIDE.md) and [board guide](NFL_BOARD_GUIDE.md).
+
+## Settlement-status correction (candidate)
+
+New activity parsing uses nfl-activity-settlements-v3. A unique, exactly matched,
+nonfuture YES/NO settlement event establishes game completion independently of
+payout arithmetic. Unreconciled payout remains a diagnostic, not an active wager.
+Closed activity with unresolved cash flow suppresses purchase-amount and expected
+payout illustrations; original trade rows remain in Details. Opposite-side trades
+alone do not establish a cash-out, and no realized profit is inferred. Legacy v1/v2
+bundles retain their original parser for replay. This correction is not installed
+in the pinned v1.1.0 release until separately integrated and deployed.

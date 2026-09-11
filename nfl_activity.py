@@ -93,7 +93,7 @@ def activity_map(raw,inputs,data):
     return result
 
 
-def parse_current(raw,imported_at,mapping):
+def parse_v2(raw,imported_at,mapping):
     result=parse(raw,imported_at,mapping);result['schema']='nfl-activity-settlements-v2';settled=[];seen=set();bad=set()
     for i,row in enumerate(csv.DictReader(io.StringIO(raw.decode('utf-8-sig'))),2):
         ticker=(row.get('Market_Ticker') or '').strip()
@@ -121,4 +121,26 @@ def parse_current(raw,imported_at,mapping):
             result['diagnostics'].append(dict(row=i,ticker=ticker,reason=str(exc)));bad.add(ticker)
     for item in settled:item['needs_review']=item['ticker'] in bad
     result['settlements']=settled
+    return result
+
+
+def parse_current(raw,imported_at,mapping):
+    """Separate a matched market's settlement status from payout reconciliation."""
+    result=parse_v2(raw,imported_at,mapping)
+    result['schema']='nfl-activity-settlements-v3'
+    events={};counts={}
+    for i,row in enumerate(csv.DictReader(io.StringIO(raw.decode('utf-8-sig'))),2):
+        ticker=(row.get('Market_Ticker') or '').strip()
+        if row.get('type')!='Settlement' or ticker not in mapping:continue
+        counts[ticker]=counts.get(ticker,0)+1
+        try:
+            at=row['Original_Date'];outcome=(row.get('Result') or '').strip().lower()
+            if aware(at)>aware(imported_at) or outcome not in ('yes','no'):continue
+            match=mapping[ticker]
+            events.setdefault(ticker,[]).append(dict(source_row=i,ticker=ticker,
+                game_id=match['game_id'],at=at,result=outcome))
+        except (ValueError,KeyError,TypeError):continue
+    # Duplicate/contradictory settlement records do not establish completion.
+    result['settlement_events']=[items[0] for ticker,items in events.items() if len(items)==1 and counts[ticker]==1]
+    result['settlement_events'].sort(key=lambda e:(e['at'],e['ticker']))
     return result

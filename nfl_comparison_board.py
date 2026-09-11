@@ -222,17 +222,17 @@ def replay(folder,check_html=True):
     if actual!=manifest['files']:raise ValueError('Board file digest mismatch')
     data=json.loads((folder/'comparison.json').read_text());rebuilt=derive(*read_inputs(folder/'inputs'),data['generated_at'])
     if 'activity' in data:
-        from nfl_activity import parse,market_map,parse_current,activity_map
+        from nfl_activity import parse,market_map,parse_current,parse_v2,activity_map
         receipt=json.loads((folder/'inputs/activity-receipt.json').read_text())
         raw=(folder/'inputs/activity.csv').read_bytes()
-        rebuilt['activity']=(parse(raw,receipt['imported_at'],market_map(folder/'inputs',rebuilt)) if data['activity']['schema']=='nfl-activity-markers-v1' else parse_current(raw,receipt['imported_at'],activity_map(raw,folder/'inputs',rebuilt)))
+        rebuilt['activity']=(parse(raw,receipt['imported_at'],market_map(folder/'inputs',rebuilt)) if data['activity']['schema']=='nfl-activity-markers-v1' else (parse_v2 if data['activity']['schema']=='nfl-activity-settlements-v2' else parse_current)(raw,receipt['imported_at'],activity_map(raw,folder/'inputs',rebuilt)))
         if receipt['source_sha256']!=rebuilt['activity']['source_sha256']:raise ValueError('Activity receipt mismatch')
     if data!=rebuilt or check_html and (folder/'board.html').read_text()!=render(rebuilt):raise ValueError('Board differs from source inputs')
     return data
 
 
 def add_activity(folder,data,activity):
-    from nfl_activity import parse,market_map,parse_current,activity_map
+    from nfl_activity import parse,market_map,parse_current,parse_v2,activity_map
     raw=Path(activity).read_bytes();at=kalshi.utc()
     overlay=parse_current(raw,at,activity_map(raw,folder/'inputs',data))
     forecast.write_once(folder/'inputs/activity.csv',raw)
