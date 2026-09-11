@@ -1412,7 +1412,8 @@ commissioning/deployment authorization. Existing immutable review receipts remai
 unchanged; no real archive or provider was used for this correction.
 
 Commissioning still requires review and deployment of this correction before
-installing/loading the six existing plists. Verify installed executable/config
+installing/loading the two PR30-generated plists described in
+`operations/PINNED_DEPLOYMENT.md`. Verify installed executable/config
 paths and actual pre-boundary no-call heartbeats. No change to activation authority
 or laptop power settings is needed. Do not call a pre-boundary staging result proof
 of post-boundary connectivity, cadence or prospective readiness. Manual calendar
@@ -1453,3 +1454,20 @@ settlement display are described in [the refresh guide](docs/NFL_REFRESH_GUIDE.m
 Run `python nfl_refresh.py` or open `Open NFL Bet Sheet.command`. The code is merged; the local launcher still uses its configured checkout.
 Prior CLI imports remain supported. The root `VERSION` file supplies the app
 version badge; it does not itself create a Git tag or release.
+
+
+## PR30 offline validation and deployment boundary
+
+Run `python -m unittest discover -s tests` with repository dependencies installed,
+then `python -m tests.pr30_checkpoint_benchmark` for the repeated synthetic scale
+gate. The benchmark uses only temporary fixture archives and reports all timings,
+source counts/bytes, canonical-state digest and machine context. No production
+archive or provider is needed. The hot path must stay at or below 7.5 seconds.
+
+Schema-2 checkpoint persistence intentionally supersedes the former per-invocation
+replay-only rule. Follow `operations/PROSPECTIVE_PROJECTION.md` for bounds, atomic
+publication, failure interpretation and manual recovery. Follow
+`operations/PINNED_DEPLOYMENT.md` for the clean detached checkout guard and exactly
+two generated jobs. Historical six-job rehearsal counts above describe earlier
+releases; they are not the current installation topology. All source verification,
+canonical graph and provider-call accounting invariants still apply.

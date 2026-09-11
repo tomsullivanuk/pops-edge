@@ -105,7 +105,11 @@ def execute(command,config,*,clock=lambda:datetime.now(timezone.utc),transport_f
                 calls=typed=due=0;disposition="pre-activation-no-call"
                 return {"configuration_id":config.identity,"namespace":config.namespace,"provider_calls":0,
                         "typed_dispositions":0,"due_opportunities":0,"disposition":disposition}
-        if command=="initialize-activation":
+        if command=="lifecycle-cycle":
+            from forecast_operational_lifecycle import run_cycle
+            output=run_cycle(archive=archive,state=state,clock=clock,run=lambda phase:execute(phase,config,clock=clock,transport_factory=transport_factory,supporting_loader=supporting_loader,outcome_loader=outcome_loader,free_disk=free_disk))
+            disposition=output["disposition"];calls=output["provider_calls"]
+        elif command=="initialize-activation":
             activation_id,protocol_id=initialize_activation(archive,started);output={"configuration_id":config.identity,"disposition":"success","activation_id":activation_id,"protocol_id":protocol_id}
         elif command=="capture-prospective":
             if transport_factory is None:raise OperationsError("adapter-unavailable","configured Kalshi order-book adapter is absent")
@@ -158,13 +162,20 @@ def execute(command,config,*,clock=lambda:datetime.now(timezone.utc),transport_f
             from forecast_prospective_projection import rebuild_projection
             if config.research_protocol_ids:rebuild_projection(archive,started)
             output={"configuration_id":config.identity,"disposition":"success","inspection":"verified","index_state":index_state,"index_sha256":digest}
+        elif command=="refresh-prospective-projection":
+            from forecast_prospective_projection import load_projection
+            load_projection(archive,started);calls=0
+            output={"disposition":"success","provider_calls":0}
         elif command=="rebuild-prospective-projection":
             from forecast_prospective_projection import rebuild_projection
             rebuild_projection(archive,started);calls=0
             output={"configuration_id":config.identity,"disposition":"success","prospective_projection":"current","provider_calls":0}
-        elif command=="rebuild-index":output={"index_sha256":rebuild_index(archive),"disposition":"success"}
-        elif command=="sync-secondary":output={**sync_secondary(archive),"disposition":"success"}
+        elif command=="rebuild-index":calls=0;output={"index_sha256":rebuild_index(archive),"disposition":"success"}
+        elif command=="sync-secondary":
+            calls=0;output={**sync_secondary(archive),"disposition":"success"}
+            if output["conflicts"] or output["missing"]:raise OperationsError("secondary-incomplete","secondary synchronization has conflicts or missing sources")
         elif command=="health-report":
+            calls=0
             disk=free_disk or (lambda root:shutil.disk_usage(root).free)
             output=json.loads(health_from_operational_state(archive=archive,state=state,trusted_at=started,free_disk=disk).to_json());disposition="success" if output["ready"] else "not-ready"
         else:raise OperationsError("command-boundary",command)
@@ -185,7 +196,8 @@ def execute(command,config,*,clock=lambda:datetime.now(timezone.utc),transport_f
 
 def main(argv=None)->int:
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument("--config",type=Path);parser.add_argument("--fixture",type=Path);parser.add_argument("--trusted-at")
-    parser.add_argument("command",choices=("initialize-activation","capture-prospective","refresh-supporting","refresh-retrospective-supporting","complete-retrospective-supporting-session","correct-retrospective-supporting-session","acquire-retrospective","reconcile-outcomes","reconcile-acquisitions","inspect","maintain","rebuild-index","rebuild-prospective-projection","sync-secondary","health-report","render-launchd","publish-retrospective-analysis","inspect-retrospective-publication","reconcile-prospective-schedule"));parser.add_argument("--output",type=Path);parser.add_argument("--maximum-opportunities",type=int);parser.add_argument("--start-date");parser.add_argument("--end-date");parser.add_argument("--session-id");parser.add_argument("--reason")
+    parser.add_argument("command",choices=("lifecycle-cycle","refresh-prospective-projection","initialize-activation","capture-prospective","refresh-supporting","refresh-retrospective-supporting","complete-retrospective-supporting-session","correct-retrospective-supporting-session","acquire-retrospective","reconcile-outcomes","reconcile-acquisitions","inspect","maintain","rebuild-index","rebuild-prospective-projection","sync-secondary","health-report","render-launchd","publish-retrospective-analysis","inspect-retrospective-publication","reconcile-prospective-schedule"));parser.add_argument("--output",type=Path);parser.add_argument("--maximum-opportunities",type=int);parser.add_argument("--start-date");parser.add_argument("--end-date");parser.add_argument("--session-id");parser.add_argument("--reason")
+    parser.add_argument("--expected-revision")
     parser.add_argument("--protocol-id");parser.add_argument("--source-snapshot")
     args=parser.parse_args(argv)
     try:
@@ -193,10 +205,13 @@ def main(argv=None)->int:
         if args.command=="publish-retrospective-analysis" and (args.trusted_at or args.fixture):raise OperationsError("configuration-error","publication requires the actual trusted clock and archived inputs, not --trusted-at or --fixture")
         if args.command=="reconcile-prospective-schedule" and args.trusted_at and not args.fixture:
             raise OperationsError("configuration-error","Live schedule reconciliation requires the actual clock")
+        if args.expected_revision:
+            from forecast_standalone_activation import verify_pinned_checkout
+            verify_pinned_checkout(Path(__file__).resolve().parent,args.expected_revision)
         config=DeploymentConfig.from_json(args.config)
         if args.command=="render-launchd":
             if args.output is None:raise OperationsError("configuration-error","--output is required")
-            result={"rendered":render_launchd_jobs(repository_root=Path(__file__).parent,python_executable=Path(sys.executable),config_path=args.config,output_root=args.output)}
+            result={"rendered":render_launchd_jobs(repository_root=Path(__file__).parent,python_executable=Path(sys.executable),config_path=args.config,output_root=args.output,expected_revision=args.expected_revision)}
         else:
             fixed=datetime.fromisoformat(args.trusted_at) if args.trusted_at else None;clock=(lambda:fixed) if fixed else (lambda:datetime.now(timezone.utc))
             fixture=FixtureTransport(args.fixture/"orderbook.json") if args.fixture else None

@@ -1,9 +1,4 @@
-"""Bounded, source-only discovery for prospective Operations.
-
-The on-disk projection contains source identities, never scientific values.
-Every reader checks its completeness against a stable manifest boundary and
-reconstructs authority using the ordinary acquisition and graph validators.
-"""
+"""Disposable, non-authoritative replay checkpoint over immutable archive sources."""
 from __future__ import annotations
 
 import json
@@ -29,9 +24,10 @@ INDEPENDENT_COMMANDS = frozenset({
 })
 MAX_SOURCE_BYTES = 256 * 1024 * 1024
 MAX_SOURCE_OBJECTS = 8192
-MAX_PROJECTION_BYTES = 2 * 1024 * 1024
-SCHEMA_VERSION = "1"
-BUILDER_VERSION = "canonical-supporting-closure-2"
+MAX_PROJECTION_BYTES = 64 * 1024 * 1024
+MAX_DELTA_MANIFESTS = 256
+SCHEMA_VERSION = "3"
+BUILDER_VERSION = "canonical-supporting-checkpoint-1"
 
 
 def relevant_entries(entries):
@@ -60,6 +56,13 @@ class ProspectiveSourceBoundary(NamespaceArchive):
         self._signatures = {}
         self._started = time.monotonic()
         self.source_bytes = 0
+        self.budget_seconds = 20
+        self._contributions = {}
+        self._reusable = set()
+        self._verified_identities = set()
+        # Full source replay starts a fresh lineage; incremental replay inherits
+        # its checkpoint's lineage, including across atomic republication.
+        self._checkpoint_lineage = uuid.uuid4().hex
 
     def _ensure_mutable(self):
         raise OperationsError("projection-read-only", "source boundary cannot publish")
@@ -69,12 +72,12 @@ class ProspectiveSourceBoundary(NamespaceArchive):
 
     def read_verified(self, family, identity):
         key = (family, identity.split(":")[-1])
-        if time.monotonic() - self._started > 20:
+        if time.monotonic() - self._started > self.budget_seconds:
             raise OperationsError("projection-budget-exceeded", "source verification exceeded preparation budget")
         if key not in self._bytes:
             path = self._path(family, identity)
-            if (len(self._bytes) >= MAX_SOURCE_OBJECTS or
-                    self.source_bytes + path.stat().st_size > MAX_SOURCE_BYTES):
+            if (self.budget_seconds == 20 and (len(self._bytes) >= MAX_SOURCE_OBJECTS or
+                    self.source_bytes + path.stat().st_size > MAX_SOURCE_BYTES)):
                 raise OperationsError("projection-budget-exceeded", "explicit rebuild/design inspection required")
             before = _signature(path)
             body = super().read_verified(family, identity)
@@ -86,7 +89,7 @@ class ProspectiveSourceBoundary(NamespaceArchive):
         return self._bytes[key]
 
     def read_json_verified(self, family, identity):
-        if time.monotonic() - self._started > 20:
+        if time.monotonic() - self._started > self.budget_seconds:
             raise OperationsError("projection-budget-exceeded", "source verification exceeded preparation budget")
         key = (family, identity.split(":")[-1])
         if key not in self._json:
@@ -97,11 +100,31 @@ class ProspectiveSourceBoundary(NamespaceArchive):
         """Reuse successful canonical checks only during one immutable replay."""
         if self._supporting_verification is None:
             return verify()
-        if time.monotonic() - self._started > 20:
+        if time.monotonic() - self._started > self.budget_seconds:
             raise OperationsError("projection-budget-exceeded", "source verification exceeded preparation budget")
         if key not in self._supporting_verification:
             self._supporting_verification[key] = verify()
         return self._supporting_verification[key]
+
+    def verify_source_identity(self, family, identity):
+        key = (family, identity.split(":")[-1])
+        if key in self._verified_identities:
+            if _signature(self._path(*key)) != self._signatures[key]:
+                raise OperationsError("projection-invalid", "checkpoint source changed")
+            return True
+        self.read_verified(family, identity)
+        self._verified_identities.add(key)
+        return True
+
+    def replay_contracts(self, entry, prior):
+        from forecast_standalone_operations import _contracts_from_entry
+        from forecast_standalone_research import deserialize_v3
+        identity = entry["manifest_entry_id"]
+        if identity in self._reusable:
+            return tuple(deserialize_v3(x) for x in self._contributions[identity])
+        contracts = _contracts_from_entry(self, entry, prior)
+        self._contributions[identity] = [x.to_json() for x in contracts]
+        return contracts
 
     def prospective_entries(self):
         if self._integrity is None:
@@ -114,8 +137,6 @@ class ProspectiveSourceBoundary(NamespaceArchive):
 def capture_boundary(archive):
     with archive.mutation_lock():
         entries = relevant_entries(archive.entries())
-    if len(entries) > MAX_SOURCE_OBJECTS:
-        raise OperationsError("projection-budget-exceeded", "too many required source manifests")
     return ProspectiveSourceBoundary(archive, entries)
 
 
@@ -158,7 +179,11 @@ def _read(archive):
         value = envelope["projection"]
         if (set(envelope) != {"projection", "sha256"} or
                 sha256_bytes(canonical_bytes(value)) != envelope["sha256"] or
-                set(value) != set(_material(archive, ())) or
+                set(value) != set(_material(archive, ())) | {"authority", "built_at", "normalized", "signatures", "contributions", "lineage"} or
+                not isinstance(value["lineage"], str) or
+                len(value["lineage"]) != 32 or
+                any(c not in "0123456789abcdef" for c in value["lineage"]) or
+                value["authority"] != "non-authoritative-operations-checkpoint" or
                 value["schema_version"] != SCHEMA_VERSION or
                 value["builder_version"] != BUILDER_VERSION or
                 value["namespace"] != archive.config.namespace or
@@ -168,16 +193,33 @@ def _read(archive):
             raise ValueError
     except (KeyError, TypeError, ValueError):
         raise OperationsError("projection-invalid", "projection content or version is invalid") from None
+    try:
+        ids = set(value["source_manifest_ids"])
+        if set(value["contributions"]) != ids or not isinstance(value["normalized"], dict):
+            raise ValueError
+        for key, signature in value["signatures"].items():
+            family, digest = key.split(":")
+            if family not in {"raw", "normalized"} or len(digest) != 64 or len(signature) != 5:
+                raise ValueError
+        for digest in value["normalized"]:
+            if "normalized:" + digest not in value["signatures"]:
+                raise ValueError
+    except (KeyError, TypeError, ValueError):
+        raise OperationsError("projection-invalid", "checkpoint state is malformed") from None
     return value
 
 
 def assert_boundary(archive, boundary):
     """Caller owns the mutation lock. No scientific/object replay occurs here."""
+    _assert_lineage(archive, boundary._checkpoint_lineage)
+    if time.monotonic() - boundary._started > boundary.budget_seconds:
+        raise OperationsError("projection-budget-exceeded", "preparation exceeded its budget")
     entries = relevant_entries(archive.entries())
     if _material(archive, entries) != _material(archive, boundary.entries()):
         raise OperationsError("projection-stale", "relevant publication changed during preparation")
-    # Detect source changes after their verified reads, without rehashing under
-    # the lock. The next invocation always reads and hashes the source anew.
+    if check_capture_persistence(archive, entries):
+        raise OperationsError("prospective-publication-ambiguous", "unresolved capture marker")
+    # Immutable signatures bind cached verification to this exact local source.
     for key, signature in boundary._signatures.items():
         if _signature(boundary._path(*key)) != signature:
             raise OperationsError("projection-invalid", "required source changed during preparation")
@@ -207,9 +249,27 @@ def _signature(path):
     return value.st_dev, value.st_ino, value.st_size, value.st_mtime_ns, value.st_ctime_ns
 
 
-def _publish(archive, boundary):
-    value = _material(archive, boundary.entries())
+def _rejected_path(archive, lineage):
+    return archive.root / f"prospective-projection-rejected-{lineage}.json"
+
+
+def _assert_lineage(archive, lineage):
+    # Presence is a durable negative fence, even if diagnostic bytes are damaged.
+    # No directory scan or historical source replay is needed on the hot path.
+    if _rejected_path(archive, lineage).exists():
+        raise OperationsError("projection-rejected", "checkpoint lineage was rejected by full replay; explicit rebuild required")
+
+
+def _publish(archive, boundary, at):
+    value = {**_material(archive, boundary.entries()),
+             "lineage": boundary._checkpoint_lineage,
+             "authority": "non-authoritative-operations-checkpoint", "built_at": at.isoformat(),
+             "normalized": {key[1]: body for key, body in boundary._json.items() if key[0] == "normalized"},
+             "signatures": {":".join(key): signature for key, signature in boundary._signatures.items()},
+             "contributions": boundary._contributions}
     body = canonical_bytes({"projection": value, "sha256": sha256_bytes(canonical_bytes(value))})
+    if len(body) > MAX_PROJECTION_BYTES:
+        raise OperationsError("projection-budget-exceeded", "checkpoint exceeds format bound")
     temporary = archive.root / f".prospective-{uuid.uuid4().hex}.partial"
     try:
         with temporary.open("xb") as handle:
@@ -219,6 +279,7 @@ def _publish(archive, boundary):
         with archive.mutation_lock():
             assert_boundary(archive, boundary)
             os.replace(temporary, projection_path(archive))
+            _sync_directory(archive.root)
     finally:
         temporary.unlink(missing_ok=True)
 
@@ -230,37 +291,116 @@ def rebuild_projection(archive, at):
     boundary = capture_boundary(archive)
     if check_capture_persistence(archive, boundary.entries()):
         raise OperationsError("prospective-publication-ambiguous", "rebuild cannot clear interrupted capture")
+    boundary.budget_seconds = float("inf")
     state = replay_boundary(boundary, at)
-    _publish(archive, boundary)
+    # Daily full replay independently checks any usable same-boundary checkpoint.
+    # Invalid/old-format cache is disposable; immutable sources were verified above.
+    try:
+        cached, recorded, current = _prepare_checkpoint(archive, at)
+    except OperationsError:
+        cached = None
+    if cached is not None and recorded["source_manifest_ids"] == current["source_manifest_ids"]:
+        cached.budget_seconds = float("inf")
+        if (canonical_bytes(replay_boundary(cached, at)) != canonical_bytes(state) or
+                canonical_bytes(cached._contributions) != canonical_bytes(boundary._contributions)):
+            # Revoke the loaded lineage even if a prepared incremental consumer
+            # has already replaced the checkpoint with one of its descendants.
+            # Persist the negative fence before removing the current cache, so
+            # interruption cannot leave a rejected lineage loadable again.
+            with archive.mutation_lock():
+                assert_boundary(archive, boundary)
+                rejected = _rejected_path(archive, recorded["lineage"])
+                if not rejected.exists():
+                    _write_transaction(archive, rejected, {
+                        "schema_version": "1", "kind": "rejected-prospective-checkpoint",
+                        "rejected_at": at.isoformat(), "checkpoint": recorded,
+                    })
+                try:
+                    current_checkpoint = _read(archive)
+                except OperationsError:
+                    current_checkpoint = None
+                if current_checkpoint is not None and current_checkpoint["lineage"] == recorded["lineage"]:
+                    projection_path(archive).unlink()
+                    _sync_directory(archive.root)
+            raise OperationsError("projection-replay-conflict", "checkpoint differs from independent full replay; explicit rebuild required")
+    _publish(archive, boundary, at)
     return state
 
 
-def load_projection(archive, at):
+def _prepare_checkpoint(archive, at):
     recorded = _read(archive)
     boundary = capture_boundary(archive)
+    boundary._checkpoint_lineage = recorded["lineage"]
+    _assert_lineage(archive, boundary._checkpoint_lineage)
     boundary.blocked_opportunities = check_capture_persistence(archive, boundary.entries())
+    if boundary.blocked_opportunities:
+        raise OperationsError("prospective-publication-ambiguous", "unresolved capture marker")
     current = _material(archive, boundary.entries())
-    # A removed source cannot be treated as ordinary append-only refresh.
-    if not set(recorded["source_manifest_ids"]) <= set(current["source_manifest_ids"]):
+    old_ids = set(recorded["source_manifest_ids"])
+    if not old_ids <= set(current["source_manifest_ids"]):
         raise OperationsError("projection-invalid", "required source manifest disappeared")
-    state = replay_boundary(boundary, at)
-    if recorded != current:
-        _publish(archive, boundary)
-    return boundary, state
+    if datetime.fromisoformat(recorded["built_at"]) > at:
+        raise OperationsError("projection-invalid", "checkpoint is future-effective")
+    delta = tuple(x for x in boundary.entries() if x["manifest_entry_id"] not in old_ids)
+    if len(delta) > MAX_DELTA_MANIFESTS:
+        raise OperationsError("projection-budget-exceeded", "excessive append delta; offline rebuild required")
+    boundary._signatures = {tuple(key.split(":")): tuple(sig) for key, sig in recorded["signatures"].items()}
+    boundary._verified_identities = set(boundary._signatures)
+    for key, signature in boundary._signatures.items():
+        if _signature(boundary._path(*key)) != signature:
+            raise OperationsError("projection-invalid", "checkpoint source changed or disappeared")
+    boundary._json = {("normalized", key): value for key, value in recorded["normalized"].items()}
+    boundary._contributions = recorded["contributions"]
+    # Replay the entire timestamp cohort at the insertion point. Never infer a
+    # substantive order from the manifest digest of a new same-time publication.
+    cutoff = min((x["acquired_at"]["datetime_utc"] for x in delta), default=None)
+    suffix = [x for x in boundary.entries() if cutoff is not None and x["acquired_at"]["datetime_utc"] >= cutoff]
+    if len(suffix) > MAX_DELTA_MANIFESTS:
+        raise OperationsError("projection-budget-exceeded", "append changes an excessive replay suffix")
+    boundary._reusable = old_ids - {x["manifest_entry_id"] for x in suffix}
+    # A completion/correction can change earlier session contributions. Rewind
+    # to the earliest affected group/session and replay the complete suffix.
+    touched_sessions = set()
+    touched_groups = set()
+    for entry in delta:
+        if entry.get("normalized_object_id"):
+            value = boundary.read_json_verified("normalized", entry["normalized_object_id"])
+            session = value.get("session_id") or value.get("supporting_session_id")
+            group = value.get("acquisition_id")
+            if session: touched_sessions.add(session)
+            if group: touched_groups.add(group)
+    for entry in boundary.entries():
+        if entry["manifest_entry_id"] not in old_ids or not entry.get("normalized_object_id"): continue
+        value = boundary._json[("normalized", entry["normalized_object_id"].split(":")[-1])]
+        if ((value.get("session_id") or value.get("supporting_session_id")) in touched_sessions or
+                value.get("acquisition_id") in touched_groups):
+            cutoff = min(cutoff, entry["acquired_at"]["datetime_utc"])
+    suffix = [x for x in boundary.entries() if cutoff is not None and x["acquired_at"]["datetime_utc"] >= cutoff]
+    if len(suffix) > MAX_DELTA_MANIFESTS:
+        raise OperationsError("projection-budget-exceeded", "lineage delta requires an excessive replay suffix")
+    boundary._reusable = old_ids - {x["manifest_entry_id"] for x in suffix}
+    return boundary, recorded, current
+
+
+def load_projection(archive, at):
+    try:
+        boundary, recorded, current = _prepare_checkpoint(archive, at)
+        state = replay_boundary(boundary, at)
+        if recorded["source_manifest_ids"] != current["source_manifest_ids"]:
+            _publish(archive, boundary, at)
+        return boundary, state
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        raise OperationsError("projection-invalid", "checkpoint source or replay state is invalid") from exc
 
 
 def projection_status(archive, at):
     try:
-        recorded = _read(archive)
-        boundary = capture_boundary(archive)
-        if check_capture_persistence(archive, boundary.entries()):return "invalid"
-        if recorded != _material(archive, boundary.entries()):
-            return "stale"
+        boundary, recorded, current = _prepare_checkpoint(archive, at)
         replay_boundary(boundary, at)
-        return "current"
+        return "current" if recorded["source_manifest_ids"] == current["source_manifest_ids"] else "stale"
     except OperationsError as exc:
         return "absent" if exc.code == "projection-absent" else "invalid"
-    except (OSError, ValueError):
+    except (OSError, ValueError, KeyError, TypeError):
         return "invalid"
 
 

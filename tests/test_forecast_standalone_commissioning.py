@@ -247,11 +247,11 @@ class CommissioningTests(unittest.TestCase):
         # CLI rejects missing bounds before any manual provider request.
         with patch('operate_forecast_standalone_activation.DeploymentConfig.from_json',return_value=self.config):
             config_path.write_text('{}')
-            with patch('forecast_standalone_activation.DeploymentConfig.from_json',return_value=self.config):
+            with patch('forecast_standalone_activation.DeploymentConfig.from_json',return_value=replace(self.config,fixture_response_path=Path(self.temp.name))):
                 import plistlib,sys
                 jobs = render_launchd_jobs(repository_root=Path(__file__).resolve().parents[1],
                     python_executable=Path(sys.executable),config_path=config_path,output_root=Path(self.temp.name)/'jobs')
-                self.assertEqual(len(jobs),6)
+                self.assertEqual(len(jobs),2)
                 self.assertNotIn(COMMAND,[plistlib.loads(Path(p).read_bytes())['ProgramArguments'][-1] for p in jobs])
             self.assertNotEqual(main(['--config', str(config_path), COMMAND]), 0)
             self.assertNotEqual(main(['--config', str(config_path), '--trusted-at', self.now.isoformat(), COMMAND,

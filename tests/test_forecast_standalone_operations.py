@@ -91,7 +91,7 @@ class OperationsTest(unittest.TestCase):
         self.config=replace(self.config,research_protocol_ids=(g["prospective"].standalone_probability_source_protocol_id,));self.archive=NamespaceArchive(self.config)
         archive_pr17_authority(self.archive,(g["activation"],g["prospective"],g["opportunity"],g["prospective_classification"],context,result,g["legacy"]["outcome_history"],g["series"]),recorded_at=g["prospective_target"])
         from forecast_prospective_projection import rebuild_projection
-        rebuild_projection(self.archive,at)
+        rebuild_projection(self.archive,g["prospective_target"])
         return g,at
 
     def prospective_response_at(self,g,at):
