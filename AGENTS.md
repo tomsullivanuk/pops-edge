@@ -87,6 +87,25 @@ If a candidate is rejected, provide the linked review artifact and, when useful,
 
 Apply this format when the artifacts will support a later handoff or approval decision. Routine inspections, minor edits, and short answers do not require standalone artifacts.
 
+### Codex task naming and PR terminology
+
+Name Codex tasks using:
+
+`Pops | <Product/component> <Target version> | <Feature> | <Activity>`
+
+Example:
+
+`Pops | NFL v1.2.0 | Game matching | Implementation`
+
+- Use a consistent feature name across related tasks.
+- Use a concise activity label, such as Planning, Implementation, Independent review, Corrections, or Deployment.
+- Include the target version only when it has been agreed. It identifies the intended release, not the currently deployed version. Omit it while undecided, and update related task titles if the agreed target changes.
+- After a GitHub Pull Request exists, append `| PR #<number>` to tasks associated with it. Do not invent or reserve PR numbers in advance.
+- Create separate tasks when they support a useful handoff, a distinct work boundary, or independent review. Do not automatically create a task for every activity.
+- Keep the exact scope, repository revision, acceptance criteria, dependencies, and authorized actions in the task instructions. A task title does not confer authorization.
+
+Use “feature planning” or “PR planning” for work that defines a proposed change before a GitHub Pull Request exists. Reserve “open the PR” or “create the PR” for creating the actual Pull Request in GitHub.
+
 ## Governing authority
 
 Apply the following authority hierarchy:
