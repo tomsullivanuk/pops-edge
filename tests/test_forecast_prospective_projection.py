@@ -133,13 +133,14 @@ class ProjectionTests(unittest.TestCase):
         attempts = replay_pr17_archive(self.archive, analysis_boundary=self.at).bucket("attempts")
         self.assertEqual(sum(item.provider_call_occurred for item in attempts), 1)
 
-    def test_unresolved_other_opportunity_does_not_block_independent_collection(self):
+    def test_unresolved_other_opportunity_blocks_checkpoint_use(self):
         from forecast_prospective_projection import begin_request
         with self.archive.mutation_lock():
             begin_request(self.archive, "prior-protocol", "prior-opportunity")
         transport = SequenceTransport(self.fixture.prospective_response_at(self.g, self.at))
-        self.assertEqual(self.capture(factory=lambda *_: transport).provider_request_count, 1)
-        self.assertEqual(len(transport.calls), 1)
+        with self.assertRaisesRegex(OperationsError, "prospective-publication-ambiguous"):
+            self.capture(factory=lambda *_: transport)
+        self.assertEqual(len(transport.calls), 0)
         self.assertEqual(projection_status(self.archive, self.at), "invalid")
 
     def test_request_fence_survives_interruption_before_response_publication(self):

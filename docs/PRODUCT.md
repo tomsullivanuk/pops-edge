@@ -676,3 +676,17 @@ Freshness is evaluated when the season view is assembled. An open page does not
 reevaluate age or kickoff until reloaded; manual Refresh Bet Sheet retrieves
 new prices. See the refresh guide and backlog for this accepted P2 limitation
 and the separate rejected-workbook restoration limitation.
+
+
+## PR30 approved local operational lifecycle correction
+
+The collector and its supporting publication, Outcomes, checkpoint, index,
+secondary and health work form one bounded local lifecycle. A disposable verified
+checkpoint may retain canonical replay state over an exact immutable source boundary.
+It creates no Evidence or scientific authority. The scheduled topology is a separate
+30-second collector and one serialized hourly maintenance cycle with daily phases.
+Visible skipped hours and manual integrity/marker intervention remain accepted.
+Historical failures remain visible after valid recovery; current readiness is not
+proof of complete Coverage. No scientific matching, selection, settlement, capture
+window, Policy, Governance or prospective no-backfill rule changes. See the PR30
+section of `ARCHITECTURE.md` and `operations/PROSPECTIVE_PROJECTION.md`.

@@ -1799,118 +1799,75 @@ unchanged. The approved laptop deployment tolerates sleep/network gaps; it does
 not require wake prevention or an always-on service.
 
 
-### PR17C1 bounded prospective source projection
+### PR30 prospective checkpoint and serialized local lifecycle
 
-`forecast_prospective_projection.py` owns one local, rebuildable Operations file,
-`prospective-projection.json`. It contains only the exact selected manifest IDs,
-namespace/mode, schema/builder versions, and a content checksum. It contains no
-scientific values or cached validation assertions. An index checksum is never
-sufficient for a call: each invocation independently selects the complete source
-set from verified manifest metadata and performs canonical page, acquisition,
-correction, and graph reconstruction from freshly digest-verified source bytes.
-Parsed objects and verified bytes are reused only within that invocation.
+The Product Owner approved a versioned, checksummed, explicitly non-authoritative
+Operations checkpoint and one bounded local non-collector cycle. This supersedes
+the earlier manifest-ID-only projection and its prohibition on persistent replay
+state. Immutable archive Evidence remains the sole authority and recovery source.
+Scientific matching, settlement, selection, population and publication contracts
+are unchanged; no backfill, archive repair, Policy or Governance authority is added.
 
-The stable source boundary is captured under the existing mutation lock. Long
-reconstruction then runs outside it. Supporting histories are shared across the
-activation boundary, so the selected dependency scope deliberately retains all
-supporting sessions, pages, corrections, histories and classifications, including
-retrospective supporting predecessors. It excludes the closed independent
-`acquire-retrospective`, `acquire-retrospective-cutoff`, and
-`publish-retrospective-analysis` command families. Their payloads, reports, and
-recursive publication validation are never loaded by the collector. The cutoff
-exception matches its actual writer: `supporting`, provider `kalshi`, and no
-Protocol ID; a differently tagged cutoff remains in the required set. Failed
-Outcome-only acquisitions (`reconcile-outcomes-failure`) have no scientific
-contracts and do not affect the projection. Unknown command families remain in
-the required set rather than being silently excluded.
+The checkpoint preserves exact source-manifest IDs, normalized source metadata,
+source object identities and local filesystem signatures, format/builder versions,
+build time and canonical per-manifest replay contributions. A full offline build
+independently verifies the complete archive and replays all relevant sources before
+atomic publication. A usable same-boundary checkpoint must reproduce byte-identical
+canonical operational state and contributions. The collector validates the current
+manifest boundary and source signatures, verifies a bounded append-only delta,
+replays any affected chronological suffix, and validates the entire current graph.
+Schema 3 gives each independent full build a fresh local lineage ID; incremental
+publications inherit it. Full-replay mismatch durably records the rejected checkpoint
+under its lineage before removing any current descendant. The rejection record
+remains a negative Operations fence across processes and later independent rebuilds.
+Prepared consumers cannot authorize requests or publish that rejected lineage;
+checkpoint replacement cannot revoke this fence. Preserve rejection diagnostics
+alongside capture markers. Full source replay remains outside the mutation lock.
+The final boundary/signature/marker/lineage check remains under the mutation lock before
+provider authorization. The checkpoint is disposable and cannot promote invalid
+material or replace immutable source Evidence.
 
-The four observable lifecycle states are:
+Supporting predecessors across activation boundaries remain included. Only the
+previously closed independent retrospective acquisition/publication and failed
+Outcome-only families remain excluded. Unknown commands stay in scope. Corrections
+rewind the replay suffix to the affected session/group; exceeding the bounded suffix
+requires offline rebuild, never dropping history or widening a capture window.
+New payload verification retains a 20-second / 8,192-object / 256-MiB hot budget;
+the append and replay suffix bounds are each 256 manifests, and the serialized
+checkpoint bound is 64 MiB. Full offline builds have a separate unlimited time
+budget. All replay decisions remain in existing canonical domain validators.
 
-- **Absent:** no projection exists; capture refuses calls. Explicit initialization
-  or `rebuild-prospective-projection` constructs it offline.
-- **Current:** the versioned manifest set matches the relevant archive boundary,
-  and required source authority verifies. The persisted file alone cannot prove
-  current scientific authority.
-- **Stale:** relevant append-only publication has changed the source set. The next
-  invocation may perform bounded canonical refresh, then atomically replace the
-  derived file before final request authorization. There is no dependency on the
-  next daily maintenance run.
-- **Invalid:** content/version validation, removed dependencies, or required source
-  verification fails. No call is authorized from invalid source authority.
-  Unresolved transaction markers separately fence their affected opportunities;
-  independent opportunities can continue. Full audit and explicit rebuild remain
-  available; neither rewrites archive material.
+Unresolved request/publication markers now block checkpoint use globally, replacing
+the previous per-opportunity continuation behavior. They remain durable negative
+Operations state, never disposable checkpoint cache. Completed manifest-linked
+markers permit later work; no marker is automatically cleared or repaired.
 
-Initialization and configured daily maintenance build the projection. Every
-supporting-session publication/correction, manual schedule receipt/completion,
-relevant Outcome publication, acquisition abandonment, and prospective
-attempt/Snapshot publication participates automatically through the independently
-checked source set. No per-writer mutable notification is trusted for completeness.
-Unrelated retrospective acquisitions/publications and failed Outcome-only
-observations do not invalidate it. Ordinary full audit, replay, publication
-verification, index, and secondary-copy authority remain unchanged.
+The installed topology is exactly two jobs: the independent 30-second collector
+and an hourly serialized lifecycle cycle. One nonblocking whole-cycle lock covers
+supporting publication, daily Outcomes, full checkpoint verification/rebuild (or
+hourly bounded refresh), daily index maintenance, daily secondary synchronization
+and final health evaluation. A long daily cycle causes a visible zero-call skipped
+hourly invocation. Typed phase results expose not-due and dependency-failed phases;
+only valid completions advance cadence. No queue, service framework or cloud
+component is introduced. Existing collector and short mutation locks retain their
+separate responsibilities.
 
-The local refresh admits at most 8,192 source manifests/objects and 256 MiB of
-unique source bytes, with a 20-second cooperative verification budget. Exceeding
-these bounds fails visibly; it never falls back to an unbounded collector rebuild.
-The limits bound supporting dependency verification, not study membership or
-Coverage: no scientific population is truncated. Manifest metadata discovery
-still scales with archive manifest count. The deployment-scale benchmark and
-object-read assertions gate fitness for the current local archive; growth beyond
-these operational bounds requires a reviewed optimization, not raising scientific
-capture tolerances or dropping predecessors.
+Health reports current safety/readiness separately from immutable failure history,
+archive integrity, checkpoint usability/boundary, phase cadence, audit/index age,
+and secondary age/lag. A later valid completion can supersede a transient failure;
+a prior health failure does not itself block future readiness. Intact index rows
+at an older append-only boundary are expected lag, not corruption. Index builder 2
+checksums its published rows so missing/altered rows cannot masquerade as lag.
+Unresolved current safety conditions still prevent readiness. Health never implies
+complete prospective Coverage or creates research/Policy authority.
 
-Immediately before transport, the collector checks the relevant manifest set and
-verified-source file signatures under a short mutation lock, obtains fresh trusted
-time, and resolves the exact schedule/target and current slot against the verified
-immutable graph. Transport construction precedes that check. Current-slot work
-precedes disk publication of earlier missed slots; the earlier slots remain
-`Missed`, even after a later successful call. A separate nonblocking collector
-lock prevents concurrent collectors from making duplicate calls without blocking
-supporting publication during provider I/O. Capture result publication uses the
-same canonical manifest and object serialization, without an unrelated namespace
-reconciliation in its commit path. Full maintenance still diagnoses orphans and
-unrelated corruption. Source-change and projection failures remain explicit in
-capture heartbeats and health reports.
-
-The prospective writer also owns narrow durable Operations markers under
-`prospective-requests/` and `prospective-publications/`. A request fence is
-atomically written and synchronized before the final trusted clock and transport;
-a publication intent is synchronized before any raw or normalized object write.
-Objects and their directories are synchronized before publishing the canonical
-manifest. Only that completed, verified manifest proves publication completion.
-The same completed invocation and bytes are idempotent; conflicting invocation
-content fails closed. Partial publication is never automatically adopted.
-
-An unresolved marker fences its opportunity, including no-call dispositions, so
-an unknown request cannot be repeated or silently represented as `Missed`.
-Other independent opportunities may continue. A live owner may record
-`no-transport` only when its fresh time check prevents entering transport; a
-restart has no such knowledge. Ambiguity remains visible in health and capture
-errors. These markers grant no scientific authority and are not disposable in
-the manner of the source projection. There is no automatic recovery subsystem.
-Builder version 2 requires explicit offline rebuild for older projections; that
-rebuild performs full archive reconciliation outside the mutation lock, refuses
-orphans or unresolved markers, and never clears or repairs them. This ensures
-pre-marker partial writes cannot be bypassed by upgrading the collector.
-
-Prospective source replay reuses successful supporting completion, correction,
-and acquisition verification only inside one immutable replay invocation. The
-memo is cleared on success or failure; ordinary archive writers and full replay
-without that source view retain independent verification. Acquisition memo keys
-retain the exact parsed object, and catalog-union keys include exact page bytes,
-positions, cursors, partitions and cutoff. Each envelope still verifies its own
-page ownership, chronology, completeness and union identity. Boundary-effective
-contract derivation and scientific graph decisions are never memoized.
-
-Catalog merging retains each market's already-canonical bytes through partition
-selection and writes the same sorted canonical union envelope without recursively
-serializing those markets again. Verified canonical unions are hashed directly;
-provider-supplied material still undergoes strict canonicalization. Every later
-invocation freshly verifies all selected immutable source bytes, retains the same
-supporting closure, and uses the unchanged 20-second, 8,192-object and 256-MiB
-bounds. This local performance correction creates no persisted cache, scientific
-contract, recovery authority, or deployment activation.
+Live scheduler rendering and each generated invocation require a clean detached
+checkout at the exact accepted revision. The renderer is inert. The dirty pinned
+checkout at `/Users/tom/pops-edge` is not a commissioning target. See
+[checkpoint, cadence and recovery details](operations/PROSPECTIVE_PROJECTION.md)
+and [clean pinned commissioning](operations/PINNED_DEPLOYMENT.md). Mac availability,
+manual integrity/marker intervention and visibly skipped hourly work remain accepted
+local operational limitations. Integration and commissioning require separate gates.
 
 
 September 10 full-season display amendment: the owner requested all workbook

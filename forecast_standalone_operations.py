@@ -29,7 +29,7 @@ from event_contracts import ContractError
 
 OPERATIONS_SCHEMA_VERSION = "1"
 INDEX_SCHEMA_VERSION = "1"
-INDEX_BUILDER_VERSION = "1"
+INDEX_BUILDER_VERSION = "2"
 PROVIDER_ID = "kalshi"
 APPROVED_ACTIVATION_AT = datetime.fromisoformat("2026-09-05T00:00:00-04:00")
 PROHIBITED_KEYS = frozenset({"authorization", "cookie", "password", "secret", "token", "api_key", "private_key"})
@@ -797,7 +797,7 @@ def reconcile_archive(archive:NamespaceArchive,*,_entries=None)->ArchiveIntegrit
         for digest in sorted(expected):
             label=f"{family}:{digest}";path=actual.get(digest)
             if path is None:missing.append(label)
-            elif sha256_bytes(archive.read_verified(family,digest) if _entries is not None else path.read_bytes())!=digest:corrupt.append(label)
+            elif (not archive.verify_source_identity(family,digest) if hasattr(archive,"verify_source_identity") else sha256_bytes(archive.read_verified(family,digest) if _entries is not None else path.read_bytes())!=digest):corrupt.append(label)
             else:referenced.append(label)
     orphaned=tuple(sorted([f"raw:{key}" for key in set(actual_raw)-expected_raw]+[f"normalized:{key}" for key in set(actual_normalized)-expected_normalized]))
     malformed_paths=[]
@@ -899,6 +899,8 @@ def rebuild_index(archive: NamespaceArchive) -> str:
             connection.executemany("INSERT INTO metadata VALUES (?,?)", (("schema_version",INDEX_SCHEMA_VERSION),("builder_version",INDEX_BUILDER_VERSION),("namespace",archive.config.namespace),("mode",archive.config.mode.value)))
             for entry in sorted(entries, key=lambda x: x["manifest_entry_id"]):
                 connection.execute("INSERT INTO manifest VALUES (?,?,?,?,?,?,?,?)", (entry["manifest_entry_id"],entry["command"],entry["disposition"],entry["acquired_at"]["datetime_utc"],entry.get("raw_object_sha256"),entry.get("normalized_object_id"),entry.get("protocol_id"),entry["design_authority"]))
+            rows=connection.execute("SELECT * FROM manifest ORDER BY id").fetchall()
+            connection.execute("INSERT INTO metadata VALUES (?,?)", ("rows_sha256",sha256_bytes(canonical_bytes(rows))))
             connection.commit(); connection.execute("PRAGMA integrity_check").fetchone()
         finally: connection.close()
         os.replace(temporary, archive.index_path)
@@ -911,6 +913,7 @@ def index_health(archive: NamespaceArchive) -> tuple[str, tuple[str, ...]]:
     try:
         connection=sqlite3.connect(f"file:{archive.index_path}?mode=ro", uri=True)
         metadata=dict(connection.execute("SELECT key,value FROM metadata")); ids={row[0] for row in connection.execute("SELECT id FROM manifest")}
+        rows=connection.execute("SELECT * FROM manifest ORDER BY id").fetchall()
         integrity=connection.execute("PRAGMA integrity_check").fetchone()[0]
     except sqlite3.DatabaseError as exc: return "corrupt", (str(exc),)
     finally:
@@ -918,8 +921,11 @@ def index_health(archive: NamespaceArchive) -> tuple[str, tuple[str, ...]]:
     try:expected={entry["manifest_entry_id"] for entry in authoritative_entries(archive)}
     except OperationsError as exc:return "archive-invalid",(exc.detail,)
     if metadata.get("schema_version")!=INDEX_SCHEMA_VERSION or metadata.get("builder_version")!=INDEX_BUILDER_VERSION: return "stale", ("version mismatch",)
-    if ids!=expected: return "disagreement", ("index/full-scan mismatch",)
     if integrity!="ok": return "corrupt", (integrity,)
+    if metadata.get("namespace")!=archive.config.namespace or metadata.get("mode")!=archive.config.mode.value:return "disagreement",("index namespace mismatch",)
+    if metadata.get("rows_sha256")!=sha256_bytes(canonical_bytes(rows)):return "disagreement",("index rows differ from published boundary",)
+    if ids < expected: return "append-only-lag", (f"{len(expected-ids)} manifests not yet indexed",)
+    if ids!=expected: return "disagreement", ("index/full-scan mismatch",)
     return "healthy", ()
 
 
@@ -1212,7 +1218,7 @@ def replay_pr17_archive(archive:NamespaceArchive,*,analysis_boundary:datetime,ex
     for entry in entries:
         if _exclude_retrospective_publications and datetime.fromisoformat(entry["acquired_at"]["datetime_utc"])>analysis_boundary:continue
         if entry.get("command")=="publish-retrospective-analysis" and datetime.fromisoformat(entry["acquired_at"]["datetime_utc"])>analysis_boundary:continue
-        contracts=_contracts_from_entry(archive,entry,objects,excluded_supporting_sessions,_exclude_retrospective_publications)
+        contracts=(archive.replay_contracts(entry,objects) if hasattr(archive,"replay_contracts") else _contracts_from_entry(archive,entry,objects,excluded_supporting_sessions,_exclude_retrospective_publications))
         if contracts:source_manifest_ids.append(entry["manifest_entry_id"])
         objects.extend(contracts)
     keyed={}

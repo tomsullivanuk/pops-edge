@@ -284,7 +284,7 @@ class ActivationTests(unittest.TestCase):
             root=Path(directory);config_path=root/"activated.json";repo=Path(__file__).resolve().parents[1];fixture=root/"fixtures";fixture.mkdir();mlb,catalog,book=fixtures();(fixture/"mlb.json").write_bytes(mlb);(fixture/"kalshi.json").write_bytes(catalog);(fixture/"orderbook.json").write_bytes(book);_,protocol=canonical_prospective_authority();trusted="2026-09-05T00:06:06-04:00"
             material={"activation_at":"2026-09-05T00:00:00-04:00","config_id":"render","fixture_response_path":str(fixture),"lock_timeout_seconds":1,"log_root":str(root/"logs"),"mode":"activated","namespace":"render","primary_root":str(root/"activated/render/primary"),"provider_base_url":"https://fixture.invalid","research_protocol_ids":[protocol.standalone_probability_source_protocol_id],"retry_policy":{"maximum_attempts":1,"request_timeout_seconds":1,"total_timeout_seconds":1,"backoff_seconds":[],"maximum_retry_after_seconds":0},"schedule_parameters":{"fixture_trusted_at":trusted},"secondary_root":str(root/"activated/render/secondary")}
             config_path.write_text(json.dumps(material));config=DeploymentConfig.from_json(config_path);execute("initialize-activation",config,clock=lambda:datetime(2026,8,28,tzinfo=timezone.utc));paths=render_launchd_jobs(repository_root=repo,python_executable=Path(__import__('sys').executable),config_path=config_path,output_root=root/"rendered")
-            self.assertEqual(len(paths),6)
+            self.assertEqual(len(paths),2)
             for job_number,path in enumerate(paths):
                 material["schedule_parameters"]["fixture_trusted_at"]=(datetime.fromisoformat(trusted)+timedelta(seconds=job_number)).isoformat()
                 config_path.write_text(json.dumps(material))

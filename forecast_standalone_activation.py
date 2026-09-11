@@ -1330,6 +1330,10 @@ class HealthReport:
     secondary_lag:int;secondary_age_seconds:int|None;free_disk_bytes:int;recent_failures:tuple[str,...];ready:bool;authority:str="non-authoritative-operations-health"
     supporting_age_seconds:int|None=None;outcome_age_seconds:int|None=None;inspection_age_seconds:int|None=None;index_rebuild_age_seconds:int|None=None
     health_generated_at:datetime|None=None;command_dispositions:tuple[tuple[str,str],...]=()
+    secondary_conflicts:int=0;secondary_unexplained:int=0
+    checkpoint_state:str="unknown";checkpoint_source_boundary:tuple[str,...]=()
+    current_blockers:tuple[str,...]=();superseded_failures:tuple[str,...]=();recent_skips:tuple[str,...]=()
+    last_valid_completions:tuple[tuple[str,datetime],...]=()
     def to_json(self)->str:return canonical_bytes(self).decode()
 
 
@@ -1372,11 +1376,26 @@ class OperationalState:
         return tuple(values)
 
 
-JOB_SCHEDULES={"prospective":{"StartInterval":30},"supporting":{"StartCalendarInterval":{"Minute":7}},"outcomes":{"StartCalendarInterval":{"Hour":4,"Minute":17}},"maintenance":{"StartCalendarInterval":{"Hour":4,"Minute":29}},"secondary":{"StartCalendarInterval":{"Hour":4,"Minute":41}},"health":{"StartCalendarInterval":{"Hour":7,"Minute":5}}}
+JOB_SCHEDULES={"prospective":{"StartInterval":30},"lifecycle":{"StartCalendarInterval":{"Minute":7}}}
+
+def verify_pinned_checkout(repository_root, expected_revision):
+    """Read-only guard shared by inert rendering and commissioned invocations."""
+    import re, subprocess
+    if not isinstance(expected_revision,str) or not re.fullmatch(r"[0-9a-f]{40}",expected_revision):
+        raise OperationsError("deployment-revision-invalid","an exact accepted revision is required")
+    def git(*args):
+        result=subprocess.run(["git","-C",str(repository_root),*args],capture_output=True,text=True,check=False)
+        return result.returncode,result.stdout.strip()
+    code,head=git("rev-parse","HEAD")
+    branch_code,_=git("symbolic-ref","--quiet","HEAD")
+    status_code,status=git("status","--porcelain","--untracked-files=all")
+    if code or head!=expected_revision or branch_code!=1 or status_code or status:
+        raise OperationsError("deployment-checkout-unsafe","deployment requires a clean detached checkout at the accepted revision")
+    return head
 
 
-def render_launchd_jobs(*,repository_root,python_executable,config_path,output_root)->tuple[str,...]:
-    """Render six inert, absolute-path jobs; never installs or loads them."""
+def render_launchd_jobs(*,repository_root,python_executable,config_path,output_root,expected_revision=None)->tuple[str,...]:
+    """Render two inert, absolute-path jobs; never installs or loads them."""
     original=tuple(map(lambda p:p if hasattr(p,"is_absolute") else __import__('pathlib').Path(p),(repository_root,python_executable,config_path,output_root)))
     if not all(p.is_absolute() for p in original):raise OperationsError("deployment-path-invalid","installation paths must be absolute")
     repository_root,python_executable,config_path,output_root=original
@@ -1386,19 +1405,22 @@ def render_launchd_jobs(*,repository_root,python_executable,config_path,output_r
     if config.mode is not OperatingMode.ACTIVATED:raise OperationsError("deployment-mode-invalid","rendering requires activated configuration")
     state_roots=tuple(p.resolve() for p in (config.primary_root,config.secondary_root,config.log_root))
     if any(output_root==p or output_root in p.parents or p in output_root.parents for p in state_roots):raise OperationsError("deployment-path-invalid","render output overlaps deployment state")
+    if config.fixture_response_path is None:verify_pinned_checkout(repository_root,expected_revision)
+    if output_root==repository_root or repository_root in output_root.parents:raise OperationsError("deployment-path-invalid","render output must be outside the pinned checkout")
     output_root.mkdir(parents=True,exist_ok=True);created=[]
-    command_by_job={"prospective":"capture-prospective","supporting":"refresh-supporting","outcomes":"reconcile-outcomes","maintenance":"maintain","secondary":"sync-secondary","health":"health-report"}
+    command_by_job={"prospective":"capture-prospective","lifecycle":"lifecycle-cycle"}
     cli=repository_root/"operate_forecast_standalone_activation.py"
     if not cli.is_file():raise OperationsError("deployment-path-invalid","typed CLI is absent")
     for name,schedule in JOB_SCHEDULES.items():
         label=f"com.popsedge.pr17c1.{name}"
         arguments=[str(python_executable),str(cli),"--config",str(config_path)]
+        if config.fixture_response_path is None:arguments.extend(("--expected-revision",expected_revision))
         if config.fixture_response_path is not None:arguments.extend(("--fixture",str(config.fixture_response_path.resolve())))
         trusted=dict(config.schedule_parameters).get("fixture_trusted_at")
         if trusted is not None:
             if config.fixture_response_path is None:raise OperationsError("deployment-path-invalid","trusted fixture time requires fixture composition")
             datetime.fromisoformat(trusted);arguments.extend(("--trusted-at",trusted))
-        arguments.append(command_by_job[name]);payload={"Label":label,"ProgramArguments":arguments,**schedule}
+        arguments.append(command_by_job[name]);payload={"Label":label,"ProgramArguments":arguments,"StandardOutPath":str(config.log_root/f"launchd-{name}.stdout.log"),"StandardErrorPath":str(config.log_root/f"launchd-{name}.stderr.log"),**schedule}
         path=output_root/f"{label}.plist";path.write_bytes(plistlib.dumps(payload,sort_keys=True));created.append(str(path))
     return tuple(created)
 
@@ -1411,25 +1433,50 @@ def build_health_report(*,archive:NamespaceArchive,trusted_at:datetime,scheduler
     age=lambda value:None if value is None else max(0,int((trusted_at-value).total_seconds()))
     if free_disk_bytes < 0: raise OperationsError("storage-invalid", "free disk value must be non-negative")
     scheduler_age=age(scheduler_at);secondary_age=age(secondary_synced_at)
-    ready=bool(integrity.healthy and idx=="healthy" and scheduler_age is not None and scheduler_age<=120 and last_collector_at is not None and secondary_age is not None and free_disk_bytes>100_000_000 and not failures)
-    return HealthReport(ACTIVATION_SCHEMA_VERSION,archive.config.identity,archive.config.namespace,trusted_at,APPROVED_TIMEZONE,"active" if trusted_at>=APPROVED_ACTIVATION_AT else "staged",scheduler_age,last_collector_at,due_opportunities,provider_calls,typed_dispositions,integrity.healthy,len(integrity.referenced_missing),len(integrity.referenced_corrupt),len(integrity.malformed),len(integrity.incompatible),len(integrity.partial),len(integrity.orphaned),idx,secondary.get("lag",0),secondary_age,free_disk_bytes,failures,ready)
+    ready=bool(not secondary.get("conflicts") and not secondary.get("unexplained") and not secondary.get("archive_invalid") and integrity.healthy and idx in {"healthy","append-only-lag"} and scheduler_age is not None and scheduler_age<=120 and last_collector_at is not None and secondary_age is not None and free_disk_bytes>100_000_000)
+    return HealthReport(ACTIVATION_SCHEMA_VERSION,archive.config.identity,archive.config.namespace,trusted_at,APPROVED_TIMEZONE,"active" if trusted_at>=APPROVED_ACTIVATION_AT else "staged",scheduler_age,last_collector_at,due_opportunities,provider_calls,typed_dispositions,integrity.healthy,len(integrity.referenced_missing),len(integrity.referenced_corrupt),len(integrity.malformed),len(integrity.incompatible),len(integrity.partial),len(integrity.orphaned),idx,secondary.get("lag",0),secondary_age,free_disk_bytes,failures,ready,secondary_conflicts=secondary.get("conflicts",0),secondary_unexplained=secondary.get("unexplained",0))
 
 
 def health_from_operational_state(*,archive:NamespaceArchive,state:OperationalState,trusted_at:datetime,free_disk:Callable[[Any],int])->HealthReport:
-    entries=state.entries();latest={}
+    from forecast_operational_lifecycle import SUCCESS
+    entries=state.entries();latest={};valid={}
     for item in entries:
         if item.started_at>item.completed_at or item.completed_at>trusted_at:raise OperationsError("trusted-clock-invalid","heartbeat chronology is future-dated or reversed")
         if item.command not in latest or latest[item.command].completed_at<item.completed_at:latest[item.command]=item
-    collector=latest.get("capture-prospective");secondary=latest.get("sync-secondary")
-    age=lambda command:None if command not in latest else int((trusted_at-latest[command].completed_at).total_seconds())
-    failures=tuple(sorted(f"{x.command}:{x.failure_code or x.disposition}" for x in entries if (trusted_at-x.completed_at).total_seconds()<=90_000 and (x.failure_code or x.disposition not in ("success","completed","unchanged","no-due-work","pre-activation-no-call"))))
-    from forecast_prospective_projection import projection_status
+        if item.disposition in SUCCESS and item.failure_code is None:
+            if item.command not in valid or valid[item.command].completed_at<item.completed_at:valid[item.command]=item
+    collector=latest.get("capture-prospective");secondary=valid.get("sync-secondary")
+    age=lambda command:None if command not in valid else int((trusted_at-valid[command].completed_at).total_seconds())
+    recent=tuple(x for x in entries if (trusted_at-x.completed_at).total_seconds()<=90_000)
+    failed=tuple(x for x in recent if x.failure_code or x.disposition not in SUCCESS|{"skipped-cycle"})
+    label=lambda x:f"{x.command}:{x.failure_code or x.disposition}"
+    failures=tuple(sorted(label(x) for x in failed))
+    superseded=tuple(sorted(label(x) for x in failed if x.command in valid and valid[x.command].completed_at>x.completed_at))
+    skips=tuple(sorted(f"{x.command}:{x.completed_at.isoformat()}:skipped-cycle" for x in recent if x.disposition=="skipped-cycle"))
+    from forecast_prospective_projection import projection_status, _read
     projection=projection_status(archive,trusted_at)
-    if projection!="current":failures=tuple(sorted((*failures,f"prospective-projection:{projection}")))
-    base=build_health_report(archive=archive,trusted_at=trusted_at,scheduler_at=collector.completed_at if collector else None,last_collector_at=collector.completed_at if collector else None,due_opportunities=collector.due_opportunities if collector else None,provider_calls=collector.provider_calls if collector else None,typed_dispositions=collector.typed_dispositions if collector else None,secondary_synced_at=secondary.completed_at if secondary and secondary.disposition=="success" else None,free_disk_bytes=free_disk(archive.root),recent_failures=failures)
+    boundary=tuple(_read(archive)["source_manifest_ids"]) if projection in {"current","stale"} else ()
+    blockers=[]
+    if projection not in {"current","stale"}:blockers.append(f"prospective-projection:{projection}")
+    base=build_health_report(archive=archive,trusted_at=trusted_at,scheduler_at=collector.completed_at if collector else None,last_collector_at=valid["capture-prospective"].completed_at if "capture-prospective" in valid else None,due_opportunities=collector.due_opportunities if collector else None,provider_calls=collector.provider_calls if collector else None,typed_dispositions=collector.typed_dispositions if collector else None,secondary_synced_at=secondary.completed_at if secondary else None,free_disk_bytes=free_disk(archive.root),recent_failures=(*failures,*blockers))
     supporting,outcome=age("refresh-supporting"),age("reconcile-outcomes")
-    inspection=age("inspect") if age("inspect") is not None else age("maintain");index_age=age("rebuild-index") if age("rebuild-index") is not None else age("maintain")
-    required=((base.scheduler_age_seconds,90),(supporting,3900),(outcome,90000),(inspection,90000),(index_age,90000),(base.secondary_age_seconds,90000))
-    dispositions=tuple(sorted((name,item.disposition) for name,item in latest.items()))
-    ready=base.ready and all(value is not None and value<=limit for value,limit in required)
-    return __import__('dataclasses').replace(base,ready=ready,supporting_age_seconds=supporting,outcome_age_seconds=outcome,inspection_age_seconds=inspection,index_rebuild_age_seconds=index_age,health_generated_at=trusted_at,command_dispositions=dispositions)
+    inspection=age("rebuild-prospective-projection")
+    if inspection is None:inspection=age("maintain")
+    index_age=age("rebuild-index")
+    if index_age is None:index_age=age("maintain")
+    skipped_hour=any(x.command in {"lifecycle-cycle","lifecycle-hour"} and x.disposition=="skipped-cycle" and (trusted_at-x.completed_at).total_seconds()<=7200 for x in recent)
+    required=(("capture-prospective",age("capture-prospective"),90),("refresh-supporting",supporting,7500 if skipped_hour else 3900),("reconcile-outcomes",outcome,90000),("archive-audit",inspection,90000),("index",index_age,90000),("sync-secondary",base.secondary_age_seconds,90000))
+    for command,value,limit in required:
+        if value is None or value>limit:blockers.append(f"{command}:stale-or-absent")
+    for command in ("capture-prospective","refresh-supporting","reconcile-outcomes","rebuild-prospective-projection","refresh-prospective-projection","rebuild-index","sync-secondary"):
+        item=latest.get(command)
+        if item and (item.failure_code or item.disposition not in SUCCESS):
+            # Full and incremental checkpoint commands resolve the same condition.
+            other="rebuild-prospective-projection" if command=="refresh-prospective-projection" else "refresh-prospective-projection" if command=="rebuild-prospective-projection" else None
+            if other in valid and valid[other].completed_at>item.completed_at:continue
+            blockers.append(label(item))
+    if base.secondary_conflicts or base.secondary_unexplained:blockers.append("secondary:conflict-or-unexplained")
+    if not base.archive_healthy:blockers.append("archive:integrity-unresolved")
+    if base.index_state not in {"healthy","append-only-lag"}:blockers.append(f"index:{base.index_state}")
+    if base.free_disk_bytes<=100_000_000:blockers.append("storage:insufficient")
+    return __import__('dataclasses').replace(base,ready=base.ready and not blockers,supporting_age_seconds=supporting,outcome_age_seconds=outcome,inspection_age_seconds=inspection,index_rebuild_age_seconds=index_age,health_generated_at=trusted_at,command_dispositions=tuple(sorted((name,item.disposition) for name,item in latest.items())),checkpoint_state=projection,checkpoint_source_boundary=boundary,current_blockers=tuple(sorted(set(blockers))),superseded_failures=superseded,recent_skips=skips,last_valid_completions=tuple(sorted((name,item.completed_at) for name,item in valid.items())))
