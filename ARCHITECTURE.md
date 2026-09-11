@@ -1,38 +1,30 @@
 # Pops' Edge Architecture
 
-> Superseding NFL workflow amendment: owner authorized inbox-only selection and
-> one Generate Bet Sheet action across every workbook week. No manual Excel
-> review/confirmation gate. New Excel records describe automated validation,
-> never human attestation; earlier verified records remain unchanged. Week
-> selection is a display filter only. Provider collectors remain weekly bounded;
-> generation iterates all weeks, reporting per-week failure and original capture
-> times. See NFL_REFRESH_GUIDE.md for current workflow and accepted limitations.
+## NFL v1.1.0 — current scope
 
-> NFL refresh amendment, September 10, 2026: the owner authorized a local
-> Excel-based refresh application, all-workbook-week selection, and activity
-> settlement display. Explicit per-source/week owner confirmation replaces
-> screenshot row checkboxes only for Excel imports. Raw workbook values and
-> original source precision are retained; automatic parsing is not verification.
-> The inbox is ~/PopsEdge/Downloads/NFL; archives are ~/PopsEdge/Data/NFL.
-> See the NFL refresh guide for accepted limitations and operation. This does not
-> authorize order execution, research claims, deployment or release.
+The NFL workflow is merged through PR #33 (`d94e171`). It is a local personal
+comparison surface: validated ELWAY Excel input, official NFL schedules, public
+Kalshi prices, recorded activity and replayable weekly comparisons. Import &
+Refresh selects files from `~/PopsEdge/Downloads/NFL/`; one **Refresh Bet Sheet**
+action processes every workbook week. The Bet Sheet filters the resulting view.
+Excel records attest automated validation, never human review. Earlier manually
+verified records remain supported with their original provenance. Raw inputs
+and captures are preserved under `~/PopsEdge/Data/NFL/`.
 
-> NFL-2B amendment, September 9, 2026: authorized local game matching and a
-> personal comparison board using explicit ELWAY, NFL.com schedule and Kalshi
-> captures. This surface reports model-versus-cost differences for manual review;
-> it does not execute Forecast Policy, issue bet signals or establish Market Edge.
-> The [NFL-2B boundary](docs/NFL_BOARD_SLICE.md) records schedule identity, supported
-> settlement/fee assumptions, rounding ranges, freshness guards and exclusions.
+TBD games remain in their official week without requiring attention. Filters
+cover week, team, completion and strict after-fee thresholds. Recorded wagers
+show each contract and purchase amount including fees; they do not establish
+current holdings. The surface creates no research, Market Edge, Forecast Policy
+or order-execution authority. World Cup and MLB contracts remain unchanged.
 
-> NFL v1.1.0 amendment: the owner authorized a separate local screenshot-import
-> and personal comparison workflow. Verified transcription is source evidence,
-> not a canonical NFL event, Policy Forecast, Market Edge, or wagering authority.
-> NFL-1 handles transcription. NFL-2A adds manual public Kalshi catalog/book
-> capture and replay, separate from schedule matching, valuation and research
-> authority. See the [retrieval guide](docs/NFL_RETRIEVAL_GUIDE.md).
-> Existing World Cup/MLB contracts and operational paths remain unchanged.
-> See [NFL release plan](docs/NFL_RELEASE_PLAN_v1.1.0.md).
+Product/source version is v1.1.0; tag publication and deployment are separate
+from the code merge. MLB remains allocated to v1.2.0. Historical MLB v1.1.0
+filenames, PR identifiers and contract-version descriptions retain their original
+meaning; this allocation does not change schemas or scientific rules.
 
+See [refresh guide](docs/NFL_REFRESH_GUIDE.md),
+[comparison boundary](docs/NFL_BOARD_SLICE.md), and
+[independent review](docs/NFL_PR33_INDEPENDENT_REVIEW.md).
 
 ## Purpose and authority
 

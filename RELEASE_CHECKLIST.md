@@ -51,3 +51,13 @@ authorize a commit, tag, push, hosted release, or rename.
 
 The repository rename is not a normal release step. If separately authorized,
 complete `docs/REPOSITORY_RENAME.md` and its rollback/validation procedure.
+
+## NFL v1.1.0 status before publication
+
+Source implementation merged through PR #33 at `d94e171`; the exact candidate
+passed independent review and 774 tests. The subsequent version/documentation
+cleanup is a separate uncommitted change and must receive its own diff review.
+The current app's VERSION label is not a release tag. Two P2 limitations are
+recorded in BACKLOG and the NFL refresh guide. GitHub tag/release publication,
+deployment and post-release checks remain pending; the generic checklist above
+is intentionally not marked complete by this status note.

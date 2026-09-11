@@ -15,7 +15,7 @@ It answers **where Pops' Edge is heading over multiple releases**; Release Plans
 
 ## Strategic direction
 
-Pops' Edge is evolving from a sports-wagering proving ground into an empirical decision platform for positive expected value opportunities supported by validated evidence. Sports remain the proving ground, not the permanent boundary. World Cup and MLB are the implementations from which reusable capabilities are earned.
+Pops' Edge is evolving from a sports-wagering proving ground into an empirical decision platform for positive expected value opportunities supported by validated evidence. Sports remain the proving ground, not the permanent boundary. World Cup, NFL and MLB are the implementations from which reusable capabilities are earned.
 
 ## Guiding principles
 
@@ -26,15 +26,22 @@ Pops' Edge is evolving from a sports-wagering proving ground into an empirical d
 - Multi-sport and multi-domain evolution remains incremental; shared abstractions must be earned.
 - Pops' Edge remains personal, noncommercial, local, cost-conscious, transparent, and appropriately simple.
 
+## Completed NFL milestone
+
+The v1.1.0 NFL comparison workflow is merged through PR #33. It supplies a
+manually refreshed local Bet Sheet with ELWAY import, official schedules,
+Kalshi comparisons and recorded wagers. It does not establish empirical model
+accuracy or execution authority. Release-tag publication remains pending.
+
 ## Capability horizons
 
 ### Horizon 1 — Empirical Decision Foundation
 
-**v1.1.0 — Empirical Decision Foundation** establishes the first complete lifecycle from immutable Evidence and Measurement through Forecast Intelligence, Market-Benchmark-relative Comparative Performance, Edge Claims and Market Edges, governed Forecast Policy, Policy Forecasts, Opportunity Analysis, and Product surfaces.
+**v1.2.0 — Empirical Decision Foundation** establishes the first complete lifecycle from immutable Evidence and Measurement through Forecast Intelligence, Market-Benchmark-relative Comparative Performance, Edge Claims and Market Edges, governed Forecast Policy, Policy Forecasts, Opportunity Analysis, and Product surfaces.
 
 It delivers Comparative Performance Reports and the Forecast Intelligence Workspace, migrates Opportunity Analysis to authorized Policy Forecasts, and preserves World Cup compatibility. `docs/RELEASE_PLAN_v1.1.0.md` governs implementation.
 
-After the standalone Kalshi studies, v1.1.0 evaluates two independently gated
+After the standalone Kalshi studies, v1.2.0 evaluates two independently gated
 challenger paths in parallel: PR18 admits and collects an external supplier only
 when access, retention, identity, chronology, and market-independence authority
 are sufficient; PR19 first uses the existing 2026 archive for one bounded,

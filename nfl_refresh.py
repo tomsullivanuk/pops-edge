@@ -126,7 +126,7 @@ def handler(workflow,token):
             path=urlsplit(self.path).path
             try:
                 if path=='/':
-                    html=(Path(__file__).with_name('nfl_refresh.html')).read_text().replace('__TOKEN__',token)
+                    html=(Path(__file__).with_name('nfl_refresh.html')).read_text().replace('__TOKEN__',token).replace('__VERSION__',Path(__file__).with_name('VERSION').read_text().strip())
                     return self.send(200,html.encode(),'text/html; charset=utf-8')
                 if path=='/season':
                     from nfl_season_board import assemble,render

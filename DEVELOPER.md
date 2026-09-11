@@ -1,27 +1,36 @@
 # Pops' Edge Developer Guide
 
-> NFL-2B amendment, September 9, 2026: authorized local game matching and a
-> personal comparison board using explicit ELWAY, NFL.com schedule and Kalshi
-> captures. This surface reports model-versus-cost differences for manual review;
-> it does not execute Forecast Policy, issue bet signals or establish Market Edge.
-> The [NFL-2B boundary](docs/NFL_BOARD_SLICE.md) records schedule identity, supported
-> settlement/fee assumptions, rounding ranges, freshness guards and exclusions.
+## NFL v1.1.0 — current scope
 
-> NFL v1.1.0 amendment: the owner authorized a separate local screenshot-import
-> and personal comparison workflow. Verified transcription is source evidence,
-> not a canonical NFL event, Policy Forecast, Market Edge, or wagering authority.
-> NFL-1 handles transcription. NFL-2A adds manual public Kalshi catalog/book
-> capture and replay, separate from schedule matching, valuation and research
-> authority. See the [retrieval guide](docs/NFL_RETRIEVAL_GUIDE.md).
-> Existing World Cup/MLB contracts and operational paths remain unchanged.
-> See [NFL release plan](docs/NFL_RELEASE_PLAN_v1.1.0.md).
+The NFL workflow is merged through PR #33 (`d94e171`). It is a local personal
+comparison surface: validated ELWAY Excel input, official NFL schedules, public
+Kalshi prices, recorded activity and replayable weekly comparisons. Import &
+Refresh selects files from `~/PopsEdge/Downloads/NFL/`; one **Refresh Bet Sheet**
+action processes every workbook week. The Bet Sheet filters the resulting view.
+Excel records attest automated validation, never human review. Earlier manually
+verified records remain supported with their original provenance. Raw inputs
+and captures are preserved under `~/PopsEdge/Data/NFL/`.
 
+TBD games remain in their official week without requiring attention. Filters
+cover week, team, completion and strict after-fee thresholds. Recorded wagers
+show each contract and purchase amount including fees; they do not establish
+current holdings. The surface creates no research, Market Edge, Forecast Policy
+or order-execution authority. World Cup and MLB contracts remain unchanged.
+
+Product/source version is v1.1.0; tag publication and deployment are separate
+from the code merge. MLB remains allocated to v1.2.0. Historical MLB v1.1.0
+filenames, PR identifiers and contract-version descriptions retain their original
+meaning; this allocation does not change schemas or scientific rules.
+
+See [refresh guide](docs/NFL_REFRESH_GUIDE.md),
+[comparison boundary](docs/NFL_BOARD_SLICE.md), and
+[independent review](docs/NFL_PR33_INDEPENDENT_REVIEW.md).
 
 Pops' Edge is the durable product name. The workflows documented below are the
 World Cup implementation shipped as v1.0.0. World Cup-prefixed artifacts remain
 unchanged for baseline compatibility.
 
-The planned v1.1.0 work and the repository rename procedure are documented in
+The planned v1.2.0 MLB work and the repository rename procedure are documented in
 `docs/RELEASE_PLAN_v1.1.0.md` and `docs/REPOSITORY_RENAME.md`. The standard PR
 workflow and completion-report format are in `docs/CODEX_WORKFLOW.md`.
 
@@ -866,7 +875,7 @@ contracts.
 
 ## Forward implementation boundaries
 
-The remaining v1.1.0 sequence after implemented PR16B analysis is:
+The remaining v1.2.0 MLB sequence after implemented PR16B analysis is:
 
 1. **PR17A — Retrospective and Prospective Methodology and Architecture:** documentation authority only (this change).
 2. **PR17B1 — Scientific Contracts and Deterministic Replay:** offline successor
@@ -915,7 +924,7 @@ candidates fail closed independently of ordering.
    principal research and governance surface.
 11. **PR23 — Policy Forecast Opportunity Integration:** migrate Opportunity
    Analysis and the Opportunity Board to governance-authorized Policy Forecasts.
-12. **PR24 — v1.1.0 Integration and Release Readiness:** validate the integrated
+12. **PR24 — MLB Integration and Release Readiness (v1.2.0):** validate the integrated
    lifecycle, compatibility, documentation, and release gates.
 
 The Release Plan owns detailed scope, dependencies, exclusions, and gates. Do
@@ -1441,5 +1450,6 @@ versioned reconstruction explicitly before applying this correction there.
 
 The owner-authorized Excel import, full-season public price refresh and
 settlement display are described in [the refresh guide](docs/NFL_REFRESH_GUIDE.md).
-Run `python nfl_refresh.py` or open `Open NFL Bet Sheet.command`. This is a local
-candidate; prior CLI imports remain supported.
+Run `python nfl_refresh.py` or open `Open NFL Bet Sheet.command`. The code is merged; the local launcher still uses its configured checkout.
+Prior CLI imports remain supported. The root `VERSION` file supplies the app
+version badge; it does not itself create a Git tag or release.

@@ -1,58 +1,49 @@
-# NFL activity markers — owner-requested extension
+# NFL recorded activity and settlements
 
-The owner supplied a Kalshi activity CSV and requested identifying existing wagers
-within the NFL Bet Sheet. This authorizes a local import/presentation extension,
-not account access, orders, inferred current balances, or deployment.
+The owner authorized local import/presentation of Kalshi activity. This supplies
+recorded trades and supported settlements, not account access, order execution,
+inferred open balances, position-based recommendations or realized P&L.
 
-Retain the exact supplied CSV in the immutable board bundle with its digest and
-actual import time. Count Trade rows only; Order rows are not additional fills.
-Read UTF-8 BOM safely, comma-grouped decimal quantities, side, price, fees and
-aware Original_Date. Match exact tickers to the preserved supported market rules,
-then associate YES with that team and NO with its opponent. This association is
-independent of which equivalent route the table currently displays.
+## Source and matching boundaries
 
-The export does not carry an explicit buy/sell action. Therefore show recorded
-wager activity, not open positions, net quantity, remaining stake or P&L. Retain
-individual trades, including both directions and any visible subsequent settlement.
-Never collapse opposite-side trades into an inferred balance. Duplicate identical
-Trade rows are ambiguous and must be flagged rather than silently doubled or
-deduplicated. Unsupported/unmatched NFL records remain visible diagnostics.
-Other sports are counted as outside this NFL view. Missing export means not
-loaded; no matching rows means none recorded in this file, not no account position.
+Preserve the exact CSV and digest with actual import time. Only Trade rows count
+as recorded fills; Order rows are not additional wagers. Parse UTF-8 BOM safely,
+comma-grouped quantities, side, price, fees and timezone-aware Original_Date.
+Associate YES with its named team and NO with the opponent using exact supported
+market matching. Closed activity may match exact date/away/home/team ticker
+identity even when absent from the open catalog; that does not validate any new
+price or rule. The association is independent of the currently displayed route.
 
-All annotations have their own import time; a new activity export can postdate
-the quote snapshot without backdating it. An activity-only update creates a new
-bundle, preserves the original comparison/build times, and records overlay time.
-It does not rerank games, change probabilities, refresh quotes or place orders.
-No accumulation across exports; each import replaces the displayed activity
-snapshot in a new bundle. Current-position reconciliation remains future work.
+The export lacks an explicit buy/sell action. Do not infer net balances or offset
+opposite directions. Preserve individual trades. Duplicate identical trades are
+ambiguous and flagged rather than silently doubled or deduplicated. Unsupported
+or unmatched NFL records remain diagnostics; other sports are outside the view.
+Each import replaces the displayed export in a new bundle; imports do not
+accumulate. Activity import time may postdate the unchanged saved quote times.
 
-## Owner-requested wager and payout display
+## Current presentation
 
-The table now shows outcome-level recorded purchase illustrations: Wagered
-(including actual recorded fees), ELWAY expected gross payout, and gross payout
-if the row's team wins. Quantity × recorded price + actual fee determines paid
-amount; quantity × ELWAY central contract value determines expected gross return.
-Tie return is half the quantity; loss return is zero. Details include expected net
-return after recorded cost. These figures explicitly assume purchases still held,
-not independently established current holdings. Settled or duplicate-flagged
-records suppress totals and request review. Missing records display a dash, not
-zero. Equivalent route selection does not change the recorded purchase price.
+Recorded wager (incl. fees) lists each trade's contract and recorded quantity ×
+price + fee on separate lines. Ambiguous trade amounts request review. No matched
+activity leaves a blank cell, not an assertion of no account position. Supported
+settlement-only activity identifies its contract without inventing purchase cost.
 
-ELWAY Contract and Difference after fee replace the former four comparison
-columns. Win probability and before-fee difference move into Details. The default
-presentation order and positive filter now use the after-fee difference; preserved
-comparison evidence and internal game scores remain unchanged.
+For an unambiguous unsettled purchase illustration, ELWAY expected gross payout
+is quantity × central contract value; gross payout on a win is quantity, a tie
+half the quantity and a loss zero. These assume recorded purchases remain held;
+current holdings are unconfirmed. Details can show expected net after recorded
+cost. Gross payout includes returned stake and is not profit.
 
-## September 10 settlement extension
+New overlays use nfl-activity-settlements-v2; legacy v1 remains replayable.
+Supported YES/NO settlement result and owned quantity must reconcile with the
+export amount before actual gross payout is shown. Profit_In_Dollars is not
+labeled realized profit. Duplicate/unreconciled settlements are flagged;
+settlement/trade cost-basis differences remain visible in Details. Settled trades
+do not get assumed open-purchase payout totals, but their recorded trade costs
+remain visible. Settled games lose current purchase routes in presentation while
+original comparison data remains unchanged.
 
-New activity overlays use nfl-activity-settlements-v2; legacy v1 data remains
-replayable. Preserve supported YES/NO settlement rows, owned quantities, result,
-reported average prices and derived gross payout reconciled with the export
-amount. Do not label Profit_In_Dollars as realized profit. Flag duplicate or
-unreconciled settlement amounts; show cost-basis discrepancies in Details and
-suppress assumed open-stake totals for settled trades. Settled games lose their
-current purchase route in presentation, preserving original comparison data.
-Exact date/away/home/team ticker matching can identify closed activity even when
-absent from the open-market catalog; this does not validate pricing/settlement
-rules for any new quote. See NFL_REFRESH_GUIDE.md.
+ELWAY Contract and Difference after fee are the compact comparison columns.
+The latter controls default sorting and threshold filters. Original probabilities,
+before-fee differences and all routes remain in Details. See the
+[refresh guide](NFL_REFRESH_GUIDE.md) and [board guide](NFL_BOARD_GUIDE.md).

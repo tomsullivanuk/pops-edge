@@ -7,6 +7,21 @@
 > [NFL acceptance gates](docs/NFL_RELEASE_PLAN_v1.1.0.md).
 
 
+## v1.1.0 — NFL comparison workflow (merged; release publication pending)
+
+- Merged ELWAY import, public Kalshi retrieval and the local comparison workflow
+  in PRs #31–#33; PR #33 merge commit is `d94e171`.
+- Added validated Excel import, official schedule matching, all-week refresh,
+  informative TBD dates and replayable comparisons with original source times.
+- Added activity/settlement display, after-fee threshold filters, folder tabs and
+  the polished Pops' Edge - NFL interface with a source-version label.
+- Independent review passed all 774 tests with no blocking findings. Two P2
+  limitations remain: open sheets need reload to reassess quote age, and rejected
+  archived workbooks can disrupt restoration after restart. A valid refresh
+  recovers the latter without deleting evidence.
+- v1.2.0 remains allocated to MLB. This entry does not create a release tag,
+  publish a GitHub release or change deployed software.
+
 ## PR19B — development-only native MLB feasibility
 
 - Recorded the Product Owner amendment that preserves PR19A's 2021–2025 formal

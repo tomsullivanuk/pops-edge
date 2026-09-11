@@ -1,32 +1,41 @@
 # Pops' Edge v1.1.0 — NFL comparison workflow
 
-> Superseding NFL workflow amendment: owner authorized inbox-only selection and
-> one Refresh Bet Sheet action across every workbook week. No manual Excel
-> review/confirmation gate. New Excel records describe automated validation,
-> never human attestation; earlier verified records remain unchanged. Week
-> selection is a display filter only. Provider collectors remain weekly bounded;
-> generation iterates all weeks, reporting per-week failure and original capture
-> times. See NFL_REFRESH_GUIDE.md for current workflow and accepted limitations.
+## NFL v1.1.0 — current scope
 
-> NFL refresh amendment, September 10, 2026: the owner authorized a local
-> Excel-based refresh application, all-workbook-week selection, and activity
-> settlement display. Explicit per-source/week owner confirmation replaces
-> screenshot row checkboxes only for Excel imports. Raw workbook values and
-> original source precision are retained; automatic parsing is not verification.
-> The inbox is ~/PopsEdge/Downloads/NFL; archives are ~/PopsEdge/Data/NFL.
-> See the NFL refresh guide for accepted limitations and operation. This does not
-> authorize order execution, research claims, deployment or release.
+The NFL workflow is merged through PR #33 (`d94e171`). It is a local personal
+comparison surface: validated ELWAY Excel input, official NFL schedules, public
+Kalshi prices, recorded activity and replayable weekly comparisons. Import &
+Refresh selects files from `~/PopsEdge/Downloads/NFL/`; one **Refresh Bet Sheet**
+action processes every workbook week. The Bet Sheet filters the resulting view.
+Excel records attest automated validation, never human review. Earlier manually
+verified records remain supported with their original provenance. Raw inputs
+and captures are preserved under `~/PopsEdge/Data/NFL/`.
+
+TBD games remain in their official week without requiring attention. Filters
+cover week, team, completion and strict after-fee thresholds. Recorded wagers
+show each contract and purchase amount including fees; they do not establish
+current holdings. The surface creates no research, Market Edge, Forecast Policy
+or order-execution authority. World Cup and MLB contracts remain unchanged.
+
+Product/source version is v1.1.0; tag publication and deployment are separate
+from the code merge. MLB remains allocated to v1.2.0. Historical MLB v1.1.0
+filenames, PR identifiers and contract-version descriptions retain their original
+meaning; this allocation does not change schemas or scientific rules.
+
+See [refresh guide](NFL_REFRESH_GUIDE.md),
+[comparison boundary](NFL_BOARD_SLICE.md), and
+[independent review](NFL_PR33_INDEPENDENT_REVIEW.md).
 
 ## Objective and authorization
 
 Reproduce the personal World Cup workflow with weekly owner-supplied ELWAY
-screenshots and manually refreshed Kalshi game-winner comparisons. Preserve
+Excel workbooks or manually verified screenshots and manually refreshed Kalshi game-winner comparisons. Preserve
 World Cup behaviour and parallel MLB work. See the [version amendment](RELEASE_ALLOCATION_2026-09-08.md).
 
-NFL-1 was merged in PR #31. On September 9, 2026, the Product Owner authorized
-moving on to Kalshi retrieval (NFL-2A), including the manual public-data smoke
-check. That instruction does not authorize commit, push, PR, merge, deployment,
-trade or release for NFL-2A.
+NFL-1 merged in PR #31, NFL-2A in PR #32, and the comparison/refresh workflow
+in PR #33. Each integration received separate owner authorization. The earlier
+screenshot slice below remains a supported alternative to automated Excel
+validation. No release tag, deployment or order execution follows from these merges.
 
 ## NFL-1 — Verified screenshot import (merged)
 
@@ -76,7 +85,7 @@ request chronology. Replay derived offers offline. See the
 This is a separate acquisition slice; complete retrieval does not establish
 schedule coverage, pregame eligibility or comparison authority.
 
-## NFL-2B — Schedule matching and comparison board (current slice)
+## NFL-2B — Schedule matching and comparison board (merged PR #33)
 
 The owner authorized this slice on September 9, 2026. Add official NFL.com
 weekly schedule mapping, supported full-game settlement semantics, a bounded
@@ -92,5 +101,7 @@ Market Edge or wagering recommendation. Do not extend MLB binary assumptions.
 
 Spreads, totals, futures, bankroll/Kelly advice, automatic execution, hosted
 services, scheduled scraping, research activation and PELE analysis are excluded.
-A v1.1.0 release requires completion and review of all slices and separate
-release authorization. NFL-1 alone is not a completed NFL board release.
+All three slices are merged through PR #33 (`d94e171`), whose independent
+review found no blocking issues. Product/source version is v1.1.0. Release-tag
+publication and deployment remain separate authorization steps; neither follows
+automatically from the merge.

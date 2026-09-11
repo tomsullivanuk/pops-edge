@@ -1,8 +1,8 @@
 # Pops' Edge
 
-**Current release:** v1.0.0<br>
-**Next release:** v1.1.0 — NFL comparison board<br>
-**Following release:** v1.2.0 — MLB empirical decision foundation
+**Current product version:** v1.1.0 — NFL comparison workflow (merged)<br>
+**Next planned minor version:** v1.2.0 — MLB empirical decision foundation<br>
+**Release publication:** v1.1.0 tag and GitHub release pending
 
 Pops' Edge is a quantitative decision platform whose Mission is to identify
 opportunities with demonstrable statistical advantage. Sports wagering is its
@@ -34,20 +34,20 @@ PR1 does not change any v1.0.0 calculations, reports, filenames, market
 coverage, or operating workflows. Detailed baseline behavior remains in
 [DEVELOPER.md](DEVELOPER.md).
 
-### v1.1.0 — NFL comparison board (in development)
+### v1.1.0 — NFL comparison workflow (merged)
 
-Weekly owner-provided ELWAY screenshots, verified local import, and a later
-manually refreshed Kalshi game-winner comparison board. The first slice provides
-image review and immutable verified transcriptions. A separate manual command
-now captures public Kalshi game-winner catalogs and order books, with exact raw
-responses and offline replay. The next local command matches an official NFL
-weekly schedule and produces
-a saved personal comparison board with tie-aware payout ranges and estimated
-one-contract fees. It provides no stake sizing or bet signals.
-See [NFL plan](docs/NFL_RELEASE_PLAN_v1.1.0.md),
-[import guide](docs/NFL_IMPORT_GUIDE.md),
-[retrieval guide](docs/NFL_RETRIEVAL_GUIDE.md), and
-[board guide](docs/NFL_BOARD_GUIDE.md).
+PRs #31–#33 implement ELWAY import, public Kalshi retrieval, official NFL
+schedule matching and a local, tabbed Bet Sheet. Excel inputs receive automated
+validation; original screenshot/manual verification records remain replayable.
+The app refreshes all workbook weeks, retains TBD games in their assigned week,
+shows recorded wagers and settlements, and filters by week, team, completion
+and difference after fee. It provides no order execution or stake sizing.
+
+PR #33 was independently reviewed and merged at `d94e171`. All 774 tests passed.
+The source version is recorded in `VERSION`; the NFL app displays that version.
+Publication of a release tag and deployment are separate from the code merge.
+See [NFL plan](docs/NFL_RELEASE_PLAN_v1.1.0.md) and
+[refresh guide](docs/NFL_REFRESH_GUIDE.md).
 
 ### v1.2.0 — MLB Research and Multi-Sport Foundation (planned)
 
@@ -288,5 +288,6 @@ After a restart, `reconcile-acquisitions` can immutably abandon an unambiguous i
 
 The owner-authorized Excel import, full-season public price refresh and
 settlement display are described in [the refresh guide](docs/NFL_REFRESH_GUIDE.md).
-Run `python nfl_refresh.py` or open `Open NFL Bet Sheet.command`. This is a local
-candidate; prior CLI imports remain supported.
+Run `python nfl_refresh.py` or open `Open NFL Bet Sheet.command`. The code is merged; the local launcher still uses its configured checkout.
+Prior CLI imports remain supported. The root `VERSION` file supplies the app
+version badge; it does not itself create a Git tag or release.

@@ -1,4 +1,8 @@
-# Retrieve NFL market quotes
+# Manual alternative: retrieve NFL market quotes
+
+The [refresh app](NFL_REFRESH_GUIDE.md) runs bounded weekly retrieval for all
+workbook weeks. This guide describes the retained standalone CLI and its legacy
+storage defaults.
 
 From a checkout containing NFL-2A, use the project's Python environment:
 
@@ -54,7 +58,7 @@ are not calculated. Full rule text remains in the catalog response.
 NFL tie settlement differs from a simple win/loss contract: inspected rules
 provide a $0.50 payout on a tie. This capture recognizes that rule text but does
 not infer exact tie probabilities from rounded ELWAY percentages. Forecast
-linking, authoritative kickoff data, comparisons, rankings and the board follow
-in NFL-2B. This command does not run existing World Cup or MLB workflows.
+linking, authoritative kickoff data and comparisons are provided by the merged
+[NFL board workflow](NFL_BOARD_GUIDE.md). This command does not run existing World Cup or MLB workflows.
 
 See [acceptance boundary](NFL_RETRIEVAL_SLICE.md) for bounds and deferred work.

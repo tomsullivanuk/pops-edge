@@ -1,4 +1,7 @@
-# Import a weekly ELWAY screenshot
+# Manual alternative: import a weekly ELWAY screenshot
+
+For the current Excel-based application, use the [refresh guide](NFL_REFRESH_GUIDE.md).
+This guide describes the retained screenshot CLI; its legacy defaults are unchanged.
 
 Use a Mac with Python 3 and Xcode Command Line Tools (`swift`). All image
 recognition stays on the Mac. No API keys, remote OCR service or paid dependency
@@ -47,6 +50,5 @@ even when OCR confidence is high. If recognition fails, the source is retained;
 check local Swift/Vision availability and retry. In restricted agent sandboxes,
 Apple Vision may require a normally permitted local execution environment.
 
-The output is verified transcription ready for the later schedule/market
-comparison slice. It contains no odds, fee estimates, tie probability, wagers,
+The output is verified transcription ready for the [schedule/market comparison workflow](NFL_BOARD_GUIDE.md). It contains no odds, fee estimates, tie probability, wagers,
 or empirical accuracy claims.
