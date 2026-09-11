@@ -58,3 +58,7 @@ that all archived games have valid final results or qualifying pregame prices.
 The documentation slice can proceed to review. The next implementation can build
 a versioned outcome adapter and weekly selection/scoring against saved fixtures;
 live capture activation remains a separate authorization gate.
+
+The local evidence/scoring service is now implemented for review; see the
+[implementation guide](NFL_MODEL_PERFORMANCE_IMPLEMENTATION.md). Source feasibility
+remains distinct from activation and from complete real-world coverage.
