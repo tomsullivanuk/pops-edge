@@ -1,8 +1,14 @@
 # Pops' Edge
 
-**Current product version:** v1.1.0 — NFL comparison workflow (merged)<br>
-**Next planned minor version:** v1.2.0 — MLB empirical decision foundation<br>
-**Release publication:** v1.1.0 tag and GitHub release pending
+**Current product version:** v1.1.0 — NFL (released and deployed locally)<br>
+**Next planned minor version:** v1.2.0 — MLB Kalshi collection and baseline performance<br>
+**Tentative following release:** v1.3 — unified NFL/MLB experience<br>
+**Parallel investigation:** external MLB forecast models and suppliers
+
+See the [roadmap](ROADMAP.md) and
+[September 12 release decision](docs/RELEASE_DIRECTION_2026-09-12.md).
+The [v1.1.0 release](https://github.com/tomsullivanuk/pops-edge/releases/tag/v1.1.0)
+is published; release tags and later local deployments remain distinct.
 
 Pops' Edge is a quantitative decision platform whose Mission is to identify
 opportunities with demonstrable statistical advantage. Sports wagering is its
@@ -52,9 +58,21 @@ Publication of a release tag and deployment are separate from the code merge.
 See [NFL plan](docs/NFL_RELEASE_PLAN_v1.1.0.md) and
 [refresh guide](docs/NFL_REFRESH_GUIDE.md).
 
-### v1.2.0 — MLB Research and Multi-Sport Foundation (planned)
+### v1.2.0 — MLB Kalshi collection and baseline performance (planned)
 
-v1.2.0 adds MLB research and the first reusable multi-sport boundaries while
+The [September 12 decision](docs/RELEASE_DIRECTION_2026-09-12.md) narrows this
+release to collection, visible coverage/health and separate retrospective and
+prospective baseline-performance presentation. Supplier/native-model success,
+track closure and the complete research-to-policy lifecycle are not release
+gates. v1.3 tentatively brings NFL and MLB into a unified experience.
+
+### Historical MLB programme and implemented foundations
+
+The programme description below preserves the earlier broader scope and its
+implemented foundations. Unfinished policy and Workspace capabilities no longer
+all target v1.2; current allocation is governed by the decision above.
+
+The broader MLB programme adds research and the first reusable multi-sport boundaries while
 preserving the World Cup baseline. The release uses bounded, reviewable pull
 requests, including documentation checkpoints when durable architecture must
 be settled before implementation. The scope, sequencing, gates, and release
