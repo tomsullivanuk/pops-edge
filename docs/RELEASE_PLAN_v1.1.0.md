@@ -1,4 +1,13 @@
-# Pops' Edge v1.2.0 — Empirical Decision Foundation
+# Pops' Edge — Historical MLB Programme and Current Release Allocation
+
+> September 12, 2026 superseding decision: v1.2 now targets MLB Kalshi
+> collection and baseline market-performance presentation. v1.3 tentatively
+> targets unified NFL/MLB UX. External MLB model/supplier investigation continues
+> independently; neither release requires PR18/PR19 closure or PR20–PR24
+> completion. The [current scope and sequencing decision](RELEASE_DIRECTION_2026-09-12.md)
+> governs those release gates. Scientific dependencies and existing protocols
+> remain unchanged. The programme below preserves historical scope and records;
+> it is not the current v1.2 completion checklist.
 
 > September 8, 2026 amendment: the Product Owner reassigned NFL to v1.1.0
 > and this planned MLB programme to v1.2.0. This historical filename and all
@@ -1104,7 +1113,11 @@ release sequence.
 
 **Gate:** the complete v1.1.0 lifecycle is traceable to passing validation or an explicitly accepted limitation, and release preparation does not create a tag, hosted release, repository rename, commit, or push without separate authorization.
 
-## Sequencing rules
+## Historical programme sequencing rules
+
+The [September 12 amendment](RELEASE_DIRECTION_2026-09-12.md) supersedes these
+rules as v1.2/v1.3 release gates. Dependencies below remain relevant to future
+scientific and policy capabilities when separately scheduled.
 
 PRs merge in numerical order except for the explicitly parallel PR18 external-
 supplier and PR19 native-model tracks. After their shared prerequisites are

@@ -1,11 +1,10 @@
 # Pops' Edge Roadmap
 
-> Release allocation, September 8, 2026: v1.1.0 is the NFL comparison board;
-> the previously planned v1.1.0 MLB programme now targets v1.2.0. Historical
-> sections and PR numbers below remain unchanged. See
-> [release allocation](docs/RELEASE_ALLOCATION_2026-09-08.md) and
-> [NFL acceptance gates](docs/NFL_RELEASE_PLAN_v1.1.0.md).
-
+> Product Owner direction, September 12, 2026: v1.2 focuses on MLB Kalshi
+> collection and baseline market performance; v1.3 is the tentative unified
+> NFL/MLB experience target. External MLB model and supplier investigation
+> continues independently of both releases. See the
+> [scope and sequencing decision](docs/RELEASE_DIRECTION_2026-09-12.md).
 
 ## Purpose
 
@@ -26,32 +25,77 @@ Pops' Edge is evolving from a sports-wagering proving ground into an empirical d
 - Multi-sport and multi-domain evolution remains incremental; shared abstractions must be earned.
 - Pops' Edge remains personal, noncommercial, local, cost-conscious, transparent, and appropriately simple.
 
-## Completed NFL milestone
+## Release direction
 
-The v1.1.0 NFL comparison workflow is merged through PR #33. It supplies a
-manually refreshed local Bet Sheet with ELWAY import, official schedules,
-Kalshi comparisons and recorded wagers. It does not establish empirical model
-accuracy or execution authority. Release-tag publication remains pending.
+| Release / track | Outcome | Status |
+|---|---|---|
+| v1.1 — NFL | Personal comparison workflow and weekly evaluation evidence | Released and deployed locally; maintenance continues |
+| v1.2 — MLB market baseline | Kalshi data collection, visible coverage and collection health, and baseline market-performance display | Agreed release scope; remaining implementation to be assessed |
+| v1.3 — Unified NFL/MLB experience | One Pops' Edge entry point with consistent navigation, branding and interaction | Tentative target; user journeys and implementation scope remain to be defined |
+| Parallel MLB investigation | Evaluate external forecast models and suppliers for possible later admission | Continues independently; no admission or successful challenger is required for v1.2 or v1.3 |
 
-## Capability horizons
+### v1.2 — MLB Kalshi collection and baseline performance
 
-### Horizon 1 — Empirical Decision Foundation
+Make existing MLB research useful to the Product Owner: show how well observed
+Kalshi probabilities predict outcomes and how complete the underlying evidence is.
+Include collection status, separate retrospective and prospective reports, and a
+simple baseline-performance display with observation periods, eligible/captured/
+scored/missing populations, probability scores, calibration, defined simple
+baselines, uncertainty and limitations under the governing protocols.
 
-**v1.2.0 — Empirical Decision Foundation** establishes the first complete lifecycle from immutable Evidence and Measurement through Forecast Intelligence, Market-Benchmark-relative Comparative Performance, Edge Claims and Market Edges, governed Forecast Policy, Policy Forecasts, Opportunity Analysis, and Product surfaces.
+Release acceptance depends on scientifically honest collection, reproducible
+measurement, understandable presentation and documented local operation. It does
+not depend on a favorable performance result or demonstrated trading advantage.
+Retrospective and prospective populations remain separate. In-progress evidence
+must be labelled as such; a release does not close or shorten a study protocol.
 
-It delivers Comparative Performance Reports and the Forecast Intelligence Workspace, migrates Opportunity Analysis to authorized Policy Forecasts, and preserves World Cup compatibility. `docs/RELEASE_PLAN_v1.1.0.md` governs implementation.
+External-source admission, further native-model development, policy selection,
+operational policy integration, the broader Forecast Intelligence Workspace and
+automated wagering are outside this release's acceptance scope. Existing
+implemented foundations remain available. See the
+[release amendment](docs/RELEASE_DIRECTION_2026-09-12.md) for the replacement
+sequencing boundary.
 
-After the standalone Kalshi studies, v1.2.0 evaluates two independently gated
-challenger paths in parallel: PR18 admits and collects an external supplier only
-when access, retention, identity, chronology, and market-independence authority
-are sufficient; PR19 first uses the existing 2026 archive for one bounded,
-development-only, market-independent native MLB feasibility look. That PR19B
-study can establish only whether the deliberately simple Model 0 shows basic
-predictive signal; it cannot admit a Probability Source or establish prospective
-validity. Any future rights-cleared point-in-time admission and prospective
-collection remain separately gated. Either track may close without a challenger.
-Current Scientific Applicability and downstream Policy work wait until both
-tracks have formally closed.
+### v1.3 — Unified NFL and MLB experience (tentative)
+
+Bring NFL and MLB together through a shared entry point, consistent navigation,
+branding and interaction. A shared application shell and sport selector are the
+starting design direction; comparison, performance and data-status destinations
+should be consistent where those capabilities exist. Detailed user journeys and
+acceptance criteria must be agreed before implementation.
+
+Preserve each sport's workflows, evidence, settlement semantics, measurement
+rules and operational authority. A unified interface does not require identical
+capabilities, combined scientific populations, a universal schema or the full
+Forecast Intelligence Workspace. Hosting and migration decisions remain separate.
+
+### Parallel external MLB model and supplier investigation
+
+Continue investigating usable external forecasts and suppliers alongside both
+release paths. Evaluate probability availability, identity, chronology, retention
+and downstream-use rights, market independence and cost. The intended outcome is
+a documented admission decision; no candidate is presumed admissible. A promising
+candidate leads to a separately scoped integration proposal.
+
+Neither v1.2 nor v1.3 waits for supplier success or formal closure of the external
+or native-model tracks. Existing native-model findings remain valid historical
+results; further native-model work is deferred pending a separate decision. This
+roadmap does not authorize vendor messages, purchases, trials or new collection.
+
+## Longer-term capability horizons (no release assigned)
+
+### Horizon 1 — Complete empirical decision lifecycle
+
+Retain the long-term progression from immutable Evidence and Measurement through
+Forecast Intelligence, supported Market Edges, governed Forecast Policy, Policy
+Forecasts and Opportunity Analysis. Current applicability, policy alignment, the
+broader Forecast Intelligence Workspace and policy-driven operational integration
+remain future capabilities, not v1.2 gates or automatic v1.3 commitments.
+
+The historical [MLB programme](docs/RELEASE_PLAN_v1.1.0.md) preserves completed
+work and future scientific dependencies. Its former whole-programme release gate
+is superseded by the September 12 decision; scientific admission and governance
+requirements are unchanged.
 
 ### Horizon 2 — Richer Forecast Intelligence
 
@@ -85,7 +129,7 @@ No non-sports domain is scheduled, and expansion assumes neither a universal sch
 
 ## Product surfaces
 
-The Forecast Intelligence Workspace is the principal research and governance surface; the Opportunity Board is the principal operational surface. Reports communicate state with provenance. None acquires hidden Policy or authority.
+The planned Forecast Intelligence Workspace remains the long-term research and governance surface; the Opportunity Board remains the operational surface. The bounded v1.2 baseline display and tentative v1.3 shared experience do not require completion of that broader Workspace. Reports communicate state with provenance. None acquires hidden Policy or authority.
 
 ## Deferred strategic opportunities
 
