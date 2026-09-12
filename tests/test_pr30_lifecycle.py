@@ -33,6 +33,54 @@ class CheckpointAcceptanceTests(unittest.TestCase):
         self.assertEqual(boundary.source_bytes,0)
         with self.archive.mutation_lock():assert_boundary(self.archive,boundary)
 
+    def test_decimal_bearing_state_passes_full_rebuild_without_broadening_operations_canonicalization(self):
+        from dataclasses import replace
+        from decimal import Decimal
+        from forecast_standalone_operations import archive_pr17_authority
+        archive_pr17_authority(self.archive,(self.g['observation'],),recorded_at=self.at)
+        with self.assertRaisesRegex(OperationsError,'unsupported-canonical-value'):
+            canonical_bytes(Decimal('0.54'))
+        rebuild_projection(self.archive,self.at)
+        cold=rebuild_projection(self.archive,self.at)
+        from forecast_prospective_projection import _scientific_state_bytes
+        _,hot=load_projection(self.archive,self.at)
+        observations=hot.bucket('market_observations')
+        self.assertEqual(len(observations),1)
+        self.assertEqual(observations[0].quotes.yes_bid,Decimal('0.54'))
+        self.assertEqual(_scientific_state_bytes(cold),_scientific_state_bytes(hot))
+        changed_states=(
+            replace(cold,analysis_boundary=cold.analysis_boundary+timedelta(microseconds=1)),
+            replace(cold,objects=cold.objects[:-1]),
+            replace(cold,graph=cold.graph[:-1]),
+            replace(cold,reports=(self.g['observation'],)),
+            replace(cold,source_manifest_ids=cold.source_manifest_ids[:-1]),
+        )
+        self.assertTrue(all(_scientific_state_bytes(cold)!=_scientific_state_bytes(changed) for changed in changed_states))
+
+    def test_decimal_bearing_state_difference_revokes_checkpoint_lineage(self):
+        from dataclasses import replace
+        from decimal import Decimal
+        import forecast_prospective_projection as projection
+        from forecast_standalone_operations import archive_pr17_authority
+        archive_pr17_authority(self.archive,(self.g['observation'],),recorded_at=self.at)
+        rebuild_projection(self.archive,self.at)
+        rebuild_projection(self.archive,self.at)
+        path=projection_path(self.archive);lineage=json.loads(path.read_bytes())['projection']['lineage'];changed=[]
+        original=projection.replay_boundary
+        def replay(boundary,at):
+            state=original(boundary,at)
+            if boundary._checkpoint_lineage!=lineage:return state
+            observation=next(value for value in state.objects if type(value).__name__=='MarketObservation')
+            replacement=replace(observation,quotes=replace(observation.quotes,yes_bid=Decimal('0.53')))
+            objects=tuple(replacement if value is observation else value for value in state.objects)
+            graph=tuple((name,tuple(replacement if value is observation else value for value in values)) for name,values in state.graph)
+            changed.append(1);return replace(state,objects=objects,graph=graph)
+        with patch.object(projection,'replay_boundary',side_effect=replay),self.assertRaisesRegex(OperationsError,'projection-replay-conflict'):
+            projection.rebuild_projection(self.archive,self.at)
+        self.assertEqual(changed,[1])
+        self.assertFalse(path.exists())
+        self.assertTrue((self.archive.root/f'prospective-projection-rejected-{lineage}.json').exists())
+
     def test_excessive_delta_fails_before_transport(self):
         self.capture()
         with patch('forecast_prospective_projection.MAX_DELTA_MANIFESTS',0):
