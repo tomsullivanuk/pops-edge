@@ -146,3 +146,24 @@ For the explicitly commissioned 2026 starting cohort, comparison status says
 comparison scoring; this does not remove them from the Bet Sheet. Capture must
 finish before the first remaining game begins. Missing prices refer to eligible
 games only. Starting with Week 2 the standard first-game-of-the-week cutoff applies.
+
+## Automatic comparison week (owner-approved workflow simplification)
+
+The default workflow is select files, then Refresh Bet Sheet. Advanced options
+contains manual comparison-week selection and the explicit missing-price retry.
+Automatic mode checks fresh official schedules in week order and chooses the
+first window still open. The fixed partial Week 1 cutoff applies while that
+window remains open; subsequent weeks use their normal first-game cutoff.
+
+The resolved target is displayed during capture and retained in the research
+import events. This is the owner-approved automatic-target exception to the
+original manual-selection workflow, not a change to research eligibility.
+Unknown dates or a target missing from the workbook produce a visible comparison
+message; the program does not silently skip to a later eligible week. The Bet
+Sheet can still refresh, and enrolled results continue to update. Closed weeks'
+research quotes are preserved. Manual override never bypasses the service cutoff.
+
+Reading/opening the page does not collect evidence. Schedule selection happens
+only on an owner-triggered refresh. Protocol and existing activation digests stay
+unchanged; this operational selection policy is documented separately so existing
+research evidence can still replay.

@@ -103,3 +103,11 @@ class StartingCohortTests(unittest.TestCase):
             e.observe_results(2026,1,lambda _: (200,source(self.games)))
             r=e.report(2026,1,self.clock());self.assertEqual(r['paired_games'],1)
             self.assertEqual(r['coverage']['excluded-starting-cohort'],2)
+
+    def test_automatic_selection_uses_partial_cutoff(self):
+        from nfl_refresh import Workflow
+        e=self.initialize();w=Workflow(self.root/'app')
+        observe=e.observe_results
+        with patch.object(e,'observe_results',side_effect=lambda season,week:observe(season,week,lambda _: (200,source(self.games)))),patch('nfl_refresh.kalshi.utc',self.clock):
+            self.assertEqual(w.automatic_comparison_week(e,2026,[1]),1)
+            self.assertEqual(e.report(2026,1,AT)['coverage']['excluded-starting-cohort'],2)
