@@ -115,3 +115,28 @@ The [approved weekly design](NFL_MODEL_PERFORMANCE_PROTOCOL.md) will capture
 Kalshi alongside a new ELWAY import and preserve a separate weekly research
 baseline. Ordinary odds refreshes will not reset that baseline. This is not yet
 implemented or activated; the currently deployed refresh workflow is unchanged.
+
+## Weekly capture connection — local implementation candidate
+
+The refresh handler now supports an explicitly commissioned store at
+`~/PopsEdge/Data/NFL/performance`. It never initializes that store on startup or
+by viewing the page. Without activation, the Bet Sheet retains its usual workflow
+and shows that weekly capture is inactive.
+
+Once commissioned, select **Model comparison week** alongside the two files.
+**Refresh Bet Sheet** first submits the workbook to the weekly capture service,
+then refreshes the season-wide Bet Sheet. New forecasts save associated comparison
+prices; unchanged imports preserve them. Selecting the week does not filter the
+Bet Sheet or enroll every week in a full-season workbook.
+
+Use **Retry missing comparison prices** explicitly to fill missing observations
+before the weekly cutoff. Successful observations cannot be replaced. The retry
+selection clears after submission. Weekly progress reports saved/frozen baseline,
+comparison coverage and scored results. A comparison failure remains visible while
+the operational Bet Sheet can still refresh; the app stays on Import & Refresh
+when comparison attention is required.
+
+Official schedule captures also update results for already enrolled weeks. Older
+enrolled weeks absent from the current workbook receive their own official result
+request. No old prices are reconstructed. This connection has not been deployed
+or commissioned by its implementation; those remain separate authorization gates.

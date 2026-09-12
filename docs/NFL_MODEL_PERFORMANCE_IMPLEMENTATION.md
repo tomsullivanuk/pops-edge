@@ -74,3 +74,14 @@ commissioning separately. The subsequent tab/refresh integration must explicitly
 select a target week, show partial/missing states and consume the report's common
 paired population. It must not reset research prices with ordinary Bet Sheet
 refreshes. No running app or live source history was changed by implementation.
+
+## Refresh connection follow-on
+
+The local workflow candidate connects the existing service before operational
+season refresh, requires an explicit target week when commissioned, provides an
+explicit retry control, and records/replays results for enrolled weeks. See the
+[refresh guide](NFL_REFRESH_GUIDE.md). This supersedes the earlier statement that
+no refresh caller is installed in source; no production activation follows.
+`record_schedule_capture` retains and validates the operational capture's raw
+receipt rather than reinterpreting old schedule derivations. Comparison errors
+are recorded separately from operational board errors.

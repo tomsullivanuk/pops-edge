@@ -18,6 +18,7 @@ import nfl_forecast_import as source
 import nfl_schedule as schedule
 import nfl_comparison_board as board
 import retrieve_kalshi_nfl as kalshi
+from nfl_performance import Performance
 
 MAX_REQUEST=24*1024*1024
 
@@ -27,7 +28,7 @@ class Workflow:
         self.root=Path(root).resolve();self.inbox=self.root/'Downloads/NFL';self.data=self.root/'Data/NFL'
         self.inbox.mkdir(parents=True,exist_ok=True);self.data.mkdir(parents=True,exist_ok=True)
         self.lock=threading.Lock();self.status=dict(state='inputs',message='Select an ELWAY workbook and activity export.')
-        self.files={};self.candidate=None;self.activity=None;self.review_id=None;self.boards={}
+        self.performance_status=dict(state='idle',message='');self.files={};self.candidate=None;self.activity=None;self.review_id=None;self.boards={}
         for path in sorted((self.data/'boards').glob('*/comparison.json')):
             if not (path.parent/'complete.json').exists():continue
             try:
@@ -35,13 +36,45 @@ class Workflow:
                 if key not in self.boards or path.stat().st_mtime>self.boards[key].stat().st_mtime:self.boards[key]=path.parent
             except (OSError,ValueError,KeyError):continue
 
+    def performance_config(self):
+        path=self.data/'performance'
+        if not (path/'activation.json').exists():
+            return dict(enabled=False,state='inactive',message='Weekly model capture is not activated yet.')
+        try:
+            Performance(path)
+            return dict(enabled=True,**self.performance_status)
+        except (ValueError,OSError,KeyError) as exc:
+            return dict(enabled=False,state='error',message='Weekly model capture unavailable: '+str(exc))
+
+    def capture_performance(self,raw,name,season,week,retry=False):
+        engine=Performance(self.data/'performance')
+        self.performance_status=dict(state='running',message=f'Capturing the Week {week} comparison…')
+        event=engine.refresh(raw,name,season,week,retry=retry)
+        if event['kind']=='rejected':raise ValueError(event['payload']['error'])
+        # Reimports preserve quotes; official outcomes are refreshed independently.
+        if event['kind']=='duplicate':engine.observe_results(season,week)
+        return engine
+
+    def performance_summary(self,engine,season,week):
+        r=engine.save_report(season,week,kalshi.utc())
+        captured=sum(g['kalshi'] is not None for g in r['games'])
+        missing=r['population']-captured
+        state='attention' if missing or not r['selected_import'] else 'complete'
+        label='frozen' if r['frozen'] else 'saved before kickoff'
+        message=(f'Week {week}: baseline {label}. {captured} of {r["population"]} games have comparison prices; '
+                 f'{r["paired_games"]} results scored.') if r['selected_import'] else f'Week {week}: no qualifying baseline. The first kickoff may have passed or inputs are missing.'
+        if r['selection_issue']:message+=' '+r['selection_issue']
+        if missing:message+=(' Missing prices remain visible; no prices will be backfilled for this week.' if r['frozen'] else ' Missing prices remain visible; retry them explicitly before the first kickoff.')
+        self.performance_status=dict(state=state,message=message,week=week,report_id=r['report_id'])
+        return r
+
     def catalog(self):
         self.files={};listing=[]
         for p in sorted(self.inbox.glob('*')):
             if p.is_symlink() or not p.is_file() or p.suffix.lower() not in ('.xlsx','.csv'):continue
             identity=source.digest(str(p).encode());self.files[identity]=p
             listing.append(dict(id=identity,name=p.name,kind=p.suffix.lower()))
-        return dict(files=listing,inbox=str(self.inbox),status=self.status,boards=sorted(self.boards))
+        return dict(files=listing,inbox=str(self.inbox),status=self.status,boards=sorted(self.boards),performance=self.performance_config())
 
     def file_bytes(self,spec,kind):
         if not isinstance(spec,dict) or set(spec)!={'id'}:raise ValueError('Select a file from the NFL inbox')
@@ -55,14 +88,21 @@ class Workflow:
         try:
             raw,name=self.file_bytes(payload.get('forecast'),'.xlsx')
             activity,activity_name=self.file_bytes(payload.get('activity'),'.csv')
+            config=self.performance_config()
+            target=payload.get('performance_week');retry=payload.get('retry_missing',False)
+            if type(retry) is not bool:raise ValueError('Invalid retry selection')
+            if config['enabled']:
+                if type(target) is not int or not 1<=target<=18:raise ValueError('Select the week for the model comparison')
+            elif target is not None or retry:
+                raise ValueError(config['message'])
             attempt=self.data/'refreshes'/uuid.uuid4().hex
             source.write_once(attempt/'started.json',source.encode(dict(at=kalshi.utc(),forecast_sha256=source.digest(raw),activity_sha256=source.digest(activity),scope='all workbook weeks')))
             self.status=dict(state='running',message='Checking the selected files…')
-            threading.Thread(target=self.run,args=(raw,name,activity,attempt),daemon=True).start()
+            threading.Thread(target=self.run,args=(raw,name,activity,attempt,target,retry),daemon=True).start()
             return self.status
         except Exception:self.lock.release();raise
 
-    def run(self,raw,name,activity,attempt):
+    def run(self,raw,name,activity,attempt,performance_week=None,retry_missing=False):
         try:
             candidate=excel.prepare(raw,name,self.data/'forecasts')
             from nfl_activity import REQUIRED
@@ -77,10 +117,24 @@ class Workflow:
             source.write_once(activity_path.parent/('import-'+uuid.uuid4().hex+'.json'),source.encode(dict(imported_at=kalshi.utc(),source_sha256=source.digest(activity))))
             self.candidate=candidate;self.activity=activity_path
             season=candidate['season'];failures=[];completed=[];pending_dates=[]
+            engine=None;performance_errors=[]
+            if performance_week is not None:
+                try:
+                    if performance_week not in candidate['weeks']:raise ValueError('Selected week is absent from the workbook')
+                    engine=self.capture_performance(raw,name,season,performance_week,retry_missing)
+                except Exception as exc:
+                    performance_errors.append(str(exc))
+                    self.performance_status=dict(state='attention',message='Weekly comparison: '+str(exc))
+            enrolled=set()
+            if engine:
+                enrolled={(e['payload']['season'],e['payload']['week']) for e in engine.events() if e['kind']=='import'}
             for index,week in enumerate(candidate['weeks'],1):
                 try:
                     self.status=dict(state='running',message=f'Refreshing week {week} ({index} of {len(verified)}): schedule…')
                     sf,s=schedule.capture(self.data/'schedules',season,week)
+                    if engine and (season,week) in enrolled:
+                        try:engine.record_schedule_capture(sf,season,week)
+                        except Exception as exc:performance_errors.append(f'Week {week} result update: {exc}')
                     if s['error']:raise ValueError(s['error'])
                     dates=[kalshi.aware(g['kickoff']).astimezone(board.NY).date().isoformat() for g in s['rows'] if g['kickoff']]
                     if not dates:
@@ -93,7 +147,19 @@ class Workflow:
                     board.replay(folder)
                     self.boards[f'{season}-{week}']=folder;completed.append(dict(week=week,board=folder.name))
                 except Exception as exc:failures.append(dict(week=week,error=str(exc)))
-            result=dict(at=kalshi.utc(),completed=completed,failures=failures,pending_dates=pending_dates)
+            if engine:
+                try:
+                    # Refresh previously enrolled weeks even with a one-week workbook.
+                    for old_season,old_week in sorted(enrolled):
+                        if old_season!=season or old_week not in candidate['weeks']:
+                            engine.observe_results(old_season,old_week)
+                        engine.save_report(old_season,old_week,kalshi.utc())
+                    self.performance_summary(engine,season,performance_week)
+                except Exception as exc:performance_errors.append(str(exc))
+            if performance_errors:
+                self.performance_status=dict(state='attention',message='Weekly comparison: '+'; '.join(performance_errors))
+            result=dict(at=kalshi.utc(),completed=completed,failures=failures,pending_dates=pending_dates,
+                        performance=self.performance_status,performance_errors=performance_errors)
             source.write_once(attempt/('complete.json' if not failures else 'partial.json'),source.encode(result))
             if failures:
                 self.status=dict(state='attention',message=f"Updated {len(completed)} of {len(verified)} weeks. Needs attention: "+'; '.join(f"Week {x['week']}: {x['error']}" for x in failures)+'. Older captures remain labeled with their original times.',updated=bool(completed))
