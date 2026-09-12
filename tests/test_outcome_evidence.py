@@ -74,6 +74,25 @@ class OutcomeEvidenceTests(unittest.TestCase):
         self.assertFalse(delayed.authoritative_final)
         self.assertFalse(no_contest.authoritative_final)
 
+    def test_delayed_start_is_valid_unresolved_and_preserves_provider_detail(self):
+        detail = "dElAyEd StArT"
+        item = self.observation("scheduled", mutation=lambda row: row["status"].update(detailedState=detail))
+        self.assertIs(item.provider_status, OutcomeStatus.DELAYED)
+        self.assertEqual(item.provider_status_detail, detail)
+        self.assertIs(item.validation_status, ValidationStatus.VALID)
+        self.assertTrue(item.unresolved)
+        self.assertFalse(item.authoritative_final)
+        self.assertIsNone(item.away_score)
+        self.assertIsNone(item.home_score)
+        self.assertIsNone(item.winning_participant_id)
+        self.assertEqual(len(item.raw_evidence_sha256), 64)
+        self.assertEqual(len(item.canonical_evidence_sha256), 64)
+
+        unknown = self.observation("scheduled", mutation=lambda row: row["status"].update(detailedState="Unexpected Holding State"))
+        self.assertIs(unknown.provider_status, OutcomeStatus.UNKNOWN)
+        self.assertIs(unknown.validation_status, ValidationStatus.INCOMPLETE)
+        self.assertEqual({issue.code for issue in unknown.issues}, {"unsupported-status"})
+
     def test_corrected_final_is_later_immutable_observation(self):
         original = self.observation("normal_final", collected_at=datetime(2026, 8, 2, tzinfo=timezone.utc))
         corrected = self.observation("corrected_final", collected_at=COLLECTED)

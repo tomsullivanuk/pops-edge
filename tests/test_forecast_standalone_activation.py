@@ -635,6 +635,17 @@ class ActivationTests(unittest.TestCase):
             histories=tuple(x for x in contracts if type(x).__name__=="OutcomeHistory");self.assertEqual(len(histories),1)
             self.assertEqual([(x.scheduled_start.date().isoformat(),x.provider_status.value) for x in histories[0].observations],[(original_day,"postponed"),(makeup_day,"final")]);self.assertEqual(histories[0].latest.home_score,3)
 
+    def test_live_shaped_supporting_refresh_accepts_delayed_start_and_rejects_unknown_status(self):
+        day="2026-09-11";at=datetime(2026,9,12,tzinfo=timezone.utc)
+        delayed=self._reschedule_game(823012,day,"2026-09-11T23:10:00Z","Delayed Start")
+        contracts=refresh_supporting_from_raw(archive=None,mlb_raw=self._schedule_page(day,delayed),kalshi_raw=b'{"cursor":"","markets":[]}',collected_at=at,prior_state=SimpleNamespace(bucket=lambda _:()),derive_only=True)
+        history=next(x for x in contracts if type(x).__name__=="OutcomeHistory")
+        self.assertEqual((history.latest.provider_status.value,history.latest.provider_status_detail,history.latest.unresolved,history.latest.authoritative_final),("delayed","Delayed Start",True,False))
+
+        unknown=copy.deepcopy(delayed);unknown["status"]["detailedState"]="Unexpected Holding State"
+        with self.assertRaisesRegex(OperationsError,"provider-data-invalid"):
+            refresh_supporting_from_raw(archive=None,mlb_raw=self._schedule_page(day,unknown),kalshi_raw=b'{"cursor":"","markets":[]}',collected_at=at,prior_state=SimpleNamespace(bucket=lambda _:()),derive_only=True)
+
     def test_outcome_reconciliation_ignores_replayed_predecessor_after_final(self):
         original_day="2026-05-23";makeup_day="2026-05-24";game_pk=824840
         original=self._reschedule_game(game_pk,original_day,"2026-05-23T20:05:00Z","Postponed",rescheduleDate="2026-05-24T22:05:00Z",rescheduleGameDate=makeup_day)

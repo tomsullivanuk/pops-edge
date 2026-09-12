@@ -31,6 +31,7 @@ _STATUS_MAP = {
     "in progress": OutcomeStatus.IN_PROGRESS,
     "manager challenge": OutcomeStatus.IN_PROGRESS,
     "delayed": OutcomeStatus.DELAYED,
+    "delayed start": OutcomeStatus.DELAYED,
     "rain delay": OutcomeStatus.DELAYED,
     "postponed": OutcomeStatus.POSTPONED,
     "suspended": OutcomeStatus.SUSPENDED,
