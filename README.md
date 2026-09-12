@@ -16,6 +16,9 @@ System,” `kalshi`, and World Cup-prefixed output filenames describe the
 original implementation, repository location, data provider, or a sport-specific
 artifact; they are not the product name.
 
+Visual design is documented in the [brand guidelines](docs/NFL_BRAND_GUIDELINES.md),
+linked from the product specification. The NFL workspace is the first implementation.
+
 ## Version history
 
 ### v1.0.0 — World Cup baseline

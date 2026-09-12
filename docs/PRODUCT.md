@@ -26,6 +26,16 @@ See [refresh guide](NFL_REFRESH_GUIDE.md),
 [comparison boundary](NFL_BOARD_SLICE.md), and
 [independent review](NFL_PR33_INDEPENDENT_REVIEW.md).
 
+## Visual identity
+
+The Product Owner approved the navy-and-green NFL design on September 12, 2026.
+[Brand guidelines](NFL_BRAND_GUIDELINES.md) are the durable visual specification
+for Pops’ Edge, first applied to the NFL workspace. Use the PE mark, bold wordmark,
+white surfaces, navy headers and restrained green accents consistently. Preserve
+readable status text, source provenance and accessible controls. Styling conveys
+identity and comparison values; it does not establish empirical trust or policy.
+Other sport implementations can adopt this identity in their own approved work.
+
 ## Purpose
 
 Pops' Edge is a quantitative decision platform for discovering and acting upon positive expected value opportunities.
