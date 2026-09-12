@@ -11,6 +11,7 @@ def main():
     sub = parser.add_subparsers(dest='command', required=True)
     init = sub.add_parser('initialize', help='Commission only with separate owner authorization')
     init.add_argument('--authorization', required=True)
+    init.add_argument('--partial-week1', action='store_true', help='Pin the owner-approved 14-game 2026 Week 1 starting cohort from a fresh official schedule')
     capture = sub.add_parser('capture', help='Import a new weekly workbook and capture associated prices')
     capture.add_argument('workbook', type=Path)
     capture.add_argument('--retry-missing', action='store_true')
@@ -24,7 +25,13 @@ def main():
     replay.add_argument('report', type=Path)
     args = parser.parse_args()
     if args.command == 'initialize':
-        obj = performance.Performance.initialize(args.store, args.authorization)
+        if args.partial_week1:
+            from tempfile import TemporaryDirectory
+            with TemporaryDirectory() as tmp:
+                folder, _ = performance.schedule.capture(tmp, 2026, 1)
+                obj = performance.Performance.initialize(args.store, args.authorization, partial_week1_schedule=folder)
+        else:
+            obj = performance.Performance.initialize(args.store, args.authorization)
         result = obj.activation
     else:
         obj = performance.Performance(args.store)

@@ -20,6 +20,7 @@ import nfl_performance_sources as sources
 PROTOCOL = 'nfl-weekly-contract-value-v1'
 SCHEMA = 'nfl-weekly-measurement-v1'
 RULE_FILE = Path(__file__).parent / 'docs/NFL_MODEL_PERFORMANCE_PROTOCOL.md'
+PARTIAL_RULE_FILE = Path(__file__).parent / 'docs/NFL_WEEK1_STARTING_COHORT.md'
 D = Decimal
 
 
@@ -43,9 +44,10 @@ class Performance:
         if self.activation['schema'] != SCHEMA:
             raise ValueError('Unsupported performance schema')
         instant(self.activation['effective_at'])
+        self.starting_cohort = self.validate_starting_cohort()
 
     @classmethod
-    def initialize(cls, root, authorization, clock=kalshi.utc):
+    def initialize(cls, root, authorization, clock=kalshi.utc, partial_week1_schedule=None):
         """Called only as an explicit, separately authorized commissioning action."""
         if not isinstance(authorization, str) or not authorization.strip():
             raise ValueError('Explicit commissioning authorization reference required')
@@ -53,9 +55,63 @@ class Performance:
         root.mkdir(parents=True, exist_ok=True)
         if list(root.iterdir()):
             raise ValueError('Initialize an empty store; never replace activation')
-        base.write_once(root / 'activation.json', base.encode(dict(schema=SCHEMA, protocol=PROTOCOL,
-            protocol_digest=base.digest(RULE_FILE.read_bytes()), effective_at=clock(), authorization=authorization)))
+        activation = dict(schema=SCHEMA, protocol=PROTOCOL,
+            protocol_digest=base.digest(RULE_FILE.read_bytes()), effective_at=clock(), authorization=authorization)
+        if partial_week1_schedule is not None:
+            receipt = schedule.replay(partial_week1_schedule)
+            cls.starting_members(receipt, activation['effective_at'], (Path(partial_week1_schedule) / 'source.html').read_bytes())
+            files = {}
+            for name in ('receipt.json', 'started.json', 'source.html'):
+                raw = (Path(partial_week1_schedule) / name).read_bytes()
+                key = base.digest(raw)
+                base.write_once(root / 'blobs' / key, raw)
+                files[name] = key
+            activation['starting_cohort'] = dict(rule_digest=base.digest(PARTIAL_RULE_FILE.read_bytes()), files=files)
+        base.write_once(root / 'activation.json', base.encode(activation))
         return cls(root, clock)
+
+    @staticmethod
+    def starting_members(receipt, effective_at, raw):
+        """A single owner-approved 2026 Week 1 exception, never a rolling population."""
+        if receipt['season'] != 2026 or receipt['week'] != 1:
+            raise ValueError('Starting cohort requires official 2026 Week 1')
+        if instant(receipt['completed_at']) > instant(effective_at):
+            raise ValueError('Cohort schedule received after activation')
+        rows = receipt['rows']
+        if len(rows) != 16 or len({g['game_id'] for g in rows}) != 16 or len({t for g in rows for t in (g['home'], g['away'])}) != 32:
+            raise ValueError('Starting cohort requires all 16 unique official games')
+        if any(not g['kickoff'] for g in rows):
+            raise ValueError('Starting cohort requires confirmed game times')
+        excluded = [g for g in rows if instant(g['kickoff']) <= instant(effective_at)]
+        if {(g['home'], g['away']) for g in excluded} != {('SEA', 'NE'), ('LAR', 'SF')}:
+            raise ValueError('Only NE at SEA and SF at LAR may precede starting-cohort activation')
+        included = [g for g in rows if g not in excluded]
+        if len(included) != 14 or any(g['status'] != 'SCHEDULED' for g in included):
+            raise ValueError('Starting cohort requires 14 unstarted scheduled games')
+        outcomes = sources.outcomes(raw, 2026, 1)
+        summaries = {g['id']: g.get('summary') or {} for g in sources.weekly_games(raw, 2026, 1)}
+        for g in included:
+            summary = summaries[g['game_id']]
+            # SCHEDULED can coexist with a live summary; missing startTime is not proof of pregame.
+            if summary.get('phase') is not None or summary.get('quarter') is not None:
+                raise ValueError('Starting cohort requires pregame evidence; summary phase or quarter is present')
+            outcome = outcomes[g['game_id']]
+            if outcome['state'] != 'awaiting-outcome' or (outcome.get('start') and instant(outcome['start']) <= instant(effective_at)):
+                raise ValueError('Starting cohort contains already-started or unresolved game')
+        return dict(included={g['game_id'] for g in included},
+                    cutoff=min(instant(g['kickoff']) for g in included))
+
+    def validate_starting_cohort(self):
+        config = self.activation.get('starting_cohort')
+        if config is None:
+            return None
+        if config['rule_digest'] != base.digest(PARTIAL_RULE_FILE.read_bytes()):
+            raise ValueError('Starting-cohort rule identity differs')
+        with self.bundle(config['files']) as folder:
+            receipt = schedule.replay(folder)
+            outcomes = sources.outcomes((folder / 'source.html').read_bytes(), 2026, 1)
+            members = self.starting_members(receipt, self.activation['effective_at'], (folder / 'source.html').read_bytes())
+            return dict(members, receipt=receipt, outcomes=outcomes)
 
     @contextmanager
     def locked(self):
@@ -243,7 +299,13 @@ class Performance:
         values = {e['id']: self.decode(e) for e in events}
         scoped = [e for e in events if e['payload'].get('season') == season and e['payload'].get('week') == week]
         schedules = [e for e in scoped if e['kind'] == 'schedule' and not values[e['id']].get('error')]
-        cutoff = None
+        cohort = self.validate_starting_cohort() if (season, week) == (2026, 1) else None
+        if cohort and instant(self.activation['effective_at']) <= at:
+            eid = base.digest(base.encode(self.activation))
+            seed = dict(id=eid, at=self.activation['effective_at'])
+            values[eid] = dict(cohort['receipt'], outcomes=cohort['outcomes'])
+            schedules = [seed] + schedules
+        cutoff = cohort['cutoff'] if cohort else None
         games = {}
         outcomes = {}
         blocked = False
@@ -252,8 +314,9 @@ class Performance:
         conflicts = set()
         for e in schedules:
             s = values[e['id']]
-            starts = [instant(g['kickoff']) for g in s['rows'] if g['kickoff']]
-            unknown = len(starts) != len(s['rows'])
+            cutoff_rows = [g for g in s['rows'] if not cohort or g['game_id'] in cohort['included']]
+            starts = [instant(g['kickoff']) for g in cutoff_rows if g['kickoff']]
+            unknown = len(starts) != len(cutoff_rows) or bool(cohort and {g['game_id'] for g in cutoff_rows} != cohort['included'])
             proposed = min(starts) if starts else None
             # Only move an open window; once its deadline passes it never reopens.
             if cutoff is None:
@@ -273,7 +336,7 @@ class Performance:
                 games[g['game_id']] = g
             for key, outcome in s['outcomes'].items():
                 outcomes[key] = dict(outcome, observed_at=e['at'], source_id=e['id'])
-                if outcome.get('start') and cutoff:
+                if outcome.get('start') and cutoff and (not cohort or key in cohort['included']):
                     cutoff = min(cutoff, instant(outcome['start']))
         effective_cutoff = None if blocked else cutoff
         imports = []
@@ -328,6 +391,8 @@ class Performance:
                     raise ValueError('Capture does not follow import and schedule')
                 for g in values[s_event['id']]['rows']:
                     gid = g['game_id']
+                    if cohort and gid not in cohort['included']:
+                        continue
                     if gid in captures:
                         continue
                     try:
@@ -343,6 +408,10 @@ class Performance:
         for gid, game in sorted(games.items()):
             row = dict(game_id=gid, home=game['home'], away=game['away'], state='missing-capture', issues=[],
                        elway=None, kalshi=None, outcome=outcomes.get(gid), scores=None)
+            if cohort and gid not in cohort['included']:
+                row.update(state='excluded-starting-cohort', issues=['Outside fixed 14-game starting cohort'])
+                rows.append(row)
+                continue
             f, q = forecast_rows.get((game['home'], game['away'])), captures.get(gid)
             if not selected:
                 row['issues'].append(selection_issue or 'No qualifying weekly baseline')
@@ -387,6 +456,10 @@ class Performance:
             selection_issue=selection_issue, attempts=attempts, coverage=coverage, means=means, games=rows,
             diagnostics=[dict(id=e['id'], kind=e['kind'], error=values[e['id']].get('error')) for e in scoped
                          if values[e['id']].get('error')])
+        if cohort:
+            result['starting_cohort'] = dict(label='Partial Week 1 — 14 of 16 games',
+                included_game_ids=sorted(cohort['included']), eligible_population=14,
+                official_population=16, fixed_at=self.activation['effective_at'])
         result['report_id'] = base.digest(base.encode(result))
         return result
 

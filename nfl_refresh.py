@@ -58,11 +58,13 @@ class Workflow:
     def performance_summary(self,engine,season,week):
         r=engine.save_report(season,week,kalshi.utc())
         captured=sum(g['kalshi'] is not None for g in r['games'])
-        missing=r['population']-captured
+        population=r.get('starting_cohort',{}).get('eligible_population',r['population'])
+        missing=population-captured
         state='attention' if missing or not r['selected_import'] else 'complete'
         label='frozen' if r['frozen'] else 'saved before kickoff'
-        message=(f'Week {week}: baseline {label}. {captured} of {r["population"]} games have comparison prices; '
+        message=(f'Week {week}: baseline {label}. {captured} of {population} games have comparison prices; '
                  f'{r["paired_games"]} results scored.') if r['selected_import'] else f'Week {week}: no qualifying baseline. The first kickoff may have passed or inputs are missing.'
+        if r.get('starting_cohort'):message=r['starting_cohort']['label']+'. '+message
         if r['selection_issue']:message+=' '+r['selection_issue']
         if missing:message+=(' Missing prices remain visible; no prices will be backfilled for this week.' if r['frozen'] else ' Missing prices remain visible; retry them explicitly before the first kickoff.')
         self.performance_status=dict(state=state,message=message,week=week,report_id=r['report_id'])
