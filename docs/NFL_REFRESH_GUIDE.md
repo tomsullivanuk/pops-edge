@@ -140,3 +140,9 @@ Official schedule captures also update results for already enrolled weeks. Older
 enrolled weeks absent from the current workbook receive their own official result
 request. No old prices are reconstructed. This connection has not been deployed
 or commissioned by its implementation; those remain separate authorization gates.
+
+For the explicitly commissioned 2026 starting cohort, comparison status says
+“Partial Week 1 — 14 of 16 games”. NE at SEA and SF at LAR remain excluded from
+comparison scoring; this does not remove them from the Bet Sheet. Capture must
+finish before the first remaining game begins. Missing prices refer to eligible
+games only. Starting with Week 2 the standard first-game-of-the-week cutoff applies.

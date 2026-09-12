@@ -85,3 +85,22 @@ no refresh caller is installed in source; no production activation follows.
 `record_schedule_capture` retains and validates the operational capture's raw
 receipt rather than reinterpreting old schedule derivations. Comparison errors
 are recorded separately from operational board errors.
+
+## Owner-approved partial Week 1 start
+
+The [2026 Week 1 addendum](NFL_WEEK1_STARTING_COHORT.md) permits only the fixed
+14-game initial cohort. `initialize --partial-week1 --authorization ...` obtains
+a fresh official schedule and pins its raw evidence, membership, rule digest and
+actual effective time. This is an explicit alternative to normal commissioning,
+not an option on ordinary refresh. Existing stores remain untouched.
+
+The earliest included kickoff governs only this initial cohort. Excluded games
+remain in the official coverage denominator and never score; eligible population
+is separately 14. Refresh status labels the partial week and counts missing prices
+against those 14, avoiding an alert solely for the two intentional exclusions.
+Week 2 onward retains the normal weekly cutoff. The results tab remains deferred.
+
+Before commissioning a real store, review and deploy the candidate under the
+owner’s corresponding authorization. After commissioning, select the latest
+workbook and Week 1 in Import & Refresh and capture before the earliest remaining
+kickoff. Verify actual paired coverage; eligibility alone does not prove capture.
