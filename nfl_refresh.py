@@ -46,6 +46,20 @@ class Workflow:
         except (ValueError,OSError,KeyError) as exc:
             return dict(enabled=False,state='error',message='Weekly model capture unavailable: '+str(exc))
 
+    def automatic_comparison_week(self,engine,season,weeks):
+        # Selection is an operational convenience; the service still enforces evidence eligibility.
+        for week in range(1,19):
+            self.performance_status=dict(state='running',message=f'Checking the Week {week} comparison schedule…')
+            engine.observe_results(season,week)
+            report=engine.report(season,week,kalshi.utc())
+            if not report['cutoff']:
+                raise ValueError(f'Week {week} dates are unresolved. Use Advanced options to select a week.')
+            if not report['frozen']:
+                if week not in weeks:
+                    raise ValueError(f'Week {week} is next, but is absent from the selected workbook.')
+                return week
+        return None
+
     def capture_performance(self,raw,name,season,week,retry=False):
         engine=Performance(self.data/'performance')
         self.performance_status=dict(state='running',message=f'Capturing the Week {week} comparison…')
@@ -91,10 +105,10 @@ class Workflow:
             raw,name=self.file_bytes(payload.get('forecast'),'.xlsx')
             activity,activity_name=self.file_bytes(payload.get('activity'),'.csv')
             config=self.performance_config()
-            target=payload.get('performance_week');retry=payload.get('retry_missing',False)
+            target=payload.get('performance_week','auto' if config['enabled'] else None);retry=payload.get('retry_missing',False)
             if type(retry) is not bool:raise ValueError('Invalid retry selection')
             if config['enabled']:
-                if type(target) is not int or not 1<=target<=18:raise ValueError('Select the week for the model comparison')
+                if target!='auto' and (type(target) is not int or not 1<=target<=18):raise ValueError('Select the week for the model comparison')
             elif target is not None or retry:
                 raise ValueError(config['message'])
             attempt=self.data/'refreshes'/uuid.uuid4().hex
@@ -122,8 +136,14 @@ class Workflow:
             engine=None;performance_errors=[]
             if performance_week is not None:
                 try:
-                    if performance_week not in candidate['weeks']:raise ValueError('Selected week is absent from the workbook')
-                    engine=self.capture_performance(raw,name,season,performance_week,retry_missing)
+                    engine=Performance(self.data/'performance')
+                    if performance_week=='auto':
+                        performance_week=self.automatic_comparison_week(engine,season,candidate['weeks'])
+                    if performance_week is not None:
+                        if performance_week not in candidate['weeks']:raise ValueError('Selected week is absent from the workbook')
+                        engine=self.capture_performance(raw,name,season,performance_week,retry_missing)
+                    else:
+                        self.performance_status=dict(state='complete',message='Model comparison: season capture windows closed. Saved results continue to update.')
                 except Exception as exc:
                     performance_errors.append(str(exc))
                     self.performance_status=dict(state='attention',message='Weekly comparison: '+str(exc))
@@ -156,7 +176,7 @@ class Workflow:
                         if old_season!=season or old_week not in candidate['weeks']:
                             engine.observe_results(old_season,old_week)
                         engine.save_report(old_season,old_week,kalshi.utc())
-                    self.performance_summary(engine,season,performance_week)
+                    if type(performance_week) is int:self.performance_summary(engine,season,performance_week)
                 except Exception as exc:performance_errors.append(str(exc))
             if performance_errors:
                 self.performance_status=dict(state='attention',message='Weekly comparison: '+'; '.join(performance_errors))
