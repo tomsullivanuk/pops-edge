@@ -164,6 +164,28 @@ def _material(archive, entries):
             "source_manifest_ids": sorted(x["manifest_entry_id"] for x in entries)}
 
 
+def _scientific_state_bytes(state):
+    """Canonical replay equality without expanding Operations serialization."""
+    def contracts(values):
+        result=[]
+        for value in values:
+            serializer=getattr(value,"to_json",None)
+            if not callable(serializer):
+                raise OperationsError("projection-invalid", "scientific replay contains a non-contract value")
+            payload=serializer()
+            if not isinstance(payload,str):
+                raise OperationsError("projection-invalid", "scientific contract serialization is not text")
+            result.append((type(value).__name__,payload))
+        return tuple(result)
+    return canonical_bytes({
+        "analysis_boundary": state.analysis_boundary,
+        "objects": contracts(state.objects),
+        "graph": tuple((name, contracts(values)) for name, values in state.graph),
+        "reports": contracts(state.reports),
+        "source_manifest_ids": state.source_manifest_ids,
+    })
+
+
 def _read(archive):
     try:
         with projection_path(archive).open("rb") as handle:
@@ -301,7 +323,7 @@ def rebuild_projection(archive, at):
         cached = None
     if cached is not None and recorded["source_manifest_ids"] == current["source_manifest_ids"]:
         cached.budget_seconds = float("inf")
-        if (canonical_bytes(replay_boundary(cached, at)) != canonical_bytes(state) or
+        if (_scientific_state_bytes(replay_boundary(cached, at)) != _scientific_state_bytes(state) or
                 canonical_bytes(cached._contributions) != canonical_bytes(boundary._contributions)):
             # Revoke the loaded lineage even if a prepared incremental consumer
             # has already replaced the checkpoint with one of its descendants.
