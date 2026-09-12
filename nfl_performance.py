@@ -166,6 +166,19 @@ class Performance:
             folder, _ = schedule.capture(tmp, season, week, transport=transport, clock=self.clock)
             return self.append('schedule', dict(season=season, week=week, files=self.archive(folder)))
 
+    def record_schedule_capture(self, folder, season, week):
+        """Attach a just-captured operational schedule as outcome evidence.
+
+        No old forecast or price enrollment is performed by this operation.
+        Raw receipts retain their original request times.
+        """
+        schedule.scope(season, week)
+        with self.locked():
+            files=self.archive(folder)
+            probe=dict(kind='schedule',at=self.clock(),payload=dict(season=season,week=week,files=files))
+            self.decode(probe)
+            return self.append('schedule',probe['payload'])
+
     def observe_results(self, season, week, transport=schedule.fetch):
         schedule.scope(season, week)
         with self.locked():
