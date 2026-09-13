@@ -1,5 +1,11 @@
 # Pops' Edge — Historical MLB Programme and Current Release Allocation
 
+> Documentation-stage reporting contract: the focused
+> [v1.2 release plan](RELEASE_PLAN_v1.2.0.md) and
+> [MLB reporting contract](MLB_REPORTING_CONTRACT_v1.2.0.md) specify the approved
+> Performance Report display and independent historical-report delivery. They
+> preserve the scientific obligations recorded below and do not claim implementation.
+
 > September 12, 2026 superseding decision: v1.2 now targets MLB Kalshi
 > collection and baseline market-performance presentation. v1.3 tentatively
 > targets unified NFL/MLB UX. External MLB model/supplier investigation continues
