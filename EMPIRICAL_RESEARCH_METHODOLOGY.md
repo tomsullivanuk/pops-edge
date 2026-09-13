@@ -5214,3 +5214,42 @@ requirements continue to apply. The [NFL weekly protocol](docs/NFL_MODEL_PERFORM
 specifies the approved selection and measurement contract. This amendment
 defines design authority only; collection/scoring activation requires a separate
 effective record and authorization.
+
+## MLB v1.2 reporting boundary amendment — documentation candidate
+
+The Product Owner approved a separate static historical candle report and an
+updated live-quote Performance Report, with a constant 50% descriptive reference
+and truthful separate observation, evidence and computation times. This amendment
+and the scientific provisions in sections 2–4 of the
+[MLB reporting contract](docs/MLB_REPORTING_CONTRACT_v1.2.0.md) define the successor
+reporting path for implementation review; they do not claim that it is implemented.
+
+The retrospective 164-day event interval remains fixed at March 25–September 5,
+2026 Eastern with strict pre-activation membership. Evidence legitimately acquired
+later may support a later retrospective report, but retains its actual availability
+time. Evidence cutoff, event-window endpoints and actual analytical/report creation
+times are distinct. Report-local Analysis may be computed after its source cutoff
+only by exact reconstruction from that pinned source authority, never by backdating
+new objects or admitting later source facts. Original Protocol identities, study
+windows, capture/selection rules and legacy replay retain their meanings.
+
+Cumulative prospective Coverage retains the complete known Protocol schedule
+universe, including not-yet-due obligations and due captures for future-starting
+games. The bounded report remains the governed five-hour scheduled-event interval.
+Full failure reconciliation and unknown calendar gaps remain visible. Missing live
+quotes cannot be reconstructed. Neither report pools or repairs the other.
+
+The reporting reference `constant-home-probability-0.5` version 1 was approved
+September 12, after study commencement. It is a descriptive reporting addition,
+not an admitted challenger or precommitted hypothesis test. It uses precisely each
+report's measured population and existing Brier/log-loss arithmetic; empty samples
+have absent scores. Kalshi's fixed-bin calibration and bootstrap procedure,
+confidence level and resample count remain unchanged. An explicit successor seed
+encoding binds the separate reporting context; original objects keep their old
+seed/replay rules. No significance, Market Edge or operational authority results.
+
+The detailed contract governs source completeness, chronology, denominator mappings,
+compatibility and worked examples. Any implementation requiring changed study
+membership, capture behavior or statistical procedure needs a separate methodological
+decision. The original PR17C/PR17D closure and final-report obligations remain;
+release approval does not perform closure or relabel an interim report as final.

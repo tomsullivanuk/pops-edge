@@ -711,3 +711,31 @@ Show paired sample sizes, source times, cumulative error and coverage gaps.
 Results do not declare a Market Edge or change Policy. See the
 [weekly protocol](NFL_MODEL_PERFORMANCE_PROTOCOL.md). Release assignment,
 application implementation and activation remain separate from this document.
+
+## MLB v1.2 Performance Report — approved design, documentation candidate
+
+The Product Owner approved **Performance Report** as the main MLB page: cumulative
+live-quote performance, eligible/captured/scored evidence accounting, missing and
+invalid material, uncertainty and expandable scoring/provenance detail. A compact,
+separately dated collection-status section distinguishes operational readiness
+from scientific completeness. A small **Historical candle report** link opens its
+own static report rather than occupying a second summary panel. Prospective and
+retrospective labels remain in scientific Protocol details.
+
+**Open Performance Report** opens saved output without acquisition or scoring.
+**Update Performance Report** manually derives and validates a new live-quote
+report from existing archived material. It preserves the selected historical link
+and does not regenerate that report. The historical report remains labelled
+interim or unavailable until its own final obligations are satisfied. A necessary
+later correction is separately identified and preserves the original.
+
+The initial simple reference is constant 50% home-win probability, evaluated
+according to the Methodology on the same scored observations. Results are
+informative even with low samples or no advantage over that reference. The page
+creates no trading, Policy or Governance authority. The existing local operating
+posture and NFL/World Cup workflows remain unchanged.
+
+The [reporting contract](MLB_REPORTING_CONTRACT_v1.2.0.md) specifies the approved
+interaction, report contents and failure behavior; the
+[focused release plan](RELEASE_PLAN_v1.2.0.md) orders the remaining work. These are
+design requirements, not claims of implemented reporting or authorized deployment.
