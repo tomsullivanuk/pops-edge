@@ -934,8 +934,28 @@ def create_probability_source_coverage_v3(*,protocol:StandaloneProbabilitySource
         market_observations:Iterable[MarketObservation]=(),market_series:Iterable[ProviderMarketSeries]=(),
         market_derivations:Iterable[MarketProbabilityDerivation]=(),measurements:Iterable[ProbabilitySourceMeasurementV3]=(),
         provenance:ResearchContractProvenance,limitations:tuple[str,...]=())->ProbabilitySourceCoverageV3:
+    return _identity(ProbabilitySourceCoverageV3,"probability_source_coverage_v3",_coverage_material(**locals()),
+        ("probability_source_coverage_v3_id","provenance","input_digest"))
+
+
+def _coverage_material(*,protocol:StandaloneProbabilitySourceProtocol,analysis_boundary:datetime,
+        coverage_scope:str="cumulative",window_start:datetime|None=None,
+        activation:StandaloneResearchActivationBoundary,opportunities:Iterable[ResearchCaptureOpportunity],
+        eligibility_contexts:Iterable[ResearchEventEligibilityContext],eligibility_results:Iterable[PopulationEligibilityResult],
+        schedule_histories:Iterable[OutcomeHistory],classifications:Iterable[StandaloneEventClassificationEvidence],manifests:Iterable[HistoricalCandleQueryManifest]=(),
+        candles:Iterable[HistoricalMarketCandleObservation]=(),historical_derivations:Iterable[HistoricalCandleProbabilityDerivation]=(),
+        attempts:Iterable[ProspectiveCaptureAttempt]=(),snapshots:Iterable[ProspectiveStandaloneSnapshot]=(),
+        market_observations:Iterable[MarketObservation]=(),market_series:Iterable[ProviderMarketSeries]=(),
+        market_derivations:Iterable[MarketProbabilityDerivation]=(),measurements:Iterable[ProbabilitySourceMeasurementV3]=(),
+        provenance:ResearchContractProvenance,limitations:tuple[str,...]=(),
+        analytical_boundary:datetime|None=None,window_end:datetime|None=None,eligible_due_only:bool=False,
+        cumulative_start:datetime|None=None)->dict[str,Any]:
+    # Shared calculation only. Public V3 dispatch retains its original boundaries;
+    # successor callers must independently reconstruct their complete pinned graph.
+    analytical_boundary=analysis_boundary if analytical_boundary is None else analytical_boundary
+    window_end=analysis_boundary if window_end is None else window_end
     if coverage_scope=="cumulative" and window_start is not None:_fail("cumulative Coverage cannot have a window start")
-    if coverage_scope=="time-bounded" and (window_start is None or window_start>=analysis_boundary):_fail("bounded Coverage requires (start,end]")
+    if coverage_scope=="time-bounded" and (window_start is None or window_start>=window_end):_fail("bounded Coverage requires (start,end]")
     pid=protocol.standalone_probability_source_protocol_id
     manifest_values=tuple(manifests);candle_values=tuple(candles);historical_derivation_values=tuple(historical_derivations)
     attempt_values=tuple(attempts);snapshot_values=tuple(snapshots);market_observation_values=tuple(market_observations)
@@ -968,13 +988,13 @@ def create_probability_source_coverage_v3(*,protocol:StandaloneProbabilitySource
         validate_population_side(protocol,activation,schedule.scheduled_start)
         scheduled[opportunity.research_capture_opportunity_id]=schedule.scheduled_start;eligibility_by_opp[opportunity.research_capture_opportunity_id]=result
     def in_scope(oid:str)->bool:
-        if coverage_scope=="cumulative":return True
-        return window_start<scheduled[oid]<=analysis_boundary
+        if coverage_scope=="cumulative":return cumulative_start is None or cumulative_start<scheduled[oid]
+        return window_start<scheduled[oid]<=window_end
     opp_values=tuple(x for x in all_opps if in_scope(x.research_capture_opportunity_id))
     universe=_unique((x.research_capture_opportunity_id for x in opp_values),"Coverage universe")
-    eligible_values=tuple(oid for oid,result in eligibility_by_opp.items() if result.disposition is PopulationEligibilityDisposition.ELIGIBLE and result.validation_status is PopulationEligibilityValidationStatus.VALID and in_scope(oid))
+    eligible_values=tuple(oid for oid,result in eligibility_by_opp.items() if result.disposition is PopulationEligibilityDisposition.ELIGIBLE and result.validation_status is PopulationEligibilityValidationStatus.VALID and in_scope(oid) and (not eligible_due_only or scheduled[oid]+timedelta(minutes=int(_rule_parameter(protocol.scope_rule,"target_offset_minutes")))<=analysis_boundary))
     eligible=_unique(eligible_values,"eligible denominator")
-    all_measurements=tuple(measurements);measurement_candidates=tuple(x for x in all_measurements if x.protocol_id==pid and x.effective_at<=analysis_boundary and x.opportunity_id in set(universe))
+    all_measurements=tuple(measurements);measurement_candidates=tuple(x for x in all_measurements if x.protocol_id==pid and x.effective_at<=analytical_boundary and x.opportunity_id in set(universe))
     measurement_values=[]
     for measurement in measurement_candidates:
         context=context_map.get(measurement.opportunity_id);history=None if context is None else history_map.get(context.canonical_event_id)
@@ -990,14 +1010,14 @@ def create_probability_source_coverage_v3(*,protocol:StandaloneProbabilitySource
         if opportunity is None or opportunity.schedule_observation_id!=measurement.schedule_observation_id:_fail("Measurement is unrelated to measured opportunity")
     if not set(measured)<=set(eligible):_fail("measured population is outside eligible denominator")
     manifests_by_opp={oid:tuple(x for x in manifest_values if x.protocol_id==pid and x.opportunity_id==oid) for oid in universe}
-    visible_hder=tuple(x for x in historical_derivation_values if x.protocol_id==pid and x.effective_at<=analysis_boundary)
+    visible_hder=tuple(x for x in historical_derivation_values if x.protocol_id==pid and x.effective_at<=analytical_boundary)
     hder_registry={x.historical_candle_probability_derivation_id:x for x in visible_hder}
     if any(hder_registry[x.historical_candle_probability_derivation_id]!=x for x in visible_hder):_fail("conflicting historical derivation identity")
     hder_by_opp={oid:tuple(x for x in hder_registry.values() if x.opportunity_id==oid) for oid in universe}
     attempts_by_opp={oid:tuple(x for x in attempt_values if x.protocol_id==pid and x.opportunity_id==oid) for oid in universe}
     selected_snapshots=select_authoritative_prospective_snapshots(tuple(x for x in snapshot_values if x.protocol_id==pid),analysis_boundary) if protocol.design_tag is StandaloneDesignTag.PROSPECTIVE and snapshot_values else ()
     snapshots_by_opp={oid:tuple(x for x in selected_snapshots if x.opportunity_id==oid) for oid in universe}
-    visible_mder=tuple(x for x in market_derivation_values if x.protocol_id==pid and x.effective_at<=analysis_boundary)
+    visible_mder=tuple(x for x in market_derivation_values if x.protocol_id==pid and x.effective_at<=analytical_boundary)
     mder_registry={x.market_probability_derivation_id:x for x in visible_mder}
     if any(mder_registry[x.market_probability_derivation_id]!=x for x in visible_mder):_fail("conflicting market derivation identity")
     mder_by_snapshot={}
@@ -1095,7 +1115,7 @@ def create_probability_source_coverage_v3(*,protocol:StandaloneProbabilitySource
         window_start=window_start,analysis_boundary=analysis_boundary,
         coverage_universe_ids=universe,eligible_denominator_ids=eligible,measured_opportunity_ids=measured,measurement_ids=mids,
         reconciliation=reconciliation,coverage_rate=rate,limitations=_unique(limitations,"Coverage limitations"),provenance=provenance)
-    return _identity(ProbabilitySourceCoverageV3,"probability_source_coverage_v3",vals,("probability_source_coverage_v3_id","provenance","input_digest"))
+    return vals
 
 
 class PerformanceScope(str,Enum): CUMULATIVE="cumulative"; TIME_BOUNDED="time-bounded"
@@ -1122,7 +1142,15 @@ def create_one_sample_uncertainty_v3(*,protocol:StandaloneProbabilitySourceProto
     seed_material=(protocol.standalone_probability_source_protocol_id,protocol.source.probability_source_reference_id,
         protocol.design_tag,scope,analysis_boundary,analysis_start,analysis_boundary if scope is PerformanceScope.TIME_BOUNDED else None,
         ids,protocol.uncertainty_rule.rule_id,protocol.uncertainty_rule.rule_version,confidence,count,algorithm_version)
-    seed=_digest(seed_material);limits=[]
+    seed=_digest(seed_material)
+    lower,upper,limits=_one_sample_interval(scores,point,confidence,count,seed)
+    return OneSampleUncertaintyV3(scope,point,n,lower,upper,confidence,count,protocol.uncertainty_rule.rule_id,
+        protocol.uncertainty_rule.rule_version,algorithm_version,seed,limits)
+
+
+def _one_sample_interval(scores,point,confidence,count,seed):
+    """Shared original bootstrap procedure; callers own versioned seed encoding."""
+    n=len(scores);limits=[]
     if not n:lower=upper=None
     elif n==1:lower=upper=point;limits.append("single observation; interval is deterministically degenerate")
     elif len(set(scores))==1:lower=upper=point;limits.append("no observed score variation; interval has zero width")
@@ -1132,8 +1160,7 @@ def create_one_sample_uncertainty_v3(*,protocol:StandaloneProbabilitySourceProto
             sample=tuple(scores[rng.randrange(n)] for __ in range(n))
             with localcontext() as context:context.prec=PRECISION;replicates.append(sum(sample,Decimal(0))/n)
         replicates.sort();alpha=(Decimal(1)-confidence)/2;lo=int(alpha*count);hi=min(count-1,int((Decimal(1)-alpha)*count));lower,upper=replicates[lo],replicates[hi]
-    return OneSampleUncertaintyV3(scope,point,n,lower,upper,confidence,count,protocol.uncertainty_rule.rule_id,
-        protocol.uncertainty_rule.rule_version,algorithm_version,seed,tuple(limits))
+    return lower,upper,tuple(limits)
 
 
 @dataclass(frozen=True,slots=True)
@@ -1166,12 +1193,21 @@ def create_probability_source_performance_v3(*,protocol:StandaloneProbabilitySou
     if any(x.protocol_id!=coverage.protocol_id or x.design_tag is not protocol.design_tag for x in values):_fail("performance population mixes Protocols")
     kinds={x.derivation_kind for x in values};expected=DerivationKindV3.HISTORICAL_CANDLE if protocol.design_tag is StandaloneDesignTag.RETROSPECTIVE else DerivationKindV3.PROSPECTIVE_MARKET
     if kinds and kinds!={expected}:_fail("performance mixes derivation kinds")
+    n,mean_b,mean_l,calibration=_performance_statistics(protocol,values)
+    uncertainty=create_one_sample_uncertainty_v3(protocol=protocol,scope=scope,analysis_boundary=analysis_boundary,
+        analysis_start=analysis_start,measurements=values)
+    vals=dict(schema_version=SCHEMA_VERSION,identity_algorithm_version=IDENTITY_VERSION,protocol_id=coverage.protocol_id,design_tag=protocol.design_tag,
+        derivation_kind=expected,source_reference_id=coverage.source_reference_id,scope=scope,analysis_start=analysis_start,analysis_boundary=analysis_boundary,
+        measurement_ids=ids,coverage_id=coverage.probability_source_coverage_v3_id,sample_size=n,mean_brier_score=mean_b,mean_log_loss=mean_l,
+        calibration=calibration,uncertainty=uncertainty,limitations=_unique(limitations,"performance limitations"),provenance=provenance)
+    return _identity(ProbabilitySourcePerformanceV3,"probability_source_performance_v3",vals,("probability_source_performance_v3_id","provenance","input_digest"))
+
+
+def _performance_statistics(protocol,values):
     n=len(values);logs=tuple(x.log_loss for x in values)
     with localcontext() as context:
         context.prec=PRECISION;mean_b=None if not n else sum((x.brier_score for x in values),Decimal(0))/n
         mean_l=None if not n else Decimal("Infinity") if Decimal("Infinity") in logs else sum(logs,Decimal(0))/n
-    uncertainty=create_one_sample_uncertainty_v3(protocol=protocol,scope=scope,analysis_boundary=analysis_boundary,
-        analysis_start=analysis_start,measurements=values)
     # Protocol-governed fixed-bin WACE; empty bins do not contribute.
     gaps=[];bin_counts=[]
     boundaries=_calibration_boundaries(protocol.calibration_rule)
@@ -1187,11 +1223,7 @@ def create_probability_source_performance_v3(*,protocol:StandaloneProbabilitySou
     calibration=CalibrationV3(protocol.calibration_rule.rule_id,protocol.calibration_rule.rule_version,boundaries,
         _rule_parameter(protocol.calibration_rule,"endpoint_semantics"),_rule_parameter(protocol.calibration_rule,"weighting"),
         _rule_parameter(protocol.calibration_rule,"empty_bins"),n,tuple(bin_counts),wace)
-    vals=dict(schema_version=SCHEMA_VERSION,identity_algorithm_version=IDENTITY_VERSION,protocol_id=coverage.protocol_id,design_tag=protocol.design_tag,
-        derivation_kind=expected,source_reference_id=coverage.source_reference_id,scope=scope,analysis_start=analysis_start,analysis_boundary=analysis_boundary,
-        measurement_ids=ids,coverage_id=coverage.probability_source_coverage_v3_id,sample_size=n,mean_brier_score=mean_b,mean_log_loss=mean_l,
-        calibration=calibration,uncertainty=uncertainty,limitations=_unique(limitations,"performance limitations"),provenance=provenance)
-    return _identity(ProbabilitySourcePerformanceV3,"probability_source_performance_v3",vals,("probability_source_performance_v3_id","provenance","input_digest"))
+    return n,mean_b,mean_l,calibration
 
 
 @dataclass(frozen=True,slots=True)
