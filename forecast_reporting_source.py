@@ -152,7 +152,7 @@ class _ReportingArchiveView:
 
 def _source_chronology(state: ScientificArchiveState, cutoff: datetime) -> None:
     for name, values in state.graph:
-        if name in ANALYTICAL_BUCKETS or name in {"protocols", "activation_boundaries", "market_series"}:
+        if name in ANALYTICAL_BUCKETS:
             continue
         for value in values:
             items = value.observations if name == "outcome_histories" else (value,)
@@ -162,6 +162,11 @@ def _source_chronology(state: ScientificArchiveState, cutoff: datetime) -> None:
                     at = getattr(item, key, None)
                     if isinstance(at, datetime) and at > cutoff:
                         _fail(f"post-cutoff source fact: {name}.{key}")
+                provenance = getattr(item, "provenance", None)
+                for key in ("collected_at", "generated_at"):
+                    at = getattr(provenance, key, None)
+                    if isinstance(at, datetime) and at > cutoff:
+                        _fail(f"post-cutoff source provenance: {name}.{key}")
 
 
 def _reconstruct(archive, inventory, cutoff):
