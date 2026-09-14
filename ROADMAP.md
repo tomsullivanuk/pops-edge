@@ -30,7 +30,7 @@ Pops' Edge is evolving from a sports-wagering proving ground into an empirical d
 | Release / track | Outcome | Status |
 |---|---|---|
 | v1.1 — NFL | Personal comparison workflow and weekly evaluation evidence | Released and deployed locally; maintenance continues |
-| v1.2 — MLB market baseline | Kalshi data collection, visible coverage and collection health, and baseline market-performance display | Agreed release scope; remaining implementation to be assessed |
+| v1.2 — MLB market baseline | Kalshi data collection, visible coverage and collection health, and baseline market-performance display | Implemented and locally activated; release publication awaits Owner approval |
 | v1.3 — Unified NFL/MLB experience | One Pops' Edge entry point with consistent navigation, branding and interaction | Tentative target; user journeys and implementation scope remain to be defined |
 | Parallel MLB investigation | Evaluate external forecast models and suppliers for possible later admission | Continues independently; no admission or successful challenger is required for v1.2 or v1.3 |
 

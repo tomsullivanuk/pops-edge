@@ -7,7 +7,7 @@
 > [NFL acceptance gates](docs/NFL_RELEASE_PLAN_v1.1.0.md).
 
 
-## v1.2.0 — MLB reporting (unreleased candidate)
+## v1.2.0 — MLB reporting (ready for approval; unpublished)
 
 - PR #51 merged independently verified historical/live saved reports, a readable
   two-decimal Performance Report, separate historical navigation and guarded
@@ -15,11 +15,15 @@
 - The normal local entry was activated on September 14, 2026 without acquiring or
   rescoring data; original packages, anchors, verification dates and selections
   were preserved. This is reporting activation, not whole-release publication.
-- Local correction candidate: separately dated collection observations reuse
+- PR #53 merged and locally activated collection status at
+  `adcce3a7da66fd9c851f657b3737cf6b16f92f34`: separately dated observations reuse
   existing invocation health rules, show valid completions/current failures/skips,
   degrade honestly on unavailable status, and include saved recovery guidance.
   Manual display refresh does not run collection or change scientific results.
-- VERSION remains 1.1.0; the running NFL application and study closure obligations
+- The Owner accepted the current layout. Dated follow-up on September 14 found
+  the earlier invocation blockers superseded by a successful lifecycle cycle;
+  no collector repair was performed. See the [release record](docs/MLB_RELEASE_RECORD_v1.2.0.md).
+- The prepared source VERSION is 1.2.0; existing pinned deployments and study closure obligations
   are unchanged. No v1.2 tag or hosted release is claimed.
 
 ## v1.1.0 — NFL comparison workflow (merged; release publication pending)
