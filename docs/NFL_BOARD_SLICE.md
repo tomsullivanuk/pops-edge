@@ -145,3 +145,47 @@ Validation must cover fresh current precedence, aging without refresh, a later
 empty snapshot, per-outcome history, changed forecast values, identity/date
 mismatch, missing/invalid/conflicting history, completed-game display, current
 filter/count exclusion, and exact preservation/replay of saved reports.
+
+## Official completion and final-score display
+
+Owner-approved season-view correction: Date / time shows date, week and local
+kickoff. Match shows the matchup and its sporting status, or the validated final
+score in away–home order. Final (OT) identifies an overtime result. Neutral-site
+labels stay with Match. Both outcome rows show the same game score; source URL,
+observation time and source discrepancy appear in Details.
+
+`nfl_completion.py` implements `nfl-completion-display-v1`, a read-only derivation
+from retained official weekly schedule responses. This is separate from legacy
+schedule normalization and model-performance outcome replay. The display accepts
+summary FINAL or FINAL_OVERTIME only with END_OF_GAME, matching game/team IDs,
+nonnegative integer totals and consistent supplied period scores. Outer SCHEDULED
+may coexist with a validated final summary; retain and disclose that discrepancy.
+Unsupported/conflicting final markers or identities remain Result needs review.
+An activity settlement or elapsed kickoff alone cannot establish sporting finality.
+
+Use the newest captured receipt for the relevant season/week at or before view
+evaluation. Validate its hash, scope and chronology. Newer failed/unresolved
+observations must not silently fall back to older final scores; disagreeing
+same-time observations remain unresolved. Unreadable receipt metadata makes
+completion unavailable rather than permitting unverified ordering. No new source
+request occurs on viewing, and no saved report, baseline, cash flow, research
+cohort or quote is rewritten. Completion works without wagers, eligible prices
+or model-performance enrollment. A validated final disables current routes and
+is omitted by Omit completed games; unresolved results are retained visibly.
+Missing captures retain the available schedule/Started status without a score.
+Freshness remains bounded by the visible observation time; automatic polling,
+additional unsupported resolutions and research recalculation are deferred.
+
+Completed games have grey Contract badges; other games retain green badges,
+including games in progress. Badge colour represents completion, not quote
+freshness. The repetitive Historical comparison and Historical ELWAY labels
+are omitted beneath their values. Capture dates remain visible without the word Captured; the repeated Historical
+difference label is omitted. Full historical provenance stays in Details.
+
+The result icon precedes the grey Contract badge: ✓ matched the final result,
+× did not match, and — denotes a tie. It evaluates the displayed YES/NO
+contract against validated final scores, not account payout or profit. Unfinished
+or unresolved games and absent contracts have no result icon. Tooltips and the
+legend explain this distinction. Contract and icon stay together on one line;
+Contract sorting continues to use its label. Contract is 150px minimum; price
+180px, ELWAY 112px, difference 140px, payout 100px, with table overflow available.

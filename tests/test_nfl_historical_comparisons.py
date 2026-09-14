@@ -61,7 +61,7 @@ class HistoricalComparisonTests(unittest.TestCase):
         self.assertEqual(data['ranked_games'], 0)
         html = render(data)
         self.assertIn('Historical comparison', html)
-        self.assertIn('Captured 09/09/2026 10:00 AM CDT', html)
+        self.assertIn('09/09/2026 10:00 AM CDT', html)
         self.assertIn('current comparable outcomes', html)
         self.assertIn('data-gap=""', html)
         from decimal import Decimal
@@ -92,7 +92,7 @@ class HistoricalComparisonTests(unittest.TestCase):
         self.assertTrue(data['diagnostics'])
         self.assertTrue(all('historical' not in o for o in data['games'][0]['outcomes']))
         html = render(data)
-        self.assertIn('Some saved history could not be verified', html)
+        self.assertIn('Some saved history or official results could not be verified', html)
         self.assertIn('No saved pregame comparison', html)
 
     def test_changed_identity_or_kickoff_never_borrows_history(self):
@@ -120,14 +120,14 @@ class HistoricalComparisonTests(unittest.TestCase):
         self.assertNotIn('historical', data['games'][0]['outcomes'][1])
         self.assertIn('Conflicting', data['diagnostics'][0]['history'])
 
-    def test_completed_game_preserves_history_but_not_current_eligibility(self):
+    def test_outer_final_alone_preserves_history_without_claiming_completion(self):
         self.new['games'][0]['status'] = 'FINAL'
         data = self.assemble()
-        self.assertTrue(data['games'][0]['completed'])
-        self.assertEqual(data['games'][0]['display_status'], 'Completed')
+        self.assertFalse(data['games'][0]['completed'])
+        self.assertEqual(data['games'][0]['display_status'], 'Started')
         self.assertTrue(all('historical' in o for o in data['games'][0]['outcomes']))
         self.assertFalse(any(row['route'] for row in sheet_rows(data)))
-        self.assertIn('data-completed="true"', render(data))
+        self.assertIn('data-completed="false"', render(data))
 
     def test_later_settlement_overlay_does_not_erase_pregame_history(self):
         self.old['activity'] = dict(settlement_events=[dict(game_id=self.old['games'][0]['game_id'])])

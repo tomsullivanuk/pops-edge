@@ -9,6 +9,7 @@ import nfl_excel_import as excel
 import nfl_forecast_import as source
 from nfl_board_view import render as weekly_render,esc,display_time,dollars
 from nfl_historical_comparisons import attach_history
+import nfl_completion as completion
 
 
 def assemble(data_root,folders,candidate=None,now=None):
@@ -29,17 +30,13 @@ def assemble(data_root,folders,candidate=None,now=None):
         for g in snap['games']:
             key=(g['week'],g['home'],g['away'])
             if key not in saved or snap['generated_at']>saved[key][0]['generated_at']:saved[key]=(snap,g)
-    # Successful schedule-only captures can establish TBD without a quote bundle.
-    latest_schedules={};undated={}
-    for path in root.glob('schedules/*/receipt.json'):
-        receipt=json.loads(path.read_text())
-        if receipt.get('season')!=season or receipt.get('error'):continue
-        week=receipt['week']
-        if week not in latest_schedules or receipt['completed_at']>latest_schedules[week][0]:latest_schedules[week]=(receipt['completed_at'],path.parent)
-    for at,path in latest_schedules.values():
-        receipt=board.schedule.replay(path)
-        for g in receipt['rows']:
-            if g['kickoff'] is None:undated[(g['week'],g['home'],g['away'])]=(g,at)
+    # Use verified observations for both unknown dates and sporting results.
+    observations,completion_issues=completion.latest(root,season,now)
+    undated={}
+    for receipt in observations.values():
+        if receipt.get('error'):continue
+        for g in receipt['games']:
+            if g['kickoff'] is None:undated[(g['week'],g['home'],g['away'])]=(g,receipt['observed_at'])
     # Reparse only the newest selected activity export across all known games.
     # Weekly overlays contain only that week's matches; never add older exports.
     choices=[(snap['activity']['imported_at'],Path(folder),snap['activity']) for folder,snap in zip(folders,snapshots) if snap['season']==season and snap.get('activity')]
@@ -50,10 +47,6 @@ def assemble(data_root,folders,candidate=None,now=None):
         raw=(folder/'inputs/activity.csv').read_bytes()
         all_games={'games':[pair[1] for pair in saved.values()]}
         activity=parse_current(raw,at,activity_map(raw,folder/'inputs',all_games))
-    trades=activity['trades'] if activity else []
-    settlements=activity.get('settlements',[]) if activity else []
-    completed={t['game_id'] for t in settlements if not t['needs_review']}
-    completed.update(e['game_id'] for e in (activity or {}).get('settlement_events',[]))
     games=[]
     for row in candidate['rows']:
         key=(row['week'],row['home'],row['away']);pair=saved.get(key)
@@ -63,7 +56,7 @@ def assemble(data_root,folders,candidate=None,now=None):
             if key in undated and undated[key][1]>=snap.get('schedule_received_at',''):
                 g['kickoff']=None
                 g['source_note']+=' · Schedule received '+display_time(undated[key][1])+' · Date/time TBD'
-            done=g['game_id'] in completed or g['status'].upper() in ('FINAL','FINAL_OVERTIME','COMPLETED','COMPLETE','CLOSED')
+            done=False  # Sporting finality comes from validated official summaries below.
             started=bool(g['kickoff'] and board.kalshi.aware(g['kickoff'])<=board.kalshi.aware(now))
             stale=(board.kalshi.aware(now)-board.kalshi.aware(snap['capture_started_at'])).total_seconds()>snap['guards']['quote_seconds']
             g['display_status']='Completed' if done else 'Date/time TBD' if not g['kickoff'] else 'Started' if started else 'Archived prices' if stale else 'Captured prices'
@@ -80,14 +73,35 @@ def assemble(data_root,folders,candidate=None,now=None):
             g['issues']=['Date/time TBD. Awaiting the NFL schedule; no action needed.']
             g['source_note']+=' · Official schedule received '+display_time(at)
         games.append(g)
+    completion.apply(games,observations,now)
     history_issues=attach_history(root,games,list(zip(folders,snapshots)),now)
-    result=dict(schema='nfl-season-view-v1',season=season,week='All',generated_at=now,games=games,guards=board.GUARDS,scheduled_games=len(games),ranked_games=sum(any(r['usable'] for o in g['outcomes'] for r in o['routes']) for g in games),diagnostics=history_issues,forecast_updated_at=candidate['updated_at'],forecast_verified_at=None,schedule_received_at=None,capture_started_at=now,capture_completed_at=now)
+    result=dict(schema='nfl-season-view-v1',season=season,week='All',generated_at=now,games=games,guards=board.GUARDS,scheduled_games=len(games),ranked_games=sum(any(r['usable'] for o in g['outcomes'] for r in o['routes']) for g in games),diagnostics=history_issues+completion_issues,forecast_updated_at=candidate['updated_at'],forecast_verified_at=None,schedule_received_at=None,capture_started_at=now,capture_completed_at=now)
     if activity:result['activity']=activity
     return result
 
 
+
+def contract_result(game, side, yes_team):
+    """Sporting alignment of this displayed contract, never realized cash flow."""
+    result=game.get('official_result',{})
+    if not game.get('completed') or result.get('state')!='final':return ''
+    if side not in ('YES','NO') or yes_team not in (game['home'],game['away']):return ''
+    home,away=result['home_score'],result['away_score']
+    if home==away:
+        icon,kind,label='—','tie','Tied final result'
+    else:
+        winner=game['home'] if home>away else game['away']
+        aligned=(yes_team==winner) if side=='YES' else (yes_team!=winner)
+        icon,kind,label=('✓','aligned','Matched final result') if aligned else ('×','opposed','Did not match final result')
+    note=label+' — game result only; does not indicate sale proceeds, payout or profit.'
+    return '<span class="result-mark '+kind+'" role="img" aria-label="'+esc(note)+'" title="'+esc(note)+'">'+icon+'</span>'
+
+
 def render(data):
     html=weekly_render(data)
+    html=html.replace('</style>', 'tbody[data-completed="true"] .contract{background:#e5e7eb;color:#4b5563;border-color:#d1d5db}</style>',1)
+    html=html.replace('</style>', '.result-mark{display:inline-flex;align-items:center;justify-content:center;margin-left:7px;width:20px;height:20px;border-radius:50%;font-size:16px;font-weight:700;vertical-align:middle}.result-mark.aligned{color:#26704c;background:#edf5f0}.result-mark.opposed{color:#a34b48;background:#fbefee}.result-mark.tie{color:#64748b;background:#eef0f3}.result-legend{font-size:12px;color:#64748b;margin:0 0 14px}.result-legend .result-mark{margin:0 3px 0 12px}.result-legend .result-mark:first-child{margin-left:0}.contract-result{display:inline-flex;flex-flow:row nowrap;align-items:center;gap:8px;white-space:nowrap}.contract-result .contract{display:inline-block;flex:none}.contract-result .result-mark{display:inline-flex;flex:none;margin:0}.betsheet th:nth-child(4),.betsheet td:nth-child(4){width:150px;min-width:150px;white-space:nowrap}.betsheet th:nth-child(6),.betsheet td:nth-child(6){width:180px;min-width:180px}.betsheet th:nth-child(5),.betsheet td:nth-child(5){width:112px;min-width:112px}.betsheet th:nth-child(7),.betsheet td:nth-child(7){width:140px;min-width:140px}.betsheet th:nth-child(9),.betsheet td:nth-child(9){width:100px;min-width:100px}.betsheet th:nth-child(10),.betsheet td:nth-child(10){width:72px}'+'</style>',1)
+    html=html.replace('<div class="scroll">', '<p class="result-legend"><span class="result-mark aligned">✓</span> Matched final result <span class="result-mark opposed">×</span> Did not match <span class="result-mark tie">—</span> Tie · Game result only; separate from your payout or profit.</p>'+'<div class="scroll">',1)
     for g in data['games']:
         for o in g['outcomes']:
             ident=esc(g['game_id']+'-'+o['team'])
@@ -96,9 +110,27 @@ def render(data):
         # Match can repeat in later weeks: target each tbody rather than global text.
         for o in g['outcomes']:
             ident=esc(g['game_id']+'-'+o['team']);start=html.index('data-id="'+ident+'"');end=html.index('</tbody>',start)
-            section=html[start:end];section=section.replace(match+'</td>',match+'<small>Week '+str(g['week'])+(' · '+esc(g['display_status']) if g['display_status']!='Captured prices' else '')+'</small></td>')
-            if g['neutral']:section=section.replace('<small>Neutral site</small>','<small>Week '+str(g['week'])+' · Neutral'+(' · '+esc(g['display_status']) if g['display_status']!='Captured prices' else '')+'</small>')
-            section=section.replace('<p>ELWAY win:', '<p>'+esc(g['source_note'])+'</p><p>ELWAY win:')
+            section=html[start:end]
+            status=g['display_status'] if g['display_status']!='Captured prices' else 'Scheduled'
+            result=g.get('official_result',{})
+            if result.get('state')=='final':
+                status=('Final (OT)' if result['overtime'] else 'Final')+': '+g['away']+' '+str(result['away_score'])+'–'+g['home']+' '+str(result['home_score'])
+            subtitle=('Neutral · ' if g['neutral'] else '')+status
+            main,rest=section.split('</tr>',1)
+            cells=list(re.finditer(r'<td\b[^>]*>.*?</td>',main,re.S))
+            cell=cells[1]
+            main=main[:cell.start()]+'<td class="match" data-sort="'+match+'">'+match+'<small>'+esc(subtitle)+'</small></td>'+main[cell.end():]
+            cell=cells[0]
+            date_cell=cell.group().replace('<small>',' · Week '+str(g['week'])+'<small>',1)
+            main=main[:cell.start()]+date_cell+main[cell.end():]
+            section=main+'</tr>'+rest
+            note='<p>'+esc(g['source_note'])+'</p>'
+            if result:
+                note+='<p><b>Official NFL result</b> · '+esc(status)
+                if result.get('observed_at'):note+=' · Observed '+esc(display_time(result['observed_at']))
+                if result.get('url'):note+=' · '+esc(result['url'])
+                note+='</p><p>'+esc('; '.join(result.get('issues',[])))+'</p><p>Saved source: '+esc(result.get('source',''))+'</p>'
+            section=section.replace('<p>ELWAY win:', note+'<p>ELWAY win:')
             historical=o.get('historical')
             if historical:
                 route=historical['route'];value=historical['outcome']['payout']
@@ -108,10 +140,10 @@ def render(data):
                 # Manual sorts use full-precision values; tbody data-gap stays empty
                 # so historical rows remain outside current filters and counts.
                 replacements=[
-                    '<td><span class="contract">'+esc(route['side'].upper()+' '+route['yes_team'])+'</span><small>Historical comparison</small></td>',
-                    '<td class="num" data-sort="'+esc(value['central'])+'">'+dollars(value['central'])+'<small>Historical ELWAY</small></td>',
-                    '<td class="num" data-sort="'+esc(route['cost']['price'])+'">'+dollars(route['cost']['price'])+'<small>Captured '+esc(display_time(route['book_received_at']))+'</small></td>',
-                    '<td class="num gap" data-sort="'+esc(gap)+'">'+dollars(gap,True)+'<small>Historical</small></td>']
+                    '<td><span class="contract">'+esc(route['side'].upper()+' '+route['yes_team'])+'</span></td>',
+                    '<td class="num" data-sort="'+esc(value['central'])+'">'+dollars(value['central'])+'</td>',
+                    '<td class="num" data-sort="'+esc(route['cost']['price'])+'">'+dollars(route['cost']['price'])+'<small>'+esc(display_time(route['book_received_at']))+'</small></td>',
+                    '<td class="num gap" data-sort="'+esc(gap)+'">'+dollars(gap,True)+'</td>']
                 for index in range(6,2,-1):
                     cell=cells[index];main=main[:cell.start()]+replacements[index-3]+main[cell.end():]
                 detail=('<p><b>Historical comparison</b> · quote captured '+esc(display_time(route['book_received_at']))+
@@ -127,6 +159,15 @@ def render(data):
                 section=main+'</tr>'+rest
             elif not any(r['usable'] for r in o['routes']):
                 section=section.replace('<td>—</td>','<td>—<small>No saved pregame comparison</small></td>',1)
+            main,rest=section.split('</tr>',1)
+            badge=re.search(r'<span class="contract">(YES|NO) ([A-Z]+)</span>',main)
+            if badge:
+                marker=contract_result(g,badge[1],badge[2])
+                if marker:
+                    # Keep manual Contract sorting based on the label, not the icon.
+                    main=main.replace('<td>'+badge[0],'<td data-sort="'+esc(badge[1]+' '+badge[2])+'">'+badge[0],1)
+                    main=main.replace(badge[0],'<span class="contract-result">'+marker+badge[0]+'</span>',1)
+            section=main+'</tr>'+rest
             html=html[:start]+section+html[end:]
     weeks=sorted({g['week'] for g in data['games']});teams=sorted({g[k] for g in data['games'] for k in ('home','away')})
     controls='<label>Week <select id="seasonWeek"><option value="">All weeks</option>'+''.join(f'<option>{w}</option>' for w in weeks)+'</select></label><label>Team <select id="seasonTeam"><option value="">All teams</option>'+''.join('<option>'+t+'</option>' for t in teams)+'</select></label>'
@@ -153,5 +194,5 @@ def render(data):
     html=html.replace('<p><a href="comparison.json">Saved comparison data</a> · <a href="complete.json">Manifest</a></p>','')
     html=html.replace('Missing or excluded quotes stay at the bottom and have no numeric difference.', 'Historical comparisons retain their original values and dated quote, but stay outside current comparison ranking and difference filters. Missing comparisons stay unavailable.')
     if data['diagnostics']:
-        html=html.replace('<div class="scroll">','<p class="reason">Some saved history could not be verified. See calculation notes for details.</p><div class="scroll">',1)
+        html=html.replace('<div class="scroll">','<p class="reason">Some saved history or official results could not be verified. See calculation notes for details.</p><div class="scroll">',1)
     return html

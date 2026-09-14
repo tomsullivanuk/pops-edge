@@ -109,3 +109,26 @@ Replay verifies inputs and reconstructs the saved derivation. It does not make
 old quotes current. Retain incomplete or failed bundles, correct inputs and run
 again; never edit historical snapshots. Local backups remain the owner's task.
 See the [comparison boundary](NFL_BOARD_SLICE.md).
+
+The season view shows the week beside Date / time. Match shows status or a
+validated official final score, for example “Final (OT): NO 30–DET 31”. Scores
+are repeated on both team-outcome rows. Neutral-site labels stay with Match.
+Details identifies the official NFL source and when it was observed. These are
+saved results, not a live scoreboard. “Result needs review” means the latest
+saved evidence could not establish a supported result; it is never hidden by
+Omit completed games. Account settlement information remains separate from the
+sporting result and final scores do not establish cash-out proceeds or profit.
+
+Completed games have grey Contract badges; other games retain green badges,
+including games in progress. Badge colour represents completion, not quote
+freshness. The repetitive Historical comparison and Historical ELWAY labels
+are omitted beneath their values. Capture dates remain visible without the word Captured; the repeated Historical
+difference label is omitted. Full historical provenance stays in Details.
+
+The result icon precedes the grey Contract badge: ✓ matched the final result,
+× did not match, and — denotes a tie. It evaluates the displayed YES/NO
+contract against validated final scores, not account payout or profit. Unfinished
+or unresolved games and absent contracts have no result icon. Tooltips and the
+legend explain this distinction. Contract and icon stay together on one line;
+Contract sorting continues to use its label. Contract is 150px minimum; price
+180px, ELWAY 112px, difference 140px, payout 100px, with table overflow available.
