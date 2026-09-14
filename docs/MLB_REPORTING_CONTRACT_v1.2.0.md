@@ -354,3 +354,16 @@ applicability/policy/governance UI, wagering and generalized publication service
 This candidate changes documentation only. Implementation, source acquisition,
 report publication into operational use, protocol closure, commit/push/PR actions,
 deployment and release remain separate authorization gates.
+
+## 8. Owner-approved simple-report hierarchy — September 13, 2026
+
+The [simple-report correction](MLB_SIMPLE_REPORT_DECISION_v1.2.0.md) governs the
+principal presentation of the delivery candidate. Cumulative live performance,
+friendly study/report dates, incomplete status, eligible/captured/scored counts,
+material missing/awaiting counts, Brier versus 50% and governed uncertainty precede
+all technical evidence. Exact values remain unchanged; display-only rounding is
+explicit. Technical IDs/JSON/provenance, internal timestamps, log loss, detailed
+calibration, bounded results, complete categories and supporting links are in
+collapsed Details. The local entry shows the principal report and a small independent
+historical link; failed attempts use a readable notice with metadata in Details.
+This is a presentation correction, not a scientific-rule change or full shared shell.

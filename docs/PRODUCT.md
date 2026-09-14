@@ -739,3 +739,15 @@ The [reporting contract](MLB_REPORTING_CONTRACT_v1.2.0.md) specifies the approve
 interaction, report contents and failure behavior; the
 [focused release plan](RELEASE_PLAN_v1.2.0.md) orders the remaining work. These are
 design requirements, not claims of implemented reporting or authorized deployment.
+
+### Simple report correction — September 13, 2026
+
+The Owner found the technical export unsuitable as the principal experience.
+Performance Report must lead with understandable period/status, eligible/captured/
+scored counts, Brier versus the same-population 50% reference and governed uncertainty.
+Use friendly dates, plain-language gaps and display-only rounding. Technical evidence,
+exact values, provenance, bounded/calibration/log-loss detail and downloads belong
+under collapsed **Details**. Material failures and interpretation limits stay visible.
+A small Historical candle report link preserves the separate study. See the
+[approved correction](MLB_SIMPLE_REPORT_DECISION_v1.2.0.md); acquired-data reads and
+local generation are authorized subject to unchanged source and clean-code safeguards.

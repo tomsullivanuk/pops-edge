@@ -572,13 +572,10 @@ def validate_manifest_lineage(manifests:Iterable[HistoricalCandleQueryManifest],
     return tuple(sorted(selected,key=lambda x:(x.protocol_id,x.opportunity_id,x.provider_market_id)))
 
 
-def create_historical_candle_probability_derivation(*,protocol:StandaloneProbabilitySourceProtocol,
-        activation:StandaloneResearchActivationBoundary,opportunity:ResearchCaptureOpportunity,
-        eligibility_context:ResearchEventEligibilityContext,eligibility_result:PopulationEligibilityResult,
-        schedule_history:OutcomeHistory,analysis_boundary:datetime,
-        manifest:HistoricalCandleQueryManifest,manifests:Iterable[HistoricalCandleQueryManifest],candles:Iterable[HistoricalMarketCandleObservation],
-        home_participant_id:str,complement_outcome_id:str,
-        effective_at:datetime,provenance:ResearchContractProvenance,limitations:tuple[str,...]=())->HistoricalCandleProbabilityDerivation:
+def _validated_historical_capture(*, protocol, activation, opportunity, eligibility_context,
+        eligibility_result, schedule_history, analysis_boundary, manifest, manifests, candles,
+        home_participant_id, complement_outcome_id):
+    """Original capture-selection stage, shared by derivation and report projections."""
     if protocol.design_tag is not StandaloneDesignTag.RETROSPECTIVE:_fail("historical derivation requires retrospective Protocol")
     schedule,target_at=resolve_standalone_schedule_authority(protocol=protocol,activation=activation,opportunity=opportunity,
         eligibility_context=eligibility_context,eligibility_result=eligibility_result,outcome_history=schedule_history,analysis_boundary=analysis_boundary)
@@ -598,6 +595,22 @@ def create_historical_candle_probability_derivation(*,protocol:StandaloneProbabi
     if (candle.canonical_event_id,candle.proposition_id,candle.home_participant_id)!=(canonical_event_id,proposition_id,home_participant_id):_fail("historical event/proposition/home mapping conflict")
     if candle.close_yes_bid is None or candle.close_yes_ask is None:_fail("selected candle requires both closing YES bounds")
     if candle.close_yes_bid>candle.close_yes_ask:_fail("historical candle bounds are crossed")
+    return schedule,target_at,candle
+
+
+def create_historical_candle_probability_derivation(*,protocol:StandaloneProbabilitySourceProtocol,
+        activation:StandaloneResearchActivationBoundary,opportunity:ResearchCaptureOpportunity,
+        eligibility_context:ResearchEventEligibilityContext,eligibility_result:PopulationEligibilityResult,
+        schedule_history:OutcomeHistory,analysis_boundary:datetime,
+        manifest:HistoricalCandleQueryManifest,manifests:Iterable[HistoricalCandleQueryManifest],candles:Iterable[HistoricalMarketCandleObservation],
+        home_participant_id:str,complement_outcome_id:str,
+        effective_at:datetime,provenance:ResearchContractProvenance,limitations:tuple[str,...]=())->HistoricalCandleProbabilityDerivation:
+    schedule,target_at,candle = _validated_historical_capture(protocol=protocol, activation=activation,
+        opportunity=opportunity, eligibility_context=eligibility_context, eligibility_result=eligibility_result,
+        schedule_history=schedule_history, analysis_boundary=analysis_boundary, manifest=manifest,
+        manifests=manifests, candles=candles, home_participant_id=home_participant_id,
+        complement_outcome_id=complement_outcome_id)
+    canonical_event_id=schedule.canonical_event_id;proposition_id=f"winner:{canonical_event_id}:{schedule.home_participant_id}"
     if effective_at<max(manifest.effective_at,candle.acquired_at):_fail("historical derivation is backdated")
     midpoint=(candle.close_yes_bid+candle.close_yes_ask)/Decimal(2);complement=Decimal(1)-midpoint
     if complement_outcome_id==home_participant_id:_fail("historical binary outcomes must be distinct")
@@ -775,13 +788,10 @@ def select_authoritative_prospective_snapshots(snapshots:Iterable[ProspectiveSta
     return tuple(sorted(selected,key=lambda x:(x.protocol_id,x.opportunity_id)))
 
 
-def create_standalone_market_probability_derivation(*,protocol:StandaloneProbabilitySourceProtocol,
-        activation:StandaloneResearchActivationBoundary,opportunity:ResearchCaptureOpportunity,
-        eligibility_context:ResearchEventEligibilityContext,eligibility_result:PopulationEligibilityResult,
-        schedule_history:OutcomeHistory,analysis_boundary:datetime,
-        snapshot:ProspectiveStandaloneSnapshot,snapshots:Iterable[ProspectiveStandaloneSnapshot],attempts:Iterable[ProspectiveCaptureAttempt],
-        observation:MarketObservation,market_observations:Iterable[MarketObservation],series:ProviderMarketSeries,
-        effective_at:datetime,provenance:ResearchContractProvenance,limitations:tuple[str,...]=())->MarketProbabilityDerivation:
+def _validated_prospective_capture(*, protocol, activation, opportunity, eligibility_context,
+        eligibility_result, schedule_history, analysis_boundary, snapshot, snapshots, attempts,
+        observation, market_observations, series):
+    """Original Snapshot/observation validation, before probability construction."""
     if protocol.design_tag is not StandaloneDesignTag.PROSPECTIVE:_fail("market derivation requires prospective standalone Protocol")
     if snapshot.protocol_id!=protocol.standalone_probability_source_protocol_id or snapshot.terminal_disposition is not SnapshotTerminalDisposition.CAPTURED_VALID:_fail("complete successful Snapshot authority is required")
     selected=tuple(x for x in select_authoritative_prospective_snapshots(snapshots,analysis_boundary) if (x.protocol_id,x.opportunity_id)==(snapshot.protocol_id,snapshot.opportunity_id))
@@ -806,6 +816,21 @@ def create_standalone_market_probability_derivation(*,protocol:StandaloneProbabi
     if not yes or not no:_fail("positive-depth two-sided order book is required")
     ask_price=min(x.acquisition_price for x in yes);no_offer=min(x.acquisition_price for x in no);bid_price=Decimal(1)-no_offer
     if bid_price>ask_price:_fail("market bounds are crossed")
+    return yes,no,ask_price,no_offer,bid_price
+
+
+def create_standalone_market_probability_derivation(*,protocol:StandaloneProbabilitySourceProtocol,
+        activation:StandaloneResearchActivationBoundary,opportunity:ResearchCaptureOpportunity,
+        eligibility_context:ResearchEventEligibilityContext,eligibility_result:PopulationEligibilityResult,
+        schedule_history:OutcomeHistory,analysis_boundary:datetime,
+        snapshot:ProspectiveStandaloneSnapshot,snapshots:Iterable[ProspectiveStandaloneSnapshot],attempts:Iterable[ProspectiveCaptureAttempt],
+        observation:MarketObservation,market_observations:Iterable[MarketObservation],series:ProviderMarketSeries,
+        effective_at:datetime,provenance:ResearchContractProvenance,limitations:tuple[str,...]=())->MarketProbabilityDerivation:
+    yes,no,ask_price,no_offer,bid_price = _validated_prospective_capture(protocol=protocol,
+        activation=activation, opportunity=opportunity, eligibility_context=eligibility_context,
+        eligibility_result=eligibility_result, schedule_history=schedule_history, analysis_boundary=analysis_boundary,
+        snapshot=snapshot, snapshots=snapshots, attempts=attempts, observation=observation,
+        market_observations=market_observations, series=series)
     def bound(kind:str,price:Decimal,items:tuple[Any,...])->MarketProbabilityBound:
         selected=tuple(x for x in items if x.acquisition_price==(ask_price if kind=="offer" else no_offer))
         levels=tuple(MarketProbabilityLevel(price,x.quantity,x.acquisition_side,x.acquisition_price,x.provider_book_side,x.provider_price,x.evidence_kind,x.transformation,"canonical_bid = 1 - complementary_outcome_offer" if kind=="bid" else None,x.source_endpoint,x.collected_at) for x in selected)
