@@ -1953,3 +1953,13 @@ previous-entry backup. Readable live/historical displays remain derived presenta
 old package renderers remain available for exact replay. This bounded activation
 requires a clean explicit reporting revision and retained independent verification
 references, and introduces no acquisition, server or collector mutation.
+
+
+The collection-status correction adds an optional frozen invocation observation to
+retained-report display activation. A pure extraction of the existing operational
+health classification/cadence rules is shared with health evaluation; no competing
+readiness engine or archive audit is introduced. Sanitized append-only operational
+records are read without invoking commands or writing operational state. The saved
+observation, its independent date/digest and offline recovery guidance belong to
+presentation only. Unavailable/stale observations never confer or revoke scientific
+authority. Original renderer defaults and immutable package replay remain unchanged.

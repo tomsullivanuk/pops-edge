@@ -7,6 +7,21 @@
 > [NFL acceptance gates](docs/NFL_RELEASE_PLAN_v1.1.0.md).
 
 
+## v1.2.0 — MLB reporting (unreleased candidate)
+
+- PR #51 merged independently verified historical/live saved reports, a readable
+  two-decimal Performance Report, separate historical navigation and guarded
+  display activation at `0d8e18248d190a0bf4bf30185ece4427dd371a9f`.
+- The normal local entry was activated on September 14, 2026 without acquiring or
+  rescoring data; original packages, anchors, verification dates and selections
+  were preserved. This is reporting activation, not whole-release publication.
+- Local correction candidate: separately dated collection observations reuse
+  existing invocation health rules, show valid completions/current failures/skips,
+  degrade honestly on unavailable status, and include saved recovery guidance.
+  Manual display refresh does not run collection or change scientific results.
+- VERSION remains 1.1.0; the running NFL application and study closure obligations
+  are unchanged. No v1.2 tag or hosted release is claimed.
+
 ## v1.1.0 — NFL comparison workflow (merged; release publication pending)
 
 - Merged ELWAY import, public Kalshi retrieval and the local comparison workflow

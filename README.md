@@ -1,7 +1,7 @@
 # Pops' Edge
 
 **Current product version:** v1.1.0 — NFL (released and deployed locally)<br>
-**Next planned minor version:** v1.2.0 — MLB Kalshi collection and baseline performance<br>
+**Release candidate in progress:** v1.2.0 — MLB Kalshi collection and baseline performance<br>
 **Tentative following release:** v1.3 — unified NFL/MLB experience<br>
 **Parallel investigation:** external MLB forecast models and suppliers
 
@@ -58,7 +58,15 @@ Publication of a release tag and deployment are separate from the code merge.
 See [NFL plan](docs/NFL_RELEASE_PLAN_v1.1.0.md) and
 [refresh guide](docs/NFL_REFRESH_GUIDE.md).
 
-### v1.2.0 — MLB Kalshi collection and baseline performance (planned)
+### v1.2.0 — MLB Kalshi collection and baseline performance (candidate)
+
+PR #51 merged the independently reviewed historical/live reporting delivery and
+two-decimal reader at `0d8e18248d190a0bf4bf30185ece4427dd371a9f`. The normal local
+entry was activated September 14, 2026 from that revision using retained verified
+reports. Collection-status display completion is a separate local correction
+candidate; whole-v1.2 publication remains pending. See the
+[operator guide](docs/MLB_REPORTING_DELIVERY_API_v1.2.0.md) for opening, manual
+scientific update, separate frozen status refresh and safe recovery.
 
 The [September 12 decision](docs/RELEASE_DIRECTION_2026-09-12.md) narrows this
 release to collection, visible coverage/health and separate retrospective and

@@ -1,9 +1,12 @@
 # Manual archive-to-report delivery
 
-Local implementation candidate on PR #50 main, September 13, 2026. This adds
-manual generation, exact saved verification, separate historical selection and
-live update, and basic saved HTML. It does not commission a production report,
-complete the polished reader, close either study or authorize deployment.
+PR #51 merged this reporting delivery and readable display at
+`0d8e18248d190a0bf4bf30185ece4427dd371a9f`. The normal local entry was activated
+September 14, 2026 from that clean revision using previously verified historical
+and live packages. The local completion receipt is
+`/Users/tom/PopsEdgeReports/mlb/activation/2026-09-14-pr51/COMPLETION.md`.
+Collection-status completion below is a separate local correction candidate;
+its integration/activation and whole-v1.2 publication remain pending.
 
 Apply the [reporting contract](MLB_REPORTING_CONTRACT_v1.2.0.md), accepted
 [source API](MLB_REPORTING_SOURCE_API_v1.2.0.md) and
@@ -13,7 +16,7 @@ its limitations, dates, arithmetic and seeds are preserved byte-for-byte. A type
 
 ## Operator commands
 
-After the separately authorized commissioning gate, use a clean checkout at the
+For authorized report operations, use a clean checkout at the
 exact accepted revision and an existing compatible Python environment. Outputs
 must be outside **every source checkout**, and must not overlap either configured
 archive root, including aliases and ancestor paths. Commands read the existing
@@ -170,8 +173,9 @@ cleanup on macOS; generation does not remove earlier packages.
 Missing historical output is shown on the next entry update while its selected
 identity/dates remain intact; it does not block a valid live update. A saved entry
 is frozen between commands, so external file removal can also be seen as a failed
-link/open. Collection health is always labelled unavailable. This implementation
-claims basic accessible HTML export, not the later branded reader or release
+link/open. Original immutable package pages retain their original status text.
+The current display activation path can attach separately dated collection
+observations, as described below; this does not certify present health or release
 readiness. Local trusted-filesystem operation and manual recovery are accepted;
 malicious concurrent filesystem edits, automatic recovery and high availability
 are not new delivery guarantees.
@@ -245,3 +249,61 @@ a later report update prevents accidentally rolling it back. Backup relative lin
 are intended to work once restored to the original entry location. Old immutable
 package pages remain frozen with their original renderers; reopen the normal entry
 to see the active display. This has no collector or release effect.
+
+
+### Frozen collection observations — local correction candidate
+
+From a clean accepted reporting checkout, after separate activation authorization:
+
+```sh
+python operate_forecast_reporting.py --output /absolute/report-output activate-display \
+  --expected-revision FULL_COMMIT \
+  --operational-state /absolute/configured-log-root/operational-state
+```
+
+This is also the manual **status-display refresh**. It reads existing sanitized
+invocation records only; it does not execute the collector or `health-report`
+(the latter writes an operational heartbeat). Do not run a collection or health
+command merely to populate this display. The directory is explicitly selected
+from the deployment's log root; use the matching MLB deployment. No configuration,
+provider credentials, source freeze, scoring or full scientific replay is needed.
+
+The page records the read time independently of report generation and evidence
+cutoff, the latest recorded completion, last valid command completions, current
+invocation blockers, superseded failures, recent skipped cycles and last recorded
+health-check outcome. Cadence and supersession use the same pure observation rules
+as existing health evaluation, including the skipped-hour supporting grace. An old
+health outcome is dated history; no overall readiness is inferred from invocation
+success. Archive integrity, checkpoint state, storage and secondary consistency are
+not audited by this path. Healthy operations never establish complete Coverage.
+
+Omitted/absent/inaccessible/malformed/ambiguous/future-dated operational records
+produce a visible unavailable notice. Stale or missing required completions remain
+visible under existing cadence rules. A concurrent append that falls after the
+recorded read boundary can yield unavailable status; a later manual refresh is
+sufficient. No operational lock, retry service or automatic recovery is introduced.
+
+Each activation saves `collection-status.json` and its digest in the activation
+record, plus an offline `recovery.html` and copies of the reporting/collection/
+pinned-deployment guides. The download describes the frozen observation and a
+digest of the parsed invocation records; it is not Evidence or scientific authority.
+The original operational records remain in their existing log directory.
+
+Both selected reports, all immutable packages/anchors/verification receipts and
+`delivery-state` including the last scientific generation attempt remain unchanged.
+A failed or missing status read cannot invalidate a scientifically valid saved
+report. Original v1/v2/v3 package bytes remain replayable. Ordinary report generation
+continues to use the original immutable renderer; attach fresh status afterward
+with this separate display command. `open` performs no status refresh or writes.
+
+Use `update-live` above only when intentionally generating a new scientific live
+report from existing acquired sources; it preserves historical selection but gives
+the new live report its actual new calculation/cutoff dates. An ordinary live update
+replaces the display, so explicitly repeat status-display refresh if wanted. Status
+refresh alone does not update those dates or the last scientific attempt.
+
+For collection failures, follow [existing health and recovery rules](../operations/PROSPECTIVE_PROJECTION.md)
+and [pinned deployment guidance](../operations/PINNED_DEPLOYMENT.md). Preserve failed
+records and unknown publication markers; do not fabricate missed quotes or retry
+unknown calls. Use the bounded activation rollback above if the new display itself
+needs reverting. Collector recovery and job changes require their own authority.

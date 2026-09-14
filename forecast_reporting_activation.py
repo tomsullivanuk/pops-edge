@@ -8,6 +8,7 @@ from pathlib import Path
 
 import forecast_reporting_delivery as delivery
 import forecast_reporting_presentation as presentation
+import forecast_reporting_collection as collection
 from forecast_standalone_operations import canonical_bytes, sha256_bytes
 
 
@@ -50,7 +51,7 @@ def _publish(output, previous, updated):
     delivery._sync_directory(output)
 
 
-def activate_display(*,output,expected_revision):
+def activate_display(*,output,expected_revision,operational_state=None):
     output=delivery.validate_output_root(output)
     revision=delivery._revision(expected_revision)
     with delivery._local_writer(output):
@@ -61,11 +62,19 @@ def activate_display(*,output,expected_revision):
         at=delivery.utc_now();identifier=uuid.uuid4().hex
         if any(datetime.fromisoformat(value[4]['verified_at'])>at for value in selected.values()):
             delivery._fail('display time precedes retained verification')
+        observation=collection.snapshot(operational_state,at)
         displays=output/'displays'
         if displays.is_symlink():delivery._fail('display directory cannot be aliased')
         displays.mkdir(exist_ok=True);target=displays/identifier;target.mkdir()
         delivery._create(target/'previous-entry.html',previous)
         delivery._create(target/'saved-state.json',canonical_bytes(state))
+        delivery._create(target/'collection-status.json',canonical_bytes(observation))
+        delivery._create(target/'recovery.html',collection.recovery_page())
+        repository=Path(__file__).resolve().parent
+        for name,source in (('operator-guide.md','docs/MLB_REPORTING_DELIVERY_API_v1.2.0.md'),
+                            ('collection-guide.md','operations/PROSPECTIVE_PROJECTION.md'),
+                            ('deployment-guide.md','operations/PINNED_DEPLOYMENT.md')):
+            delivery._create(target/name,(repository/source).read_bytes())
         def render(name,base,principal=False):
             report,projections,envelope,receipt_path,receipt=selected[name]
             relative=lambda path:os.path.relpath(path,base)
@@ -74,7 +83,8 @@ def activate_display(*,output,expected_revision):
             other='historical' if name=='live' else 'live'
             body='<nav><a href="'+presentation.text(links[other])+'">'+('Historical candle report' if other=='historical' else 'Performance Report')+'</a></nav>'
             body+=presentation.update_notice(state)
-            body+=presentation.summary(report,projections,envelope['synthetic_validation'])
+            body+=presentation.summary(report,projections,envelope['synthetic_validation'],
+                collection_status=collection.render(observation,relative(target/'recovery.html'),relative(target/'collection-status.json')))
             body+='<p class="muted">Display updated '+presentation.friendly(at)+'. Original calculation and evidence dates are unchanged; no new data was collected or scored.</p>'
             body+='<details><summary>Details</summary><p>Original report verified '+presentation.friendly(receipt['verified_at'])+'. This display uses that retained verification; it does not repeat scientific verification.</p>'
             prefix=relative(output/'packages'/state[name]['package_id'])+'/'
@@ -90,7 +100,9 @@ def activate_display(*,output,expected_revision):
             software_revision=revision,rendered_at=at.isoformat(),previous_entry_sha256=sha256_bytes(previous),
             active_entry_sha256=sha256_bytes(updated),state=state,
             authority='display only; active exactly while entry bytes match active_entry_sha256',
-            prior_verifications={name:selected[name][4] for name in selected})
+            prior_verifications={name:selected[name][4] for name in selected},
+            collection_display_version=collection.VERSION,
+            collection_status_sha256=sha256_bytes(canonical_bytes(observation)))
         delivery._create(target/'activation.json',canonical_bytes(receipt))
         delivery._sync_directory(target)
         delivery._revision(revision)
