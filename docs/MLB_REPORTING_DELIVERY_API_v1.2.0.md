@@ -1,5 +1,11 @@
 # Manual archive-to-report delivery
 
+Current status — September 14, 2026: reporting delivery (PR #51) and collection
+status (PR #53) are independently accepted, merged and locally activated.
+Earlier candidate/authorization statements below are dated history, not pending
+implementation gates. See [release record](MLB_RELEASE_RECORD_v1.2.0.md).
+Whole-release publication remains pending; opening a saved page does not refresh it.
+
 PR #51 merged this reporting delivery and readable display at
 `0d8e18248d190a0bf4bf30185ece4427dd371a9f`. The normal local entry was activated
 September 14, 2026 from that clean revision using previously verified historical

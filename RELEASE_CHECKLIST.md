@@ -1,5 +1,18 @@
 # Pops' Edge Release Checklist
 
+## MLB v1.2 approval status — September 14, 2026
+
+The [reconciled release record](docs/MLB_RELEASE_RECORD_v1.2.0.md) governs the
+narrowed MLB release. Reporting, collection-status correction and local activation
+are complete; Owner layout acceptance is recorded. Existing independent reviews,
+compatibility evidence and dated operational follow-up are reused.
+
+This documentation candidate has not been committed or published. Final candidate
+diff/inventory validation, explicit Owner publication approval, exact release commit,
+tag and hosted-release verification remain publication steps. Generic checkboxes
+below are a reusable checklist, not claims that every check was rerun. No new full
+suite, present-health audit, deployment or study closure is asserted.
+
 > Release allocation, September 8, 2026: v1.1.0 is the NFL comparison board;
 > the previously planned v1.1.0 MLB programme now targets v1.2.0. Historical
 > sections and PR numbers below remain unchanged. See

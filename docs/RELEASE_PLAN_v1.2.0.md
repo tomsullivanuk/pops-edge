@@ -1,6 +1,8 @@
 # MLB v1.2.0 — focused release plan
 
-Status: implementation in progress, updated September 13, 2026. Original
+Status: narrowed MLB scope implemented and locally activated; ready for Owner
+release approval, reconciled September 14, 2026. See the
+[release record](MLB_RELEASE_RECORD_v1.2.0.md). Original
 documentation baseline (September 12) was main
 `1f1c033f7b0250f390aee597f85246cbdeba564c`, the
 [September 12 direction](RELEASE_DIRECTION_2026-09-12.md) and the
@@ -109,8 +111,8 @@ previously verified acquired-data packages. The dated local receipt is
 Earlier future-gate wording is historical; reporting integration and that activation
 are complete. No fresh scientific computation was performed during activation.
 
-The remaining collection-status gap is addressed by a separate local implementation
-candidate: read existing sanitized invocation records, share the existing health
+The collection-status gap was closed by independently accepted PR #53, merged
+and locally activated at `adcce3a7da66fd9c851f657b3737cf6b16f92f34`: read existing sanitized invocation records, share the existing health
 classification/cadence rules, expose separately dated valid completions, current
 invocation blockers, skips and the last recorded health outcome. It does not repeat
 archive/secondary/checkpoint/disk audits or assert overall live readiness. Status
@@ -119,6 +121,8 @@ remains frozen; an explicit display refresh preserves all scientific dates and s
 This uses the already approved status boundary, not a new operational health engine.
 
 The [current operator guide](MLB_REPORTING_DELIVERY_API_v1.2.0.md) documents manual
-status refresh separately from live scientific update. This correction still needs
-bounded review and separately authorized integration/activation. Whole-v1.2 release
-readiness remains its own decision; VERSION stays 1.1.0 and NFL is unchanged.
+status refresh separately from live scientific update. Independent correction
+review and local activation are complete. The Owner accepted the current layout.
+The reconciled release record closes the prior release-readiness collection-status
+gap and records the later successful lifecycle observation. Whole-v1.2 publication
+awaits Owner approval; no study is closed or deployment repinned by that decision.
