@@ -751,3 +751,10 @@ under collapsed **Details**. Material failures and interpretation limits stay vi
 A small Historical candle report link preserves the separate study. See the
 [approved correction](MLB_SIMPLE_REPORT_DECISION_v1.2.0.md); acquired-data reads and
 local generation are authorized subject to unchanged source and clean-code safeguards.
+
+The Owner's later MLB readability and local activation amendments require at most
+two decimal places in every readable metric, plain-language drill-downs with exact
+evidence downloads, and a usable corrected normal local entry. Rendering retained
+verified results must preserve their scientific dates, selection/status and immutable
+packages. See [display decisions](MLB_SIMPLE_REPORT_DECISION_v1.2.0.md). This bounded
+integration/activation authority does not authorize collector changes or study closure.

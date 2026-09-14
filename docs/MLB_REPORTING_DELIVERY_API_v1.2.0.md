@@ -204,3 +204,44 @@ to this bounded request. There is no synthetic bypass for acquired data. No comm
 push/PR/merge, new acquisition, collector/scheduler/Evidence/index/checkpoint mutation,
 full deployment or release authority is implied. Readiness-only source verification
 is distinguished from operational Analysis/report generation.
+
+### Two-decimal readable renderer amendment
+
+`mlb-reporting-html-3` is the current renderer. v1 and v2 remain accepted for exact
+saved-package replay. Readable Details no longer embed machine-record dumps: they
+show two-decimal metrics, integer counts, friendly chronology, calendar date ranges,
+and named saved-report/update status. Exact evidence remains downloadable.
+`planning/RENDER_READABLE_ACTUAL_REPORTS.py` is a local one-off preview recipe, not an
+acquisition or new scientific publication API. It checks saved package digests,
+retained prior verification references and original renderer bytes, then records
+new presentation timing/hashes separately without source replay or changing the
+accepted output's current pointer.
+
+### Activate or roll back the readable local entry
+
+The later Owner authorization permits normal-entry activation as documented in the
+[integration/activation handoff](MLB_REPORTING_INTEGRATION_ACTIVATION_v1.2.0.md).
+From a clean reporting checkout at the accepted merged revision:
+
+```text
+python operate_forecast_reporting.py --output REPORT_ROOT activate-display --expected-revision MERGED_COMMIT
+python operate_forecast_reporting.py --output REPORT_ROOT rollback-display --expected-revision MERGED_COMMIT --activation ACTIVATION_ID
+```
+
+These commands take no acquisition config and never access the source archive.
+Activation requires both selected studies and matching independently retained source
+anchors and previous package verification receipts. It checks payload digests and
+saved renderer bytes without replaying science, builds readable displays under
+`displays/ACTIVATION_ID/`, saves `previous-entry.html` and `activation.json`, then
+atomically replaces `entry.html` with identical machine-readable selection/attempt
+state. Actual display time is separate and the existing failed/running notice stays
+visible. Verification dates are attributed to the retained verification, not today.
+
+The activation record is prepared before publication; it is active exactly while
+its recorded digest matches the actual entry. An interruption leaves the old entry
+or a complete new one. Inspect the digest after an uncertain command result. Rollback
+only restores the retained bytes if both current entry and backup match that record;
+a later report update prevents accidentally rolling it back. Backup relative links
+are intended to work once restored to the original entry location. Old immutable
+package pages remain frozen with their original renderers; reopen the normal entry
+to see the active display. This has no collector or release effect.

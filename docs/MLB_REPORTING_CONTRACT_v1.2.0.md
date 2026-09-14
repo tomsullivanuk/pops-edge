@@ -367,3 +367,19 @@ calibration, bounded results, complete categories and supporting links are in
 collapsed Details. The local entry shows the principal report and a small independent
 historical link; failed attempts use a readable notice with metadata in Details.
 This is a presentation correction, not a scientific-rule change or full shared shell.
+
+The subsequent Owner readability amendment limits every readable numeric metric to
+two decimal places, uses human-readable calendar/report/update disclosures, and moves
+raw precision and machine records to labelled downloads. It preserves canonical
+precision and old renderer replay. Separately dated presentation-only previews of
+verified results confer no new scientific computation or package authority.
+
+### Authorized local display activation
+
+A clean merged reporting checkout may explicitly re-render previously verified
+selected packages into the normal mutable entry. This is display activation, not
+new scientific computation or verification. Original packages/anchors/verification
+receipts remain immutable; exact `delivery-state` selection and last-attempt semantics
+remain intact. The entry discloses fresh display time, links readable historical
+and live displays, and retains material failed/running attempt notices. A previous
+entry backup and digest-guarded rollback support proportionate manual recovery.

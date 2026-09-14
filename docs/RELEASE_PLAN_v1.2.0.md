@@ -84,3 +84,15 @@ it does not create the shared shell or alter scientific rules. Prior PDF accepta
 established rendering only and does not override the Owner's usability correction.
 Acquired-data reads/generation are authorized, but the clean code-revision prerequisite
 remains; commit/integration and deployment are not inferred from that authorization.
+
+### Bounded reporting integration/activation gate
+
+The original delivery received separate independent acceptance and local commit
+`20c1a009c59dd88c5796e933adc5b62adf509195`; actual historical and live acquired-data
+packages were generated and exactly verified. The Owner then approved two-decimal,
+readable drill-downs and explicitly authorized integration plus normal local entry
+activation. The [amendment review](MLB_REPORTING_AMENDMENT_REVIEW_v1.2.0.md) and
+[integration/activation handoff](MLB_REPORTING_INTEGRATION_ACTIVATION_v1.2.0.md) govern
+this next bounded gate. Earlier uncommitted/unapproved status statements above are
+historical. The eventual PR and local activation receipt record actual completion;
+whole-v1.2 release, collector deployment and study closure remain separate.

@@ -25,7 +25,7 @@ from forecast_reporting_source import FrozenReportingSource, freeze_reporting_so
 from forecast_standalone_operations import OperationsError, canonical_bytes, sha256_bytes
 
 VERSION = 'mlb-reporting-delivery-1'
-RENDERER = 'mlb-reporting-html-2'
+RENDERER = 'mlb-reporting-html-3'
 REPOSITORY = Path(__file__).resolve().parent
 PAYLOAD_NAMES = {'source.json', 'analysis.json', 'projections.json', 'envelope.json',
                  'protocol.json', 'report.html', 'REPRODUCE.txt'}
@@ -213,10 +213,13 @@ def _render_report_v1(report, projections, envelope):
 def render_report(report, projections, envelope):
     if envelope['renderer_version'] == 'mlb-reporting-html-1':
         return _render_report_v1(report, projections, envelope)
+    if envelope['renderer_version'] == 'mlb-reporting-html-2':
+        from forecast_reporting_presentation_v2 import render
+        return render(report, projections, envelope, _render_report_v1(report, projections, envelope))
     if envelope['renderer_version'] != RENDERER:
         _fail('unknown report renderer version')
     from forecast_reporting_presentation import render
-    return render(report, projections, envelope, _render_report_v1(report, projections, envelope))
+    return render(report, projections, envelope)
 
 
 def _empty_state():
@@ -241,7 +244,7 @@ def read_entry(output):
 
 
 def _replace_entry(output, state):
-    from forecast_reporting_presentation import page, summary, technical_contents, friendly
+    from forecast_reporting_presentation import page, summary, technical_contents, friendly, saved_reports, update_notice
     body = ''; metadata = ''; live = state['live']
     historical = state['historical']
     if historical is None:
@@ -252,11 +255,7 @@ def _replace_entry(output, state):
         if not (output/relative).is_file():
             body += '<p class="notice">Selected package unavailable. Historical selection retained; no substitute chosen.</p>'
     attempt = state['last_attempt']
-    if attempt and attempt['status'] == 'failed':
-        retained = ('The saved report from '+friendly(live['report_generated_at'])+' is retained.' if live else 'No validated report available.')
-        body += '<p class="notice"><strong>The last report attempt failed.</strong> '+_text(retained)+' See Details for the reason.</p>'
-    elif attempt and attempt['status'] == 'running':
-        body += '<p class="notice">A report attempt was started. Its completion is not recorded; any previously saved report remains selected.</p>'
+    body += update_notice(state)
     if live is None:
         body += '<p>No validated report available.</p><p>A live report has not yet been generated and selected successfully.</p>'
     else:
@@ -270,15 +269,15 @@ def _replace_entry(output, state):
             body += summary(report, projections, envelope['synthetic_validation'])
             prefix = 'packages/'+live['package_id']+'/'
             metadata += '<p><a href="'+prefix+'report.html">Immutable saved report</a></p>'
-            metadata += technical_contents(_render_report_v1(report, projections, envelope), prefix)
+            metadata += technical_contents(report, projections, envelope, prefix)
         except Exception as exc:
             # A newly selected update must still be readable when the entry is built.
             # Fail through generation's existing rollback, preserving the old reference.
             if attempt and attempt['status'] == 'succeeded' and attempt.get('operation') == 'update-live':
                 raise
             body += '<p class="notice">Selected package unavailable or damaged. Its identity and original date are retained; no replacement was chosen.</p>'
-            metadata += '<p>'+_text(str(exc))+'</p>'
-    body += '<details id="report-details"><summary>Details</summary>'+metadata+'<h2>Local report references and last attempt</h2><pre>'+_text(json.dumps(state, indent=2, sort_keys=True))+'</pre></details>'
+            metadata += '<p>The selected report could not be read. Exact references and diagnostics remain in the metadata download.</p>'
+    body += '<details id="report-details"><summary>Details</summary>'+metadata+saved_reports(state, {name:'packages/'+ref['package_id']+'/report.html' for name,ref in [('live',live),('historical',historical)] if ref}, 'entry.html')+'</details>'
     state_json = canonical_bytes(state).decode().replace('<', '\\u003c')
     body += '<script type="application/json" id="delivery-state">'+state_json+'</script>'
     temporary = output/('entry-'+uuid.uuid4().hex+'.partial')
@@ -371,7 +370,7 @@ def _verify(path, output, anchor_key, archive, clock, expected_id=None):
         _fail('anchor was not retained before computing the candidate')
     if not report.context.report_generated_at <= times[0] <= times[1] <= times[2] <= completed <= source_receipt.verified_at:
         _fail('package chronology does not follow actual analytical work')
-    if typed.renderer_version not in {'mlb-reporting-html-1', RENDERER}:
+    if typed.renderer_version not in {'mlb-reporting-html-1', 'mlb-reporting-html-2', RENDERER}:
         _fail('unknown report renderer version')
     wanted = DeliveryEnvelope(VERSION, typed.renderer_version, PROJECTION_VERSION, report.object_id,
         source.boundary_id, projected['object_id'], protocol.standalone_probability_source_protocol_id,

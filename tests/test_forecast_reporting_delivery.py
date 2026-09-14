@@ -126,7 +126,7 @@ class DeliveryTests(unittest.TestCase):
                 if len(values)==4:
                     self.assertEqual([x['count'] for x in bins],[1,1,0,0,0,0,0,0,0,2])
                     self.assertEqual(bins[-1]['mean_home_probability'],'0.95')
-                    self.assertIn(b'Infinity',self.payload(ref,'report.html'))
+                    self.assertIn(b'Infinite',self.payload(ref,'report.html'))
                 self.verify(ref);self.archive=previous
 
     def test_projection_replay_under_precision_and_input_permutation(self):
@@ -365,19 +365,19 @@ print(verify_package(output=root/'reports',archive=NamespaceArchive(config),pack
 
     def test_simple_principal_hides_technical_evidence_and_retains_exact_details(self):
         ref=self.generate();raw=self.payload(ref,'report.html');visible=self.principal_text(raw)
-        self.assertIn('0.202',visible);self.assertIn('0.250',visible)
+        self.assertIn('0.20',visible);self.assertIn('0.25',visible)
         self.assertIn('Only one scored observation',visible)
         self.assertIn('Study in progress',visible);self.assertIn('EDT',visible)
         self.assertIn('synthetic data',visible)
         for technical in (ref['report_id'],'Mean log loss','Fixed-bin calibration','time-bounded','Computation started','Protocol','sha256'):
             self.assertNotIn(technical,visible)
-        self.assertIn(ref['report_id'].encode(),raw)
+        self.assertNotIn(ref['report_id'].encode(),raw)
         self.assertIn(b'<summary>Details</summary>',raw)
-        self.assertIn(b'0.2025',raw)
+        self.assertNotIn(b'0.2025',raw);self.assertIn(b'0.2025',self.payload(ref,'analysis.json'))
         self.assertIn(b'Mean log loss',raw)
         self.assertIn(b'href="analysis.json"',raw)
         entry=(self.output/'entry.html').read_bytes();main=self.principal_text(entry)
-        self.assertIn('Prediction error',main);self.assertIn('0.202',main)
+        self.assertIn('Prediction error',main);self.assertIn('0.20',main)
         self.assertNotIn(ref['package_id'],main)
         self.assertIn('Historical candle report',main)
         self.verify(ref)
@@ -386,8 +386,8 @@ print(verify_package(output=root/'reports',archive=NamespaceArchive(config),pack
         from forecast_reporting_presentation import rounded
         with localcontext() as ctx:
             ctx.prec=3;ctx.rounding=ROUND_UP
-            self.assertEqual(rounded(Decimal('0.2025')),'0.202')
-            self.assertEqual(rounded(Decimal('0.12345')),'0.123')
+            self.assertEqual(rounded(Decimal('0.2025')),'0.20')
+            self.assertEqual(rounded(Decimal('0.12345')),'0.12')
             self.assertEqual(rounded(Decimal('0.3333333333333333333'),1,True),'33.3%')
             self.assertEqual(rounded(None),'Unavailable')
             self.assertEqual(rounded(Decimal('Infinity')),'Infinite')
@@ -403,7 +403,7 @@ print(verify_package(output=root/'reports',archive=NamespaceArchive(config),pack
         raw=(self.output/'entry.html').read_bytes();visible=self.principal_text(raw)
         self.assertIn('last report attempt failed',visible)
         self.assertIn('saved report from',visible)
-        self.assertIn('0.202',visible)
+        self.assertIn('0.20',visible)
         self.assertNotIn('123abc',visible);self.assertNotIn(ref['report_id'],visible)
         self.assertIn(b'123abc',raw);self.assertEqual(delivery.read_entry(self.output)['live'],ref)
 
@@ -434,9 +434,122 @@ print(verify_package(output=root/'reports',archive=NamespaceArchive(config),pack
         archive_events(self.archive,(event,),self.now)
         historical=self.generate('historical');raw=self.payload(historical,'report.html');visible=self.principal_text(raw)
         self.assertIn('assigned a zero probability',visible)
-        self.assertNotIn('Mean log loss',visible);self.assertIn(b'Infinity',raw)
+        self.assertNotIn('Mean log loss',visible);self.assertIn(b'Infinite',raw)
         self.verify(historical)
 
+
+    def test_all_readable_details_are_rounded_and_not_machine_dumps(self):
+        from html.parser import HTMLParser
+        import re
+        class Readable(HTMLParser):
+            def __init__(self):super().__init__();self.hidden=0;self.parts=[]
+            def handle_starttag(self,t,a):
+                if t in ('head','script','style'):self.hidden+=1
+                assert t not in ('pre','code')
+            def handle_endtag(self,t):
+                if t in ('head','script','style'):self.hidden-=1
+            def handle_data(self,x):
+                if not self.hidden:self.parts.append(x)
+        for study in ('historical','live'):
+            ref=self.generate(study)
+            for raw in (self.payload(ref,'report.html'),(self.output/'entry.html').read_bytes()):
+                parser=Readable();parser.feed(raw.decode());readable=' '.join(parser.parts)
+                self.assertIsNone(re.search(r'(?<![\w.])\d+\.\d{3,}',readable))
+                self.assertNotIn('{',readable);self.assertNotIn('StandaloneAnalyticalReport:',readable)
+                if 'No validated report available' not in readable:self.assertIn('Calendar coverage',readable)
+                self.assertIn('Download',readable)
+
+    def test_v2_renderer_remains_byte_compatible(self):
+        import forecast_reporting_presentation_v2 as old
+        with patch.object(delivery,'RENDERER','mlb-reporting-html-2'):
+            ref=self.generate()
+        before=self.inventory(self.output/'packages'/ref['package_id'])
+        self.assertIn(b'0.202',self.payload(ref,'report.html'))
+        self.verify(ref)
+        self.assertEqual(before,self.inventory(self.output/'packages'/ref['package_id']))
+
+    def test_rounded_tie_does_not_claim_a_visible_difference(self):
+        from types import SimpleNamespace
+        from dataclasses import fields
+        from forecast_reporting_presentation import summary
+        ref=self.generate()
+        report=analysis.deserialize_reporting_analysis(self.payload(ref,'analysis.json').decode())
+        projection=json.loads(self.payload(ref,'projections.json'))
+        original=report.performances[0]
+        uncertainty=SimpleNamespace(**{f.name:getattr(original.uncertainty,f.name) for f in fields(original.uncertainty)})
+        uncertainty.lower=Decimal('0.2501');uncertainty.upper=Decimal('0.2502')
+        performance=SimpleNamespace(**{f.name:getattr(original,f.name) for f in fields(original)})
+        performance.mean_brier_score=Decimal('0.2501');performance.uncertainty=uncertainty
+        # Presentation-only input: no scientific object is changed or resealed.
+        display=SimpleNamespace(context=report.context,coverages=report.coverages,performances=(performance,))
+        value=summary(display,projection,False)
+        self.assertIn('displayed scores are tied',value)
+        self.assertNotIn('higher than',value);self.assertNotIn('lower than',value)
+
+    def test_readable_calendar_and_saved_status_states(self):
+        from forecast_reporting_presentation import calendar_details,saved_reports,rounded
+        from datetime import date
+        self.assertIn('No calendar dates are recorded',calendar_details((),()))
+        self.assertIn('No unverified dates',calendar_details((date(2026,9,1),),()))
+        self.assertIn('Sep 1, 2026 through Sep 2, 2026',calendar_details((),(date(2026,9,1),date(2026,9,2))))
+        state=delivery._empty_state()
+        self.assertIn('No previous report attempt',saved_reports(state,{},'metadata.json'))
+        ref=self.generate();state=delivery.read_entry(self.output)
+        state['last_attempt']={'operation':'update-live','status':'failed','error':'source validation failed','completed_at':self.now.isoformat()}
+        readable=saved_reports(state,{'live':'live.html'},'metadata.json')
+        self.assertIn('earlier saved live report remains',readable)
+        self.assertIn('validation did not pass',readable)
+        self.assertNotIn(ref['package_id'],readable)
+        self.assertEqual(rounded(Decimal('0.123456'),8),'0.12')
+
+    def activation_pair(self):
+        historical=self.generate('historical')
+        delivery.select_historical(output=self.output,package_id=historical['package_id'],anchor_key=historical['anchor_key'],archive=self.archive,clock=lambda:self.now)
+        live=self.generate()
+        return historical,live
+
+    def test_display_activation_preserves_science_state_and_rolls_back_exactly(self):
+        from forecast_reporting_activation import activate_display,rollback_display
+        self.activation_pair();before=(self.output/'entry.html').read_bytes();state=delivery.read_entry(self.output)
+        packages=self.inventory(self.output/'packages');anchors=self.inventory(self.output/'anchors');receipts=self.inventory(self.output/'receipts')
+        with patch.object(delivery,'_revision',return_value='a'*40), \
+             patch.object(delivery,'freeze_reporting_source',side_effect=AssertionError('no source freeze')), \
+             patch.object(analysis,'create_standalone_report_analysis',side_effect=AssertionError('no scoring')), \
+             patch.object(analysis,'verify_standalone_report_analysis',side_effect=AssertionError('no source replay')):
+            receipt=activate_display(output=self.output,expected_revision='a'*40)
+            self.assertEqual(state,delivery.read_entry(self.output))
+            active=(self.output/'entry.html').read_bytes()
+            self.assertIn(b'Display updated',active);self.assertIn(b'displays/',active)
+            self.assertNotIn(b'<pre>',active)
+            self.assertEqual(packages,self.inventory(self.output/'packages'))
+            self.assertEqual(anchors,self.inventory(self.output/'anchors'))
+            self.assertEqual(receipts,self.inventory(self.output/'receipts'))
+            rollback_display(output=self.output,activation_id=receipt['activation_id'],expected_revision='a'*40)
+            self.assertEqual(before,(self.output/'entry.html').read_bytes())
+
+    def test_display_activation_requires_retained_verification_and_preserves_failure_notice(self):
+        from forecast_reporting_activation import activate_display
+        self.activation_pair()
+        state=delivery.read_entry(self.output)
+        for status in ('failed','running'):
+            state['last_attempt']={'operation':'update-live','status':status,'error':'source validation failed','started_at':self.now.isoformat()}
+            delivery._replace_entry(self.output,state)
+            with patch.object(delivery,'_revision',return_value='a'*40):activate_display(output=self.output,expected_revision='a'*40)
+            visible=self.principal_text((self.output/'entry.html').read_bytes())
+            self.assertIn('last report attempt failed' if status=='failed' else 'completion is not recorded',visible)
+            self.assertEqual(state,delivery.read_entry(self.output))
+        before=(self.output/'entry.html').read_bytes()
+        for p in (self.output/'receipts').glob('*.json'):p.unlink()
+        with patch.object(delivery,'_revision',return_value='a'*40),self.assertRaisesRegex(delivery.OperationsError,'no retained verification'):
+            activate_display(output=self.output,expected_revision='a'*40)
+        self.assertEqual(before,(self.output/'entry.html').read_bytes())
+
+    def test_display_activation_failure_before_publish_retains_current_entry(self):
+        import forecast_reporting_activation as activation
+        self.activation_pair();before=(self.output/'entry.html').read_bytes()
+        with patch.object(delivery,'_revision',return_value='a'*40),patch.object(activation,'_publish',side_effect=OSError('publication failed')),self.assertRaises(OSError):
+            activation.activate_display(output=self.output,expected_revision='a'*40)
+        self.assertEqual(before,(self.output/'entry.html').read_bytes())
 
     def test_new_principal_read_failure_cannot_select_unreadable_package(self):
         prior=self.generate();original=delivery._inspect
@@ -448,7 +561,7 @@ print(verify_package(output=root/'reports',archive=NamespaceArchive(config),pack
             self.generate()
         state=delivery.read_entry(self.output)
         self.assertEqual(state['live'],prior);self.assertEqual(state['last_attempt']['status'],'failed')
-        self.assertIn('0.202',self.principal_text((self.output/'entry.html').read_bytes()))
+        self.assertIn('0.20',self.principal_text((self.output/'entry.html').read_bytes()))
 
 
 if __name__=='__main__':unittest.main()
