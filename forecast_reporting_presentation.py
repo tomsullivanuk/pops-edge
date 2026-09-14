@@ -46,7 +46,7 @@ main{max-width:940px;margin:0 auto;padding:40px 24px 60px}h1{font-size:2.2rem;le
 </style></head><body><main><p class="eyebrow">Pops’ Edge · MLB</p><h1>'''+text(title)+'</h1>'+body+'</main></body></html>').encode()
 
 
-def summary(report, projections, synthetic):
+def summary(report, projections, synthetic, collection_status=None):
     context=report.context;spec=context.computation
     coverage=report.coverages[0];performance=report.performances[0];projection=projections['scopes'][0]
     historical=spec.design_tag.value=='retrospective'
@@ -116,7 +116,7 @@ def summary(report, projections, synthetic):
             body+='<p>Which eligible games had a qualifying market is not fully known, so offered-market coverage rates are unavailable.</p>'
     else:
         body+='<p>Missed live captures cannot be reconstructed later. Future known games remain visible even before their capture is due.</p>'
-    body+='<p class="muted">Collection status: unavailable. This saved report does not certify current collection health.</p></section>'
+    body+=('<p class="muted">Collection status: unavailable. This saved report does not certify current collection health.</p>' if collection_status is None else collection_status)+'</section>'
     return body
 
 

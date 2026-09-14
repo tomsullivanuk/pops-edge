@@ -1446,15 +1446,15 @@ def build_health_report(*,archive:NamespaceArchive,trusted_at:datetime,scheduler
     return HealthReport(ACTIVATION_SCHEMA_VERSION,archive.config.identity,archive.config.namespace,trusted_at,APPROVED_TIMEZONE,"active" if trusted_at>=APPROVED_ACTIVATION_AT else "staged",scheduler_age,last_collector_at,due_opportunities,provider_calls,typed_dispositions,integrity.healthy,len(integrity.referenced_missing),len(integrity.referenced_corrupt),len(integrity.malformed),len(integrity.incompatible),len(integrity.partial),len(integrity.orphaned),idx,secondary.get("lag",0),secondary_age,free_disk_bytes,failures,ready,secondary_conflicts=secondary.get("conflicts",0),secondary_unexplained=secondary.get("unexplained",0))
 
 
-def health_from_operational_state(*,archive:NamespaceArchive,state:OperationalState,trusted_at:datetime,free_disk:Callable[[Any],int])->HealthReport:
+def operational_observations(entries, trusted_at):
+    """Existing invocation health rules, without archive reads or writes."""
     from forecast_operational_lifecycle import SUCCESS
-    entries=state.entries();latest={};valid={}
+    latest={};valid={}
     for item in entries:
         if item.started_at>item.completed_at or item.completed_at>trusted_at:raise OperationsError("trusted-clock-invalid","heartbeat chronology is future-dated or reversed")
         if item.command not in latest or latest[item.command].completed_at<item.completed_at:latest[item.command]=item
         if item.disposition in SUCCESS and item.failure_code is None:
             if item.command not in valid or valid[item.command].completed_at<item.completed_at:valid[item.command]=item
-    collector=latest.get("capture-prospective");secondary=valid.get("sync-secondary")
     age=lambda command:None if command not in valid else int((trusted_at-valid[command].completed_at).total_seconds())
     recent=tuple(x for x in entries if (trusted_at-x.completed_at).total_seconds()<=90_000)
     failed=tuple(x for x in recent if x.failure_code or x.disposition not in SUCCESS|{"skipped-cycle"})
@@ -1462,19 +1462,14 @@ def health_from_operational_state(*,archive:NamespaceArchive,state:OperationalSt
     failures=tuple(sorted(label(x) for x in failed))
     superseded=tuple(sorted(label(x) for x in failed if x.command in valid and valid[x.command].completed_at>x.completed_at))
     skips=tuple(sorted(f"{x.command}:{x.completed_at.isoformat()}:skipped-cycle" for x in recent if x.disposition=="skipped-cycle"))
-    from forecast_prospective_projection import projection_status, _read
-    projection=projection_status(archive,trusted_at)
-    boundary=tuple(_read(archive)["source_manifest_ids"]) if projection in {"current","stale"} else ()
     blockers=[]
-    if projection not in {"current","stale"}:blockers.append(f"prospective-projection:{projection}")
-    base=build_health_report(archive=archive,trusted_at=trusted_at,scheduler_at=collector.completed_at if collector else None,last_collector_at=valid["capture-prospective"].completed_at if "capture-prospective" in valid else None,due_opportunities=collector.due_opportunities if collector else None,provider_calls=collector.provider_calls if collector else None,typed_dispositions=collector.typed_dispositions if collector else None,secondary_synced_at=secondary.completed_at if secondary else None,free_disk_bytes=free_disk(archive.root),recent_failures=(*failures,*blockers))
     supporting,outcome=age("refresh-supporting"),age("reconcile-outcomes")
     inspection=age("rebuild-prospective-projection")
     if inspection is None:inspection=age("maintain")
     index_age=age("rebuild-index")
     if index_age is None:index_age=age("maintain")
     skipped_hour=any(x.command in {"lifecycle-cycle","lifecycle-hour"} and x.disposition=="skipped-cycle" and (trusted_at-x.completed_at).total_seconds()<=7200 for x in recent)
-    required=(("capture-prospective",age("capture-prospective"),90),("refresh-supporting",supporting,7500 if skipped_hour else 3900),("reconcile-outcomes",outcome,90000),("archive-audit",inspection,90000),("index",index_age,90000),("sync-secondary",base.secondary_age_seconds,90000))
+    required=(("capture-prospective",age("capture-prospective"),90),("refresh-supporting",supporting,7500 if skipped_hour else 3900),("reconcile-outcomes",outcome,90000),("archive-audit",inspection,90000),("index",index_age,90000),("sync-secondary",age("sync-secondary"),90000))
     for command,value,limit in required:
         if value is None or value>limit:blockers.append(f"{command}:stale-or-absent")
     for command in ("capture-prospective","refresh-supporting","reconcile-outcomes","rebuild-prospective-projection","refresh-prospective-projection","rebuild-index","sync-secondary"):
@@ -1484,8 +1479,24 @@ def health_from_operational_state(*,archive:NamespaceArchive,state:OperationalSt
             other="rebuild-prospective-projection" if command=="refresh-prospective-projection" else "refresh-prospective-projection" if command=="rebuild-prospective-projection" else None
             if other in valid and valid[other].completed_at>item.completed_at:continue
             blockers.append(label(item))
+    return dict(latest=latest,valid=valid,failures=failures,superseded=superseded,skips=skips,
+        blockers=blockers,supporting=supporting,outcome=outcome,inspection=inspection,index_age=index_age)
+
+
+def health_from_operational_state(*,archive:NamespaceArchive,state:OperationalState,trusted_at:datetime,free_disk:Callable[[Any],int])->HealthReport:
+    observed=operational_observations(state.entries(),trusted_at)
+    latest,valid=observed["latest"],observed["valid"]
+    failures,superseded,skips=(observed[key] for key in ("failures","superseded","skips"))
+    collector=latest.get("capture-prospective");secondary=valid.get("sync-secondary")
+    from forecast_prospective_projection import projection_status, _read
+    projection=projection_status(archive,trusted_at)
+    boundary=tuple(_read(archive)["source_manifest_ids"]) if projection in {"current","stale"} else ()
+    blockers=[]
+    if projection not in {"current","stale"}:blockers.append(f"prospective-projection:{projection}")
+    base=build_health_report(archive=archive,trusted_at=trusted_at,scheduler_at=collector.completed_at if collector else None,last_collector_at=valid["capture-prospective"].completed_at if "capture-prospective" in valid else None,due_opportunities=collector.due_opportunities if collector else None,provider_calls=collector.provider_calls if collector else None,typed_dispositions=collector.typed_dispositions if collector else None,secondary_synced_at=secondary.completed_at if secondary else None,free_disk_bytes=free_disk(archive.root),recent_failures=(*failures,*blockers))
+    blockers.extend(observed["blockers"])
     if base.secondary_conflicts or base.secondary_unexplained:blockers.append("secondary:conflict-or-unexplained")
     if not base.archive_healthy:blockers.append("archive:integrity-unresolved")
     if base.index_state not in {"healthy","append-only-lag"}:blockers.append(f"index:{base.index_state}")
     if base.free_disk_bytes<=100_000_000:blockers.append("storage:insufficient")
-    return __import__('dataclasses').replace(base,ready=base.ready and not blockers,supporting_age_seconds=supporting,outcome_age_seconds=outcome,inspection_age_seconds=inspection,index_rebuild_age_seconds=index_age,health_generated_at=trusted_at,command_dispositions=tuple(sorted((name,item.disposition) for name,item in latest.items())),checkpoint_state=projection,checkpoint_source_boundary=boundary,current_blockers=tuple(sorted(set(blockers))),superseded_failures=superseded,recent_skips=skips,last_valid_completions=tuple(sorted((name,item.completed_at) for name,item in valid.items())))
+    return __import__('dataclasses').replace(base,ready=base.ready and not blockers,supporting_age_seconds=observed["supporting"],outcome_age_seconds=observed["outcome"],inspection_age_seconds=observed["inspection"],index_rebuild_age_seconds=observed["index_age"],health_generated_at=trusted_at,command_dispositions=tuple(sorted((name,item.disposition) for name,item in latest.items())),checkpoint_state=projection,checkpoint_source_boundary=boundary,current_blockers=tuple(sorted(set(blockers))),superseded_failures=superseded,recent_skips=skips,last_valid_completions=tuple(sorted((name,item.completed_at) for name,item in valid.items())))

@@ -527,6 +527,42 @@ print(verify_package(output=root/'reports',archive=NamespaceArchive(config),pack
             rollback_display(output=self.output,activation_id=receipt['activation_id'],expected_revision='a'*40)
             self.assertEqual(before,(self.output/'entry.html').read_bytes())
 
+    def test_collection_refresh_preserves_science_and_open_is_frozen(self):
+        from forecast_reporting_activation import activate_display
+        from forecast_standalone_activation import OperationalState,OperationalHeartbeat
+        self.activation_pair();state=delivery.read_entry(self.output)
+        records=OperationalState(self.root/'operational-state')
+        for name in ('capture-prospective','refresh-supporting','reconcile-outcomes','rebuild-prospective-projection','rebuild-index','sync-secondary'):
+            records.append(OperationalHeartbeat('1',name,self.now,self.now,'success',0,None,None,None))
+        immutable={name:self.inventory(self.output/name) for name in ('packages','anchors','receipts')}
+        source=self.inventory(self.archive.root);operations=self.inventory(records.root)
+        with patch.object(delivery,'_revision',return_value='a'*40), \
+             patch.object(delivery,'utc_now',return_value=self.now+timedelta(seconds=1)), \
+             patch.object(delivery,'freeze_reporting_source',side_effect=AssertionError('no source freeze')), \
+             patch.object(analysis,'create_standalone_report_analysis',side_effect=AssertionError('no scoring')), \
+             patch.object(OperationalState,'append',side_effect=AssertionError('no heartbeat')), \
+             patch('socket.socket',side_effect=AssertionError('no network')):
+            receipt=activate_display(output=self.output,expected_revision='a'*40,operational_state=records.root)
+            target=self.output/'displays'/receipt['activation_id']
+            for name in ('live.html','historical.html'):
+                html=(target/name).read_text()
+                self.assertIn('No invocation blockers observed',html)
+                self.assertNotIn('Collection status: unavailable',html)
+                self.assertIn('recovery.html',html)
+            self.assertEqual(state,delivery.read_entry(self.output))
+            before=self.inventory(self.output)
+            delivery.open_saved(output=self.output,opener=lambda url:True)
+            self.assertEqual(before,self.inventory(self.output))
+            # Malformed operational data must not prevent a display refresh.
+            (records.root/'bad.json').write_text('{}')
+            activate_display(output=self.output,expected_revision='a'*40,operational_state=records.root)
+            self.assertIn('Collection status unavailable',(self.output/'entry.html').read_text())
+            self.assertEqual(state,delivery.read_entry(self.output))
+            (records.root/'bad.json').unlink()
+        for name,values in immutable.items():self.assertEqual(values,self.inventory(self.output/name))
+        self.assertEqual(source,self.inventory(self.archive.root))
+        self.assertEqual(operations,self.inventory(records.root))
+
     def test_display_activation_requires_retained_verification_and_preserves_failure_notice(self):
         from forecast_reporting_activation import activate_display
         self.activation_pair()

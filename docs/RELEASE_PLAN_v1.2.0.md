@@ -96,3 +96,29 @@ activation. The [amendment review](MLB_REPORTING_AMENDMENT_REVIEW_v1.2.0.md) and
 this next bounded gate. Earlier uncommitted/unapproved status statements above are
 historical. The eventual PR and local activation receipt record actual completion;
 whole-v1.2 release, collector deployment and study closure remain separate.
+
+
+### Actual reporting completion and bounded correction — September 14, 2026
+
+PR #51 merged the accepted delivery and readable activation at
+`0d8e18248d190a0bf4bf30185ece4427dd371a9f`. The original independent review,
+amendment review and 906-test local compatibility result are retained evidence.
+The normal local entry was activated from that clean merged revision using both
+previously verified acquired-data packages. The dated local receipt is
+`/Users/tom/PopsEdgeReports/mlb/activation/2026-09-14-pr51/COMPLETION.md`.
+Earlier future-gate wording is historical; reporting integration and that activation
+are complete. No fresh scientific computation was performed during activation.
+
+The remaining collection-status gap is addressed by a separate local implementation
+candidate: read existing sanitized invocation records, share the existing health
+classification/cadence rules, expose separately dated valid completions, current
+invocation blockers, skips and the last recorded health outcome. It does not repeat
+archive/secondary/checkpoint/disk audits or assert overall live readiness. Status
+absence, invalidity or staleness leaves saved scientific results intact. Opening
+remains frozen; an explicit display refresh preserves all scientific dates and state.
+This uses the already approved status boundary, not a new operational health engine.
+
+The [current operator guide](MLB_REPORTING_DELIVERY_API_v1.2.0.md) documents manual
+status refresh separately from live scientific update. This correction still needs
+bounded review and separately authorized integration/activation. Whole-v1.2 release
+readiness remains its own decision; VERSION stays 1.1.0 and NFL is unchanged.

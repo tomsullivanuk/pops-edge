@@ -25,6 +25,7 @@ def main(argv=None):
     for command in ('activate-display','rollback-display'):
         item=sub.add_parser(command);item.add_argument('--expected-revision',required=True)
         if command=='rollback-display':item.add_argument('--activation',required=True)
+        else:item.add_argument('--operational-state',type=Path,help='existing sanitized invocation directory; read only')
     item = sub.add_parser('open'); item.add_argument('--package')
     sub.add_parser('status')
     args = parser.parse_args(argv)
@@ -35,7 +36,7 @@ def main(argv=None):
             print(json.dumps(delivery.read_entry(args.output), indent=2)); return 0
         if args.command in {'activate-display','rollback-display'}:
             from forecast_reporting_activation import activate_display,rollback_display
-            value=(activate_display(output=args.output,expected_revision=args.expected_revision) if args.command=='activate-display' else
+            value=(activate_display(output=args.output,expected_revision=args.expected_revision,operational_state=args.operational_state) if args.command=='activate-display' else
                    rollback_display(output=args.output,activation_id=args.activation,expected_revision=args.expected_revision))
             print(json.dumps(value,indent=2));return 0
         archive = NamespaceArchive(DeploymentConfig.from_json(args.config))
