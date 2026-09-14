@@ -120,6 +120,12 @@ as one comparison. Label history and its capture date (including year and Centra
 timezone) in the principal table. Historical values must not count as current
 comparisons or participate in current difference filters/ranking.
 
+Manual column-header sorting is separate from current-opportunity ranking:
+ELWAY Contract, Kalshi price and Difference after fee sort all displayed numeric
+values, including historical comparisons, in either direction using full precision.
+Historical values remain excluded from current counts, difference filters and
+the initial current-opportunity ordering. Truly missing values stay last.
+
 Read complete saved board bundles and replay before using historical values.
 Match the exact game ID, participants, neutral designation, kickoff and outcome.
 Select the latest saved comparison by original generation time; same-time

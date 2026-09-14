@@ -64,7 +64,18 @@ class HistoricalComparisonTests(unittest.TestCase):
         self.assertIn('Captured 09/09/2026 10:00 AM CDT', html)
         self.assertIn('current comparable outcomes', html)
         self.assertIn('data-gap=""', html)
-        self.assertIn('<td class="num gap" data-sort="">', html)
+        from decimal import Decimal
+        from html.parser import HTMLParser
+        class Table(HTMLParser):
+            def __init__(self): super().__init__(); self.groups=[]; self.cells=[]
+            def handle_starttag(self, tag, attrs):
+                if tag == 'tbody': self.groups.append(dict(attrs))
+                if tag == 'td': self.cells.append(dict(attrs))
+        table=Table();table.feed(html)
+        expected_gap=str(Decimal(h['outcome']['payout']['central'])-Decimal(h['route']['cost']['total']))
+        self.assertTrue(all(g['data-gap']=='' for g in table.groups))
+        for value in (h['outcome']['payout']['central'], h['route']['cost']['price'], expected_gap):
+            self.assertIn(value, [c.get('data-sort') for c in table.cells])
         self.assertIn('Latest snapshot ELWAY win:', html)
 
     def test_aging_without_refresh_and_fresh_current_precedence(self):

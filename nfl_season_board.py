@@ -105,13 +105,13 @@ def render(data):
                 gap=Decimal(value['central'])-Decimal(route['cost']['total'])
                 main,rest=section.split('</tr>',1)
                 cells=list(re.finditer(r'<td\b[^>]*>.*?</td>',main,re.S))
-                # Keep current comparison sort/filter keys empty. History has no
-                # current eligibility, even though its old difference is shown.
+                # Manual sorts use full-precision values; tbody data-gap stays empty
+                # so historical rows remain outside current filters and counts.
                 replacements=[
                     '<td><span class="contract">'+esc(route['side'].upper()+' '+route['yes_team'])+'</span><small>Historical comparison</small></td>',
-                    '<td class="num" data-sort="">'+dollars(value['central'])+'<small>Historical ELWAY</small></td>',
-                    '<td class="num" data-sort="">'+dollars(route['cost']['price'])+'<small>Captured '+esc(display_time(route['book_received_at']))+'</small></td>',
-                    '<td class="num gap" data-sort="">'+dollars(gap,True)+'<small>Historical</small></td>']
+                    '<td class="num" data-sort="'+esc(value['central'])+'">'+dollars(value['central'])+'<small>Historical ELWAY</small></td>',
+                    '<td class="num" data-sort="'+esc(route['cost']['price'])+'">'+dollars(route['cost']['price'])+'<small>Captured '+esc(display_time(route['book_received_at']))+'</small></td>',
+                    '<td class="num gap" data-sort="'+esc(gap)+'">'+dollars(gap,True)+'<small>Historical</small></td>']
                 for index in range(6,2,-1):
                     cell=cells[index];main=main[:cell.start()]+replacements[index-3]+main[cell.end():]
                 detail=('<p><b>Historical comparison</b> · quote captured '+esc(display_time(route['book_received_at']))+
