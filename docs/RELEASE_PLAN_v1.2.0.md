@@ -1,6 +1,7 @@
 # MLB v1.2.0 — focused release plan
 
-Status: documentation-only candidate, September 12, 2026. Based on main
+Status: implementation in progress, updated September 13, 2026. Original
+documentation baseline (September 12) was main
 `1f1c033f7b0250f390aee597f85246cbdeba564c`, the
 [September 12 direction](RELEASE_DIRECTION_2026-09-12.md) and the
 [reporting contract](MLB_REPORTING_CONTRACT_v1.2.0.md).
@@ -54,3 +55,44 @@ fitted baselines or additional statistics, cloud operation and all excluded
 supplier/model/policy/wagering work above. The usual independent review, amendment
 and release-readiness review budget applies; P2/P3 refinements do not become new
 must-hold conditions without concrete evidence of a governing violation.
+
+## Implementation progress — September 13, 2026
+
+Reporting authority is recorded in PR #48. Frozen source authority (PR #49) and
+successor Analysis (PR #50) have separate recorded independent acceptance.
+The archive-to-report delivery candidate adds independently anchored immutable
+packages, deterministic descriptive projections, basic self-contained HTML and
+safe manual separate report references. See the [delivery API/operator guide](MLB_REPORTING_DELIVERY_API_v1.2.0.md)
+and [implementation review](MLB_REPORTING_DELIVERY_REVIEW_v1.2.0.md).
+This candidate is local and uncommitted; its self-validation is not independent
+acceptance, integration, commissioning or production publication.
+
+The original recommendation for separating governing documentation from code has
+been satisfied by the preceding authority gate. Focused operator/API documentation
+and this factual progress update accompany the bounded delivery implementation.
+Polished reader, separately authorized local commissioning, independent acceptance
+and release-readiness work remain. Original study closure/final-report obligations
+remain unchanged; neither v1.2 nor either study is declared complete.
+
+### Owner usability correction — September 13, 2026
+
+Before independent implementation review, the Owner approved replacing the principal
+technical export with a simple Performance Report and collapsed Details, plus local
+generation from already acquired MLB data. See the [durable decision](MLB_SIMPLE_REPORT_DECISION_v1.2.0.md).
+This advances the bounded presentation hierarchy within the existing candidate;
+it does not create the shared shell or alter scientific rules. Prior PDF acceptance
+established rendering only and does not override the Owner's usability correction.
+Acquired-data reads/generation are authorized, but the clean code-revision prerequisite
+remains; commit/integration and deployment are not inferred from that authorization.
+
+### Bounded reporting integration/activation gate
+
+The original delivery received separate independent acceptance and local commit
+`20c1a009c59dd88c5796e933adc5b62adf509195`; actual historical and live acquired-data
+packages were generated and exactly verified. The Owner then approved two-decimal,
+readable drill-downs and explicitly authorized integration plus normal local entry
+activation. The [amendment review](MLB_REPORTING_AMENDMENT_REVIEW_v1.2.0.md) and
+[integration/activation handoff](MLB_REPORTING_INTEGRATION_ACTIVATION_v1.2.0.md) govern
+this next bounded gate. Earlier uncommitted/unapproved status statements above are
+historical. The eventual PR and local activation receipt record actual completion;
+whole-v1.2 release, collector deployment and study closure remain separate.

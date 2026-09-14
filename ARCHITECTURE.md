@@ -1937,3 +1937,12 @@ No server, shared application shell, queue, generic version store or recovery
 framework is required. See the contract for exact context, identity, failure and
 legacy-compatibility requirements. Code, operational use and release remain later,
 separately authorized gates.
+
+The later Owner-authorized local display activation re-renders selected, previously
+verified packages without repeating source replay or changing scientific authority.
+It preserves the exact current selection and last-generation-attempt state in the
+mutable entry, while recording separate display chronology and retaining a guarded
+previous-entry backup. Readable live/historical displays remain derived presentations;
+old package renderers remain available for exact replay. This bounded activation
+requires a clean explicit reporting revision and retained independent verification
+references, and introduces no acquisition, server or collector mutation.
