@@ -26,9 +26,13 @@ class SeasonTests(unittest.TestCase):
     def test_schedule_only_tbd_games_keep_their_week(self):
         import tempfile,json
         with tempfile.TemporaryDirectory() as d:
-            root=Path(d);folder=root/'schedules/schedule-test';folder.mkdir(parents=True)
-            r=dict(season=2026,week=18,error=None,completed_at='2026-09-10T20:00:00Z',rows=[dict(game_id='official-id',season=2026,week=18,home='SEA',away='NE',neutral=False,kickoff=None,status='SCHEDULED',venue=None)])
-            (folder/'receipt.json').write_text(json.dumps(r))
+            root=Path(d)
             c=dict(season=2026,updated_at='2026-09-09T14:51:00Z',rows=[dict(week=18,home='SEA',away='NE',neutral=False,home_win='69.9%',away_win='29.6%')])
-            with patch('nfl_season_board.board.schedule.replay',return_value=r):data=assemble(root,[],c)
-            game=data['games'][0];self.assertEqual(game['week'],18);self.assertEqual(game['display_status'],'Date/time TBD');self.assertIsNone(game['kickoff']);self.assertFalse(game['completed']);self.assertIn('Week 18 · Date/time TBD',render(data))
+            from tests.test_nfl_performance import game as fixture_game
+            import nfl_schedule
+            g=fixture_game();g.update(week=18,time=None)
+            query=dict(queryKey=['useFetchFootballWeeklyGameDetails',dict(season='2026',seasonType='REG',week=18)],state=dict(status='success',data=[g]))
+            raw=('<script>self.__next_f.push('+json.dumps([1,'0:'+json.dumps(query)+'\n'])+')</script>').encode()
+            nfl_schedule.capture(root/'schedules',2026,18,transport=lambda _: (200,raw),clock=lambda:'2026-09-10T20:00:00Z')
+            data=assemble(root,[],c)
+            game=data['games'][0];self.assertEqual(game['week'],18);self.assertEqual(game['display_status'],'Date/time TBD');self.assertIsNone(game['kickoff']);self.assertFalse(game['completed']);self.assertIn('TBD · Week 18<small>',render(data));self.assertIn('Date/time TBD</small>',render(data))
