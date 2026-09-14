@@ -1,12 +1,14 @@
 """Full-season presentation over immutable weekly snapshots and workbook rows."""
 from copy import deepcopy
 import json
+import re
 from decimal import Decimal
 from pathlib import Path
 import nfl_comparison_board as board
 import nfl_excel_import as excel
 import nfl_forecast_import as source
-from nfl_board_view import render as weekly_render,esc,display_time
+from nfl_board_view import render as weekly_render,esc,display_time,dollars
+from nfl_historical_comparisons import attach_history
 
 
 def assemble(data_root,folders,candidate=None,now=None):
@@ -78,7 +80,8 @@ def assemble(data_root,folders,candidate=None,now=None):
             g['issues']=['Date/time TBD. Awaiting the NFL schedule; no action needed.']
             g['source_note']+=' · Official schedule received '+display_time(at)
         games.append(g)
-    result=dict(schema='nfl-season-view-v1',season=season,week='All',generated_at=now,games=games,guards=board.GUARDS,scheduled_games=len(games),ranked_games=sum(any(r['usable'] for o in g['outcomes'] for r in o['routes']) for g in games),diagnostics=[],forecast_updated_at=candidate['updated_at'],forecast_verified_at=None,schedule_received_at=None,capture_started_at=now,capture_completed_at=now)
+    history_issues=attach_history(root,games,list(zip(folders,snapshots)),now)
+    result=dict(schema='nfl-season-view-v1',season=season,week='All',generated_at=now,games=games,guards=board.GUARDS,scheduled_games=len(games),ranked_games=sum(any(r['usable'] for o in g['outcomes'] for r in o['routes']) for g in games),diagnostics=history_issues,forecast_updated_at=candidate['updated_at'],forecast_verified_at=None,schedule_received_at=None,capture_started_at=now,capture_completed_at=now)
     if activity:result['activity']=activity
     return result
 
@@ -96,6 +99,34 @@ def render(data):
             section=html[start:end];section=section.replace(match+'</td>',match+'<small>Week '+str(g['week'])+(' · '+esc(g['display_status']) if g['display_status']!='Captured prices' else '')+'</small></td>')
             if g['neutral']:section=section.replace('<small>Neutral site</small>','<small>Week '+str(g['week'])+' · Neutral'+(' · '+esc(g['display_status']) if g['display_status']!='Captured prices' else '')+'</small>')
             section=section.replace('<p>ELWAY win:', '<p>'+esc(g['source_note'])+'</p><p>ELWAY win:')
+            historical=o.get('historical')
+            if historical:
+                route=historical['route'];value=historical['outcome']['payout']
+                gap=Decimal(value['central'])-Decimal(route['cost']['total'])
+                main,rest=section.split('</tr>',1)
+                cells=list(re.finditer(r'<td\b[^>]*>.*?</td>',main,re.S))
+                # Keep current comparison sort/filter keys empty. History has no
+                # current eligibility, even though its old difference is shown.
+                replacements=[
+                    '<td><span class="contract">'+esc(route['side'].upper()+' '+route['yes_team'])+'</span><small>Historical comparison</small></td>',
+                    '<td class="num" data-sort="">'+dollars(value['central'])+'<small>Historical ELWAY</small></td>',
+                    '<td class="num" data-sort="">'+dollars(route['cost']['price'])+'<small>Captured '+esc(display_time(route['book_received_at']))+'</small></td>',
+                    '<td class="num gap" data-sort="">'+dollars(gap,True)+'<small>Historical</small></td>']
+                for index in range(6,2,-1):
+                    cell=cells[index];main=main[:cell.start()]+replacements[index-3]+main[cell.end():]
+                detail=('<p><b>Historical comparison</b> · quote captured '+esc(display_time(route['book_received_at']))+
+                        ' · ELWAY updated '+esc(display_time(historical['forecast_updated_at']))+
+                        ' · verified '+esc(display_time(historical['forecast_verified_at']))+'.</p><p>'+esc(route['ticker'])+
+                        ' · '+esc(route['side'].upper())+' · original ELWAY win '+esc(historical['outcome']['displayed_win'])+
+                        ' · original contract value '+dollars(value['central'])+' · estimated fee '+dollars(route['cost']['estimated_fee'])+
+                        ' · total one-contract cost '+dollars(route['cost']['total'])+'. '+esc(historical['fee_model'])+
+                        '. These saved values are excluded from current comparisons and difference filters.</p><p>Saved source: '+esc(historical['source_bundle'])+'</p>')
+                rest=rest.replace('<td colspan="10">','<td colspan="10">'+detail,1)
+                rest=rest.replace('<p>ELWAY win:', '<p>Latest snapshot ELWAY win:')
+                rest=rest.replace('<p>ELWAY payout range:', '<p>Latest snapshot ELWAY payout range:')
+                section=main+'</tr>'+rest
+            elif not any(r['usable'] for r in o['routes']):
+                section=section.replace('<td>—</td>','<td>—<small>No saved pregame comparison</small></td>',1)
             html=html[:start]+section+html[end:]
     weeks=sorted({g['week'] for g in data['games']});teams=sorted({g[k] for g in data['games'] for k in ('home','away')})
     controls='<label>Week <select id="seasonWeek"><option value="">All weeks</option>'+''.join(f'<option>{w}</option>' for w in weeks)+'</select></label><label>Team <select id="seasonTeam"><option value="">All teams</option>'+''.join('<option>'+t+'</option>' for t in teams)+'</select></label>'
@@ -113,11 +144,14 @@ def render(data):
     html=html[:a]+html[b:]
     html=html.replace("let n=0;groups.forEach", "const week=document.getElementById('seasonWeek').value,team=document.getElementById('seasonTeam').value,omitCompleted=document.getElementById('omitCompleted').checked;let n=0;groups.forEach")
     html=html.replace("g.hidden=!g.dataset.search.includes(term)","g.hidden=(week!==''&&g.dataset.week!==week)||(team!==''&&!g.dataset.search.split(' ').includes(team))||(omitCompleted&&g.dataset.completed==='true')||!g.dataset.search.includes(term)")
-    html=html.replace("document.getElementById('count').textContent=n+' outcomes shown';", "const visible=groups.filter(g=>!g.hidden),gaps=visible.filter(g=>g.dataset.gap!=='').map(g=>Number(g.dataset.gap));document.getElementById('count').textContent=new Set(visible.map(g=>g.dataset.game)).size+' games · '+n+' outcomes shown · '+gaps.length+' comparable outcomes';")
+    html=html.replace("document.getElementById('count').textContent=n+' outcomes shown';", "const visible=groups.filter(g=>!g.hidden),gaps=visible.filter(g=>g.dataset.gap!=='').map(g=>Number(g.dataset.gap));document.getElementById('count').textContent=new Set(visible.map(g=>g.dataset.game)).size+' games · '+n+' outcomes shown · '+gaps.length+' current comparable outcomes';")
     extra="document.querySelectorAll('#seasonWeek,#seasonTeam,#omitCompleted').forEach(e=>e.addEventListener('change',filter));"
     html=html.replace('</script>',extra+'</script>')
     # A composite view has no single source capture or verification time.
     a=html.index('<p>ELWAY updated:');b=html.index('</p>',a)+4
     html=html[:a]+'<p>Full-season view assembled: '+esc(display_time(data['generated_at']))+'. Individual game source times appear in Details. Price captures vary by week; archived prices are excluded from positive differences. Filtering does not refresh prices. Workbook-only games show probabilities as an unverified preview; no contract value or difference is inferred.</p>'+html[b:]
     html=html.replace('<p><a href="comparison.json">Saved comparison data</a> · <a href="complete.json">Manifest</a></p>','')
+    html=html.replace('Missing or excluded quotes stay at the bottom and have no numeric difference.', 'Historical comparisons retain their original values and dated quote, but stay outside current comparison ranking and difference filters. Missing comparisons stay unavailable.')
+    if data['diagnostics']:
+        html=html.replace('<div class="scroll">','<p class="reason">Some saved history could not be verified. See calculation notes for details.</p><div class="scroll">',1)
     return html

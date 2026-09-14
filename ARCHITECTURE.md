@@ -28,6 +28,13 @@ See [refresh guide](docs/NFL_REFRESH_GUIDE.md),
 
 ## Purpose and authority
 
+The season presentation may read earlier immutable board bundles for the
+Owner-approved [historical comparison correction](docs/NFL_BOARD_SLICE.md).
+Replay validates a historical source before display; its original quote, forecast
+and fee basis remain paired. Historical display never restores current quote
+eligibility or mutates saved weekly outputs. The existing acquisition, accounting,
+completion and research paths retain their authority and behavior.
+
 This document defines how Pops' Edge realizes the capabilities in [`docs/PRODUCT.md`](docs/PRODUCT.md). Architecture realizes the Product; it does not redefine it.
 
 [`EMPIRICAL_RESEARCH_METHODOLOGY.md`](EMPIRICAL_RESEARCH_METHODOLOGY.md) is the governing methodological authority. It defines how empirical knowledge is created and interpreted. The Product defines the required capabilities, this document defines their architectural boundaries, and implementation conforms to those boundaries:
