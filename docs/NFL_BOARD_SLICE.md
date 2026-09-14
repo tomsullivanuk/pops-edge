@@ -110,3 +110,32 @@ supersede the earlier screenshot-only and card/presentation assumptions:
 Current operator details are in the [refresh guide](NFL_REFRESH_GUIDE.md).
 Existing source bundles are not rewritten by a presentation update. These
 changes do not authorize research activation, execution, release or deployment.
+
+## Historical season comparisons — September 14, 2026 correction
+
+Owner-approved scope: when a season outcome has no current eligible comparison,
+display its latest valid saved pregame comparison as historical. Preserve the
+original contract, offer, ELWAY probability/value, estimated fee and source dates
+as one comparison. Label history and its capture date (including year and Central
+timezone) in the principal table. Historical values must not count as current
+comparisons or participate in current difference filters/ranking.
+
+Read complete saved board bundles and replay before using historical values.
+Match the exact game ID, participants, neutral designation, kickoff and outcome.
+Select the latest saved comparison by original generation time; same-time
+conflicting comparisons remain unavailable. Keep missing history explicit and
+disclose invalid historical bundles. Do not make fresh provider requests or
+rewrite earlier reports, imports or research baselines. Keep the original weekly
+renderer and saved JSON/HTML replay unchanged. Current activity/accounting and
+game-completion decisions remain independent of historical comparison selection.
+
+Accepted limitations: history requires retained bundles and unchanged game
+identity/kickoff. A rescheduled or undated game does not borrow the former date's
+comparison. Selection remains on load/reload, with no new background polling,
+database or generalized archive service. Cash-flow accounting, completion sources,
+research baseline changes and deployment are separate slices.
+
+Validation must cover fresh current precedence, aging without refresh, a later
+empty snapshot, per-outcome history, changed forecast values, identity/date
+mismatch, missing/invalid/conflicting history, completed-game display, current
+filter/count exclusion, and exact preservation/replay of saved reports.

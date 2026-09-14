@@ -28,6 +28,13 @@ See [refresh guide](NFL_REFRESH_GUIDE.md),
 
 ## Visual identity
 
+The September 14 historical-comparison correction retains dated pregame values
+in the season table when current quotes are unavailable. Original ELWAY values,
+contracts and fee assumptions travel with the saved quote. Historical comparisons
+are explicitly labelled and excluded from current comparison counts and difference
+filters. See [the comparison boundary](NFL_BOARD_SLICE.md). This does not change
+accounting, completion evidence or research baselines.
+
 The Product Owner approved the navy-and-green NFL design on September 12, 2026.
 [Brand guidelines](NFL_BRAND_GUIDELINES.md) are the durable visual specification
 for Pops’ Edge, first applied to the NFL workspace. Use the PE mark, bold wordmark,
