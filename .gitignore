@@ -19,6 +19,7 @@ env/
 *.xlsm
 *.html
 !nfl_refresh.html
+!mlb_odds.html
 !tests/fixtures/dratings_mlb_snapshot_2026-07-31.html
 ~$*
 

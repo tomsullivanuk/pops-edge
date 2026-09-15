@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pops’ Edge · MLB Bet Sheet</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f2f5f8;color:#213247;font:15px system-ui,sans-serif}
+.workspace{max-width:1460px;margin:auto;padding:28px}h1{font-size:28px;margin:0}.brand-header{display:flex;align-items:center;gap:12px;margin-bottom:22px}.brand-header svg{width:46px;height:46px}
+nav{display:flex;align-items:center;gap:10px;margin:14px 0 26px}nav a,nav strong{padding:9px 18px;border-radius:7px;text-decoration:none}nav strong{color:#fff;background:#0b2341}nav a{color:#0b2341;border:1px solid #ccd7df}
+.panel{background:#fff;border:1px solid #dce4eb;border-radius:12px;padding:24px;margin-bottom:20px}.heading{display:flex;justify-content:space-between;align-items:center;gap:15px}h2{margin:0 0 7px;font-size:23px}.muted{color:#526477;font-size:13px;line-height:1.6}.eyebrow{font-size:12px;font-weight:700;color:#50657b;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
+.controls{display:flex;flex-wrap:wrap;gap:14px;align-items:end;margin-top:22px}label{font-size:12px;font-weight:650;display:block}label span{display:block;margin-bottom:5px}input,select,button{font:inherit;font-size:14px;border:1px solid #c9d4de;border-radius:6px;padding:10px;background:white;color:#213247}button{cursor:pointer;font-weight:600}button.primary{background:#0b2341;color:white;padding:12px 20px}button:hover:not(:disabled){box-shadow:0 0 0 2px #18a85b}button:disabled{opacity:.5;cursor:default}.check{display:flex;gap:8px;align-items:center;padding:10px 0}.check input{width:17px;height:17px}.datebuttons{display:flex;gap:6px}a{color:#175a83}button:focus-visible,a:focus-visible,summary:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #087440;outline-offset:3px}
+.notice{border-left:4px solid #b87617;background:#fff8e9;padding:12px 15px;line-height:1.6;margin-top:14px}.notice.ok{border-color:#087440;background:#eef8f1}.notice.neutral{border-color:#76899c;background:#f4f7fa}.summary{display:flex;gap:26px;margin:22px 0 4px;font-size:13px}.summary strong{display:block;font-size:25px;color:#0b2341;font-variant-numeric:tabular-nums}.tablewrap{overflow:auto;background:white;border:1px solid #dce4eb;border-radius:12px}table{width:100%;border-collapse:collapse;min-width:880px}th{background:#0b2341;color:white;text-align:left;font-size:12px;padding:15px 16px}td{padding:19px 16px;border-bottom:1px solid #e4eaf0;vertical-align:top}td:first-child{width:160px}td.match{min-width:260px}.price{font-size:21px;font-weight:750;font-variant-numeric:tabular-nums;color:#0b2341}.teamname{display:block;font-size:12px;margin-bottom:6px;color:#53677b}.badge{display:inline-block;border-radius:5px;padding:4px 7px;background:#edf2f6;color:#3c5267;font-size:12px}.badge.good{background:#e8f6ed;color:#09603b}.blank{padding:40px 24px;text-align:center;color:#526477}details{margin-top:12px}summary{cursor:pointer;color:#175a83;font-size:13px;font-weight:600}.detailrow td{padding:0;border:0}.detailbody{padding:0 18px 20px}.detailbody details{background:#f7f9fb;padding:14px;margin:0}.details-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}.details-grid p{overflow-wrap:anywhere}.detailbody p{font-size:13px;line-height:1.6}.rule{color:#526477;max-width:900px}.links{display:flex;flex-wrap:wrap;gap:12px;font-size:13px;margin-top:12px}.bottom{margin-top:22px}.bottom details{margin-top:14px}#error:empty{display:none}[hidden]{display:none!important}.clock{color:#874e09}
+@media(max-width:700px){.workspace{padding:14px}.panel{padding:18px}.heading{align-items:start;flex-direction:column}.controls{gap:10px}.details-grid{grid-template-columns:1fr}.summary{gap:18px}.brand-header h1{font-size:23px}}
+__BRAND_CSS__
+</style></head>
+<body><main class="workspace">
+<header class="brand-header">__BRAND_MARK__<h1>Pops’ Edge</h1></header>
+<div class="eyebrow">Bet Sheet</div>
+<nav aria-label="Sport"><a href="/">NFL</a><strong aria-current="page">MLB</strong></nav>
+<section class="panel">
+<div class="heading"><div><h2>MLB Bet Sheet</h2><div class="muted">Market prices only · Before fees · No model comparison available</div></div><button id="refresh" class="primary">Refresh MLB odds</button></div>
+<div class="controls">
+<label><span>Game date · Eastern</span><input id="day" type="date"></label>
+<div class="datebuttons"><button id="today">Today</button><button id="tomorrow">Tomorrow</button><button id="reload">Reload saved sheet</button></div>
+<label><span>Team</span><select id="team"><option value="">All teams</option></select></label>
+<label class="check"><input type="checkbox" id="include" checked> Include started and completed games</label>
+</div>
+<p class="muted">Each price is an observed offer for one team YES contract paying $1 if that team wins under the supported rules. Availability can change before you act.</p>
+<div id="outcome" class="notice neutral" role="status" aria-live="polite">Loading saved information…</div>
+<div id="error" class="notice" role="alert"></div>
+<div class="summary" aria-label="Selected view counts"><div><strong id="gameCount">—</strong>Games shown</div><div><strong id="priceCount">—</strong>Current priced outcomes</div><div><strong id="gapCount">—</strong>Pregame outcomes without current prices</div></div>
+<p id="dates" class="muted"></p>
+</section>
+<section class="tablewrap" aria-label="MLB games">
+<table><thead><tr><th>Start · Eastern</th><th>Match</th><th>Away YES buy price</th><th>Home YES buy price</th><th>Status</th></tr></thead><tbody id="rows"></tbody></table>
+<div id="empty" class="blank" hidden></div>
+</section>
+<section class="panel bottom">
+<h2 style="font-size:18px">About these prices</h2>
+<p class="muted">Pregame, regular-season game winners only. Prices stop being current after five minutes or at scheduled start, whichever comes first. Opening, filtering and switching sports never retrieves new odds. Missing prices are not zero. This sheet does not show holdings, model-derived edges or betting recommendations.</p>
+<details><summary>Refresh scope, source evidence and recovery</summary><p class="muted">Refresh retrieves the official schedule and market catalog, then supported team YES books for the selected day. Team and completion filters change the view only. Each contract keeps its own capture time. Failed books remain missing; a failed schedule or catalog keeps the previous saved sheet with its original dates. Verify the local clock before restarting after a clock warning. If an attempt was interrupted, check that no other app is refreshing, then start a new manual refresh. No research data is repaired.</p><div id="downloads" class="links"></div><div id="diagnostics"></div></details>
+</section>
+</main>
+<script>
+'use strict';
+const $=id=>document.getElementById(id), token='__TOKEN__';
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const number=v=>new Intl.NumberFormat('en-US',{maximumFractionDigits:2}).format(Number(v));
+const time=v=>v?new Date(v).toLocaleString('en-US',{timeZone:'America/New_York',month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',second:'2-digit',timeZoneName:'short'}):'Unavailable';
+let data=null,requestId=0,poll=null,clockBad=false,lastStates='',wallStart=Date.now(),monoStart=performance.now();
+// Request state survives every render. Server payloads describe saved attempts,
+// not failures to read them or submit a new action from this page.
+let requestedDay='',readPending=false,readFailure=null;
+const actions=new Map();
+function loaded(){return data&&data.day===requestedDay;}
+function action(){return actions.get(requestedDay);}
+function validClock(){if(Date.now()<wallStart||Math.abs((Date.now()-wallStart)-(performance.now()-monoStart))>5000)clockBad=true;return !clockBad&&(data?.clock_ok??true);}
+function quoteState(game,q){
+ if(!q)return 'Unavailable';
+ if(!loaded()||readPending||readFailure||action()||data.error)return 'Previous saved quote';
+ if(data.attempt&&data.selected&&data.attempt.id!==data.selected.id)return 'Previous saved quote';
+ if(!validClock())return 'Clock uncertain';
+ const times=['started_at','completed_at','schedule_started_at','catalog_started_at'].map(k=>Date.parse(q[k]));
+ if(times.some(t=>!Number.isFinite(t)||t>Date.now())||times[1]<times[0])return 'Clock uncertain';
+ if(Date.now()>=Date.parse(game.start))return 'Pregame ended';
+ if(times.some(t=>Date.now()-t>=300000))return 'Stale';
+ return game.reasons.length?'Unavailable':'Current';
+}
+function pregame(g){return !g.reasons.length&&Number.isFinite(Date.parse(g.start))&&Date.now()<Date.parse(g.start);}
+function evidence(name,label){return data?.selected?`<a href="/mlb/evidence/${encodeURIComponent(data.day)}/${data.selected.id}/${name}" download>${esc(label)}</a>`:'';}
+function price(g,side){const q=g[side+'_quote'],state=quoteState(g,q);return `<span class="teamname">${esc(g[side].name)} · YES</span>`+(state==='Current'?`<span class="price">${number(q.cents)}¢</span><div class="muted">Captured ${esc(time(q.completed_at))}</div>`:`<span class="badge">${esc(state)}</span><div class="muted">${esc(q?'Saved quote in Details':g.reasons.join('; ')||g[side+'_reason'])}</div>`);}
+function quoteDetails(g,side){const q=g[side+'_quote'];if(!q)return `<p><strong>${esc(g[side].name)}</strong><br>${esc(g.reasons.join('; ')||g[side+'_reason'])}</p>`;return `<div><p><strong>${esc(g[side].name)} · YES</strong><br>${quoteState(g,q)==='Current'?'Observed':'Historical saved'} ask: ${number(q.cents)}¢ before fees · ${number(q.quantity)} contracts at this price<br>${esc(q.ticker)}<br>Request started ${esc(time(q.started_at))}<br>Response completed ${esc(time(q.completed_at))}<br>${esc(q.transformation)} (${number(Number(q.source_no_bid)*100)}¢ NO bid)</p><p class="rule">${esc(q.rules_primary)}<br>${esc(q.rules_secondary)}</p>${evidence(q.raw_file,'Download original order book')}</div>`;}
+function render(){
+ lastStates=states();
+ const savedOpen=new Set([...document.querySelectorAll('details[data-game][open]')].map(x=>x.dataset.game));
+ const result=loaded()?data.result:null,team=$('team').value;
+ let games=(result?.games||[]).filter(g=>(!team||String(g.away.id)===team||String(g.home.id)===team)&&($('include').checked||pregame(g)));
+ games.sort((a,b)=>Number(pregame(b))-Number(pregame(a))||(Date.parse(a.start)||Infinity)-(Date.parse(b.start)||Infinity)||a.id.localeCompare(b.id));
+ $('rows').innerHTML=games.map(g=>`<tr><td>${esc(time(g.start))}</td><td class="match"><strong>${esc(g.away.name)}<br><span class="muted">at</span> ${esc(g.home.name)}</strong>${g.number?`<div class="muted">Game ${g.number}</div>`:''}</td><td>${price(g,'away')}</td><td>${price(g,'home')}</td><td><span class="badge">${esc(g.official_status)}</span><p class="muted">${esc(g.reasons.join('; ')||(!pregame(g)?'Scheduled start passed; official completion not inferred.':'Pregame'))}</p></td></tr><tr class="detailrow"><td colspan="5"><div class="detailbody"><details data-game="${esc(g.id)}" ${savedOpen.has(g.id)?'open':''}><summary>Details · ${esc(g.away.name)} at ${esc(g.home.name)}</summary><p>Official game ${esc(g.game_pk)} · Schedule retrieved ${esc(time(result.schedule_started_at))}<br>Catalog retrieval began ${esc(time(result.catalog_started_at))}</p><div class="details-grid">${quoteDetails(g,'away')}${quoteDetails(g,'home')}</div></details></div></td></tr>`).join('');
+ $('empty').hidden=games.length>0;
+ $('empty').textContent=result?(result.games.length?'No games match these filters.':'The saved official schedule confirmed no games on this date.'):'No validated sheet saved for this date. Choose Refresh MLB odds to retrieve it.';
+ const priced=games.reduce((n,g)=>n+['away','home'].filter(s=>quoteState(g,g[s+'_quote'])==='Current').length,0);
+ $('gameCount').textContent=games.length;$('priceCount').textContent=priced;$('gapCount').textContent=games.filter(pregame).length*2-priced;
+ const a=loaded()?data.attempt:null,active=action();
+ $('outcome').className='notice '+(a?.state==='complete'?'ok':!a?'neutral':'');
+ $('outcome').textContent=a?`${a.state==='running'?'Refreshing':a.state==='failed'?'Refresh failed':a.state==='partial'?'Refresh completed with gaps':a.state==='interrupted'?'Unfinished refresh':'Refresh complete'} · ${a.message}${a.completed_at?' '+time(a.completed_at):''}`:'No refresh recorded for this date.';
+ if(active){
+  $('outcome').className='notice';
+  $('outcome').textContent=`${active.state==='failed'?'Refresh request failed':active.state==='pending'?'Submitting refresh':'Refresh submitted'} · ${active.message}`;
+ }else if(readPending||readFailure){
+  $('outcome').className='notice neutral';
+  $('outcome').textContent=readPending?'Loading saved information…':'Saved sheet could not be loaded for the selected date.';
+ }
+ $('dates').textContent=result?`Saved sheet for ${data.day} completed ${time(result.completed_at)}. Captures are separate observations, not simultaneous prices.`:'';
+ $('error').textContent=[readFailure,active?.state==='failed'?active.message:null,loaded()?data.error:null,!validClock()?'Local clock changed or is uncertain. Current prices withheld; check the clock and restart the app.':''].filter(Boolean).join(' ');
+ $('refresh').disabled=readPending||!loaded()||!!data.running||active?.state==='pending'||!validClock()||requestedDay<data.today||requestedDay.slice(0,4)!==data.today.slice(0,4);
+ $('reload').disabled=readPending;
+ if(!result&&(readPending||readFailure))$('empty').textContent=readPending?'Loading the selected saved date…':'No sheet loaded for the selected date. Use Reload saved sheet to try again.';
+ $('downloads').innerHTML=result?evidence('result.json','Download exact saved sheet and request receipts')+evidence('complete.json','Download integrity manifest')+result.requests.filter(r=>r.raw_file).map(r=>evidence(r.raw_file,`Download ${r.provider==='mlb'?'official schedule':r.route==='/markets'?'catalog page':'book'} ${r.sequence+1}`)).join(''):'';
+ $('diagnostics').innerHTML=result?.diagnostics.length?`<details><summary>Catalog exclusions (${result.diagnostics.length})</summary><p class="muted">These records did not establish a supported market for this sheet. A missing verified market does not establish that no market exists.</p><ul>${result.diagnostics.map(d=>`<li>${esc(d.ticker)}: ${esc(d.reason)}</li>`).join('')}</ul></details>`:'';
+}
+async function api(path,body){const response=await fetch(path,body?{method:'POST',headers:{'Content-Type':'application/json','X-Pops-Token':token},body:JSON.stringify(body)}:{});const value=await response.json();if(!response.ok)throw Error(value.error||'Local request failed');return value;}
+async function load(day){
+ const target=day||'',id=++requestId;
+ clearTimeout(poll);
+ if(target!==requestedDay)readFailure=null;
+ requestedDay=target;readPending=true;$('day').value=target;render();
+ try{
+  const value=await api('/api/mlb/day'+(target?'?date='+encodeURIComponent(target):''));
+  if(id!==requestId)return;
+  if(target&&value.day!==target)throw Error('Saved response does not match the selected date.');
+  data=value;requestedDay=value.day;readPending=false;readFailure=null;
+  if(Math.abs(Date.parse(value.now)-Date.now())>5000)clockBad=true;
+  const active=action();
+  if(active&&['submitted','failed'].includes(active.state)&&!value.running){
+   if(value.error)actions.set(value.day,{...active,state:'failed',message:value.error});
+   else if(value.attempt&&value.attempt.id!==active.baseline)actions.delete(value.day);
+  }
+  $('day').value=value.day;
+  const previous=$('team').value,teams=new Map();
+  for(const g of value.result?.games||[])for(const side of ['away','home'])teams.set(String(g[side].id),g[side].name);
+  $('team').replaceChildren(new Option('All teams',''),...[...teams].sort((a,b)=>a[1].localeCompare(b[1])).map(([key,name])=>new Option(name,key)));
+  if(teams.has(previous))$('team').value=previous;
+  render();
+  if(value.running)poll=setTimeout(()=>{if(requestedDay===value.day)load(value.day);},1200);
+ }catch(e){
+  if(id!==requestId)return;
+  readPending=false;readFailure=e.message+' Use Reload saved sheet to try again.';render();
+ }
+}
+$('refresh').onclick=async()=>{
+ if($('refresh').disabled||!loaded()||!validClock())return;
+ const day=requestedDay,baseline=data.attempt?.id;
+ const pending={state:'pending',baseline,message:`Request for ${day} is awaiting a response.`};
+ actions.set(day,pending);clearTimeout(poll);++requestId;readPending=false;render();
+ try{
+  await api('/api/mlb/refresh',{date:day});
+  actions.set(day,{state:'submitted',baseline,message:`Request for ${day} was accepted; waiting for its saved outcome.`});
+  if(requestedDay===day)await load(day);
+ }catch(e){
+  actions.set(day,{state:'failed',baseline,message:`${day}: ${e.message}. Reload saved sheet to check the outcome before retrying.`});
+  if(requestedDay===day)render();
+ }
+};
+$('reload').onclick=()=>load(requestedDay);
+$('day').onchange=()=>load($('day').value);$('team').onchange=render;$('include').onchange=render;
+$('today').onclick=()=>load(data?.today);$('tomorrow').onclick=()=>{if(data){const d=new Date(data.today+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+1);load(d.toISOString().slice(0,10));}};
+function states(){return JSON.stringify([validClock(),...(data?.result?.games||[]).map(g=>[pregame(g),quoteState(g,g.away_quote),quoteState(g,g.home_quote)])]);}
+function tick(){if(states()!==lastStates)render();}
+setInterval(()=>{if(!document.hidden)tick();},1000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)tick();});window.addEventListener('focus',tick);
+load();
+</script></body></html>

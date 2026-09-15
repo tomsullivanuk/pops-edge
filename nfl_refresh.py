@@ -10,7 +10,7 @@ import re
 import secrets
 import threading
 from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, parse_qs
 import uuid
 import webbrowser
 import nfl_excel_import as excel
@@ -210,6 +210,8 @@ class Workflow:
 
 
 def handler(workflow,token):
+    from mlb_odds_store import OddsStore
+    mlb = OddsStore(workflow.root/'Data/MLB/odds') if workflow is not None else None
     class Handler(BaseHTTPRequestHandler):
         def log_message(self,*args):pass
         def send(self,status,data,kind='application/json'):
@@ -228,6 +230,18 @@ def handler(workflow,token):
             if not self.trusted():return self.send(403,dict(error='Local access only'))
             path=urlsplit(self.path).path
             try:
+                if path=='/mlb':
+                    from nfl_brand import BRAND_CSS, BRAND_MARK
+                    html=Path(__file__).with_name('mlb_odds.html').read_text().replace('__BRAND_CSS__',BRAND_CSS).replace('__BRAND_MARK__',BRAND_MARK).replace('__TOKEN__',token)
+                    return self.send(200,html.encode(),'text/html; charset=utf-8')
+                if path=='/api/mlb/day':
+                    from mlb_odds import aware, EASTERN
+                    query=parse_qs(urlsplit(self.path).query,keep_blank_values=True)
+                    if set(query)-{'date'} or any(len(v)!=1 for v in query.values()):raise ValueError('Select one date')
+                    day=query.get('date',[aware(mlb.clock()).astimezone(EASTERN).date().isoformat()])[0]
+                    return self.send(200,mlb.read(day))
+                m=re.fullmatch(r'/mlb/evidence/(\d{4}-\d{2}-\d{2})/([0-9a-f]{32})/(complete\.json|result\.json|started\.json|request-\d{3}\.json|raw/\d{3}\.body)',path)
+                if m:return self.send(200,mlb.download(*m.groups()),'application/octet-stream')
                 if path=='/':
                     from nfl_brand import BRAND_CSS, BRAND_MARK
                     html=(Path(__file__).with_name('nfl_refresh.html')).read_text().replace('__BRAND_CSS__',BRAND_CSS).replace('__BRAND_MARK__',BRAND_MARK).replace('__TOKEN__',token).replace('__VERSION__',Path(__file__).with_name('VERSION').read_text().strip())
@@ -258,6 +272,9 @@ def handler(workflow,token):
                 if not 0<length<=MAX_REQUEST:raise ValueError('Request exceeds limit')
                 payload=json.loads(self.rfile.read(length))
                 if not isinstance(payload,dict):raise ValueError('Invalid request')
+                if self.path=='/api/mlb/refresh':
+                    if set(payload)!={'date'}:raise ValueError('Refresh requires only the selected date')
+                    return self.send(200,mlb.start(payload['date']))
                 if self.path=='/api/generate':return self.send(200,workflow.generate(payload))
                 if self.path=='/api/accounting':return self.send(200,workflow.update_accounting(payload))
                 return self.send(404,dict(error='Unknown action'))
