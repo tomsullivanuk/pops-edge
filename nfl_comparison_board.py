@@ -20,6 +20,18 @@ CITIES=['Arizona','Atlanta','Baltimore','Buffalo','Carolina','Chicago','Cincinna
 ALIASES={name:code for name,code in zip(CITIES,schedule.NAMES)}
 ALIASES.update(schedule.FULL_NAMES)
 ALIASES.update({'LA Rams':'LAR','LA Chargers':'LAC','NY Giants':'NYG','NY Jets':'NYJ'})
+MATCHING_VERSION='nfl-market-aliases-v2'
+ABBREVIATED_ALIASES={
+    'ARI Cardinals':'ARI','ATL Falcons':'ATL','BAL Ravens':'BAL','BUF Bills':'BUF',
+    'CAR Panthers':'CAR','CHI Bears':'CHI','CIN Bengals':'CIN','CLE Browns':'CLE',
+    'DAL Cowboys':'DAL','DEN Broncos':'DEN','DET Lions':'DET','GB Packers':'GB',
+    'HOU Texans':'HOU','IND Colts':'IND','JAC Jaguars':'JAX','KC Chiefs':'KC',
+    'LV Raiders':'LV','MIA Dolphins':'MIA','MIN Vikings':'MIN','NE Patriots':'NE',
+    'NO Saints':'NO','PHI Eagles':'PHI','PIT Steelers':'PIT','SF 49ers':'SF',
+    'SEA Seahawks':'SEA','TB Buccaneers':'TB','TEN Titans':'TEN','WAS Commanders':'WAS',
+}
+
+
 SECONDARY=('The following market refers to the team who wins the {game} {sport} game originally scheduled for {day}. '
            'If the game ends in a tie, the market will resolve to $0.50 for each team. '
            'If the game is postponed but begins within 48 hours from its originally scheduled start time, the market will remain open and resolve based on the official final result. '
@@ -28,15 +40,17 @@ SECONDARY=('The following market refers to the team who wins the {game} {sport} 
            'All trademarks, logos, and brand names are the property of their respective owners.')
 
 
-def strict_market(m):
+def strict_market(m,matching_version=None):
+    if matching_version not in (None,MATCHING_VERSION):raise ValueError('Unsupported market matching version')
+    aliases=ALIASES if matching_version is None else {**ALIASES,**ABBREVIATED_ALIASES}
     rule=kalshi.market_rule(m)
     match=kalshi.RULE.fullmatch(m['rules_primary'])
     sport='Pro Football' if ' Pro Football game ' in m['rules_primary'] else 'professional football'
     allowed=[SECONDARY.format(game=match['game'],sport=sport,day=match['day'],fair=f) for f in ('fair price','fair market price')]
     if m['rules_secondary'] not in allowed:raise ValueError('Unsupported full settlement wording')
     parts=rule['game'].split(' vs ')
-    if len(parts)!=2 or any(p not in ALIASES for p in parts) or rule['yes_label'] not in ALIASES:raise ValueError('Unknown team alias')
-    teams=frozenset(ALIASES[p] for p in parts);team=ALIASES[rule['yes_label']]
+    if len(parts)!=2 or any(p not in aliases for p in parts) or rule['yes_label'] not in aliases:raise ValueError('Unknown team alias')
+    teams=frozenset(aliases[p] for p in parts);team=aliases[rule['yes_label']]
     if len(teams)!=2 or team not in teams:raise ValueError('Conflicting market teams')
     return teams,team,rule['provider_game_date']
 
@@ -83,7 +97,8 @@ def age_guard(at,boundary,limit,label):
     return f'{label} is stale' if elapsed>limit else None
 
 
-def derive(f,s,k,raw_markets,asof):
+def derive(f,s,k,raw_markets,asof,matching_version=None):
+    if matching_version not in (None,MATCHING_VERSION):raise ValueError('Unsupported market matching version')
     at=kalshi.aware(asof);review=f['review']
     if (review['season'],review['week'])!=(s['season'],s['week']):raise ValueError('Forecast and schedule scope differ')
     general=[]
@@ -101,7 +116,7 @@ def derive(f,s,k,raw_markets,asof):
     quotes={r['ticker']:r for r in k.get('rows',[])}
     for m in raw_markets:
         if m.get('ticker') not in quotes:continue
-        try:teams,team,day=strict_market(m)
+        try:teams,team,day=strict_market(m,matching_version)
         except (ValueError,KeyError,TypeError) as exc:
             diagnostics.append(dict(ticker=m.get('ticker'),reason=str(exc)));continue
         mapped[m['ticker']]=(teams,team,day)
@@ -160,7 +175,7 @@ def derive(f,s,k,raw_markets,asof):
     for ticker in sorted(set(quotes)-consumed):diagnostics.append(dict(ticker=ticker,reason='Market not matched to this weekly schedule'))
     for fr in f['rows']:
         if fr['forecast_match_key'] not in used_forecasts:diagnostics.append(dict(forecast=fr['forecast_match_key'],reason='Forecast not matched to schedule'))
-    return dict(schema=VERSION,generated_at=asof,season=s['season'],week=s['week'],guards=GUARDS,games=games,
+    return dict(**({"matching_version":matching_version} if matching_version else {}),schema=VERSION,generated_at=asof,season=s['season'],week=s['week'],guards=GUARDS,games=games,
                 scheduled_games=len(games),ranked_games=sum(g['rank'] is not None for g in games),diagnostics=diagnostics,
                 forecast_updated_at=review['updated_at'],forecast_verified_at=f['verified_at'],schedule_received_at=s['completed_at'],
                 capture_started_at=k['run_started_at'],capture_completed_at=k['run_completed_at'],
@@ -206,7 +221,7 @@ def build(store,verified,forecast_store,schedule_run,kalshi_run,activity=None):
                 if r['sequence']!=i:raise ValueError('Invalid capture sequence')
                 files.extend([f'response-{i:03d}.body',f'response-{i:03d}.json'])
         for file in files:copy_file(root/file,folder/'inputs'/name/file)
-    data=derive(*read_inputs(folder/'inputs'),kalshi.utc())
+    data=derive(*read_inputs(folder/'inputs'),kalshi.utc(),matching_version=MATCHING_VERSION)
     if activity is not None:data=add_activity(folder,data,activity)
     forecast.write_once(folder/'comparison.json',forecast.encode(data));forecast.write_once(folder/'board.html',render(data).encode())
     files={str(p.relative_to(folder)):forecast.digest(p.read_bytes()) for p in folder.rglob('*') if p.is_file()}
@@ -220,7 +235,7 @@ def replay(folder,check_html=True):
     if manifest['schema']!=VERSION:raise ValueError('Unsupported board version')
     actual={str(p.relative_to(folder)):forecast.digest(p.read_bytes()) for p in folder.rglob('*') if p.is_file() and p!=folder/'complete.json'}
     if actual!=manifest['files']:raise ValueError('Board file digest mismatch')
-    data=json.loads((folder/'comparison.json').read_text());rebuilt=derive(*read_inputs(folder/'inputs'),data['generated_at'])
+    data=json.loads((folder/'comparison.json').read_text());rebuilt=derive(*read_inputs(folder/'inputs'),data['generated_at'],matching_version=data.get('matching_version'))
     if 'activity' in data:
         from nfl_activity import parse,market_map,parse_current,parse_v2,activity_map
         receipt=json.loads((folder/'inputs/activity-receipt.json').read_text())
