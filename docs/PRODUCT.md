@@ -1,5 +1,25 @@
 # PRODUCT
 
+## v1.3 MLB Bet Sheet — adopted September 15, 2026
+
+The Product Owner adopted one local website organized as Bet Sheet, Performance
+and Administration, with sport selection within each area. The bounded first MLB
+Bet Sheet shows official regular-season games for one selected date and independently
+matched team YES purchase prices, one contract in cents before fees. It has no model
+comparison, Market Edge, confirmed holdings or wagering authority. Current-price
+eligibility expires at five minutes from request start or scheduled start, whichever
+comes first; retrieval is manual. See [the adopted feature contract](MLB_BET_SHEET.md).
+The shared shell and NFL Performance reader remain separate slices.
+
+Current-state clarification: source v1.2.0 was published at ff9c0a2; NFL maintenance
+is merged through #58 on this implementation baseline. Paired NFL accounting (#57)
+retains reconciled closed history independently of legacy newest-export handling.
+NFL weekly measurement/capture integration exists; its results reader remains deferred.
+MLB reporting/status display is implemented and separately locally activated. Earlier
+design/candidate statements below retain historical meaning, not current delivery
+status. Repository release, each runtime deployment and scientific study closure
+remain separate. The complete lifecycle below is product vision, not a v1.3 gate.
+
 ## NFL v1.1.0 — current scope
 
 The NFL workflow is merged through PR #33 (`d94e171`). It is a local personal

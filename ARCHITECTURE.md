@@ -1,5 +1,27 @@
 # Pops' Edge Architecture
 
+## v1.3 operational MLB Bet Sheet — adopted boundary
+
+The Owner approved a bounded local market-only MLB Bet Sheet on September 15, 2026.
+See [the feature contract](docs/MLB_BET_SHEET.md). A new versioned operational
+validation/refresh path owns complete supported settlement checks, selected-day
+schedule/catalog acquisition, team YES offers, retained raw receipts and saved views.
+It must not alter legacy adapters or scientific replay. The existing local HTTP
+application supplies a bounded MLB destination; the full shared shell is separate.
+
+Operational observations live under a dedicated MLB odds root, outside source and
+research archives. No research collector, checkpoint, marker, index, study population,
+report selection or policy changes. A five-minute/start-time timer changes display
+eligibility only. Failed discovery cannot certify a fresh complete slate; independently
+valid book results may survive a partial refresh. Immutable completed bundles and
+an atomic per-day selection/attempt record preserve honest failures and prior output.
+
+Current-state clarification: early NFL #33/source-v1.1 summaries below are historical.
+NFL now includes weekly measurement/capture integration and #57 paired accounting,
+with #58 operational aliases; the results reader remains separate. PR15 comparative
+contracts and MLB reporting/activation described later are implemented. Their existence
+does not imply a completed Workspace, shared deployment or policy consumer integration.
+
 ## NFL v1.1.0 — current scope
 
 The NFL workflow is merged through PR #33 (`d94e171`). It is a local personal

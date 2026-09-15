@@ -1,5 +1,15 @@
 # Pops' Edge Roadmap
 
+## September 15, 2026 adopted v1.3 direction
+
+One website: Bet Sheet / Performance / Administration, with sport selection.
+The [MLB Bet Sheet](docs/MLB_BET_SHEET.md) is the first approved implementation
+slice: manually refreshed pregame team-winner market prices, before fees, with
+honest expiry and missing states. Model investigation remains independent.
+See [v1.3 sequencing](docs/RELEASE_PLAN_v1.3.md). Earlier tentative direction below
+is historical. v1.2.0 was published September 14 at ff9c0a2; the older publication
+pending statement is superseded, without repinning any deployment or closing studies.
+
 > Product Owner direction, September 12, 2026: v1.2 focuses on MLB Kalshi
 > collection and baseline market performance; v1.3 is the tentative unified
 > NFL/MLB experience target. External MLB model and supplier investigation
