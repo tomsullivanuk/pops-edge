@@ -18,3 +18,14 @@ Use offline semantic, partial-failure, chronology, security and browser checks f
 slice. Preserve the accepted local/manual limitations. Require independent candidate
 acceptance before separately authorized integration/deployment; publish only after a
 later whole-release scope/limitations review and explicit Owner authorization.
+
+## September 15 presentation follow-up
+
+PR #59 completed the first slice's integration/deployment after its separate approval;
+the initial authorization paragraph above records that earlier gate, not current runtime
+status. The Owner now authorizes the amended MLB presentation and manual saved-date
+result capability described in MLB_BET_SHEET.md. Documentation and implementation may
+be one focused follow-up change, independently reviewed before separate integration
+and deployment approval. The whole v1.3 release remains incomplete.
+
+The Owner subsequently adopted one Refresh MLB sheet action, conditional saved-read recovery, compact NFL-style filters/counts and shorter Details. The amended feature contract governs this refinement of the same follow-up candidate.

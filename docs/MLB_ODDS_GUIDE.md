@@ -1,15 +1,15 @@
 # MLB Bet Sheet operating guide
 
-This v1.3 candidate adds `/mlb` to the existing local NFL application. It is a
-market-only view, governed by [the adopted contract](MLB_BET_SHEET.md).
-Integration and live commissioning require separate Owner authorization.
+The local `/mlb` page is a market-only saved view governed by
+[the adopted feature contract](MLB_BET_SHEET.md). This guide describes the unified
+refresh/presentation follow-up to PR #59. Source integration, deployment and live
+commissioning have separate Owner authorization; a source guide does not establish
+which revision is running locally.
 
 ## Open and read
 
-Use the existing local application entry point and select **MLB**. The server
-entry remains `nfl_refresh.py`; no second server or deployment is required. A
-separately authorized launch uses the existing Python environment and explicit
-local data root, for example:
+Use the existing local application and select **MLB**. The server remains
+`nfl_refresh.py`, with the existing Python environment and explicit local data root:
 
 ```sh
 python nfl_refresh.py --root "$HOME/PopsEdge" --port 8766
@@ -17,87 +17,108 @@ python nfl_refresh.py --root "$HOME/PopsEdge" --port 8766
 
 Open `http://127.0.0.1:8766/mlb`. Construction of the MLB store and every MLB read
 are inert: they neither create MLB data directories nor acquire provider data.
-The existing NFL application's own startup behavior is unchanged.
+The existing NFL application's startup behavior is unchanged.
 
-Today is Eastern time. Select another date, a team, or whether to include games
-that have started. These are saved-view operations. A date without saved data
-shows that absence. **Reload saved sheet** retries a local read without collecting
-provider data. While a different date is loading or its read has failed, the
-previous date's table is cleared. Read failures and refresh-request failures
-remain visible through filtering and price expiry. A successful read resolves a
-read failure; a failed refresh request remains visible until a new saved attempt
-establishes its outcome or a later explicit refresh succeeds. Past dates may be
-read but cannot be refreshed. Future
-acquisition is limited to the current calendar season; unsupported postseason,
-changed schedules and unresolved games remain visible without prices.
+**Date** selects the official MLB schedule date. Today/Tomorrow follow Central
+Time; displayed times use Central with daylight-saving adjustments. This does
+not change official game identity, stored UTC observations or market-rule wording.
+**Team / All teams** filters the saved view. **Omit completed games**, unchecked
+by default, hides verified completed games; in-progress and unresolved results
+remain visible. Neither filter narrows retrieval or requests provider data.
 
-Each side is that team's own YES contract. The principal price is an observed
-buy offer for at least one contract, in cents before fees. Prices are independent
-captures. Missing is never zero. This view has no model, edge, holdings or order
-entry. The market's complete retained rules remain readable in Details; unusual
-or unrecognized rules withhold the quote.
+Each side is that team's own YES contract. **Last captured** shows its saved buy
+ask in cents before fees, with its original capture time. These are independent
+observations, not simultaneous prices, guaranteed availability or closing prices.
+Missing prices are not zero. The count line describes saved captures, not current
+executable offers. No model, edge, holdings or order entry is supplied.
 
-## Refresh explicitly
+Status and verified final scores appear beneath Match. Only the winning YES
+contract receives a green check. This denotes a sporting result, not Kalshi
+settlement, payout or profit. Unknown or contradictory results receive no winner.
+Elapsed scheduled start does not establish completion. Details show the saved
+capture table and observation time; secondary evidence retains exact market rules,
+request receipts and original calculations. Unrecognized rules withhold new prices.
 
-**Refresh MLB odds** retrieves the official selected-date schedule, then every
-page of the open KXMLBGAME market catalog, then supported team YES order books.
-Team/view filters do not narrow collection. The browser polls the local attempt
-status while the action runs; those reads do not repeat acquisition.
+## One explicit refresh
 
-A complete schedule with zero games is distinct from a failed schedule request.
-Failure of schedule or complete catalog discovery preserves the previous saved
-sheet and its original dates, with a visible failed outcome. Previous prices
-are available as history in Details, never passed off as results of that attempt.
-An individual missing/invalid book permits a completed sheet with visible gaps.
-An independently valid other side remains usable until its own expiry.
+**Refresh MLB sheet** operates on the selected date:
 
-Current eligibility ends at 300 seconds from the oldest required request start
-(schedule, catalog or book), or scheduled start, whichever comes first. The
-screen reassesses while open and on focus return without retrieving data. A
-scheduled start passing does not claim that the official game is completed.
-Clock uncertainty withholds current prices. Display rounding is at most two
-decimals; downloads retain exact values.
+- Today or a future date in the current calendar season: retrieve the complete
+  official schedule/status/results, then the complete open KXMLBGAME catalog and
+  supported team YES books for eligible pregame games. Skip Kalshi when no game
+  is eligible. There is no in-play price retrieval.
+- A past saved date in the current season: retrieve official schedule/results only
+  and retain compatible original price captures. Never retrieve past prices.
+- An unsaved past date or unsupported season: refresh is unavailable. Absence of
+  saved prices is not repaired through retrospective acquisition.
 
-## Saved material and manual recovery
+While a refresh runs, the browser reads local progress; those reads do not repeat
+acquisition. Completion has one visible outcome, including partial success.
 
-The application uses `<root>/Data/MLB/odds/`, outside a source checkout. Each
-refresh has a unique immutable attempt directory with original response bodies,
-request start/end receipts and errors. Successful or partial results have a
-hash inventory completed last. A separate atomic per-date record selects the
-result and records the latest attempt. These operational files confer no
-scientific or wagering authority and are not inputs to the scientific collector.
+A complete zero-game schedule is distinct from failed official discovery. A failed
+schedule preserves the prior selected sheet and stops dependent price acquisition.
+If official results succeed but Kalshi discovery fails, valid results may update
+while the sheet reports odds unavailable and retains compatible older captures.
+Partial catalogs never supply matching authority or book requests. Individual
+missing/invalid books produce visible price gaps or explicitly dated prior captures.
+Storage publication or clock validation failure preserves the prior selection.
 
-Downloads expose the validated selected sheet, its manifest and original source
-responses. Failed-attempt receipts remain in the local attempt directory;
-failed outcome and time remain visible on the screen. No retention cleanup is
-automated. Back up the dedicated odds directory with normal local data backups.
+Current-price eligibility ends at 300 seconds from the oldest required request
+start (schedule, catalog or book), or scheduled start, whichever comes first.
+Expired captures stay visible as dated history. Clock uncertainty cannot make
+old prices current. All ordinary numeric displays use at most two decimal places;
+downloads retain exact values.
 
-- Provider failure or missing price: read the visible reason and retry manually.
-  A new attempt has new source times; it does not repair past observations.
-- Interrupted refresh: ensure another local instance is not still running, then
-  perform a new refresh. Prior selected history remains available.
-- Clock warning: check the computer clock, restart the local application and
-  reload the page. Do not adjust source timestamps to make old prices current.
-- Storage/integrity warning: preserve existing files, check disk access and free
-  space, and investigate before retrying. Changed evidence is withheld. Do not
-  edit receipts or manifests to bypass validation.
-- Competing writer: wait for it to finish or stop that local instance, then retry.
-  Stale lock-file presence alone is harmless; the operating system owns the lock.
+## Saved material and recovery
 
-Requests use fixed public MLB/Kalshi hosts without credentials, retries or
-redirects. Bounds are 8 MiB per response, 50 catalog pages, 50 official games and
-240 seconds before starting another request. An already-started request may
-finish after the overall bound; individual request chronology is bounded at
-20 seconds. Reaching a bound is visible missing/failure, not complete discovery.
+The app uses `<root>/Data/MLB/odds/`, outside a source checkout. Each refresh has
+an immutable attempt directory with original responses, request start/end receipts
+and errors. Complete/partial result bundles have a hash inventory written last.
+An atomic per-date record selects a result and records the latest attempt.
+References to older price captures preserve their source bundles and times rather
+than copying them as newly acquired quotes. Changed games, participants, starts,
+doubleheaders or incompatible/ambiguous contracts cannot inherit an old quote.
+These operational files confer no scientific or wagering authority and are not
+inputs to the scientific collector.
 
-Accepted limitations include manual operation and recovery, supported rule
-families only, missing observations, trusted local files/clocks, and no live
-commissioning claim from offline tests. See [release sequencing](RELEASE_PLAN_v1.3.md).
+Downloads expose the verified selected bundle and referenced price-source evidence.
+Failed acquisition receipts remain in the attempt directory. No retention cleanup
+is automated. Back up the odds directory with normal local data backups.
 
-## Offline browser regression
+- **Saved read failure or uncertain action outcome:** use the conditional **Retry
+  loading saved sheet** button. It reads local data only. While a different date
+  loads or its read fails, the previous date's table is cleared. Failures persist
+  through filtering and display updates. A successful local read resolves a read
+  failure; a failed action remains visible until a new saved attempt establishes
+  its outcome or a later explicit refresh succeeds.
+- **Provider failure or missing price:** read the outcome and retry the main
+  refresh manually. A new attempt has new source times; it does not repair history.
+- **Interrupted refresh:** ensure another instance is not still refreshing before
+  starting another manual attempt. Prior selected history remains available.
+- **Clock warning:** check the clock, restart the app and reload the page. Do not
+  adjust source timestamps to make prices current.
+- **Storage/integrity warning:** preserve files, check disk access and free space,
+  and investigate. Changed evidence is withheld. Never edit receipts/manifests to
+  bypass validation.
+- **Competing writer:** wait for it to finish or stop that instance. Lock-file
+  presence alone is harmless; the operating system owns the lock.
 
-`tests/mlb_odds_browser.cjs` runs against the actual page with intercepted fixture
-responses only. With Playwright available to Node and Chrome installed, run
-`node tests/mlb_odds_browser.cjs`. No live local app or provider connection is
-needed. It asserts request-failure persistence, date/read ordering, manual
-recovery, cross-date actions and existing unavailable-price states.
+Requests use fixed public MLB/Kalshi hosts without credentials, redirects or
+automatic retries. Bounds remain 8 MiB per response, 50 catalog pages, 50 official
+games and 240 seconds before another request starts; individual request chronology
+is bounded at 20 seconds. A started request may finish after the overall bound.
+Reaching a bound is visible failure or partial output, never complete discovery.
+
+Accepted limits include manual local operation/recovery, current-season scope,
+supported rule families, missing observations and trusted local files/clocks.
+Offline tests do not claim live-provider commissioning. Scientific reporting,
+collector state, model evaluation and financial settlement remain separate.
+
+## Offline regression
+
+`tests/mlb_odds_browser.cjs` exercises the actual page with intercepted fixtures.
+With Playwright available to Node and Chrome installed, run
+`node tests/mlb_odds_browser.cjs`. It covers failures, date ordering, conditional
+recovery, completed-only filtering, unified refresh and saved-price presentation.
+Python tests cover parsing, immutable lifecycle, source integrity, partial outcomes
+and the real localhost action boundary without live provider acquisition.
