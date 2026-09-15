@@ -13,6 +13,8 @@ from mlb_stats_api import MLBStatsAPIAdapter, MLBStatsAPIResponse
 
 VERSION = "mlb-operational-odds-1"
 EASTERN = ZoneInfo("America/New_York")
+CENTRAL = ZoneInfo("America/Chicago")
+VIEW_VERSION = "mlb-operational-view-2"
 MAX_AGE = 300
 RULE = re.compile(
     r"If (?P<winner>[A-Za-z .'-]+) wins the (?P<away>[A-Za-z .'-]+) vs "
@@ -65,6 +67,43 @@ def decode(raw):
                       parse_constant=lambda _: (_ for _ in ()).throw(ValueError("Nonfinite source value")))
 
 
+def official_result(record, received_at):
+    """Operational sporting result only; never financial settlement authority."""
+    status = record.get("status") or {}
+    detail = str(status.get("detailedState", "")).casefold()
+    value = dict(observed_at=received_at, state="pending", winning_side=None)
+    if detail not in ("final", "completed early"):
+        return value
+    value["state"] = "unavailable"
+    value["message"] = "Final score unavailable or conflicting"
+    if (status.get("abstractGameState", "Final") != "Final" or
+            status.get("codedGameState", "F") not in ("F", "O") or
+            status.get("statusCode", "F") not in ("F", "O")):
+        return value
+    try:
+        if aware(received_at) < aware(record.get("gameDate")):
+            return value
+    except (ValueError, TypeError):
+        return value
+    teams = record.get("teams", {})
+    scores = [teams.get(side, {}).get("score") for side in ("away", "home")]
+    if any(type(score) is not int or score < 0 for score in scores):
+        return value
+    winner = None if scores[0] == scores[1] else "away" if scores[0] > scores[1] else "home"
+    for side in ("away", "home"):
+        flag = teams.get(side, {}).get("isWinner")
+        if flag is not None and (type(flag) is not bool or flag != (side == winner)):
+            return value
+    return dict(observed_at=received_at, state="final", away_score=scores[0],
+                home_score=scores[1], winning_side=winner)
+
+
+def same_game(left, right):
+    """A saved price may not jump games, participants, starts or doubleheaders."""
+    return (all(left.get(k) == right.get(k) for k in ("id", "game_pk", "start", "number"))
+            and all(left[s].get("id") == right[s].get("id") for s in ("away", "home")))
+
+
 def schedule_games(raw, selected_day, received_at):
     """Keep the complete official date universe, including unpriceable records."""
     day_value(selected_day)
@@ -105,6 +144,7 @@ def schedule_games(raw, selected_day, received_at):
                    number=record.get("gameNumber") if record.get("doubleHeader") not in (None, "N", "n", "") else None,
                    official_status=(record.get("status") or {}).get("detailedState", "Unknown"),
                    reasons=[], away_quote=None, home_quote=None,
+                   official_result=official_result(record, received_at),
                    away_reason="No verified team YES market", home_reason="No verified team YES market")
         if not item.game or not item.schedule_observation or not item.status_observation:
             row["reasons"].append("Official identity or start time is unavailable")
@@ -123,6 +163,12 @@ def schedule_games(raw, selected_day, received_at):
             row["reasons"].append("Doubleheader game number is unresolved")
         if row["away"]["id"] == row["home"]["id"]:
             row["reasons"].append("Conflicting team identities")
+        # Sporting results require supported, unambiguous identity too. A status-only
+        # price exclusion for a normal final does not invalidate its score.
+        if any(reason not in (row["official_status"] + ": pregame prices unavailable",)
+               for reason in row["reasons"]):
+            row["official_result"] = dict(observed_at=received_at, state="unavailable",
+                                          winning_side=None, message="Game identity or schedule needs review")
         result.append(row)
     return result
 
@@ -233,6 +279,8 @@ def quote_state(row, quote, now, *, clock_ok=True):
         return "unavailable"
     if not clock_ok:
         return "clock-uncertain"
+    if quote.get("retained"):
+        return "historical"
     try:
         at = aware(now)
         times = [aware(quote[k]) for k in ("started_at", "completed_at", "schedule_started_at", "catalog_started_at")]

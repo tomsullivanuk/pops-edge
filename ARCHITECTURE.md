@@ -1,5 +1,9 @@
 # Pops' Edge Architecture
 
+## v1.3 MLB saved-results presentation amendment
+
+The existing operational odds store supports one selected-date refresh: schedule/status/results and eligible pregame odds, or schedule/results only for past saved current-season dates. Valid schedule/results may publish with explicit odds-unavailable status after a failed catalog step; partial catalogs provide no matching authority. Immutable bundles retain original quote-source selections; the read view resolves those bounded references without acquiring data or mutating history. Exact game/participant/start/contract compatibility governs retained prices. Official result observations are independently dated and validated before display, with no scientific or financial settlement authority. Central display and Today/Tomorrow do not alter official schedule identity, provider rule timezones or stored timestamps. See [the amended feature contract](docs/MLB_BET_SHEET.md).
+
 ## v1.3 operational MLB Bet Sheet — adopted boundary
 
 The Owner approved a bounded local market-only MLB Bet Sheet on September 15, 2026.

@@ -4,10 +4,62 @@ Adopted by the Product Owner September 15, 2026; implementation explicitly autho
 Baseline: `c8e72cbad7e0f84628e525ef2e1c4f73bb8b3409`. Methodology → Product →
 Architecture governs. This operational presentation does not change research.
 
+## September 15 presentation and unified-refresh amendment
+
+The Owner approved NFL-style Match status/final score, a rightmost Details/Close
+button, compact Details and last-captured prices retained in the main row. Display a
+green check only beside the winning team's YES contract; no visible winner label or
+losing icon. Its accessible description denotes a game result, not financial settlement.
+
+Use the NFL pale rounded filter bar, compact inline Date/Team controls, All teams,
+Today/Tomorrow and unchecked Omit completed games. Omission requires verified sporting
+completion; in-progress games and unresolved final information remain visible. Show one
+compact summary of games, captured prices and prices not captured. These counts describe
+the filtered saved view, not current executable availability.
+
+One Refresh MLB sheet action operates on the selected official schedule date. Today
+and future current-season dates retrieve schedule/status/results, then eligible pregame
+books. Past saved current-season dates update official results only, never past prices.
+Team/completion filters do not narrow acquisition. Opening dates remains read-only.
+Remove the routine reload control; offer Retry loading saved sheet only for a read
+failure or uncertain action outcome. That recovery is a local read, not acquisition.
+
+A complete valid schedule/result observation may be published when later Kalshi discovery
+fails. Report a partial update with odds unavailable, no new market completeness or
+price authority, and compatible older captures retained with their original dates.
+Partial catalogs are not used for market matching. Failed official discovery, storage
+publication or clock validation preserves the prior complete selection. Failed receipts
+remain immutable alongside valid observations; no partial operational output gains
+scientific authority.
+
+All ordinary times use America/Chicago (Central, with DST), rounded to minutes.
+Today/Tomorrow follow the Central calendar; Date still selects the official MLB schedule
+date. Do not reassign games or alter provider rule wording and stored UTC timestamps.
+Last captured means the latest valid saved observation for the exact compatible game
+and contract, not a closing price or an available offer. Preserve five-minute/start-time
+current-price eligibility even when expired dated history remains visible.
+
+Final scores require explicit final status, consistent fields, nonnegative integer
+scores and supported identity/chronology. Missing, conflicting, tied or exceptional
+unresolved outcomes never manufacture a winner. Separate result and price observation
+times and immutable references. Changed participants, doubleheader, scheduled start or
+incompatible/ambiguous market identity cannot inherit a quote.
+
+Ordinary Details retain the compact capture table, observation time and useful missing
+information. Omit the generic settlement-summary paragraph. Exact rules, provenance,
+receipts and original calculations remain available in secondary evidence/downloads;
+contract validation and settlement meaning are unchanged. Important failures remain
+visible outside Details.
+
+This amendment replaces the earlier separate result action, Eastern display,
+started/completed combined filter, historical-price placement and all-or-nothing
+schedule/catalog publication behavior. Old bundles remain readable and immutable.
+No automatic refresh, live scoreboard, in-play odds, accounting or scientific scoring.
+
 ## Product and price
 
-One official schedule date, default Today Eastern; Today/Tomorrow and a date selector,
-team filter, started/completed inclusion, and Refresh MLB odds. Filters do not limit
+One official schedule date, default Today Central; Today/Tomorrow and a date selector,
+team filter, completed-game omission, and Refresh MLB sheet. Filters do not limit
 retrieval. Preserve every returned official game even when unsupported/unpriced.
 Distinct doubleheaders retain MLB game identity, game number and schedule instant.
 
@@ -40,9 +92,7 @@ No forecasts, account credentials, orders, research commands or automated retry.
 Retain actual request start/end, raw bytes/digests and errors in a dedicated operational
 odds directory. Interrupted candidates have no completed-view authority. Publish a
 complete bundle last, then atomically select it with the last attempt outcome.
-Book failures may produce a complete partial-coverage bundle. Failed schedule/catalog
-keeps the prior saved result/dates and a visible failed attempt; no silent old-price
-substitution. Repeated explicit refresh creates new chronology, not evidence repair.
+Book failures may produce a complete partial-coverage bundle. Failed official schedule acquisition keeps the prior saved result/dates and a visible failed attempt. Failed catalog acquisition may publish valid schedule/results with explicit unavailable odds and dated retained quotes as specified above; no silent old-price substitution. Repeated explicit refresh creates new chronology, not evidence repair.
 Only one writer may use an output root at a time; manual independent retry is sufficient.
 
 No writes to scientific archives, activation, capture markers, checkpoints, indexes,

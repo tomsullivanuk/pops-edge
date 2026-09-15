@@ -1,5 +1,7 @@
 # Pops' Edge Roadmap
 
+MLB presentation follow-up adopted September 15: Central times, compact NFL-style rows/Details, retained last-captured quotes and one manual refresh for official results and eligible odds, plus NFL-style filters. See [feature scope](docs/MLB_BET_SHEET.md).
+
 ## September 15, 2026 adopted v1.3 direction
 
 One website: Bet Sheet / Performance / Administration, with sport selection.

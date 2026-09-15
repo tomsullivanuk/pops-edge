@@ -1,5 +1,9 @@
 # PRODUCT
 
+## v1.3 MLB presentation amendment — September 15, 2026
+
+The Owner approved Central display times, NFL-style Match status/final score and Details button, dated last-captured prices, and a winner-only green check without visible text. A single Refresh MLB sheet action updates results and eligible prices, with results-only work for past saved current-season dates; results and price captures retain independent chronology. See [the amended feature contract](MLB_BET_SHEET.md). This does not authorize scientific scoring, Kalshi settlement or wagering.
+
 ## v1.3 MLB Bet Sheet — adopted September 15, 2026
 
 The Product Owner adopted one local website organized as Bet Sheet, Performance

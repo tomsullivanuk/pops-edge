@@ -121,14 +121,26 @@ class OddsStore:
             finally:
                 fcntl.flock(stream, fcntl.LOCK_UN)
 
-    def _validate_day(self, day, *, refresh=False):
+    def _validate_day(self, day, *, refresh=False, mode="odds"):
         value = odds.day_value(day)
-        today = odds.aware(self.clock()).astimezone(odds.EASTERN).date()
-        if refresh and (value < today or value.year != today.year):
-            raise ValueError("Refresh requires today or a future date in the current season; past sheets are saved history")
+        today = odds.aware(self.clock()).astimezone(odds.CENTRAL).date()
+        if mode not in ("odds", "results"):
+            raise ValueError("Unknown MLB action")
+        if refresh:
+            if mode == "results":
+                if value > today or value.year != today.year or not self._state(day)["selected"]:
+                    raise ValueError("Refresh requires a saved date in the current season for past game results")
+            elif value < today or value.year != today.year:
+                raise ValueError("Odds refresh requires today or a future date in the current season; use the sheet refresh for saved past dates")
+
+    def _refresh_mode(self, day):
+        selected = odds.day_value(day)
+        today = odds.aware(self.clock()).astimezone(odds.CENTRAL).date()
+        return "results" if selected < today else "odds"
 
     def start(self, day):
-        self._validate_day(day, refresh=True)
+        mode = self._refresh_mode(day)
+        self._validate_day(day, refresh=True, mode=mode)
         if not self.clock_ok():
             raise ValueError("Local clock changed. Check it and restart the local application before refreshing")
         if not self.lock.acquire(False):
@@ -136,38 +148,42 @@ class OddsStore:
         try:
             self.active_day = day
             self.memory_error = None
-            self.thread = threading.Thread(target=self._background, args=(day,), daemon=True)
+            self.thread = threading.Thread(target=self._background, args=(day, mode), daemon=True)
             self.thread.start()
         except Exception:
             self.active_day = None; self.lock.release(); raise
         return dict(state="running", message="Refreshing the official schedule…")
 
-    def _background(self, day):
+    def _background(self, day, mode):
         try:
-            self.refresh(day)
+            self.refresh(day, mode=mode)
         except Exception as exc:
             self.memory_error = dict(day=day, message=str(exc))
         finally:
             self.active_day = None
             self.lock.release()
 
-    def refresh(self, day):
-        """Synchronous explicit workflow for the handler and offline validation."""
-        self._validate_day(day, refresh=True)
+    def refresh(self, day, *, mode=None):
+        """One selected-date action; explicit mode remains internal for replay tests."""
+        mode = self._refresh_mode(day) if mode is None else mode
+        self._validate_day(day, refresh=True, mode=mode)
         if not self.clock_ok():
             raise ValueError("Local clock is uncertain")
         with self.writer():
             state = self._state(day)
+            prior = self._view(state["selected"], day) if state["selected"] else None
+            prior_selection = state["selected"]
             attempt_id = uuid.uuid4().hex
             folder = self.path("attempts", attempt_id)
-            attempt = dict(id=attempt_id, state="running", started_at=self.clock(),
+            attempt = dict(id=attempt_id, state="running", mode=mode, started_at=self.clock(),
                            message="Refreshing the official schedule…")
             self._write(folder / "started.json", odds.encode(dict(day=day, **attempt)))
             state["attempt"] = attempt; self._save_state(state)
             requests_seen = []
             try:
-                result = self._collect(day, folder, requests_seen, state)
-                result.update(schema=odds.VERSION, day=day, completed_at=self.clock(), requests=requests_seen)
+                result = self._collect(day, folder, requests_seen, state, mode=mode)
+                self._retain_quotes(result, prior, prior_selection)
+                result.update(schema=odds.VERSION, view_version=odds.VIEW_VERSION, mode=mode, day=day, completed_at=self.clock(), requests=requests_seen)
                 if not self.clock_ok():
                     raise ValueError("Clock changed during refresh")
                 self._write(folder / "result.json", odds.encode(result))
@@ -179,8 +195,21 @@ class OddsStore:
                 state["selected"] = dict(id=attempt_id, digest=odds.digest(manifest_raw))
                 count = sum(g[s + "_quote"] is not None for g in result["games"] for s in ("away", "home"))
                 expected = result["expected_outcomes"]
-                status = "partial" if count < expected else "complete"
-                message = f"{len(result['games'])} official games; {count} of {expected} supported pregame outcomes priced."
+                finals = sum(g["official_result"]["state"] == "final" for g in result["games"])
+                gaps = sum(g["official_result"]["state"] == "unavailable" for g in result["games"])
+                odds_error = result.get("odds_error")
+                status = "partial" if count < expected or gaps or odds_error else "complete"
+                message = f"{len(result['games'])} official games updated; {finals} verified final scores."
+                if odds_error:
+                    message += " Odds unavailable; previous compatible captures retained where available."
+                elif mode == "results":
+                    message += " Prices were not retrieved for this past date."
+                elif expected:
+                    message += f" {count} of {expected} supported pregame outcomes priced."
+                else:
+                    message += " No eligible pregame prices to retrieve."
+                if gaps:
+                    message += f" {gaps} results need review."
                 if not result["games"]:
                     message = "Official schedule confirmed no games on this date."
                 state["attempt"] = {**attempt, "state": status, "completed_at": self.clock(), "message": message}
@@ -199,7 +228,7 @@ class OddsStore:
                     raise ValueError("Refresh failed; ATTEMPT STATUS COULD NOT BE SAVED. Previous selection retained; inspect local storage") from exc
                 raise
 
-    def _collect(self, day, folder, receipts, state):
+    def _collect(self, day, folder, receipts, state, *, mode="odds"):
         began = self.monotonic()
         last_end = odds.aware(self.clock())
         def progress(message):
@@ -242,6 +271,8 @@ class OddsStore:
         games = odds.schedule_games(raw, day, schedule["completed_at"])
         result = dict(games=games, diagnostics=[], expected_outcomes=0,
                       schedule_started_at=schedule["started_at"], catalog_started_at=None)
+        if mode == "results":
+            return result
         eligible = []
         for game in games:
             if not game["reasons"] and odds.aware(game["start"]) <= odds.aware(self.clock()):
@@ -252,33 +283,43 @@ class OddsStore:
         if not eligible:
             return result
         progress("Checking the complete MLB market catalog…")
-        markets, seen, cursor = {}, set(), ""
-        for page in range(MAX_PAGES):
-            if cursor in seen:
-                raise ValueError("Catalog cursor repeats; discovery is incomplete")
-            seen.add(cursor)
-            params = dict(series_ticker="KXMLBGAME", status="open", limit="1000")
-            if cursor:
-                params["cursor"] = cursor
-            raw, receipt = request("kalshi", "/markets", params)
-            result["catalog_started_at"] = result["catalog_started_at"] or receipt["started_at"]
-            payload = odds.decode(raw)
-            if not isinstance(payload, dict) or set(payload) != {"markets", "cursor"} or not isinstance(payload["markets"], list) or not isinstance(payload["cursor"], str):
-                raise ValueError("Catalog response is incomplete")
-            for market in payload["markets"]:
-                if not isinstance(market, dict) or not isinstance(market.get("ticker"), str):
-                    raise ValueError("Catalog market identity is missing")
-                ticker = market["ticker"]
-                if ticker in markets and markets[ticker] != market:
-                    raise ValueError("Catalog contains conflicting market records")
-                markets[ticker] = market
-            cursor = payload["cursor"]
-            if not cursor:
-                break
-        else:
-            raise ValueError("Catalog exceeded page bound; discovery is incomplete")
-        mapped, diagnostics = odds.map_markets(games, list(markets.values()))
-        result["diagnostics"] = diagnostics
+        try:
+            markets, seen, cursor = {}, set(), ""
+            for page in range(MAX_PAGES):
+                if cursor in seen:
+                    raise ValueError("Catalog cursor repeats; discovery is incomplete")
+                seen.add(cursor)
+                params = dict(series_ticker="KXMLBGAME", status="open", limit="1000")
+                if cursor:
+                    params["cursor"] = cursor
+                raw, receipt = request("kalshi", "/markets", params)
+                result["catalog_started_at"] = result["catalog_started_at"] or receipt["started_at"]
+                payload = odds.decode(raw)
+                if not isinstance(payload, dict) or set(payload) != {"markets", "cursor"} or not isinstance(payload["markets"], list) or not isinstance(payload["cursor"], str):
+                    raise ValueError("Catalog response is incomplete")
+                for market in payload["markets"]:
+                    if not isinstance(market, dict) or not isinstance(market.get("ticker"), str):
+                        raise ValueError("Catalog market identity is missing")
+                    ticker = market["ticker"]
+                    if ticker in markets and markets[ticker] != market:
+                        raise ValueError("Catalog contains conflicting market records")
+                    markets[ticker] = market
+                cursor = payload["cursor"]
+                if not cursor:
+                    break
+            else:
+                raise ValueError("Catalog exceeded page bound; discovery is incomplete")
+            mapped, diagnostics = odds.map_markets(games, list(markets.values()))
+            result["diagnostics"] = diagnostics
+        except ValueError as exc:
+            # Official observations remain valid; no partial catalog is admitted for
+            # matching. Storage errors propagate, and the final clock gate still holds.
+            result["odds_error"] = str(exc)
+            result["diagnostics"] = []
+            for game in eligible:
+                for side in ("away", "home"):
+                    game[side + "_reason"] = "Odds unavailable: " + str(exc)
+            return result
         for index, game in enumerate(eligible, 1):
             progress(f"Reading prices for game {index} of {len(eligible)}…")
             for side in ("away", "home"):
@@ -287,6 +328,7 @@ class OddsStore:
                     game[side + "_reason"] = "Ambiguous team YES markets" if candidates else "No verified team YES market; see catalog Details"
                     continue
                 market = candidates[0]
+                game[side + "_market"] = {k: market[k] for k in ("ticker", "rules_primary", "rules_secondary")}
                 if odds.aware(self.clock()) >= odds.aware(game["start"]):
                     game[side + "_reason"] = "Scheduled start passed during refresh"
                     continue
@@ -301,6 +343,61 @@ class OddsStore:
                     game[side + "_reason"] = ""
                 except ValueError as exc:
                     game[side + "_reason"] = str(exc)
+        return result
+
+    def _retain_quotes(self, result, prior, selection):
+        """Reference original completed captures; never copy them as new observations."""
+        result["retained_quotes"] = []
+        if not prior:
+            return
+        previous = {g["id"]: g for g in prior["games"]}
+        for game in result["games"]:
+            old = previous.get(game["id"])
+            if not old or not odds.same_game(game, old):
+                continue
+            allowed = (game["official_status"] + ": pregame prices unavailable",
+                       "Scheduled start passed; pregame prices unavailable")
+            if any(reason not in allowed for reason in game["reasons"]):
+                continue
+            for side in ("away", "home"):
+                q = old.get(side + "_quote")
+                if game[side + "_quote"] or not q:
+                    continue
+                market = game.get(side + "_market")
+                reason = game.get(side + "_reason", "")
+                if "Ambiguous" in reason or (market and any(market[k] != q[k] for k in market)):
+                    continue
+                # A new catalog that no longer verifies this market must not carry it
+                # forward as the contract for a scheduled game.
+                if not game["reasons"] and result["catalog_started_at"] and not result.get("odds_error") and not market:
+                    continue
+                result["retained_quotes"].append(dict(game_id=game["id"], side=side,
+                    source=q.get("source_selection", selection)))
+
+    def _view(self, selected, day):
+        result, _ = self.verified(selected, day)
+        refs = result.get("retained_quotes", [])
+        if not isinstance(refs, list) or len(refs) > 100:
+            raise ValueError("Retained price references exceed the daily bound")
+        games = {g["id"]: g for g in result["games"]}
+        sources, used = {}, set()
+        for ref in refs:
+            side, identity = ref["side"], ref["game_id"]
+            if side not in ("away", "home") or identity not in games or (identity, side) in used:
+                raise ValueError("Invalid retained price reference")
+            used.add((identity, side))
+            source = ref["source"]
+            key = (source["id"], source["digest"])
+            if key not in sources:
+                sources[key], _ = self.verified(source, day)
+            old = next((g for g in sources[key]["games"] if g["id"] == identity), None)
+            game = games[identity]
+            if not old or not odds.same_game(game, old) or game[side + "_quote"]:
+                raise ValueError("Retained price identity conflicts with the selected game")
+            q = old.get(side + "_quote")
+            if not q or odds.aware(q["completed_at"]) > odds.aware(result["completed_at"]):
+                raise ValueError("Retained price has no original capture or has invalid chronology")
+            game[side + "_quote"] = {**q, "source_selection": source, "retained": True}
         return result
 
     def verified(self, selected, day):
@@ -327,19 +424,21 @@ class OddsStore:
         result = odds.decode((folder / "result.json").read_bytes())
         if not isinstance(result, dict) or result.get("schema") != odds.VERSION or result.get("day") != day:
             raise ValueError("Saved odds view has incompatible identity")
+        if result.get("view_version") not in (None, odds.VIEW_VERSION):
+            raise ValueError("Saved odds view version is unsupported")
         return result, manifest
 
     def read(self, day):
         self._validate_day(day)
         now = self.clock()
-        value = dict(day=day, now=now, today=odds.aware(now).astimezone(odds.EASTERN).date().isoformat(),
+        value = dict(day=day, now=now, today=odds.aware(now).astimezone(odds.CENTRAL).date().isoformat(),
                      clock_ok=self.clock_ok(), selected=None, attempt=None, result=None,
                      running=self.active_day == day, error=None)
         try:
             state = self._state(day)
             value.update(selected=state["selected"], attempt=state["attempt"])
             if state["selected"]:
-                value["result"], _ = self.verified(state["selected"], day)
+                value["result"] = self._view(state["selected"], day)
         except (OSError, ValueError, KeyError, TypeError) as exc:
             value["error"] = str(exc)
         if self.memory_error and self.memory_error["day"] == day:
@@ -352,9 +451,14 @@ class OddsStore:
     def download(self, day, identity, name):
         self._validate_day(day)
         state = self._state(day)
-        if not state["selected"] or state["selected"]["id"] != identity:
+        if not state["selected"]:
             raise ValueError("Download requires the explicitly selected saved sheet")
-        _, manifest = self.verified(state["selected"], day)
+        view = self._view(state["selected"], day)
+        selections = [state["selected"]] + [r["source"] for r in view.get("retained_quotes", [])]
+        selected = next((s for s in selections if s["id"] == identity), None)
+        if selected is None:
+            raise ValueError("Download requires the selected sheet or its retained quote evidence")
+        _, manifest = self.verified(selected, day)
         if name == "complete.json":
             return self.path("attempts", identity, name).read_bytes()
         if name not in manifest["files"]:

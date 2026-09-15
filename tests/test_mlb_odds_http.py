@@ -33,7 +33,7 @@ class LocalHTTP(unittest.TestCase):
     def test_navigation_is_inert_and_local_only(self):
         self.assertIn('href="/mlb"',self.get('/').text)
         page=self.get('/mlb');self.assertEqual(page.status_code,200)
-        self.assertIn('Refresh MLB odds',page.text);self.assertNotIn('__TOKEN__',page.text)
+        self.assertIn('Refresh MLB sheet',page.text);self.assertNotIn('__TOKEN__',page.text)
         self.assertIsNone(self.get('/api/mlb/day?date='+DAY).json()['result'])
         self.assertFalse(self.root.exists());self.assertFalse(self.feed.calls)
         self.assertEqual(requests.get(self.url+'/mlb',headers={'Host':'evil.example'},timeout=3).status_code,403)
@@ -60,6 +60,26 @@ class LocalHTTP(unittest.TestCase):
         self.assertEqual(self.get(f'/mlb/evidence/{DAY}/{identity}/secrets.json').status_code,404)
         self.assertEqual(self.get('/api/mlb/day?date='+DAY).json()['selected'],state['selected'])
         self.assertEqual(len(self.feed.calls),4)
+
+    def test_results_action_is_local_schedule_only_and_accepts_saved_past_date(self):
+        url=self.url+'/api/mlb/refresh'
+        self.assertEqual(requests.post(url,json={'date':'2026-09-14'},headers=self.headers,timeout=3).status_code,400)
+        self.assertFalse(self.feed.calls)
+        self.assertEqual(self.post({'date':DAY}).status_code,200);self.store.thread.join(3)
+        old=self.store.read(DAY);self.clock.seconds=86400;self.feed.calls.clear()
+        for headers in ({'Origin':'https://evil.example','X-Pops-Token':'test-token'},
+                        {'Origin':self.url,'X-Pops-Token':'wrong'}):
+            self.assertEqual(requests.post(url,json={'date':DAY},headers=headers,timeout=3).status_code,403)
+        self.assertEqual(requests.post(url,json={'date':DAY,'mode':'odds'},headers=self.headers,timeout=3).status_code,400)
+        self.assertEqual(requests.post(url,json={'date':DAY},headers=self.headers,timeout=3).status_code,200)
+        self.store.thread.join(3)
+        self.assertEqual([call[0] for call in self.feed.calls],['mlb'])
+        state=self.get('/api/mlb/day?date='+DAY).json()
+        self.assertEqual(state['attempt']['mode'],'results')
+        self.assertEqual(state['result']['games'][0]['away_quote']['source_selection'],old['selected'])
+        self.assertEqual(self.get(f"/mlb/evidence/{DAY}/{old['selected']['id']}/raw/002.body").status_code,200)
+        self.assertEqual(len(self.feed.calls),1)
+        self.assertEqual(requests.post(self.url+'/api/mlb/results',json={'date':DAY},headers=self.headers,timeout=3).status_code,404)
 
     def test_running_and_failed_actions_remain_visible(self):
         entered,release=threading.Event(),threading.Event()

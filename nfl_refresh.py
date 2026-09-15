@@ -235,10 +235,10 @@ def handler(workflow,token):
                     html=Path(__file__).with_name('mlb_odds.html').read_text().replace('__BRAND_CSS__',BRAND_CSS).replace('__BRAND_MARK__',BRAND_MARK).replace('__TOKEN__',token)
                     return self.send(200,html.encode(),'text/html; charset=utf-8')
                 if path=='/api/mlb/day':
-                    from mlb_odds import aware, EASTERN
+                    from mlb_odds import aware, CENTRAL
                     query=parse_qs(urlsplit(self.path).query,keep_blank_values=True)
                     if set(query)-{'date'} or any(len(v)!=1 for v in query.values()):raise ValueError('Select one date')
-                    day=query.get('date',[aware(mlb.clock()).astimezone(EASTERN).date().isoformat()])[0]
+                    day=query.get('date',[aware(mlb.clock()).astimezone(CENTRAL).date().isoformat()])[0]
                     return self.send(200,mlb.read(day))
                 m=re.fullmatch(r'/mlb/evidence/(\d{4}-\d{2}-\d{2})/([0-9a-f]{32})/(complete\.json|result\.json|started\.json|request-\d{3}\.json|raw/\d{3}\.body)',path)
                 if m:return self.send(200,mlb.download(*m.groups()),'application/octet-stream')

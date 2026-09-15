@@ -155,22 +155,30 @@ class Lifecycle(unittest.TestCase):
         self.store.refresh(DAY);g=self.store.read(DAY)['result']['games'][0]
         self.assertIsNone(g['home_quote']);self.assertIn('Ambiguous',g['home_reason'])
 
-    def test_failed_discovery_retains_previous_selection_and_dates(self):
+    def test_failed_catalog_updates_schedule_and_retains_dated_prices(self):
         self.store.refresh(DAY);old=self.store.read(DAY);self.clock.seconds=10
         self.feed.pages=lambda params:dict(markets=[],cursor='loop')
-        with self.assertRaisesRegex(ValueError,'cursor repeats'):self.store.refresh(DAY)
-        new=self.store.read(DAY)
-        self.assertEqual(new['selected'],old['selected']);self.assertEqual(new['result'],old['result'])
-        self.assertEqual(new['attempt']['state'],'failed');self.assertNotEqual(new['attempt']['id'],new['selected']['id'])
-        self.feed.pages=None;self.store.refresh(DAY);self.assertEqual(self.store.read(DAY)['attempt']['state'],'complete')
+        self.store.refresh(DAY);new=self.store.read(DAY)
+        self.assertNotEqual(new['selected'],old['selected'])
+        self.assertIn('cursor repeats',new['result']['odds_error'])
+        self.assertEqual(new['attempt']['state'],'partial')
+        self.assertEqual(new['result']['games'][0]['home_quote']['completed_at'],old['result']['games'][0]['home_quote']['completed_at'])
+        self.assertTrue(new['result']['games'][0]['home_quote']['retained'])
+        self.assertNotEqual(new['result']['schedule_started_at'],old['result']['schedule_started_at'])
+        self.feed.pages=None;self.store.refresh(DAY);new=self.store.read(DAY)
+        self.assertEqual(new['attempt']['state'],'complete');self.assertNotIn('odds_error',new['result'])
 
     def test_request_failure_and_invalid_catalog_do_not_infer_no_games(self):
         self.feed.fail=lambda route:True
         with self.assertRaises(ValueError):self.store.refresh(DAY)
         self.assertIsNone(self.store.read(DAY)['result'])
         self.feed.fail=None;self.feed.pages=lambda params:dict(markets=[])
-        with self.assertRaises(ValueError):self.store.refresh(DAY)
-        self.assertIsNone(self.store.read(DAY)['result'])
+        self.store.refresh(DAY)
+        state=self.store.read(DAY)
+        self.assertEqual(len(state['result']['games']),1)
+        self.assertEqual(state['attempt']['state'],'partial')
+        self.assertIsNone(state['result']['games'][0]['away_quote'])
+        self.assertIn('incomplete',state['result']['odds_error'])
 
     def test_no_games_has_authority_no_catalog_calls(self):
         self.feed.games=[];self.store.refresh(DAY)
