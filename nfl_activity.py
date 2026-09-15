@@ -65,7 +65,7 @@ def market_map(inputs,data):
         if request['purpose']!='catalog':continue
         markets=json.loads((root/f"response-{request['sequence']:03d}.body").read_text())['markets']
         for m in markets:
-            try:teams,yes,day=strict_market(m)
+            try:teams,yes,day=strict_market(m,data.get("matching_version"))
             except (ValueError,KeyError,TypeError):continue
             matches=[g for g in data['games'] if frozenset((g['home'],g['away']))==teams and g['kickoff'] and aware(g['kickoff']).astimezone(NY).date().isoformat()==day]
             if len(matches)!=1:continue
