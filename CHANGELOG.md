@@ -7,7 +7,26 @@
 > [NFL acceptance gates](docs/NFL_RELEASE_PLAN_v1.1.0.md).
 
 
-## v1.2.0 — MLB reporting (ready for approval; unpublished)
+## Unreleased — v1.3 MLB Bet Sheet candidate
+
+- Add a market-only MLB destination to the existing local application: official
+  games, independently matched team YES offers, manual selected-day refresh,
+  visible missing outcomes and five-minute/start-time expiry.
+- Retain raw request evidence and immutable operational results separately from
+  scientific archives; keep failed attempts visible and prior saved history intact.
+- Adopt the bounded v1.3 scope and document local use. The shared shell,
+  Performance and Administration completion remain separate slices.
+- This working candidate is not integrated, deployed, live-commissioned or released.
+
+## Release-state correction — September 15, 2026
+
+v1.2.0 was published at `ff9c0a287db0dc789ba6218397241202fdf8088f` (PR #55);
+v1.1.0 was also published. NFL maintenance through PR #58 is merged. Older
+publication-pending/no-tag claims below describe their original preparation
+state and are superseded by the release record. No deployment pin or study
+closure is implied by this correction.
+
+## v1.2.0 — MLB reporting (historical release-preparation record)
 
 - PR #51 merged independently verified historical/live saved reports, a readable
   two-decimal Performance Report, separate historical navigation and guarded

@@ -1,14 +1,16 @@
 # Pops' Edge
 
-**Current product version:** v1.1.0 — NFL (released and deployed locally)<br>
-**Release candidate ready for Owner approval:** v1.2.0 — MLB Kalshi collection and baseline performance<br>
-**Tentative following release:** v1.3 — unified NFL/MLB experience<br>
+**Published product release:** v1.2.0 — MLB reporting and collection status<br>
+**Current source baseline:** NFL maintenance merged through PR #58<br>
+**In development:** v1.3 — unified NFL/MLB experience; first slice is a market-only MLB Bet Sheet<br>
 **Parallel investigation:** external MLB forecast models and suppliers
 
-See the [roadmap](ROADMAP.md) and
-[September 12 release decision](docs/RELEASE_DIRECTION_2026-09-12.md).
-The [v1.1.0 release](https://github.com/tomsullivanuk/pops-edge/releases/tag/v1.1.0)
-is published; release tags and later local deployments remain distinct.
+See the [roadmap](ROADMAP.md), [v1.3 release plan](docs/RELEASE_PLAN_v1.3.md)
+and [MLB Bet Sheet guide](docs/MLB_ODDS_GUIDE.md).
+The [v1.2.0 release](https://github.com/tomsullivanuk/pops-edge/releases/tag/v1.2.0)
+is published. NFL, MLB reporting and collector deployments remain independently
+pinned; this candidate does not deploy or repin them. Earlier release-candidate
+wording is superseded by the published release record.
 
 Pops' Edge is a quantitative decision platform whose Mission is to identify
 opportunities with demonstrable statistical advantage. Sports wagering is its
