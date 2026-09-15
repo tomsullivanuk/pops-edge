@@ -118,6 +118,21 @@ class Workflow:
             return self.status
         except Exception:self.lock.release();raise
 
+    def update_accounting(self, payload):
+        """Local two-file accounting import; never calls schedule or price providers."""
+        if not self.lock.acquire(False):raise ValueError('An update is already running')
+        try:
+            from nfl_accounting import save
+            activity, _ = self.file_bytes(payload.get('activity'), '.csv')
+            pnl, _ = self.file_bytes(payload.get('pnl'), '.csv')
+            result = save(self.data, activity, pnl, kalshi.utc())
+            self.status = dict(state='attention' if result['issues'] else 'complete', updated=True,
+                message=f"Accounting imported: {result['positions']} reconciled closed positions. " +
+                (f"{len(result['issues'])} markets need review. See Bet Sheet calculation notes. " if result['issues'] else '') +
+                'Prices were not refreshed.')
+            return self.status
+        finally:self.lock.release()
+
     def run(self,raw,name,activity,attempt,performance_week=None,retry_missing=False):
         try:
             candidate=excel.prepare(raw,name,self.data/'forecasts')
@@ -244,6 +259,7 @@ def handler(workflow,token):
                 payload=json.loads(self.rfile.read(length))
                 if not isinstance(payload,dict):raise ValueError('Invalid request')
                 if self.path=='/api/generate':return self.send(200,workflow.generate(payload))
+                if self.path=='/api/accounting':return self.send(200,workflow.update_accounting(payload))
                 return self.send(404,dict(error='Unknown action'))
             except Exception as exc:return self.send(400,dict(error=str(exc)))
     return Handler
