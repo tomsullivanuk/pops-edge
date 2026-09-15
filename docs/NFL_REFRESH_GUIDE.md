@@ -167,3 +167,11 @@ Reading/opening the page does not collect evidence. Schedule selection happens
 only on an owner-triggered refresh. Protocol and existing activation digests stay
 unchanged; this operational selection policy is documented separately so existing
 research evidence can still replay.
+
+## Paired closed-position accounting
+
+The season view now supports a separate two-file accounting update. See
+[NFL accounting](NFL_ACCOUNTING.md) for the governing scope, required All Activity
+and realized P&L exports, reconciliation, retained history and review cases.
+This extends the legacy activity behavior described above without rewriting saved
+weekly bundles or refreshing prices.

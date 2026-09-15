@@ -94,6 +94,41 @@ def render(data):
         when=minute_time(kick)
         date_label=when.strftime('%m/%d') if when else 'TBD';time_label=when.strftime('%I:%M %p %Z').lstrip('0') if when else ''
         after=Decimal(value['central'])-Decimal(r['cost']['total']) if r else None
+        cash = [l for l in data.get('accounting', []) if l['game_id']==g['game_id'] and l['team']==o['team']]
+        cash_details = ''
+        payout_cell = (dollars(paid)+'<small>Actual payout</small>' if paid is not None else dollars(summary['expected'])+'<small>'+dollars(summary['win'])+' if win · expected above</small>' if summary else '—')
+        payout_sort = paid if paid is not None else summary['expected'] if summary else ''
+        if data.get('accounting_enabled'):
+            # Never mix legacy purchase illustrations with reconciled financial amounts.
+            known = {l['ticker'] for l in data.get('accounting', [])}
+            from nfl_accounting import second
+            def covered(t):
+                matches=[l for l in data.get('accounting', []) if l['ticker']==t['ticker'] and
+                         ((second(t['at'])==l['opened'] and t['side']==l['side']) or
+                          (second(t['at'])==l['closed'] and l['kind']=='sale' and t['side']!=l['side']))]
+                return sum((Decimal(l['quantity']) for l in matches),Decimal(0))==Decimal(t['quantity'])
+            unresolved = [t for t in wagers if not covered(t)]
+            summary=None; settlements=[]; settlement_details=''; unresolved_close=False
+            wager_cell=''; payout_cell='—'; payout_sort=''
+            if cash:
+                spent=sum((Decimal(l['cost'])+Decimal(l['opening_fee']) for l in cash),Decimal(0))
+                sales=sum((Decimal(l['proceeds']) for l in cash if l['kind']=='sale'),Decimal(0))
+                settled=sum((Decimal(l['proceeds']) for l in cash if l['kind']=='settlement'),Decimal(0))
+                profit=sum((Decimal(l['profit']) for l in cash),Decimal(0))
+                wager_label=', '.join(sorted({l['side'].upper()+' '+l['yes_team'] for l in cash}))
+                wager_cell=''
+                for ticker,side,yes in sorted({(l['ticker'],l['side'],l['yes_team']) for l in cash}):
+                    cost=sum((Decimal(l['cost'])+Decimal(l['opening_fee']) for l in cash if l['ticker']==ticker and l['side']==side),Decimal(0))
+                    wager_cell+='<div><b>'+esc(side.upper()+' '+yes)+'</b> · '+dollars(cost)+'</div>'
+                wager_cell+='<small>Closed positions · includes opening fees</small>'
+                payout_sort=sales+settled
+                payout_cell=dollars(payout_sort)+'<small>'+('Sale proceeds' if all(l['kind']=='sale' for l in cash) else 'Settlement proceeds' if all(l['kind']=='settlement' for l in cash) else 'Sale + settlement')+'</small><small>Profit '+dollars(profit,True)+'</small>'
+                for l in cash:
+                    cash_details+='<li>'+esc(l['side'].upper()+' '+l['yes_team'])+' · '+esc(l['quantity'])+' contracts · '+esc(l['kind'])+' · opened '+esc(display_time(l['opened']))+' · closed '+esc(display_time(l['closed']))+'<br>Purchase before fees $'+esc(l['cost'])+' · opening fee $'+esc(l['opening_fee'])+' · gross proceeds $'+esc(l['proceeds'])+' · closing fee $'+esc(l['closing_fee'])+' · realized profit $'+esc(l['profit'])+'<br>Imported '+esc(display_time(l['imported_at']))+' · saved source '+esc(l['source'])+'</li>'
+                cash_details='<p><b>Reconciled cash flows</b>. Proceeds include returned stake; profit deducts purchase cost and both fees.</p><ul>'+cash_details+'</ul>'
+            if unresolved:
+                wager_cell+='<small>Accounting review needed · unmatched activity; open balance unconfirmed</small>'
+                payout_cell+=' <small>Partial accounting coverage</small>'
         cells=[f'<td data-sort="{esc(kick or "")}">{date_label if when else "TBD"}<small>{time_label}</small></td>',
                '<td class="match">'+esc(g['away']+' at '+g['home'])+('<small>Neutral site</small>' if g['neutral'] else '')+'</td>',
                '<td><b>'+esc(o['team'])+'</b></td>',
@@ -101,12 +136,13 @@ def render(data):
                '<td class="num" data-sort="'+esc(value['central'] if value else '')+'">'+(dollars(value['central']) if value else '—')+'</td>',
                '<td class="num" data-sort="'+esc(r['cost']['price'] if r else '')+'">'+(dollars(r['cost']['price']) if r else '—')+'</td>',
                '<td class="num gap '+('positive' if gap is not None and gap>0 else 'negative' if gap is not None and gap<0 else '')+'" data-sort="'+esc(gap if gap is not None else '')+'">'+(dollars(gap,True) if gap is not None else '—')+'</td>',
-               '<td class="wager" data-sort="'+esc(wager_label if wagers or settlements else '')+'">'+wager_cell+'</td>',
-               '<td class="num" data-sort="'+esc(paid if paid is not None else summary['expected'] if summary else '')+'">'+(dollars(paid)+'<small>Actual payout</small>' if paid is not None else dollars(summary['expected'])+'<small>'+dollars(summary['win'])+' if win · expected above</small>' if summary else '—')+'</td>',
+               '<td class="wager" data-sort="'+esc(wager_label if wagers or settlements or cash else '')+'">'+wager_cell+'</td>',
+               '<td class="num" data-sort="'+esc(payout_sort)+'">'+payout_cell+'</td>',
                '<td><button class="expand" aria-expanded="false" aria-label="Details for '+esc(o['team'])+'">Details</button></td>']
         ident=g['game_id']+'-'+o['team']
         body.append('<tbody data-id="'+esc(ident)+'" data-search="'+esc(g['away']+' '+g['home']+' '+o['team'])+'" data-gap="'+esc(gap if gap is not None else '')+'"><tr class="quote">'+''.join(cells)+'</tr><tr class="detail" hidden><td colspan="10">'+
                     ('<p class="reason">'+esc(reasons)+'</p>' if reasons else '')+
+                    cash_details+
                     ('<p>Market settled. Cash-out proceeds and realized profit are not established by this export; original trade records remain below.</p>' if unresolved_close and wagers else '')+
                     '<p>ELWAY win: '+esc(o['displayed_win'] or '—')+'. '+('Difference before fee: '+dollars(Decimal(value['central'])-Decimal(r['cost']['price']),True)+'.' if r else '')+'</p>'+
                     '<p>'+esc(g['venue'] or '')+' · kickoff '+esc(display_time(kick))+'</p>'+
@@ -117,11 +153,17 @@ def render(data):
                     ('<p><b>Settlement reported by Kalshi</b>. Actual payout is gross return, not profit.</p><ul>'+settlement_details+'</ul>' if settlements else '')+
                     '<ul>'+(''.join(details) or '<li>No supported market matched.</li>')+'</ul></td></tr></tbody>')
     headers=[('Date / time','Kickoff in Central time'),('Match','Designated away and home teams'),('Outcome','Team whose normal full-game payout is represented'),('Contract','Observed purchase route; YES team or NO opponent'),('ELWAY Contract','ELWAY expected payout per contract, including $0.50 on a tie'),('Kalshi price','Observed offer for the same payout'),('Difference after fee ↓','ELWAY value minus offer and estimated one-contract fee'),('Recorded wager (incl. fees)','Each recorded trade: contract and quantity × paid price + recorded fees; current holdings unconfirmed'),('Payout','Actual gross payout when settled; otherwise ELWAY expected gross payout'),('','Expand all source and quote details')]
+    if data.get('accounting_enabled'):
+        headers[8]=('Proceeds / profit','Gross sale or settlement proceeds; realized profit after purchase cost and both fees')
     th=''.join('<th scope="col"'+(' aria-sort="descending"' if i==6 else '')+'>'+('<button data-column="'+str(i)+'" title="'+esc(tip)+'">'+esc(label)+'</button>' if label else '')+'</th>' for i,(label,tip) in enumerate(headers))
     count=sum(r['route'] is not None for r in rows);top=next((r['gap'] for r in rows if r['gap'] is not None),None)
     diagnostics=''.join('<li>'+esc(json.dumps(d,sort_keys=True))+'</li>' for d in data['diagnostics']) or '<li>No unmatched inputs.</li>'
     activity_note=('<p class="activity-note"><b>Wager activity:</b> '+str(len(recorded))+' matched NFL trades · imported '+esc(display_time(activity['imported_at']))+'. Wagered and payout figures assume recorded purchases are still held. Current holdings are unconfirmed; activity can be newer than these saved prices.</p>' if activity else '<p class="activity-note">Wager activity not loaded. Attach a Kalshi activity export to identify recorded trades.</p>')
     activity_issues=(''.join('<li>'+esc(json.dumps(d,sort_keys=True))+'</li>' for d in activity['diagnostics']) if activity else '')
+    if data.get('accounting_enabled'):
+        activity_note='<p class="activity-note">Closed-position accounting uses paired All Activity and realized P&amp;L exports. Proceeds are gross; profit deducts purchase cost and both fees. Open holdings are unconfirmed. Unmatched records remain under review.</p>'
+        reconciled_tickers={l['ticker'] for l in data.get('accounting', [])}
+        activity_issues=''.join('<li>'+esc(json.dumps(d,sort_keys=True))+'</li>' for d in (activity or {}).get('diagnostics', []) if not (d.get('ticker') in reconciled_tickers and d.get('reason')=='Export settlement amount does not reconcile to winning quantity'))
     clocks=json.dumps(dict(generated=display_time(data['generated_at']),capture=data['capture_started_at'],kickoffs=[g['kickoff'] for g in data['games'] if g['rank'] is not None and g['kickoff']],maxAge=data['guards']['quote_seconds'])).replace('<','\\u003c')
     return '''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pops&#39; Edge - NFL</title><style>
 *{box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;margin:32px;background:#f6f7f9;color:#222}h1{margin:0 0 5px;font-size:30px;letter-spacing:-.5px}.subtitle{color:#666;margin:0 0 16px}.summary{display:flex;gap:24px;flex-wrap:wrap;font-size:14px;margin:18px 0}.summary b{font-size:18px}.toolbar{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin:18px 0}input[type=search]{padding:9px 12px;border:1px solid #cbd0d8;border-radius:6px;font:inherit;min-width:250px}.toolbar label{font-size:14px}.scroll{overflow:auto;box-shadow:0 2px 12px #00000014;border-radius:10px}table.betsheet{border-collapse:collapse;width:100%;min-width:1060px;background:white;font-size:14px}.betsheet th{background:#1f2937;color:white;padding:0;text-align:left;white-space:nowrap;position:sticky;top:0}.betsheet th button{color:inherit;background:none;border:0;padding:12px 10px;font:inherit;font-weight:600;cursor:pointer;white-space:nowrap;width:100%;text-align:left}.betsheet th:hover{background:#374151}.betsheet td{padding:10px;border-bottom:1px solid #e5e7eb;vertical-align:middle}.betsheet tr.quote:hover{background:#f3f4f6}.num{font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}.match{white-space:nowrap;font-weight:600}small{display:block;font-size:11px;color:#697382;margin-top:3px;white-space:nowrap}.gap{background:#f0f5f9;font-weight:750;font-size:16px}.positive{color:#08764d}.negative{color:#a13c38}.wager{font-size:12px;white-space:nowrap}.wager b{color:#17694c}.activity-note{font-size:13px;color:#475569}.contract{font-size:12px;font-weight:600;background:#edf0f5;border-radius:4px;padding:4px 6px;white-space:nowrap}.expand{font:inherit;font-size:12px;border:1px solid #d4d9e0;border-radius:4px;background:white;padding:5px 8px;cursor:pointer}.detail td{background:#f0f3f7;padding:14px 24px;color:#465365;font-size:13px}.detail p{margin:5px 0}.detail li{margin:7px 0;overflow-wrap:anywhere}.reason{color:#93551f;font-weight:600}#age{font-size:13px;color:#705317;background:#fff5df;padding:9px 12px;border-radius:5px}.guide{font-size:13px;line-height:1.65;color:#647080;max-width:1100px;margin-top:20px}.guide summary{cursor:pointer;font-weight:600;color:#39485c}.guide a{color:#225c91}[hidden]{display:none!important}#count{color:#687281;font-size:13px}button:focus-visible,input:focus-visible{outline:3px solid #609ee2;outline-offset:2px}@media(max-width:650px){body{margin:16px}.toolbar{gap:12px}h1{font-size:25px}.summary{gap:14px}}

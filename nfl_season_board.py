@@ -77,6 +77,19 @@ def assemble(data_root,folders,candidate=None,now=None):
     history_issues=attach_history(root,games,list(zip(folders,snapshots)),now)
     result=dict(schema='nfl-season-view-v1',season=season,week='All',generated_at=now,games=games,guards=board.GUARDS,scheduled_games=len(games),ranked_games=sum(any(r['usable'] for o in g['outcomes'] for r in o['routes']) for g in games),diagnostics=history_issues+completion_issues,forecast_updated_at=candidate['updated_at'],forecast_verified_at=None,schedule_received_at=None,capture_started_at=now,capture_completed_at=now)
     if activity:result['activity']=activity
+    from nfl_accounting import load
+    result['accounting'], accounting_issues = load(root, games, now)
+    result['accounting_enabled'] = (root/'accounting').exists()
+    result['diagnostics'].extend(accounting_issues)
+    if choices and result['accounting_enabled']:
+        from nfl_accounting import latest_activity
+        try:
+            recent = latest_activity(root, now)
+            if recent and (not activity or board.kalshi.aware(recent[0]) >= board.kalshi.aware(activity['imported_at'])):
+                at, raw = recent
+                result['activity'] = parse_current(raw, at, activity_map(raw,folder/'inputs',{'games':games}))
+        except (OSError, ValueError, KeyError) as exc:
+            result['diagnostics'].append(dict(reason='Accounting activity unavailable: '+str(exc)))
     return result
 
 
@@ -195,4 +208,6 @@ def render(data):
     html=html.replace('Missing or excluded quotes stay at the bottom and have no numeric difference.', 'Historical comparisons retain their original values and dated quote, but stay outside current comparison ranking and difference filters. Missing comparisons stay unavailable.')
     if data['diagnostics']:
         html=html.replace('<div class="scroll">','<p class="reason">Some saved history or official results could not be verified. See calculation notes for details.</p><div class="scroll">',1)
+    if data.get('accounting_enabled'):
+        html=html.replace('Some saved history or official results could not be verified.', 'Some saved history, accounting or official results could not be verified.')
     return html

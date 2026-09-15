@@ -58,3 +58,11 @@ payout illustrations; original trade rows remain in Details. Opposite-side trade
 alone do not establish a cash-out, and no realized profit is inferred. Legacy v1/v2
 bundles retain their original parser for replay. This correction is not installed
 in the pinned v1.1.0 release until separately integrated and deployed.
+
+## Paired closed-position accounting
+
+The season view now supports a separate two-file accounting update. See
+[NFL accounting](NFL_ACCOUNTING.md) for the governing scope, required All Activity
+and realized P&L exports, reconciliation, retained history and review cases.
+This extends the legacy activity behavior described above without rewriting saved
+weekly bundles or refreshing prices.
