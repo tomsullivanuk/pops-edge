@@ -808,3 +808,7 @@ does not rename its metric or require editing/re-pinning its historical contents
 The same paired games govern the 50% reference and both improvements over it.
 Direct Kalshi-minus-ELWAY comparison stays in Details. No profit, statistical
 superiority or wagering authority follows. Additional MLB redesign remains deferred.
+
+## NFL completed-overtime correction — September 16, 2026
+
+The focused [outcome-rule amendment](NFL_OVERTIME_OUTCOME_AMENDMENT.md) explicitly supports completed overtime in new weekly Performance reports. Legacy report replay retains its original interpretation; new reports pin the v2 rule. Capture/population/scoring formulas and immutable evidence remain unchanged. This is a correction candidate, not a claim of production deployment or a newly published report.
