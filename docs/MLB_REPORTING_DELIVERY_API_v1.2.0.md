@@ -1,5 +1,9 @@
 # Manual archive-to-report delivery
 
+## v1.3 read-only browser access candidate
+
+The [Performance reader](PERFORMANCE_READERS_v1.3.md) exposes the existing saved output through the local application, preserving bytes and relative evidence/history links. It does not run delivery, scoring, activation or collection refresh. Earlier publication-pending wording is historical: v1.2.0 was published independently of deployment pins and study closure.
+
 Current status — September 14, 2026: reporting delivery (PR #51) and collection
 status (PR #53) are independently accepted, merged and locally activated.
 Earlier candidate/authorization statements below are dated history, not pending

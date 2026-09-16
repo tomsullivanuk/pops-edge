@@ -1,5 +1,9 @@
 # PRODUCT
 
+## v1.3 Part 2 — adopted Performance readers
+
+The Owner adopted weekly NFL results alongside the established MLB reader. Performance is read-only; cumulative NFL charts/season aggregates and Administration update controls are explicitly deferred. See [reader contract](PERFORMANCE_READERS_v1.3.md). The implementation candidate adds the previously deferred reader without changing measurement authority.
+
 ## v1.3 MLB presentation amendment — September 15, 2026
 
 The Owner approved Central display times, NFL-style Match status/final score and Details button, dated last-captured prices, and a winner-only green check without visible text. A single Refresh MLB sheet action updates results and eligible prices, with results-only work for past saved current-season dates; results and price captures retain independent chronology. See [the amended feature contract](MLB_BET_SHEET.md). This does not authorize scientific scoring, Kalshi settlement or wagering.
@@ -789,3 +793,18 @@ evidence downloads, and a usable corrected normal local entry. Rendering retaine
 verified results must preserve their scientific dates, selection/status and immutable
 packages. See [display decisions](MLB_SIMPLE_REPORT_DECISION_v1.2.0.md). This bounded
 integration/activation authority does not authorize collector changes or study closure.
+
+## Owner terminology decision — September 15, 2026
+
+The NFL reader uses **Payout-adjusted Brier score** as a descriptive product label
+for the existing squared contract-value error. The summary is its paired-sample
+mean; game columns are ELWAY score and Kalshi score. Details define the squared
+error against payout 1 for home win, 0 for away win and 0.5 for tie. This is not a
+claim of standard binary/multiclass Brier scoring. Calculations, canonical field
+names, protocol identifiers, saved reports and activation digests are unchanged.
+The pinned weekly protocol remains the scientific authority; this display alias
+does not rename its metric or require editing/re-pinning its historical contents.
+
+The same paired games govern the 50% reference and both improvements over it.
+Direct Kalshi-minus-ELWAY comparison stays in Details. No profit, statistical
+superiority or wagering authority follows. Additional MLB redesign remains deferred.

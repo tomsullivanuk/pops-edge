@@ -209,7 +209,10 @@ class Workflow:
         finally:self.lock.release()
 
 
-def handler(workflow,token):
+def handler(workflow,token,mlb_reports=None):
+    from performance_reader import NFLReader, MLBReader, DEFAULT_MLB, navigation, NAV_CSS, READER_ERRORS
+    nfl_reader = NFLReader(workflow.root/'Data/NFL/performance') if workflow is not None else None
+    mlb_reader = MLBReader(mlb_reports if mlb_reports is not None else DEFAULT_MLB)
     from mlb_odds_store import OddsStore
     mlb = OddsStore(workflow.root/'Data/MLB/odds') if workflow is not None else None
     class Handler(BaseHTTPRequestHandler):
@@ -218,7 +221,10 @@ def handler(workflow,token):
             body=source.encode(data) if kind=='application/json' else data
             self.send_response(status);self.send_header('Content-Type',kind);self.send_header('Content-Length',str(len(body)))
             self.send_header('Cache-Control','no-store');self.send_header('X-Content-Type-Options','nosniff')
-            self.send_header('Referrer-Policy','no-referrer');self.send_header('Content-Security-Policy',"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; frame-ancestors 'self'; object-src 'none'; base-uri 'none'")
+            self.send_header('Referrer-Policy','no-referrer')
+            if self.path.startswith('/performance/mlb/saved/'):
+                self.send_header('Content-Security-Policy',"default-src 'none'; style-src 'unsafe-inline'; sandbox allow-same-origin allow-downloads; frame-ancestors 'self'")
+            self.send_header('Content-Security-Policy',"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; frame-ancestors 'self'; object-src 'none'; base-uri 'none'")
             self.end_headers();self.wfile.write(body)
         def trusted(self,write=False):
             origin=f'http://127.0.0.1:{self.server.server_port}'
@@ -230,9 +236,21 @@ def handler(workflow,token):
             if not self.trusted():return self.send(403,dict(error='Local access only'))
             path=urlsplit(self.path).path
             try:
+                if path=='/performance/nfl':
+                    return self.send(200,nfl_reader.render(parse_qs(urlsplit(self.path).query,keep_blank_values=True)),'text/html; charset=utf-8')
+                if path=='/performance/mlb':
+                    return self.send(200,mlb_reader.render(),'text/html; charset=utf-8')
+                m=re.fullmatch(r'/performance/nfl/report/([0-9a-f]{64})\.json',path)
+                if m:return self.send(200,nfl_reader.download(m[1]),'application/octet-stream')
+                if path.startswith('/performance/mlb/saved/'):
+                    try:
+                        raw,kind=mlb_reader.asset(path.removeprefix('/performance/mlb/saved/'))
+                        return self.send(200,raw,kind)
+                    except READER_ERRORS:
+                        return self.send(404,b'<h1>Saved report unavailable</h1><p>The selected saved report or evidence is missing or invalid. No substitute was selected and no update was attempted.</p>','text/html; charset=utf-8')
                 if path=='/mlb':
                     from nfl_brand import BRAND_CSS, BRAND_MARK
-                    html=Path(__file__).with_name('mlb_odds.html').read_text().replace('__BRAND_CSS__',BRAND_CSS).replace('__BRAND_MARK__',BRAND_MARK).replace('__TOKEN__',token)
+                    html=Path(__file__).with_name('mlb_odds.html').read_text().replace('__BRAND_CSS__',BRAND_CSS).replace('__BRAND_MARK__',BRAND_MARK).replace('__TOKEN__',token).replace('__PRODUCT_NAV__',navigation('mlb','bet')).replace('__NAV_CSS__',NAV_CSS)
                     return self.send(200,html.encode(),'text/html; charset=utf-8')
                 if path=='/api/mlb/day':
                     from mlb_odds import aware, CENTRAL
@@ -244,7 +262,7 @@ def handler(workflow,token):
                 if m:return self.send(200,mlb.download(*m.groups()),'application/octet-stream')
                 if path=='/':
                     from nfl_brand import BRAND_CSS, BRAND_MARK
-                    html=(Path(__file__).with_name('nfl_refresh.html')).read_text().replace('__BRAND_CSS__',BRAND_CSS).replace('__BRAND_MARK__',BRAND_MARK).replace('__TOKEN__',token).replace('__VERSION__',Path(__file__).with_name('VERSION').read_text().strip())
+                    html=(Path(__file__).with_name('nfl_refresh.html')).read_text().replace('__BRAND_CSS__',BRAND_CSS).replace('__BRAND_MARK__',BRAND_MARK).replace('__TOKEN__',token).replace('__VERSION__',Path(__file__).with_name('VERSION').read_text().strip()).replace('__PRODUCT_NAV__',navigation('nfl','bet')).replace('__NAV_CSS__',NAV_CSS)
                     return self.send(200,html.encode(),'text/html; charset=utf-8')
                 if path=='/season':
                     from nfl_season_board import assemble,render
@@ -283,8 +301,8 @@ def handler(workflow,token):
 
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--root',type=Path,default=Path.home()/'PopsEdge');p.add_argument('--port',type=int,default=8766);p.add_argument('--no-browser',action='store_true');args=p.parse_args()
-    workflow=Workflow(args.root);server=ThreadingHTTPServer(('127.0.0.1',args.port),handler(workflow,secrets.token_hex(32)))
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--root',type=Path,default=Path.home()/'PopsEdge');p.add_argument('--port',type=int,default=8766);p.add_argument('--no-browser',action='store_true');p.add_argument('--mlb-reports',type=Path,help='Existing saved MLB reporting output root (read only)');args=p.parse_args()
+    workflow=Workflow(args.root);server=ThreadingHTTPServer(('127.0.0.1',args.port),handler(workflow,secrets.token_hex(32),args.mlb_reports))
     url=f'http://127.0.0.1:{server.server_port}/';print('NFL Bet Sheet: '+url,flush=True)
     if not args.no_browser:webbrowser.open(url)
     try:server.serve_forever()
