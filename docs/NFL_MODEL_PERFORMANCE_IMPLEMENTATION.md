@@ -1,5 +1,9 @@
 # Weekly capture and scoring — local implementation
 
+## Current reader candidate — September 15, 2026
+
+Capture and refresh integration already exist. The [Part 2 reader candidate](PERFORMANCE_READERS_v1.3.md) now exposes saved weekly results without changing acquisition or scoring. Earlier disconnected/deferred statements below describe prior gates, not current source capability.
+
 Implementation modules: `nfl_performance.py` (explicit local service and replay),
 `nfl_performance_sources.py` (versioned outcome/market adapters), and
 `operate_nfl_performance.py` (command entry point). They implement the

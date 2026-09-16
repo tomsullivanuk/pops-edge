@@ -1,5 +1,9 @@
 # v1.3 — unified experience
 
+## Part 2 — weekly Performance readers
+
+The Owner authorized implementation of [the bounded reader slice](PERFORMANCE_READERS_v1.3.md). This supersedes the earlier deferral of the NFL weekly reader and adds the minimum shared Bet Sheet / Performance navigation. Browser update controls and the broader Administration surface remain deferred. Review and integration/deployment remain separate gates.
+
 September 15, 2026: Owner-adopted direction is one local website organized as
 Bet Sheet, Performance and Administration, with sport selection inside each area.
 

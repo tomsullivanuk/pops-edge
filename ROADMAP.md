@@ -1,5 +1,9 @@
 # Pops' Edge Roadmap
 
+## September 15, 2026 — Performance slice adopted
+
+Part 2 exposes existing NFL weekly results alongside the established MLB reader. Weekly scope is adopted; cumulative NFL charts and Administration controls are deferred. See [contract](docs/PERFORMANCE_READERS_v1.3.md). This is an implementation candidate, not a deployed or published release.
+
 MLB presentation follow-up adopted September 15: Central times, compact NFL-style rows/Details, retained last-captured quotes and one manual refresh for official results and eligible odds, plus NFL-style filters. See [feature scope](docs/MLB_BET_SHEET.md).
 
 ## September 15, 2026 adopted v1.3 direction
