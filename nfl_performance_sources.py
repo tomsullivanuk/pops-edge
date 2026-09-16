@@ -43,7 +43,14 @@ def weekly_games(raw, season, week):
     return found[0]
 
 
-def outcomes(raw, season, week):
+LEGACY_OUTCOME_RULE = 'nfl-weekly-outcome-v1'
+OVERTIME_OUTCOME_RULE = 'nfl-weekly-outcome-v2'
+
+
+def outcomes(raw, season, week, *, outcome_rule=LEGACY_OUTCOME_RULE):
+    if outcome_rule not in (LEGACY_OUTCOME_RULE, OVERTIME_OUTCOME_RULE):
+        raise ValueError('Unsupported weekly outcome rule')
+    final_phases = ('FINAL', 'FINAL_OVERTIME') if outcome_rule == OVERTIME_OUTCOME_RULE else ('FINAL',)
     result = {}
     for game in weekly_games(raw, season, week):
         row = dict(state='awaiting-outcome', payout=None, issues=[], start=None)
@@ -61,8 +68,8 @@ def outcomes(raw, season, week):
                 kalshi.aware(summary['startTime'])
                 row['start'] = summary['startTime']
             phase, quarter = summary.get('phase'), summary.get('quarter')
-            if phase != 'FINAL' or quarter != 'END_OF_GAME':
-                if phase == 'FINAL' or quarter == 'END_OF_GAME' or game['status'] in ('FINAL', 'FINAL_OVERTIME', 'COMPLETED'):
+            if phase not in final_phases or quarter != 'END_OF_GAME':
+                if phase in final_phases or quarter == 'END_OF_GAME' or game['status'] in ('FINAL', 'FINAL_OVERTIME', 'COMPLETED'):
                     raise ValueError('Conflicting final markers')
                 continue
             if game['status'] not in ('SCHEDULED', 'FINAL', 'FINAL_OVERTIME', 'COMPLETED'):
@@ -82,7 +89,7 @@ def outcomes(raw, season, week):
             row.update(state='final', home_score=scores[0], away_score=scores[1],
                        payout='1' if scores[0] > scores[1] else '0' if scores[0] < scores[1] else '0.5')
             if game['status'] == 'SCHEDULED':
-                row['issues'].append('Outer SCHEDULED; validated summary FINAL')
+                row['issues'].append('Outer SCHEDULED; validated summary '+phase)
         except (ValueError, KeyError, TypeError) as exc:
             row.update(state='unresolved-outcome', payout=None)
             row['issues'].append(str(exc))

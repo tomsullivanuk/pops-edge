@@ -1993,3 +1993,7 @@ records are read without invoking commands or writing operational state. The sav
 observation, its independent date/digest and offline recovery guidance belong to
 presentation only. Unavailable/stale observations never confer or revoke scientific
 authority. Original renderer defaults and immutable package replay remain unchanged.
+
+## NFL completed-overtime correction — September 16, 2026
+
+The focused [outcome-rule amendment](docs/NFL_OVERTIME_OUTCOME_AMENDMENT.md) explicitly supports completed overtime in new weekly Performance reports. Legacy report replay retains its original interpretation; new reports pin the v2 rule. Capture/population/scoring formulas and immutable evidence remain unchanged. This is a correction candidate, not a claim of production deployment or a newly published report.

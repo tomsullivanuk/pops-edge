@@ -175,7 +175,7 @@ class Performance:
                 (Path(tmp) / name).write_bytes(self.raw(key))
             yield Path(tmp)
 
-    def decode(self, event):
+    def decode(self, event, *, outcome_rule=sources.LEGACY_OUTCOME_RULE):
         p = event['payload']
         if event['kind'] == 'import':
             raw = self.raw(p['raw'])
@@ -203,7 +203,7 @@ class Performance:
                 if r.get('error'):
                     return dict(error=r['error'])
                 schedule.replay(folder)
-                return dict(r, outcomes=sources.outcomes(raw, p['season'], p['week']))
+                return dict(r, outcomes=sources.outcomes(raw, p['season'], p['week'], outcome_rule=outcome_rule))
         if event['kind'] == 'market':
             with self.bundle(p['files']) as folder:
                 r = kalshi.replay(folder)
@@ -278,8 +278,10 @@ class Performance:
                 return self.append('market', dict(attempt_id=attempt['id'], import_id=event['id'],
                     schedule_id=s_event['id'], retry=retry, season=season, week=week, files=self.archive(folder)))
 
-    def report(self, season, week, boundary, *, source_boundary=None):
+    def report(self, season, week, boundary, *, source_boundary=None, outcome_rule=sources.OVERTIME_OUTCOME_RULE):
         """Pure saved-source replay. No writes, no network, no inferred holdings."""
+        if outcome_rule not in (sources.LEGACY_OUTCOME_RULE, sources.OVERTIME_OUTCOME_RULE):
+            raise ValueError('Unsupported weekly outcome rule')
         schedule.scope(season, week)
         at = instant(boundary)
         if at > instant(self.clock()):
@@ -296,7 +298,7 @@ class Performance:
             all_events = all_events[:tips[0]+1]
         events = [e for e in all_events if instant(e['at']) <= at]
         # Validate sources even when not selected; never trust persisted derivations.
-        values = {e['id']: self.decode(e) for e in events}
+        values = {e['id']: self.decode(e, outcome_rule=outcome_rule) for e in events}
         scoped = [e for e in events if e['payload'].get('season') == season and e['payload'].get('week') == week]
         schedules = [e for e in scoped if e['kind'] == 'schedule' and not values[e['id']].get('error')]
         cohort = self.validate_starting_cohort() if (season, week) == (2026, 1) else None
@@ -460,6 +462,8 @@ class Performance:
             result['starting_cohort'] = dict(label='Partial Week 1 — 14 of 16 games',
                 included_game_ids=sorted(cohort['included']), eligible_population=14,
                 official_population=16, fixed_at=self.activation['effective_at'])
+        if outcome_rule != sources.LEGACY_OUTCOME_RULE:
+            result['outcome_rule'] = outcome_rule
         result['report_id'] = base.digest(base.encode(result))
         return result
 
@@ -471,7 +475,8 @@ class Performance:
 
     def replay_report(self, path):
         saved = json.loads(Path(path).read_text())
-        derived = self.report(saved['season'], saved['week'], saved['boundary'], source_boundary=saved['source_boundary'] or '')
+        derived = self.report(saved['season'], saved['week'], saved['boundary'], source_boundary=saved['source_boundary'] or '',
+                              outcome_rule=saved.get('outcome_rule', sources.LEGACY_OUTCOME_RULE))
         if derived != saved:
             raise ValueError('Saved report differs from replay')
         return derived
