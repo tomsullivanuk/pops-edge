@@ -8,15 +8,15 @@ Current status — September 14, 2026: reporting delivery (PR #51) and collectio
 status (PR #53) are independently accepted, merged and locally activated.
 Earlier candidate/authorization statements below are dated history, not pending
 implementation gates. See [release record](MLB_RELEASE_RECORD_v1.2.0.md).
-Whole-release publication remains pending; opening a saved page does not refresh it.
+v1.2.0 is published; opening a saved page does not refresh it.
 
 PR #51 merged this reporting delivery and readable display at
 `0d8e18248d190a0bf4bf30185ece4427dd371a9f`. The normal local entry was activated
 September 14, 2026 from that clean revision using previously verified historical
 and live packages. The local completion receipt is
 `/Users/tom/PopsEdgeReports/mlb/activation/2026-09-14-pr51/COMPLETION.md`.
-Collection-status completion below is a separate local correction candidate;
-its integration/activation and whole-v1.2 publication remain pending.
+Collection-status completion below retains its original candidate-era wording;
+PR #53 integration/activation and v1.2.0 publication subsequently completed.
 
 Apply the [reporting contract](MLB_REPORTING_CONTRACT_v1.2.0.md), accepted
 [source API](MLB_REPORTING_SOURCE_API_v1.2.0.md) and
@@ -317,3 +317,8 @@ and [pinned deployment guidance](../operations/PINNED_DEPLOYMENT.md). Preserve f
 records and unknown publication markers; do not fabricate missed quotes or retry
 unknown calls. Use the bounded activation rollback above if the new display itself
 needs reverting. Collector recovery and job changes require their own authority.
+
+
+## v1.3 explicit browser update candidate
+
+[Manual Performance update](MLB_PERFORMANCE_UPDATE_v1.3.md) composes scientific generation and package-bound match preparation before selection, followed by an optional separately dated collection observation. Existing manual CLI operations and immutable replay retain their behavior. Original static readers keep their own frozen status; the new observation belongs to the app reader. See the workflow guide for clean pinned worker configuration and bounded interruption recovery.

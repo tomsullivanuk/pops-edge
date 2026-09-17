@@ -412,7 +412,7 @@ def _reference(manifest, report, anchor_key):
 
 
 def generate_report(*, archive, output, study, expected_revision, report_status='in-progress',
-                    update_live=False, clock=utc_now, synthetic_validation=False):
+                    update_live=False, clock=utc_now, synthetic_validation=False, prepare_matches=False):
     output = validate_output_root(output, archive)
     with _local_writer(output):
         state = read_entry(output)
@@ -420,6 +420,8 @@ def generate_report(*, archive, output, study, expected_revision, report_status=
                        status='running', started_at=_time(clock).isoformat())
         try:
             _replace_entry(output, {**state, 'last_attempt':attempt})
+            if prepare_matches and not (study == 'live' and update_live):
+                _fail('match preparation requires a live update')
             if study not in {'historical', 'live'} or (update_live and study != 'live'):
                 _fail('exactly one study required; only live update may move current live reference')
             if report_status not in {'in-progress', 'interim'}:
@@ -482,6 +484,11 @@ def generate_report(*, archive, output, study, expected_revision, report_status=
                 _sync_directory(output/'packages')
             _receipt(output, manifest, report, source_receipt, key, clock)
             ref = _reference(manifest, report, key)
+            if prepare_matches:
+                from mlb_performance_matches import prepare
+                prepare(output, archive.root, output/'matches', reference=ref)
+                if not synthetic_validation:
+                    _revision(revision)
             new_state = {**state, 'last_attempt':{**attempt, 'status':'succeeded',
                 'completed_at':_time(clock).isoformat(), 'package':ref}}
             if update_live:
