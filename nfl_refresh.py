@@ -209,10 +209,12 @@ class Workflow:
         finally:self.lock.release()
 
 
-def handler(workflow,token,mlb_reports=None):
+def handler(workflow,token,mlb_reports=None,mlb_update_config=None):
     from performance_reader import NFLReader, MLBReader, DEFAULT_MLB, navigation, NAV_CSS, READER_ERRORS
     nfl_reader = NFLReader(workflow.root/'Data/NFL/performance') if workflow is not None else None
     mlb_reader = MLBReader(mlb_reports if mlb_reports is not None else DEFAULT_MLB)
+    from mlb_performance_update import UpdateController
+    updates = UpdateController(mlb_reader.root,mlb_update_config)
     from mlb_odds_store import OddsStore
     mlb = OddsStore(workflow.root/'Data/MLB/odds') if workflow is not None else None
     class Handler(BaseHTTPRequestHandler):
@@ -239,7 +241,10 @@ def handler(workflow,token,mlb_reports=None):
                 if path=='/performance/nfl':
                     return self.send(200,nfl_reader.render(parse_qs(urlsplit(self.path).query,keep_blank_values=True)),'text/html; charset=utf-8')
                 if path=='/performance/mlb':
-                    return self.send(200,mlb_reader.render(parse_qs(urlsplit(self.path).query,keep_blank_values=True)),'text/html; charset=utf-8')
+                    return self.send(200,mlb_reader.render(parse_qs(urlsplit(self.path).query,keep_blank_values=True),updates=updates,token=token),'text/html; charset=utf-8')
+                if path=='/api/mlb/performance/update':return self.send(200,updates.status())
+                m=re.fullmatch(r'/performance/mlb/update/evidence/([0-9a-f]{32})/collection.json',path)
+                if m:return self.send(200,updates.download(m[1]),'application/octet-stream')
                 m=re.fullmatch(r'/performance/nfl/report/([0-9a-f]{64})\.json',path)
                 if m:return self.send(200,nfl_reader.download(m[1]),'application/octet-stream')
                 if path.startswith('/performance/mlb/saved/'):
@@ -290,6 +295,9 @@ def handler(workflow,token,mlb_reports=None):
                 if not 0<length<=MAX_REQUEST:raise ValueError('Request exceeds limit')
                 payload=json.loads(self.rfile.read(length))
                 if not isinstance(payload,dict):raise ValueError('Invalid request')
+                if self.path=='/api/mlb/performance/update':
+                    if payload:raise ValueError('Report update takes no filter or path parameters')
+                    return self.send(202,updates.start())
                 if self.path=='/api/mlb/refresh':
                     if set(payload)!={'date'}:raise ValueError('Refresh requires only the selected date')
                     return self.send(200,mlb.start(payload['date']))
@@ -301,8 +309,8 @@ def handler(workflow,token,mlb_reports=None):
 
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--root',type=Path,default=Path.home()/'PopsEdge');p.add_argument('--port',type=int,default=8766);p.add_argument('--no-browser',action='store_true');p.add_argument('--mlb-reports',type=Path,help='Existing saved MLB reporting output root (read only)');args=p.parse_args()
-    workflow=Workflow(args.root);server=ThreadingHTTPServer(('127.0.0.1',args.port),handler(workflow,secrets.token_hex(32),args.mlb_reports))
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--root',type=Path,default=Path.home()/'PopsEdge');p.add_argument('--port',type=int,default=8766);p.add_argument('--no-browser',action='store_true');p.add_argument('--mlb-reports',type=Path,help='Existing saved MLB reporting output root');p.add_argument('--mlb-update-config',type=Path,help='Trusted local configuration for explicit report updates');args=p.parse_args()
+    workflow=Workflow(args.root);server=ThreadingHTTPServer(('127.0.0.1',args.port),handler(workflow,secrets.token_hex(32),args.mlb_reports,args.mlb_update_config))
     url=f'http://127.0.0.1:{server.server_port}/';print('NFL Bet Sheet: '+url,flush=True)
     if not args.no_browser:webbrowser.open(url)
     try:server.serve_forever()

@@ -83,6 +83,9 @@ NAV_CSS = '.product-nav{display:flex;gap:8px;margin:12px 0}.product-nav a{displa
 CSS = '''*{box-sizing:border-box}body{margin:28px;background:#f5f7fa;color:#18304a;font:15px/1.5 system-ui}main{max-width:1250px;margin:auto}h1{margin:0}h2{margin:0 0 10px}p{margin:8px 0}.panel{background:white;border:1px solid #dbe2e9;border-radius:12px;padding:24px;margin:18px 0}.filters{display:flex;align-items:center;gap:18px;flex-wrap:wrap;background:#f3f6fa;border:1px solid #dce4ed;border-radius:10px;padding:16px}select,button{font:inherit;background:white;border:1px solid #c9d5e2;border-radius:6px;padding:6px 12px;color:#18304a}.metrics{display:flex;gap:18px;flex-wrap:wrap;margin:18px 0}.metric{flex:1;min-width:170px;padding:18px;background:#f2f6fa;border-radius:8px}.metric b{font-size:28px;display:block}.muted{color:#60738a}.notice{padding:14px;background:#fff6e5;border-left:4px solid #b88322}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;background:white}th{background:#102b49;color:white;text-align:left}td,th{padding:14px;border-bottom:1px solid #e1e7ed;vertical-align:top}td small{display:block;color:#60738a}table[aria-label="Comparison with 50% reference"] tbody th{background:#eaf0f6;color:#20334a;font-weight:600}summary{cursor:pointer;font-weight:600}details p{max-width:650px}a{color:#195c89}iframe{width:100%;height:80vh;border:1px solid #dbe2e9;border-radius:10px;background:white}dl{display:grid;grid-template-columns:minmax(100px,200px) 1fr;gap:8px}dd{margin:0;overflow-wrap:anywhere}.error{color:#8d3c21}@media(max-width:650px){body{margin:12px}.panel{padding:16px}.metric{min-width:120px}td,th{padding:10px}}'''
 
 
+CSS += """.summary-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}.summary-heading h2{margin:0}.report-update{max-width:100%}.summary-dates{margin:12px 0 16px}.coverage-note{font-size:14px;font-weight:400;color:#7c6025}#update-result:empty{display:none}@media(max-width:600px){.summary-heading{align-items:flex-start}.summary-dates span{display:block;margin-top:5px}}"""
+
+
 def page(sport, body):
     return ('<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
         '<title>Pops’ Edge · '+sport.upper()+' Performance</title><style>'+BRAND_CSS+CSS+NAV_CSS+'</style></head><body><main>'
@@ -250,13 +253,16 @@ class MLBReader:
             raise ValueError('Saved MLB report changed while reading; reopen the page')
         return assets,state
 
-    def render(self, query=None):
+    def render(self, query=None, *, updates=None, token=""):
+        status=updates.status() if updates else None
+        from mlb_performance_update_view import panel
+        controls=panel(status,token) if status else ""
         try:
             assets,state=self.assets()
             from mlb_performance_view import render
-            return render(self,assets,state,query or {})
+            return render(self,assets,state,query or {},updates=updates,update_status=status,controls=controls)
         except READER_ERRORS as exc:
-            return page('mlb','<section class="panel"><h2>MLB Performance Report unavailable</h2><p class="notice">'+text(exc)+'</p><p>No report was generated or selected. Use the existing manual reporting workflow to inspect the saved output.</p></section>')
+            return page('mlb','<section class="panel"><div class="summary-heading"><h2>MLB Performance Report unavailable</h2>'+controls+'</div><p class="notice">'+text(exc)+'</p><p>No report was generated or selected. Use Update Performance Report when configured, or inspect the saved output with the manual reporting workflow.</p></section>')
 
     def asset(self, name):
         assets,state=self.assets()

@@ -39,3 +39,13 @@ Must hold: no evidence/report mutation or acquisition; retained verified selecti
 Accepted limits: explicit manual display preparation for each newly selected scientific report; local saved results; unknown names use provider ID labels; unmeasured opportunities have no inferred final scores; original evidence pages keep their original date conventions. Existing archived capture gaps remain.
 
 Deferred: model/supplier admission, arbitrary recalculated filtered summaries, Administration/update controls, automatic refresh, new inference, collector changes, study closure, positions/profit, cloud/services and whole-v1.3 release. Earlier documentation-candidate headings remain historical; subsequent implemented reporting and activation amendments govern current capabilities.
+
+
+## MLB Performance manual update — September 17, 2026
+
+The Owner adopted and authorized implementation of the [bounded update workflow](MLB_PERFORMANCE_UPDATE_v1.3.md). This supersedes browser-update deferral only for an explicit MLB Performance action. It uses existing archived evidence, preserves scientific validation and historical selection, prepares matching rows before selecting the new report, and reads separately dated collection observations without acquisition. A clean pinned reporting worker remains distinct from the web runtime and collector. Full Administration and automatic refresh remain deferred. This is an implementation candidate, not deployment or real-generation authority.
+
+
+## Owner-adopted compact summary — September 17, 2026
+
+The heading and Update report action share a wrapping row. One quiet line shows the cumulative Protocol-origin-to-Central-cutoff date range and actual generation date/time. Exact cutoff and generation times remain separately labelled in Details. Eligible/captured/scored counts stay visible, with Limited coverage when eligible opportunities remain unscored or calendar coverage is unknown. Category counts move to readable Coverage Details; this supersedes the earlier principal category-breakdown presentation. The Brier table and sampling interval remain visible; repeated sample-count text is removed. No study origin, population, scoring, filter or update authority changes. Empty/small/degenerate samples, unknown-calendar coverage and failed/incomplete updates retain their notices. Permanent instructional text moves to Details; running/outcome/error messages remain visible.

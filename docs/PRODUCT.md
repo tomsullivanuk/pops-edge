@@ -817,3 +817,8 @@ The focused [outcome-rule amendment](NFL_OVERTIME_OUTCOME_AMENDMENT.md) explicit
 ## MLB Performance presentation — September 16, 2026
 
 The Owner authorized the [NFL-style MLB reader](MLB_PERFORMANCE_READER_v1.3.md), including cumulative Kalshi/reference summary, complete retained opportunity rows, Period/Custom Period and Team display filters, Central dates, compact Details and bottom historical link. It supersedes the earlier iframe-presentation limitation and redesign deferral for this bounded slice. Scientific packages, scoring, populations and collector authority remain unchanged. Explicit manual match-display preparation is separate from browser reads. Implementation and independent review are authorized; integration/deployment/release are separate gates.
+
+
+## MLB Performance manual update — September 17, 2026
+
+The Owner adopted and authorized implementation of the [bounded update workflow](MLB_PERFORMANCE_UPDATE_v1.3.md). This supersedes browser-update deferral only for an explicit MLB Performance action. It uses existing archived evidence, preserves scientific validation and historical selection, prepares matching rows before selecting the new report, and reads separately dated collection observations without acquisition. A clean pinned reporting worker remains distinct from the web runtime and collector. Full Administration and automatic refresh remain deferred. This is an implementation candidate, not deployment or real-generation authority.

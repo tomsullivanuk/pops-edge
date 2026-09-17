@@ -141,7 +141,7 @@ def validate(payload, package_id, analysis, projection):
     return rows
 
 
-def prepare(reports, archive, destination):
+def prepare(reports, archive, destination, *, reference=None):
     reports = Path(reports).absolute();archive = Path(archive).resolve();destination = Path(destination).absolute()
     if destination.is_symlink():
         raise ValueError('Aliased match display destination')
@@ -149,7 +149,7 @@ def prepare(reports, archive, destination):
     # Only presentation output, never an archive or repository, can be written.
     if destination == archive or archive in destination.parents or any((parent/'.git').exists() for parent in (destination, *destination.parents)):
         raise ValueError('Match display output must be separate from source')
-    ref = read_entry(reports)['live']
+    ref = reference if reference is not None else read_entry(reports)['live']
     if not ref:
         raise ValueError('No selected live report')
     _retained(reports, 'live', ref)
@@ -161,7 +161,7 @@ def prepare(reports, archive, destination):
     payload = dict(version=VERSION, package_id=ref['package_id'], report_id=ref['report_id'], rows=rows)
     payload['digest'] = sha256_bytes(canonical_bytes(payload))
     validate(payload, ref['package_id'], analysis, projection)
-    if read_entry(reports)['live'] != ref:
+    if reference is None and read_entry(reports)['live'] != ref:
         raise ValueError('Selected report changed during preparation')
     destination.mkdir(parents=True, exist_ok=True)
     target = safe_path(destination, ref['package_id']+'.json')
