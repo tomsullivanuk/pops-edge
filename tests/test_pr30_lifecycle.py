@@ -299,6 +299,34 @@ class LifecycleAcceptanceTests(unittest.TestCase):
         at=at or self.at
         self.state.append(OperationalHeartbeat('1',command,at,at,disposition,0,0,0,failure))
 
+    def test_rebuild_retry_allows_downstream_maintenance_and_records_exhaustion(self):
+        import forecast_prospective_projection as projection
+        original = projection.rebuild_projection
+        attempts = []
+        outputs = {}
+        def rebuild(archive, at):
+            attempts.append(at)
+            if len(attempts) == 1:
+                raise OperationsError('projection-stale', 'concurrent publication')
+            return original(archive, at)
+        def run(command):
+            if command in ('rebuild-prospective-projection', 'rebuild-index', 'sync-secondary'):
+                outputs[command] = execute(command, self.config, clock=lambda:self.at)
+                return outputs[command]
+            return {'disposition':'success', 'provider_calls':0}
+        with patch.object(projection, 'rebuild_projection', side_effect=rebuild):
+            result = run_cycle(archive=self.archive, state=self.state, clock=lambda:self.at, run=run)
+        self.assertEqual(result['disposition'], 'success')
+        self.assertEqual(outputs['rebuild-prospective-projection']['rebuild_attempts'], 2)
+        self.assertEqual(outputs['sync-secondary']['disposition'], 'success')
+        later = self.at + timedelta(days=1)
+        with patch.object(projection, 'rebuild_projection', side_effect=OperationsError('projection-stale', 'continuous contention')) as rebuild:
+            with self.assertRaisesRegex(OperationsError, 'projection-stale'):
+                execute('rebuild-prospective-projection', self.config, clock=lambda:later)
+            self.assertEqual(rebuild.call_count, 3)
+        last = self.state.entries()[-1]
+        self.assertEqual((last.failure_code, last.provider_calls), ('projection-stale', 0))
+
     def test_sequential_typed_phases_and_dependency_failure(self):
         order=[]
         def run(command):
