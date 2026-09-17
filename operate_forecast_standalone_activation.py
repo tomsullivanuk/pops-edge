@@ -167,9 +167,10 @@ def execute(command,config,*,clock=lambda:datetime.now(timezone.utc),transport_f
             load_projection(archive,started);calls=0
             output={"disposition":"success","provider_calls":0}
         elif command=="rebuild-prospective-projection":
-            from forecast_prospective_projection import rebuild_projection
-            rebuild_projection(archive,started);calls=0
-            output={"configuration_id":config.identity,"disposition":"success","prospective_projection":"current","provider_calls":0}
+            from forecast_prospective_projection import rebuild_projection_with_retry
+            calls=0
+            attempts=rebuild_projection_with_retry(archive,clock=clock)
+            output={"configuration_id":config.identity,"disposition":"success","prospective_projection":"current","provider_calls":0,"rebuild_attempts":attempts}
         elif command=="rebuild-index":calls=0;output={"index_sha256":rebuild_index(archive),"disposition":"success"}
         elif command=="sync-secondary":
             calls=0;output={**sync_secondary(archive),"disposition":"success"}

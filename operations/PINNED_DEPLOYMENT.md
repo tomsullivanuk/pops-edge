@@ -37,6 +37,16 @@ and health jobs must remain absent from the commissioned topology. Legacy PR17B2
 examples are historical dry-run material, not additional activated jobs. Rendering
 is inert: it does not install, load, enable, bootstrap, or start any job.
 
+The `rebuild-prospective-projection` command permits three total full preparation
+attempts when concurrent relevant publication causes `projection-stale`. Each
+attempt recaptures sources with a fresh trusted timestamp. Successful output
+includes `rebuild_attempts`; exhaustion retains the `projection-stale` failure
+and zero provider-call count. Other failures are not retried. Full and cached
+replays are compared only at matching source boundaries, and all publication and
+rejected-lineage guards remain active. The collector remains independent; this
+does not guarantee rebuild progress under continuous publication. Exhaustion
+continues to block dependent maintenance and remains visible for operator review.
+
 Before authorizing acquisition, independently verify archive integrity, rebuild
 and compare the checkpoint, rebuild the index, synchronize the secondary copy,
 and inspect all unresolved markers and current health conditions. Then perform

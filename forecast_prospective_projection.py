@@ -306,6 +306,22 @@ def _publish(archive, boundary, at):
         temporary.unlink(missing_ok=True)
 
 
+def rebuild_projection_with_retry(archive, *, clock):
+    """At most three full preparations; only concurrent publication is retryable."""
+    previous = None
+    for attempt in range(1, 4):
+        at = clock()
+        if at.tzinfo is None or at.utcoffset() is None or (previous is not None and at < previous):
+            raise OperationsError("trusted-clock-invalid", "rebuild retry requires an aware, nondecreasing clock")
+        previous = at
+        try:
+            rebuild_projection(archive, at)
+            return attempt
+        except OperationsError as exc:
+            if exc.code != "projection-stale" or attempt == 3:
+                raise
+
+
 def rebuild_projection(archive, at):
     integrity = reconcile_archive(archive)
     if not integrity.healthy:
@@ -321,6 +337,9 @@ def rebuild_projection(archive, at):
         cached, recorded, current = _prepare_checkpoint(archive, at)
     except OperationsError:
         cached = None
+    if cached is not None and current != _material(archive, boundary.entries()):
+        # A newer checkpoint is not evidence that the older full replay is wrong.
+        raise OperationsError("projection-stale", "source boundary changed before replay comparison")
     if cached is not None and recorded["source_manifest_ids"] == current["source_manifest_ids"]:
         cached.budget_seconds = float("inf")
         if (_scientific_state_bytes(replay_boundary(cached, at)) != _scientific_state_bytes(state) or
