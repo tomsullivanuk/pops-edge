@@ -105,3 +105,8 @@ does not rename its metric or require editing/re-pinning its historical contents
 The same paired games govern the 50% reference and both improvements over it.
 Direct Kalshi-minus-ELWAY comparison stays in Details. No profit, statistical
 superiority or wagering authority follows. Additional MLB redesign remains deferred.
+
+
+## MLB Performance presentation — September 16, 2026
+
+The Owner authorized the [NFL-style MLB reader](MLB_PERFORMANCE_READER_v1.3.md), including cumulative Kalshi/reference summary, complete retained opportunity rows, Period/Custom Period and Team display filters, Central dates, compact Details and bottom historical link. It supersedes the earlier iframe-presentation limitation and redesign deferral for this bounded slice. Scientific packages, scoring, populations and collector authority remain unchanged. Explicit manual match-display preparation is separate from browser reads. Implementation and independent review are authorized; integration/deployment/release are separate gates.
