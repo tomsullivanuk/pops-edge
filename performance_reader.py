@@ -226,7 +226,7 @@ class MLBReader:
                 for p in parent.rglob('*'):
                     if p.is_symlink():raise ValueError('Aliased MLB report evidence is not allowed')
             _retained(self.root,'live',state['live'])
-        allowed=re.compile(r'(entry\.html|packages/'+HEX+r'/(analysis|projections|source|protocol|envelope|package)\.json|packages/'+HEX+r'/(report\.html|REPRODUCE\.txt)|(?:anchors|receipts)/[0-9a-f]{32}\.json|displays/[0-9a-f]{32}/(?:live\.html|historical\.html|recovery\.html|saved-state\.json|collection-status\.json|activation\.json))')
+        allowed=re.compile(r'(entry\.html|packages/'+HEX+r'/(analysis|projections|source|protocol|envelope|package)\.json|packages/'+HEX+r'/(report\.html|REPRODUCE\.txt)|(?:anchors|receipts)/[0-9a-f]{32}\.json|displays/[0-9a-f]{32}/(?:live\.html|historical\.html|recovery\.html|saved-state\.json|collection-status\.json|activation\.json|operator-guide\.md|collection-guide\.md|deployment-guide\.md))')
         assets={'entry.html':entry};pending=['entry.html']
         while pending:
             name=pending.pop()
@@ -250,10 +250,11 @@ class MLBReader:
             raise ValueError('Saved MLB report changed while reading; reopen the page')
         return assets,state
 
-    def render(self):
+    def render(self, query=None):
         try:
-            self.assets()
-            return page('mlb','<p class="muted">Saved MLB reader · Report dates and collection status remain independently dated. Opening this page performs no update.</p><iframe title="MLB Performance Report" sandbox="allow-same-origin allow-downloads" src="/performance/mlb/saved/entry.html"></iframe>')
+            assets,state=self.assets()
+            from mlb_performance_view import render
+            return render(self,assets,state,query or {})
         except READER_ERRORS as exc:
             return page('mlb','<section class="panel"><h2>MLB Performance Report unavailable</h2><p class="notice">'+text(exc)+'</p><p>No report was generated or selected. Use the existing manual reporting workflow to inspect the saved output.</p></section>')
 

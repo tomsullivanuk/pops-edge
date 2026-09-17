@@ -239,7 +239,7 @@ def handler(workflow,token,mlb_reports=None):
                 if path=='/performance/nfl':
                     return self.send(200,nfl_reader.render(parse_qs(urlsplit(self.path).query,keep_blank_values=True)),'text/html; charset=utf-8')
                 if path=='/performance/mlb':
-                    return self.send(200,mlb_reader.render(),'text/html; charset=utf-8')
+                    return self.send(200,mlb_reader.render(parse_qs(urlsplit(self.path).query,keep_blank_values=True)),'text/html; charset=utf-8')
                 m=re.fullmatch(r'/performance/nfl/report/([0-9a-f]{64})\.json',path)
                 if m:return self.send(200,nfl_reader.download(m[1]),'application/octet-stream')
                 if path.startswith('/performance/mlb/saved/'):

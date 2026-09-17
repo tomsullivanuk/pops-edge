@@ -33,3 +33,8 @@ be one focused follow-up change, independently reviewed before separate integrat
 and deployment approval. The whole v1.3 release remains incomplete.
 
 The Owner subsequently adopted one Refresh MLB sheet action, conditional saved-read recovery, compact NFL-style filters/counts and shorter Details. The amended feature contract governs this refinement of the same follow-up candidate.
+
+
+## MLB Performance presentation — September 16, 2026
+
+The Owner authorized the [NFL-style MLB reader](MLB_PERFORMANCE_READER_v1.3.md), including cumulative Kalshi/reference summary, complete retained opportunity rows, Period/Custom Period and Team display filters, Central dates, compact Details and bottom historical link. It supersedes the earlier iframe-presentation limitation and redesign deferral for this bounded slice. Scientific packages, scoring, populations and collector authority remain unchanged. Explicit manual match-display preparation is separate from browser reads. Implementation and independent review are authorized; integration/deployment/release are separate gates.
