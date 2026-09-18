@@ -53,6 +53,31 @@ namespace integrity failures and session-local exclusion semantics. No automatic
 retry/recovery, snapshot database, publication pointer or background service.
 Source storage retention remains necessary for replay.
 
+### Invocation-local verification reuse
+
+Report generation reconstructs each exact archive/inventory/cutoff once and reuses
+that verified graph across its analytical and package checks. The scope is local
+to that invocation, retains at most one graph, and is discarded on success or
+failure. It does not persist trust or reuse an earlier report as Evidence.
+Every source verification still checks the independent boundary ID, full current
+namespace integrity, retained manifests, selection/closure/dispositions, graph
+digest and chronology. Returned containers are independent copies. A changed
+inventory or cutoff cannot reuse the graph. Separate explicit verification retains
+its independent reconstruction behavior. One initial reconstruction remains
+necessary; durable incremental source verification is outside this correction.
+
+Within each reconstruction the read-only view keeps verified bytes, decoded JSON
+and successful supporting/acquisition checks only for that complete frozen
+inventory. Nested manifest values are immutable, avoiding repeated inventory
+serialization. Original validators still check page completeness, lineage, union
+identity and derivation; failure results are not cached. Before returning the
+graph, every consumed source object is re-read and hash-verified through the real
+archive, decoded values are checked for accidental mutation, and namespace-wide
+integrity is checked again (including unconsumed objects). Corruption or
+removal during reconstruction fails closed. These caches are discarded with the
+view; memory scales with the consumed source bytes and parsed objects for one
+reconstruction, not with a retained history of report runs.
+
 Validation uses temporary synthetic namespaces, including late completion,
 legacy completion followed by correction, rehashed omission/tampering, missing
 and corrupt material outside contributing roots, concurrent append, independent

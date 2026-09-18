@@ -21,7 +21,8 @@ from pathlib import Path
 
 import forecast_reporting_analysis as analysis
 from forecast_reporting_projections import VERSION as PROJECTION_VERSION, create_reporting_projections
-from forecast_reporting_source import FrozenReportingSource, freeze_reporting_source, verify_reporting_source
+from forecast_reporting_source import (FrozenReportingSource, freeze_reporting_source,
+    verify_reporting_source, reporting_verification_scope)
 from forecast_standalone_operations import OperationsError, canonical_bytes, sha256_bytes
 
 VERSION = 'mlb-reporting-delivery-1'
@@ -414,7 +415,7 @@ def _reference(manifest, report, anchor_key):
 def generate_report(*, archive, output, study, expected_revision, report_status='in-progress',
                     update_live=False, clock=utc_now, synthetic_validation=False, prepare_matches=False):
     output = validate_output_root(output, archive)
-    with _local_writer(output):
+    with _local_writer(output), reporting_verification_scope():
         state = read_entry(output)
         attempt = dict(attempt_id=uuid.uuid4().hex, operation='update-live' if update_live else 'generate-'+study,
                        status='running', started_at=_time(clock).isoformat())
