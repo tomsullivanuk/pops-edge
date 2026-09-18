@@ -1,5 +1,24 @@
 # Weekly capture and scoring — local implementation
 
+## File creation proxy amendment — September 18, 2026
+
+New ELWAY workbook imports may use the owner-approved
+[file creation proxy amendment](NFL_FILE_CREATION_TIME_AMENDMENT.md) when the
+publisher explicitly reports its update time unavailable. The local UI and CLI
+read the original file's birth metadata together with its bytes. Immutable
+validation records and research import events bind that observation to the bytes
+and amendment digest. Existing source receipts, activation and baseline protocol
+files remain untouched. Per-source `file-time.json` retains the first observation
+for operational reimports and restart; research semantic deduplication additionally
+handles copies and metadata-only resaves of identical target-week rows.
+
+Scientific replay never consults live filesystem metadata. Imports without an
+amendment observation retain legacy semantics, including rejected imports.
+Publication time and model age remain unknown for proxy records. The original
+import, request and weekly-cutoff requirements still apply; an old birth time
+cannot enroll a new post-cutoff research import. This candidate is not deployed
+or activated by the documentation or by importing its modules.
+
 ## Current reader candidate — September 15, 2026
 
 Capture and refresh integration already exist. The [Part 2 reader candidate](PERFORMANCE_READERS_v1.3.md) now exposes saved weekly results without changing acquisition or scoring. Earlier disconnected/deferred statements below describe prior gates, not current source capability.

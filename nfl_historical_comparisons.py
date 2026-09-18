@@ -72,6 +72,7 @@ def attach_history(root, games, selected, now):
                              forecast_updated_at=snap['forecast_updated_at'],
                              forecast_verified_at=snap['forecast_verified_at'],
                              fee_model=snap['fee_model'], generated_at=snap['generated_at'])
+                if snap.get('forecast_time_basis'):value['forecast_time_basis']=snap['forecast_time_basis']
                 if key in found and found[key][1] != value:
                     found[key] = (at, None, None)
                 else:

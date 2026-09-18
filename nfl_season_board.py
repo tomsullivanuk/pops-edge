@@ -20,7 +20,12 @@ def assemble(data_root,folders,candidate=None,now=None):
         for p in root.glob('forecasts/sources/*/receipt.json'):
             receipt=json.loads(p.read_text());raw=(p.parent/'source.xlsx').read_bytes()
             if source.digest(raw)!=receipt['source_sha256']:raise ValueError('Workbook identity mismatch')
-            parsed=excel.parse(raw);records.append(dict(source=receipt,**parsed))
+            time_path=p.parent/'file-time.json'
+            file_time=json.loads(time_path.read_text()) if time_path.exists() else None
+            if file_time:
+                from nfl_forecast_time import validate
+                validate(file_time,raw,now)
+            parsed=excel.parse(raw,file_time);records.append(dict(source=receipt,**parsed))
         if not records:raise ValueError('Select an ELWAY workbook to display the full season')
         candidate=max(records,key=lambda r:(r['source']['imported_at'],r['source']['source_sha256']))
     season=candidate['season'];saved={};activities=[]
@@ -52,7 +57,7 @@ def assemble(data_root,folders,candidate=None,now=None):
         key=(row['week'],row['home'],row['away']);pair=saved.get(key)
         if pair:
             snap,original=pair;g=deepcopy(original)
-            g['source_note']='ELWAY updated '+display_time(snap['forecast_updated_at'])+' · Prices captured '+display_time(snap['capture_completed_at'])
+            g['source_note']=('File creation time — publication-time proxy ' if snap.get('forecast_time_basis') else 'ELWAY updated ')+display_time(snap['forecast_updated_at'])+' · Prices captured '+display_time(snap['capture_completed_at'])
             if key in undated and undated[key][1]>=snap.get('schedule_received_at',''):
                 g['kickoff']=None
                 g['source_note']+=' · Schedule received '+display_time(undated[key][1])+' · Date/time TBD'
@@ -72,10 +77,13 @@ def assemble(data_root,folders,candidate=None,now=None):
             g['display_status']='Date/time TBD'
             g['issues']=['Date/time TBD. Awaiting the NFL schedule; no action needed.']
             g['source_note']+=' · Official schedule received '+display_time(at)
+        if not pair and candidate.get('file_time'):
+            g['source_note']=g['source_note'].replace('Workbook updated ', 'File creation time — publication-time proxy ')
         games.append(g)
     completion.apply(games,observations,now)
     history_issues=attach_history(root,games,list(zip(folders,snapshots)),now)
     result=dict(schema='nfl-season-view-v1',season=season,week='All',generated_at=now,games=games,guards=board.GUARDS,scheduled_games=len(games),ranked_games=sum(any(r['usable'] for o in g['outcomes'] for r in o['routes']) for g in games),diagnostics=history_issues+completion_issues,forecast_updated_at=candidate['updated_at'],forecast_verified_at=None,schedule_received_at=None,capture_started_at=now,capture_completed_at=now)
+    if candidate.get('file_time'):result['forecast_time_basis']=candidate['file_time']['rule']
     if activity:result['activity']=activity
     from nfl_accounting import load
     result['accounting'], accounting_issues = load(root, games, now)
@@ -160,7 +168,7 @@ def render(data):
                 for index in range(6,2,-1):
                     cell=cells[index];main=main[:cell.start()]+replacements[index-3]+main[cell.end():]
                 detail=('<p><b>Historical comparison</b> · quote captured '+esc(display_time(route['book_received_at']))+
-                        ' · ELWAY updated '+esc(display_time(historical['forecast_updated_at']))+
+                        (' · File creation time — publication-time proxy ' if historical.get('forecast_time_basis') else ' · ELWAY updated ')+esc(display_time(historical['forecast_updated_at']))+
                         ' · verified '+esc(display_time(historical['forecast_verified_at']))+'.</p><p>'+esc(route['ticker'])+
                         ' · '+esc(route['side'].upper())+' · original ELWAY win '+esc(historical['outcome']['displayed_win'])+
                         ' · original contract value '+dollars(value['central'])+' · estimated fee '+dollars(route['cost']['estimated_fee'])+
@@ -202,8 +210,10 @@ def render(data):
     extra="document.querySelectorAll('#seasonWeek,#seasonTeam,#omitCompleted').forEach(e=>e.addEventListener('change',filter));"
     html=html.replace('</script>',extra+'</script>')
     # A composite view has no single source capture or verification time.
-    a=html.index('<p>ELWAY updated:');b=html.index('</p>',a)+4
+    a=html.index('<p>File creation time — publication-time proxy' if data.get('forecast_time_basis') else '<p>ELWAY updated:');b=html.index('</p>',a)+4
     html=html[:a]+'<p>Full-season view assembled: '+esc(display_time(data['generated_at']))+'. Individual game source times appear in Details. Price captures vary by week; archived prices are excluded from positive differences. Filtering does not refresh prices. Workbook-only games show probabilities as an unverified preview; no contract value or difference is inferred.</p>'+html[b:]
+    if data.get('forecast_time_basis'):
+        html=html[:a]+'<p>File creation time — publication-time proxy. Publisher update time and model age are unknown.</p>'+html[a:]
     html=html.replace('<p><a href="comparison.json">Saved comparison data</a> · <a href="complete.json">Manifest</a></p>','')
     html=html.replace('Missing or excluded quotes stay at the bottom and have no numeric difference.', 'Historical comparisons retain their original values and dated quote, but stay outside current comparison ranking and difference filters. Missing comparisons stay unavailable.')
     if data['diagnostics']:

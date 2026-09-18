@@ -12,6 +12,7 @@ import fcntl
 import json
 import nfl_forecast_import as base
 import nfl_excel_import as excel
+import nfl_forecast_time as timing
 import nfl_schedule as schedule
 import nfl_comparison_board as board
 import retrieve_kalshi_nfl as kalshi
@@ -180,7 +181,9 @@ class Performance:
         if event['kind'] == 'import':
             raw = self.raw(p['raw'])
             try:
-                value = excel.parse(raw)
+                value = excel.parse(raw,p.get('file_time'))
+                if value.get('file_time'):
+                    timing.validate(value['file_time'],raw,p['received_at'])
                 rows = [{k: v for k, v in r.items() if k != 'excel_row'} for r in value['rows'] if r['week'] == p['week']]
                 if value['season'] != p['season'] or not rows or any(r['conditional'] for r in rows):
                     raise ValueError('Missing, conditional or wrong-season target week')
@@ -189,6 +192,13 @@ class Performance:
                 rows.sort(key=lambda r: (r['home'], r['away']))
                 material = dict(source='ELWAY', season=p['season'], week=p['week'],
                                 updated_at=canonical_time(value['updated_at']), rows=rows)
+                if value.get('file_time'):
+                    # First content-identical proxy candidate retains its time in
+                    # selection; copies/resaves cannot reset research acquisition.
+                    identity = dict(source='ELWAY',season=p['season'],week=p['week'],rows=rows,
+                                    time_basis=timing.RULE,rule_digest=value['file_time']['rule_digest'])
+                    return dict(material,time_basis=timing.RULE,file_time=value['file_time'],
+                                published_at=None,semantic=base.digest(base.encode(identity)),error=None)
                 return dict(material, semantic=base.digest(base.encode(material)), error=None)
             except Exception as exc:
                 return dict(error=type(exc).__name__ + ': ' + str(exc))
@@ -240,7 +250,7 @@ class Performance:
         with self.locked():
             return self._schedule(season, week, transport)
 
-    def refresh(self, raw, name, season, week, *, retry=False,
+    def refresh(self, raw, name, season, week, *, retry=False, file_time=None,
                 schedule_transport=schedule.fetch, market_transport=kalshi.public_get):
         """New import captures once; explicit retries never overwrite successes.
 
@@ -251,7 +261,7 @@ class Performance:
         with self.locked():
             received = self.clock()
             event = self.append('import', dict(raw=self.blob(raw), name=Path(name).name,
-                received_at=received, season=season, week=week))
+                received_at=received, season=season, week=week,**({'file_time':file_time} if file_time is not None else {})))
             forecast = self.decode(event)
             if forecast['error']:
                 return self.append('rejected', dict(import_id=event['id'], season=season, week=week, error=forecast['error']))
@@ -342,6 +352,8 @@ class Performance:
                     cutoff = min(cutoff, instant(outcome['start']))
         effective_cutoff = None if blocked else cutoff
         imports = []
+        eligible_imports = []
+        proxy_identities = set()
         for e in scoped:
             if e['kind'] != 'import' or values[e['id']].get('error') or not effective_cutoff:
                 continue
@@ -351,6 +363,12 @@ class Performance:
             known = [s for s in schedules if instant(s['at']) < effective_cutoff]
             if not known:
                 continue
+            eligible_imports.append(e)
+            value = values[e['id']]
+            if value.get('time_basis') == timing.RULE:
+                if value['semantic'] in proxy_identities:
+                    continue
+                proxy_identities.add(value['semantic'])
             imports.append(e)
         selected = None
         selection_issue = None
@@ -359,7 +377,7 @@ class Performance:
             candidates = [e for e in imports if instant(values[e['id']]['updated_at']) == newest]
             identities = {values[e['id']]['semantic'] for e in candidates}
             if len(identities) != 1:
-                selection_issue = 'Conflicting forecasts at newest publication time'
+                selection_issue = ('Conflicting forecasts at newest effective time (includes file-creation proxy)' if any(values[e['id']].get('time_basis') for e in candidates) else 'Conflicting forecasts at newest publication time')
             else:
                 selected = candidates[0]
         selected_value = values[selected['id']] if selected else None
@@ -367,7 +385,7 @@ class Performance:
         quote_issues = {}
         attempts = []
         if selected:
-            family = {e['id'] for e in imports if values[e['id']]['semantic'] == selected_value['semantic']}
+            family = {e['id'] for e in eligible_imports if values[e['id']]['semantic'] == selected_value['semantic']}
             valid_attempts = {e['id']: e for e in scoped if e['kind'] == 'attempt' and e['payload']['import_id'] in family}
             for attempt_event in valid_attempts.values():
                 terminals = [e for e in scoped if e['kind'] in ('market', 'failed') and e['payload'].get('attempt_id') == attempt_event['id']]

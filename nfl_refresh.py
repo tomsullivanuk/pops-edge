@@ -14,6 +14,7 @@ from urllib.parse import urlsplit, parse_qs
 import uuid
 import webbrowser
 import nfl_excel_import as excel
+import nfl_forecast_time as forecast_time
 import nfl_forecast_import as source
 import nfl_schedule as schedule
 import nfl_comparison_board as board
@@ -60,10 +61,10 @@ class Workflow:
                 return week
         return None
 
-    def capture_performance(self,raw,name,season,week,retry=False):
+    def capture_performance(self,raw,name,season,week,retry=False,file_time=None):
         engine=Performance(self.data/'performance')
         self.performance_status=dict(state='running',message=f'Capturing the Week {week} comparison…')
-        event=engine.refresh(raw,name,season,week,retry=retry)
+        event=engine.refresh(raw,name,season,week,retry=retry,**({'file_time':file_time} if file_time else {}))
         if event['kind']=='rejected':raise ValueError(event['payload']['error'])
         # Reimports preserve quotes; official outcomes are refreshed independently.
         if event['kind']=='duplicate':engine.observe_results(season,week)
@@ -92,17 +93,20 @@ class Workflow:
             listing.append(dict(id=identity,name=p.name,kind=p.suffix.lower()))
         return dict(files=listing,inbox=str(self.inbox),status=self.status,boards=sorted(self.boards),performance=self.performance_config())
 
-    def file_bytes(self,spec,kind):
+    def file_bytes(self,spec,kind,with_time=False):
         if not isinstance(spec,dict) or set(spec)!={'id'}:raise ValueError('Select a file from the NFL inbox')
         path=self.files.get(spec['id'])
         if not path or path.is_symlink() or path.resolve().parent!=self.inbox or path.suffix.lower()!=kind:raise ValueError('Selected inbox file is unavailable')
         if not 0<path.stat().st_size<=excel.MAX_BYTES:raise ValueError('Use a nonempty file up to 8 MB')
+        if with_time:
+            raw,file_time=forecast_time.read_file(path)
+            return raw,path.name,file_time
         return path.read_bytes(),path.name
 
     def generate(self,payload):
         if not self.lock.acquire(False):raise ValueError('A generation is already running')
         try:
-            raw,name=self.file_bytes(payload.get('forecast'),'.xlsx')
+            raw,name,file_time=self.file_bytes(payload.get('forecast'),'.xlsx',with_time=True)
             activity,activity_name=self.file_bytes(payload.get('activity'),'.csv')
             config=self.performance_config()
             target=payload.get('performance_week','auto' if config['enabled'] else None);retry=payload.get('retry_missing',False)
@@ -114,7 +118,7 @@ class Workflow:
             attempt=self.data/'refreshes'/uuid.uuid4().hex
             source.write_once(attempt/'started.json',source.encode(dict(at=kalshi.utc(),forecast_sha256=source.digest(raw),activity_sha256=source.digest(activity),scope='all workbook weeks')))
             self.status=dict(state='running',message='Checking the selected files…')
-            threading.Thread(target=self.run,args=(raw,name,activity,attempt,target,retry),daemon=True).start()
+            threading.Thread(target=self.run,args=(raw,name,activity,attempt,target,retry,file_time),daemon=True).start()
             return self.status
         except Exception:self.lock.release();raise
 
@@ -133,9 +137,9 @@ class Workflow:
             return self.status
         finally:self.lock.release()
 
-    def run(self,raw,name,activity,attempt,performance_week=None,retry_missing=False):
+    def run(self,raw,name,activity,attempt,performance_week=None,retry_missing=False,file_time=None):
         try:
-            candidate=excel.prepare(raw,name,self.data/'forecasts')
+            candidate=excel.prepare(raw,name,self.data/'forecasts',file_time) if file_time else excel.prepare(raw,name,self.data/'forecasts')
             from nfl_activity import REQUIRED
             reader=csv.DictReader(io.StringIO(activity.decode('utf-8-sig')))
             if not REQUIRED.issubset(reader.fieldnames or []):raise ValueError('Activity export missing required columns')
@@ -156,7 +160,7 @@ class Workflow:
                         performance_week=self.automatic_comparison_week(engine,season,candidate['weeks'])
                     if performance_week is not None:
                         if performance_week not in candidate['weeks']:raise ValueError('Selected week is absent from the workbook')
-                        engine=self.capture_performance(raw,name,season,performance_week,retry_missing)
+                        engine=self.capture_performance(raw,name,season,performance_week,retry_missing,**({'file_time':candidate['file_time']} if candidate.get('file_time') else {}))
                     else:
                         self.performance_status=dict(state='complete',message='Model comparison: season capture windows closed. Saved results continue to update.')
                 except Exception as exc:
@@ -203,6 +207,8 @@ class Workflow:
             else:
                 note=(' '+', '.join(f"Week {x['week']}" for x in pending_dates)+': date/time TBD. Games remain listed in their weeks.') if pending_dates else ''
                 self.status=dict(state='complete',message=f"Bet Sheet refreshed: {candidate['game_count']} games. {len(completed)} weeks updated."+note,updated=True)
+            if candidate.get('file_time'):
+                self.status['message']+=' '+forecast_time.LABEL+'. Publisher update time is unknown.'
         except Exception as exc:
             self.status=dict(state='attention',message=str(exc)+'. Previous sheets remain available.')
             source.write_once(attempt/'failed.json',source.encode(dict(at=kalshi.utc(),error=str(exc))))
