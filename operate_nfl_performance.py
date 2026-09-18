@@ -36,7 +36,9 @@ def main():
     else:
         obj = performance.Performance(args.store)
         if args.command == 'capture':
-            result = obj.refresh(args.workbook.read_bytes(), args.workbook.name, args.season, args.week, retry=args.retry_missing)
+            from nfl_forecast_time import read_file
+            raw, file_time = read_file(args.workbook)
+            result = obj.refresh(raw, args.workbook.name, args.season, args.week, retry=args.retry_missing, file_time=file_time)
         elif args.command == 'outcomes':
             result = obj.observe_results(args.season, args.week)
         elif args.command == 'report':

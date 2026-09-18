@@ -175,7 +175,7 @@ def derive(f,s,k,raw_markets,asof,matching_version=None):
     for ticker in sorted(set(quotes)-consumed):diagnostics.append(dict(ticker=ticker,reason='Market not matched to this weekly schedule'))
     for fr in f['rows']:
         if fr['forecast_match_key'] not in used_forecasts:diagnostics.append(dict(forecast=fr['forecast_match_key'],reason='Forecast not matched to schedule'))
-    return dict(**({"matching_version":matching_version} if matching_version else {}),schema=VERSION,generated_at=asof,season=s['season'],week=s['week'],guards=GUARDS,games=games,
+    return dict(**({"matching_version":matching_version} if matching_version else {}),**({'forecast_time_basis':'nfl-file-creation-proxy-v1','forecast_file_time':review['file_time']} if review.get('file_time') else {}),schema=VERSION,generated_at=asof,season=s['season'],week=s['week'],guards=GUARDS,games=games,
                 scheduled_games=len(games),ranked_games=sum(g['rank'] is not None for g in games),diagnostics=diagnostics,
                 forecast_updated_at=review['updated_at'],forecast_verified_at=f['verified_at'],schedule_received_at=s['completed_at'],
                 capture_started_at=k['run_started_at'],capture_completed_at=k['run_completed_at'],
