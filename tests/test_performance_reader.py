@@ -33,6 +33,8 @@ class NFLReaderTests(unittest.TestCase):
             self.assertIn('Payout-adjusted Brier score',html);self.assertIn('ELWAY score',html);self.assertIn('1 scored pairs',html);self.assertIn('0.37',html);self.assertIn('0.31',html)
             self.assertNotIn('Unavailable.</p><a download',html)
             self.assertEqual(json.loads(self.reader.download(r['report_id'])),r)
+            self.assertIn('Market matching correction: nfl-market-aliases-v2',html)
+            self.assertIn(r['legacy_interpretation_id'],html)
         self.assertEqual(before,inventory(self.root))
     def test_match_cells_omit_evaluation_labels_but_details_preserve_them(self):
         import re

@@ -153,6 +153,8 @@ class NFLReader:
             coverage = ' · '.join(f'{count} {LABELS.get(state,state.replace("-"," "))}' for state,count in r['coverage'].items())
             body='<section class="panel"><h2>NFL weekly performance</h2>'+filters
             report_details='<p class="muted">Saved analysis: '+text(date(r['boundary']))+'. Opening this page does not update results.</p>'
+            if r.get('matching_version'):
+                report_details+='<p>Market matching correction: '+text(r['matching_version'])+'. Existing archived evidence is interpreted using explicit team aliases; no replacement observations were acquired. Legacy interpretation ID: '+text(r['legacy_interpretation_id'])+'. This ID does not imply that interpretation was published.</p>'
             report_details+='<p>'+('Baseline frozen' if r['frozen'] else 'Baseline not yet frozen')+' · Cutoff: '+text(date(r['cutoff']))+'</p>'
             if cohort:
                 report_details+='<p class="notice">Partial Week 1 — '+str(cohort['eligible_population'])+' enrolled of '+str(cohort['official_population'])+' official games. The two starting-cohort exclusions remain outside scoring.</p>'
