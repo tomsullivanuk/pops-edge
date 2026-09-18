@@ -96,8 +96,10 @@ def outcomes(raw, season, week, *, outcome_rule=LEGACY_OUTCOME_RULE):
     return result
 
 
-def midpoint(game, summary, markets):
+def midpoint(game, summary, markets, *, matching_version=None):
     """Match only the designated home YES market; price/cost never selects a route."""
+    if matching_version not in (None, board.MATCHING_VERSION):
+        raise ValueError('Unsupported weekly matching version')
     if summary.get('state') not in ('complete', 'partial') or not summary.get('catalog_complete'):
         raise ValueError('Incomplete market catalog/capture')
     if not game['kickoff']:
@@ -106,7 +108,7 @@ def midpoint(game, summary, markets):
     candidates = []
     for market in markets:
         try:
-            teams, yes_team, market_day = board.strict_market(market)
+            teams, yes_team, market_day = board.strict_market(market, matching_version)
         except (ValueError, KeyError, TypeError):
             continue
         if teams == {game['home'], game['away']} and yes_team == game['home'] and market_day == day:

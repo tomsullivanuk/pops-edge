@@ -89,7 +89,7 @@ class StartingCohortTests(unittest.TestCase):
             s['A6']='1';s['B6']=h;s['E6']=a;s['D6']=.60;s['G6']=.39
             s['A8']='Updated September 12, 2026 at 10:00 AM EDT'
         quote=dict(ticker='fixture',value='0.56',bid='0.54',ask='0.58',started_at=AT,received_at=AT,metadata_received_at=AT)
-        def midpoint(game,*args):
+        def midpoint(game,*args,matching_version=None):
             if game['game_id']!=g['id']:raise ValueError('No book')
             return quote
         with patch('nfl_performance.sources.midpoint',side_effect=midpoint):

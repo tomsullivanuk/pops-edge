@@ -288,10 +288,13 @@ class Performance:
                 return self.append('market', dict(attempt_id=attempt['id'], import_id=event['id'],
                     schedule_id=s_event['id'], retry=retry, season=season, week=week, files=self.archive(folder)))
 
-    def report(self, season, week, boundary, *, source_boundary=None, outcome_rule=sources.OVERTIME_OUTCOME_RULE):
+    def report(self, season, week, boundary, *, source_boundary=None, outcome_rule=sources.OVERTIME_OUTCOME_RULE,
+               matching_version=sources.board.MATCHING_VERSION):
         """Pure saved-source replay. No writes, no network, no inferred holdings."""
         if outcome_rule not in (sources.LEGACY_OUTCOME_RULE, sources.OVERTIME_OUTCOME_RULE):
             raise ValueError('Unsupported weekly outcome rule')
+        if matching_version not in (None, sources.board.MATCHING_VERSION):
+            raise ValueError('Unsupported weekly matching version')
         schedule.scope(season, week)
         at = instant(boundary)
         if at > instant(self.clock()):
@@ -416,7 +419,7 @@ class Performance:
                     if gid in captures:
                         continue
                     try:
-                        quote = sources.midpoint(g, market, market['markets'])
+                        quote = sources.midpoint(g, market, market['markets'], matching_version=matching_version)
                         if not instant(market['run_started_at']) <= instant(quote['metadata_received_at']) <= instant(quote['started_at']) <= instant(quote['received_at']) < effective_cutoff:
                             raise ValueError('Quote outside weekly cutoff')
                         captures[gid] = dict(quote, source_id=e['id'], retry=p['retry'], game=g)
@@ -482,6 +485,14 @@ class Performance:
                 official_population=16, fixed_at=self.activation['effective_at'])
         if outcome_rule != sources.LEGACY_OUTCOME_RULE:
             result['outcome_rule'] = outcome_rule
+        if matching_version is not None:
+            result['matching_version'] = matching_version
+            # Pin the same evidence prefix even if acquisition appends concurrently.
+            # This identifies the legacy interpretation, not a claim it was published.
+            legacy = self.report(season, week, boundary,
+                source_boundary=result['source_boundary'] or '', outcome_rule=outcome_rule,
+                matching_version=None)
+            result['legacy_interpretation_id'] = legacy['report_id']
         result['report_id'] = base.digest(base.encode(result))
         return result
 
@@ -494,7 +505,8 @@ class Performance:
     def replay_report(self, path):
         saved = json.loads(Path(path).read_text())
         derived = self.report(saved['season'], saved['week'], saved['boundary'], source_boundary=saved['source_boundary'] or '',
-                              outcome_rule=saved.get('outcome_rule', sources.LEGACY_OUTCOME_RULE))
+                              outcome_rule=saved.get('outcome_rule', sources.LEGACY_OUTCOME_RULE),
+                              matching_version=saved.get('matching_version'))
         if derived != saved:
             raise ValueError('Saved report differs from replay')
         return derived

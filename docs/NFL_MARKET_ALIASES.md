@@ -17,10 +17,13 @@ new matcher; old archives replay without changes; unknown/conflicting names,
 wrong dates, altered settlement rules and stale quotes remain rejected or
 unavailable under the existing guards.
 
-The correction is prospective for newly generated Bet Sheets. It does not
+The original correction was prospective for newly generated Bet Sheets. It did not
 reinterpret stored research baselines or modify the legacy matcher used by
 `nfl_performance_sources`. Expanding research matching is a separate decision.
 Saved prices used in offline validation retain their original timestamps and
 are not current offers. After deployment, a separately initiated normal refresh
 can generate new comparisons using the corrected matcher. No source refresh,
 baseline backfill, accounting change or deployment is part of implementation.
+
+The separately owner-approved research extension is specified in
+`NFL_RESEARCH_MATCHING_AMENDMENT.md`. Legacy research interpretations remain stable.
