@@ -7,9 +7,13 @@ No persistence, transport, collector or publication entry point lives here.
 from __future__ import annotations
 
 import json
+from contextlib import contextmanager
+from contextvars import ContextVar
+from copy import deepcopy
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from decimal import Context, ROUND_HALF_EVEN, localcontext
+from types import MappingProxyType
 from typing import Callable
 
 from forecast_standalone_operations import (
@@ -22,6 +26,19 @@ from forecast_standalone_publication import _source_authority
 VERSION = "mlb-reporting-source-1"
 ANALYTICAL_BUCKETS = frozenset({"historical_derivations", "market_derivations",
                               "measurements", "coverages", "performances", "reports"})
+
+# Only delivery opts in. Neither a package nor a caller-supplied source boundary
+# can populate this cache. No verified state survives an invocation.
+_reconstruction_scope = ContextVar("reporting_reconstruction_scope", default=None)
+
+
+@contextmanager
+def reporting_verification_scope():
+    token = _reconstruction_scope.set({})
+    try:
+        yield
+    finally:
+        _reconstruction_scope.reset(token)
 
 
 def _fail(detail: str) -> None:
@@ -122,17 +139,29 @@ class SourceVerificationReceipt:
     verified_at: datetime
 
 
+def _readonly_manifest(value):
+    """Preserve manifest meaning without copying the full inventory per check."""
+    if isinstance(value, dict):
+        return MappingProxyType({key: _readonly_manifest(item) for key, item in value.items()})
+    if isinstance(value, list):
+        return tuple(_readonly_manifest(item) for item in value)
+    return value
+
+
 class _ReportingArchiveView:
     """Frozen inventory and read primitives only; no live selection or mutation."""
     def __init__(self, archive, inventory):
         self.config = archive.config
         self._archive = archive
-        self._entries = tuple(sorted((json.loads(item) for item in inventory),
+        self._entries = tuple(sorted((_readonly_manifest(json.loads(item)) for item in inventory),
             key=lambda item: (item["acquired_at"]["datetime_utc"], item["manifest_entry_id"])))
+        self._bytes = {}
+        self._json = {}
+        self._supporting_verification = {}
 
     def entries(self):
-        # Readers cannot mutate the inventory used by a later validator.
-        return tuple(json.loads(canonical_bytes(item)) for item in self._entries)
+        # Nested mappings/sequences are read-only, including chronology fields.
+        return self._entries
 
     def prospective_entries(self):
         # Namespace-wide integrity already passed against the real archive. These
@@ -140,10 +169,32 @@ class _ReportingArchiveView:
         return self.entries()
 
     def read_verified(self, family, identity):
-        return self._archive.read_verified(family, identity)
+        key = (family, identity)
+        if key not in self._bytes:
+            self._bytes[key] = self._archive.read_verified(family, identity)
+        return self._bytes[key]
 
     def read_json_verified(self, family, identity):
-        return json.loads(self.read_verified(family, identity))
+        key = (family, identity)
+        if key not in self._json:
+            self._json[key] = json.loads(self.read_verified(family, identity))
+        return self._json[key]
+
+    def memoized_supporting_verification(self, key, verify):
+        # Original validators construct the keys, including parsed object identity
+        # or all catalog-union inputs. Failures are never memoized.
+        if key not in self._supporting_verification:
+            self._supporting_verification[key] = verify()
+        return self._supporting_verification[key]
+
+    def verify_unchanged(self):
+        # Re-read/hash consumed files through the real archive before accepting
+        # any cached validation. Also reject accidental mutation of shared JSON.
+        for key, body in self._bytes.items():
+            if self._archive.read_verified(*key) != body:
+                _fail("source bytes changed during reconstruction")
+            if key in self._json and self._json[key] != json.loads(body):
+                _fail("decoded source changed during reconstruction")
 
     def replay_contracts(self, entry, prior_objects):
         return _contracts_from_entry(self, entry, prior_objects,
@@ -170,6 +221,22 @@ def _source_chronology(state: ScientificArchiveState, cutoff: datetime) -> None:
 
 
 def _reconstruct(archive, inventory, cutoff):
+    cache = _reconstruction_scope.get()
+    key = (archive, inventory, cutoff)
+    if cache is not None and key in cache:
+        # Public entry points have just rechecked real namespace integrity,
+        # retained manifests and the independent trust anchor. Do not expose
+        # cached mutable containers to downstream analytical code.
+        return deepcopy(cache[key])
+    result = _reconstruct_uncached(archive, inventory, cutoff)
+    if cache is not None:
+        # Bound memory to one source graph; a different boundary replaces it.
+        cache.clear()
+        cache[key] = deepcopy(result)
+    return result
+
+
+def _reconstruct_uncached(archive, inventory, cutoff):
     view = _ReportingArchiveView(archive, inventory)
     entries = view.entries()
     if any(datetime.fromisoformat(x["acquired_at"]["datetime_utc"]) > cutoff for x in entries):
@@ -206,6 +273,9 @@ def _reconstruct(archive, inventory, cutoff):
         else:
             dispositions.append((session, "verified-complete"))
     graph_digest = _hash(tuple(sorted(item.to_json() for item in state.objects)))
+    view.verify_unchanged()
+    # Namespace-wide corruption matters even outside consumed/source-root bytes.
+    _global_integrity(archive)
     return state, dict(source_manifest_ids=roots, dependency_manifest_ids=dependencies,
                       manifest_roles=roles, session_dispositions=tuple(dispositions),
                       graph_digest=graph_digest)
