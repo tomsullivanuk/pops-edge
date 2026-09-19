@@ -12,6 +12,19 @@ from nfl_historical_comparisons import attach_history
 import nfl_completion as completion
 
 
+def separate_accounting_notes(result, accounting_issues):
+    """Keep clean trade-only missing-closure notices out of warning presentation."""
+    activity=result.get('activity') or {}
+    trade_only={t['ticker'] for t in activity.get('trades', [])}
+    blocked={t['ticker'] for t in activity.get('trades', []) if t['needs_review'] or t['settlement_seen']}
+    blocked.update(d.get('ticker') for d in activity.get('diagnostics', []))
+    blocked.update(e['ticker'] for e in activity.get('settlement_events', []))
+    notice='No closed position in selected P&L window; open balance unconfirmed'
+    blocked.update(d.get('ticker') for d in result['diagnostics'] if d.get('reason')!=notice)
+    result['accounting_notes']=[d for d in accounting_issues if d.get('reason')==notice and d.get('ticker') in trade_only-blocked]
+    result['diagnostics']=[d for d in result['diagnostics'] if d not in result['accounting_notes']]
+
+
 def assemble(data_root,folders,candidate=None,now=None):
     now=now or source.now();root=Path(data_root)
     snapshots=[board.replay(p,check_html=False) for p in folders]
@@ -98,6 +111,9 @@ def assemble(data_root,folders,candidate=None,now=None):
                 result['activity'] = parse_current(raw, at, activity_map(raw,folder/'inputs',{'games':games}))
         except (OSError, ValueError, KeyError) as exc:
             result['diagnostics'].append(dict(reason='Accounting activity unavailable: '+str(exc)))
+    # Only clean, matched trade-only records qualify for an informational notice.
+    # Missing closures, duplicate activity and other discrepancies stay warnings.
+    separate_accounting_notes(result, accounting_issues)
     return result
 
 

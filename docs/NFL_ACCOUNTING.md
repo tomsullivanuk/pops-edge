@@ -1,5 +1,29 @@
 # Paired NFL accounting imports
 
+## Recorded-trade presentation amendment — September 18, 2026
+
+Owner approved displaying matched activity records even without closed-position
+P&L. In accounting-enabled season views, the Recorded trades / closed cost column
+shows each export row's direction/team, exact quantity, explicitly labeled export
+YES-scale price, recorded fee and date. NO-direction export prices are not relabeled
+as NO purchase prices. Purchase/sale action and current holdings are not inferred.
+Trades appear separately from unchanged reconciled closed-position purchase cost.
+They are never summed into holdings, proceeds, profit or expected payouts.
+
+Clean matched trade-only missing-closure notices are informational: “Recorded trade ·
+current holding unverified.” Their original reasons remain in `accounting_notes`;
+only this presentation classification changes. Duplicates, unmatched identities,
+settlement/closure discrepancies and conflicting accounting stay warnings. The raw
+reconciliation result, imports, stored evidence and legacy weekly rendering remain
+unchanged. Existing import summaries still describe reconciliation coverage; this
+amendment changes the season table and its calculation notes, not import semantics.
+
+Must hold: open trades visible, genuine issues visible, unchanged closed arithmetic,
+no invented balances, no alteration of source or report evidence. Accepted limits:
+export direction does not establish buy/sell and holdings remain unverified.
+Deferred: missing Week 1 game retention, Season to Date, live holdings integration,
+provider acquisition and deployment until separately reviewed and authorized.
+
 ## Product boundary
 
 The Product Owner approved a focused accounting correction requiring both All
