@@ -818,7 +818,7 @@ def _verify_supporting_session_completion(archive:NamespaceArchive,session_id:st
     for entry in entries:
         identity=entry.get("normalized_object_id")
         if not identity:continue
-        try:value=archive.read_json_verified("normalized",identity)
+        try:value=archive.read_normalized_metadata(identity)
         except (UnicodeDecodeError,json.JSONDecodeError,TypeError) as exc:raise OperationsError("supporting-session-conflict","archived normalized material is malformed") from exc
         normalized.append((entry,value))
     completions=tuple((entry,value) for entry,value in normalized if value.get("record_kind")=="pr17c2-supporting-session-completion" and value.get("session_id")==session_id);corrections=tuple((entry,value) for entry,value in normalized if value.get("record_kind")=="pr17c2-supporting-session-correction" and value.get("session_id")==session_id)
@@ -841,7 +841,7 @@ def _verify_supporting_session_completion(archive:NamespaceArchive,session_id:st
     for provider,manifest_field in (("mlb-stats-api","mlb_acquisition_manifest_id"),("kalshi","kalshi_acquisition_manifest_id")):
         manifest_id=completion.get(manifest_field);entry=by_id.get(manifest_id)
         if entry is None or not entry.get("normalized_object_id"):raise OperationsError("supporting-session-conflict",f"{provider} completion manifest is absent")
-        value=next((value for candidate,value in normalized if candidate["manifest_entry_id"]==manifest_id),None)
+        value=archive.read_json_verified("normalized",entry["normalized_object_id"])
         acquisition_field="mlb_acquisition_id" if provider=="mlb-stats-api" else "kalshi_acquisition_id"
         if not isinstance(value,dict) or value.get("record_kind")!="pr17c1-acquisition-bundle" or value.get("family")!="refresh-retrospective-supporting" or value.get("provider")!=provider or value.get("acquisition_id")!=wanted_ids[provider] or completion.get(acquisition_field)!=wanted_ids[provider] or value.get("union_rule")!=expected_union:raise OperationsError("supporting-session-conflict",f"{provider} acquisition identity conflicts")
         union,payloads=verify_acquisition_bundle(archive,value,include_union=True);bundles[provider]=(entry,value,union,payloads)
@@ -899,7 +899,7 @@ def _verify_supporting_session_correction(archive:NamespaceArchive,session_id:st
     entries=tuple(archive.entries());by_id={entry["manifest_entry_id"]:entry for entry in entries};values=[]
     for entry in entries:
         identity=entry.get("normalized_object_id")
-        if identity:values.append((entry,archive.read_json_verified("normalized",identity)))
+        if identity:values.append((entry,archive.read_normalized_metadata(identity)))
     roots=tuple((entry,value) for entry,value in values if value.get("record_kind")=="pr17c2-supporting-session-completion" and value.get("session_id")==session_id)
     corrections=tuple((entry,value) for entry,value in values if value.get("record_kind")=="pr17c2-supporting-session-correction" and value.get("session_id")==session_id)
     if len(roots)!=1 or len(corrections)!=1:raise OperationsError("supporting-session-correction-conflict","correction lineage is missing, duplicated, or branched")
@@ -1068,7 +1068,7 @@ def _verify_acquisition_bundle(archive:NamespaceArchive,value:Mapping[str,Any],*
     for entry_id,entry in entries.items():
         normalized_id=entry.get("normalized_object_id")
         if not normalized_id:continue
-        candidate=archive.read_json_verified("normalized",normalized_id)
+        candidate=archive.read_normalized_metadata(normalized_id)
         if candidate.get("record_kind")=="pr17c1-provider-page" and candidate.get("acquisition_id")==group:group_pages.add(entry_id)
         if value.get("page_record_kind")=="pr17c2-supporting-session-page" and candidate.get("record_kind")=="pr17c2-supporting-session-page" and group.startswith(candidate.get("session_id","")+":") and candidate.get("provider")==provider and candidate.get("purpose")!="historical-cutoff":group_pages.add(entry_id)
     if group_pages!=referenced:raise OperationsError("acquisition-page-conflict","acquisition has missing or unreferenced pages")

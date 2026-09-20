@@ -107,6 +107,60 @@ class ProjectionTests(unittest.TestCase):
         self.assertEqual(len(boundary._bytes), len(set(boundary._bytes)))
         self.assertEqual(self.capture().provider_request_count, 0)
 
+    def test_compact_metadata_never_replaces_full_payload_and_hot_replay_reads_none(self):
+        from forecast_prospective_projection import _read
+        recorded = _read(self.archive)
+        self.assertEqual(recorded["schema_version"], "4")
+        self.assertNotIn("normalized", recorded)
+        source = next(x for x in self.archive.entries() if x.get("normalized_object_id"))
+        identity = source["normalized_object_id"]
+        digest = identity.split(":")[-1]
+        original = self.archive.read_json_verified("normalized", identity)
+        self.assertIn("contracts", original)
+        self.assertNotIn("contracts", recorded["source_metadata"][digest])
+        canonical = replay_pr17_archive(self.archive, analysis_boundary=self.at)
+        with patch.object(NamespaceArchive, "read_verified", side_effect=AssertionError("historical payload reread")):
+            boundary, actual = load_projection(self.archive, self.at)
+        self.assertEqual(actual.graph, canonical.graph)
+        self.assertEqual(boundary._json, {})
+        self.assertEqual(boundary.read_json_verified("normalized", identity), original)
+
+    def test_old_schema_requires_offline_rebuild_and_metadata_boundary_is_exact(self):
+        path = projection_path(self.archive)
+        original = path.read_bytes()
+        for change in ("old-schema", "missing-metadata", "unexpected-contracts"):
+            value = json.loads(original)
+            projection = value["projection"]
+            if change == "old-schema":
+                projection["schema_version"] = "3"
+                projection["builder_version"] = "canonical-supporting-checkpoint-1"
+                projection["normalized"] = projection.pop("source_metadata")
+            elif change == "missing-metadata":
+                projection["source_metadata"].pop(next(iter(projection["source_metadata"])))
+            else:
+                metadata = next(x for x in projection["source_metadata"].values()
+                                if x.get("record_kind") == "pr17b1-contract-bundle")
+                metadata["contracts"] = []
+            value["sha256"] = sha256_bytes(canonical_bytes(projection))
+            path.write_bytes(canonical_bytes(value))
+            with self.assertRaisesRegex(OperationsError, "projection-invalid"):
+                self.capture(factory=lambda *_: self.fail("invalid cache prepared transport"))
+            rebuild_projection(self.archive, self.at)
+            self.assertEqual(projection_status(self.archive, self.at), "current")
+
+    def test_full_replay_rejects_metadata_drift_even_when_graph_is_unchanged(self):
+        path = projection_path(self.archive)
+        value = json.loads(path.read_bytes())
+        lineage = value["projection"]["lineage"]
+        metadata = next(iter(value["projection"]["source_metadata"].values()))
+        metadata["unexpected_scan_field"] = "drift"
+        value["sha256"] = sha256_bytes(canonical_bytes(value["projection"]))
+        path.write_bytes(canonical_bytes(value))
+        with self.assertRaisesRegex(OperationsError, "projection-replay-conflict"):
+            rebuild_projection(self.archive, self.at)
+        self.assertTrue((self.archive.root / f"prospective-projection-rejected-{lineage}.json").exists())
+        self.assertFalse(path.exists())
+
     def test_interrupted_publication_restart_never_repeats_request(self):
         from forecast_standalone_operations import reconcile_archive
         for stage in ("raw", "normalized"):
