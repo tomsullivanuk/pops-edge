@@ -67,6 +67,36 @@ class ProjectionTests(unittest.TestCase):
             with self.assertRaisesRegex(OperationsError, "projection-invalid"):
                 self.capture(factory=lambda *_: self.fail("transport prepared"))
 
+    def test_format_boundary_accepts_exact_limit_and_preserves_cache_on_overflow(self):
+        from forecast_prospective_projection import _publish, _read
+        boundary = capture_boundary(self.archive)
+        replay_boundary(boundary, self.at)
+        _publish(self.archive, boundary, self.at)
+        path = projection_path(self.archive)
+        original = path.read_bytes()
+        with patch("forecast_prospective_projection.MAX_PROJECTION_BYTES", len(original)):
+            _publish(self.archive, boundary, self.at)
+            self.assertEqual(_read(self.archive)["lineage"], boundary._checkpoint_lineage)
+        with patch("forecast_prospective_projection.MAX_PROJECTION_BYTES", len(original) - 1):
+            with self.assertRaisesRegex(OperationsError, "checkpoint exceeds format bound"):
+                _publish(self.archive, boundary, self.at)
+            self.assertEqual(path.read_bytes(), original)
+            with self.assertRaisesRegex(OperationsError, "projection-invalid"):
+                _read(self.archive)
+        self.assertEqual(list(self.archive.root.glob(".prospective-*.partial")), [])
+
+    def test_checkpoint_above_former_limit_loads_within_emergency_limit(self):
+        from forecast_prospective_projection import MAX_PROJECTION_BYTES, _read
+        self.assertEqual(MAX_PROJECTION_BYTES, 128 * 1024 * 1024)
+        path = projection_path(self.archive)
+        original = path.read_bytes()
+        # JSON whitespace exercises real read-size enforcement without changing
+        # any scientific or checkpoint content or bypassing checksum validation.
+        path.write_bytes(original + b" " * (64 * 1024 * 1024 + 1 - len(original)))
+        self.assertEqual(_read(self.archive)["authority"], "non-authoritative-operations-checkpoint")
+        _, state = load_projection(self.archive, self.at)
+        self.assertEqual(state.graph, replay_pr17_archive(self.archive, analysis_boundary=self.at).graph)
+
     def test_attempt_append_refreshes_and_matches_canonical_replay(self):
         self.capture()
         self.assertEqual(projection_status(self.archive, self.at), "stale")

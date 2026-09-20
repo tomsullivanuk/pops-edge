@@ -1879,7 +1879,13 @@ rewind the replay suffix to the affected session/group; exceeding the bounded su
 requires offline rebuild, never dropping history or widening a capture window.
 New payload verification retains a 20-second / 8,192-object / 256-MiB hot budget;
 the append and replay suffix bounds are each 256 manifests, and the serialized
-checkpoint bound is 64 MiB. Full offline builds have a separate unlimited time
+checkpoint bound is 128 MiB. The Product Owner approved this temporary capacity
+amendment on 2026-09-20 after schema 3 exhausted its former 64-MiB bound. It
+preserves all existing source, replay, publication and provider-authorization
+checks. Duplicate normalized payload storage remains an accepted temporary
+limitation; a separately reviewed compact schema 4 is the approved follow-up.
+Missed prospective windows remain missing and must not be backfilled.
+Full offline builds have a separate unlimited time
 budget. All replay decisions remain in existing canonical domain validators.
 
 Unresolved request/publication markers now block checkpoint use globally, replacing
