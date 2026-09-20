@@ -704,6 +704,13 @@ class NamespaceArchive:
     def read_json_verified(self, family: str, identity: str) -> Any:
         return json.loads(self.read_verified(family, identity))
 
+    def read_normalized_metadata(self, identity: str) -> Any:
+        """Scan metadata; a checkpoint boundary may omit bundle contract arrays.
+
+        Derivation and validators consuming contracts must use read_json_verified.
+        """
+        return self.read_json_verified("normalized", identity)
+
     def entries(self) -> tuple[Mapping[str, Any], ...]:
         if not self.manifest_root.exists(): return ()
         values=[]
@@ -782,7 +789,7 @@ def reconcile_archive(archive:NamespaceArchive,*,_entries=None)->ArchiveIntegrit
     for item in valid:
         normalized_id=item.get("normalized_object_id")
         if not normalized_id:continue
-        try:value=(json.loads(archive._path("normalized",normalized_id).read_bytes()) if _entries is None else archive.read_json_verified("normalized",normalized_id))
+        try:value=(json.loads(archive._path("normalized",normalized_id).read_bytes()) if _entries is None else archive.read_normalized_metadata(normalized_id))
         except (FileNotFoundError,UnicodeDecodeError,json.JSONDecodeError):continue
         if value.get("record_kind")=="pr17c2-supporting-session-page" and value.get("schema_version")=="2":
             for attempt in value.get("attempts",()):
@@ -811,7 +818,7 @@ def reconcile_archive(archive:NamespaceArchive,*,_entries=None)->ArchiveIntegrit
     for item in valid:
         identity=item.get("normalized_object_id")
         if not identity or identity.split(":")[-1] not in actual_normalized:continue
-        try:value=(json.loads(actual_normalized[identity.split(":")[-1]].read_bytes()) if _entries is None else archive.read_json_verified("normalized",identity))
+        try:value=(json.loads(actual_normalized[identity.split(":")[-1]].read_bytes()) if _entries is None else archive.read_normalized_metadata(identity))
         except (OSError,json.JSONDecodeError):continue
         group=value.get("acquisition_id");kind=value.get("record_kind")
         if not isinstance(group,str):continue
@@ -832,7 +839,7 @@ def reconcile_archive(archive:NamespaceArchive,*,_entries=None)->ArchiveIntegrit
             page_values=[]
             for item in valid:
                 if item["manifest_entry_id"] not in pages:continue
-                page_values.append((item,json.loads(actual_normalized[item["normalized_object_id"].split(":")[-1]].read_bytes()) if _entries is None else archive.read_json_verified("normalized",item["normalized_object_id"])))
+                page_values.append((item,json.loads(actual_normalized[item["normalized_object_id"].split(":")[-1]].read_bytes()) if _entries is None else archive.read_normalized_metadata(item["normalized_object_id"])))
             providers={value.get("provider") for _,value in page_values};families={item.get("command","")[:-5] for item,_ in page_values if item.get("command","").endswith("-page")}
             expected_authority=[{"position":value.get("position"),"request_identity":value.get("request_identity"),"endpoint":value.get("endpoint"),"raw_sha256":value.get("raw_sha256"),"started_at":value.get("started_at"),"completed_at":value.get("completed_at")} for _,value in sorted(page_values,key=lambda pair:pair[1].get("position",-1))]
             latest=max((datetime.fromisoformat(item["acquired_at"]["datetime_utc"]) for item,_ in page_values),default=None)
@@ -1187,8 +1194,10 @@ def _contracts_from_entry(archive:NamespaceArchive,entry:Mapping[str,Any],prior_
             for candidate_entry in authoritative_entries(archive):
                 normalized_id=candidate_entry.get("normalized_object_id")
                 if not normalized_id:continue
-                candidate=archive.read_json_verified("normalized",normalized_id)
-                if candidate.get("record_kind")=="pr17c1-acquisition-bundle" and candidate.get("acquisition_id")==dependencies[0] and candidate.get("provider")=="mlb-stats-api":mlb_union,_=verify_acquisition_bundle(archive,candidate,include_union=True);mlb_union_rule=candidate.get("union_rule");break
+                candidate=archive.read_normalized_metadata(normalized_id)
+                if candidate.get("record_kind")=="pr17c1-acquisition-bundle" and candidate.get("acquisition_id")==dependencies[0] and candidate.get("provider")=="mlb-stats-api":
+                    candidate=archive.read_json_verified("normalized",normalized_id)
+                    mlb_union,_=verify_acquisition_bundle(archive,candidate,include_union=True);mlb_union_rule=candidate.get("union_rule");break
             if mlb_union is None:raise OperationsError("acquisition-dependency-conflict","MLB dependency is absent")
             expected=tuple(x for x in refresh_supporting_from_raw(archive=None,mlb_raw=mlb_union,kalshi_raw=union,collected_at=started,prior_state=prior,derive_only=True,acquisition_command=family,union_rule=mlb_union_rule) if type(x).__name__=="ProviderMarketSeries")
         else:raise OperationsError("acquisition-incompatible","unsupported PR17C1 acquisition family")

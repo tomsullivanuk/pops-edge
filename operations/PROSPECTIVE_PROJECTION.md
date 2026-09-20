@@ -8,14 +8,26 @@ new deployment archive and treat its signatures as verified there.
 
 ## Checkpoint format and use
 
-Schema 3 / builder `canonical-supporting-checkpoint-1` stores a checksum, exact
-selected manifest IDs, build time, namespace/mode, verified normalized source
-representations, raw/normalized object identities and filesystem signatures, and
+Schema 4 / builder `compact-source-metadata-1` stores a checksum, exact
+selected manifest IDs, build time, namespace/mode, compact verified source
+metadata, raw/normalized object identities and filesystem signatures, and
 canonical contract contributions for each manifest, and a local lineage ID.
 Only independent full source replay creates a fresh lineage; incremental
 publication retains the loaded lineage. Contributions retain earlier
 history versions needed by deterministic subsequent derivation. The current graph
-is reconstructed and validated at the invocation's trusted time.
+is reconstructed and validated at the invocation's trusted time. The metadata
+omits only the duplicate `contracts` arrays from known acquisition and contract
+bundles. It preserves other fields and record kinds for integrity, dependency and
+session/correction scans. Metadata is accessed separately from full normalized
+payloads: actual contribution derivation re-reads and digest-verifies the complete
+source payload when needed. An unchanged replay uses signatures, metadata and
+contributions without historical payload reads. No scientific validator receives
+a compact bundle as though it were a complete source payload.
+
+Schema 3 checkpoints are unsupported disposable cache, requiring an offline
+rebuild before capture under schema 4. Immutable sources and durable markers are
+not migrated or changed. Full replay also compares compact metadata at matching
+boundaries; a disagreement rejects the cached lineage by the same durable fence.
 
 A cold offline build verifies the complete archive's bytes and integrity, then
 replays the complete relevant source set. Its budget is independent of the
@@ -55,9 +67,11 @@ pages are verified if suffix derivation needs them. The graph is always validate
 by the existing scientific validator. Excessive suffixes require an offline build;
 no source or population is truncated. Newly read payloads retain the 8,192-object /
 256-MiB bounds. The checkpoint has a 128-MiB serialized format bound. This is the
-2026-09-20 emergency capacity amendment to schema 3's former 64-MiB bound, not
-unlimited growth: full normalized payload duplication remains a temporary accepted
-limitation pending the separately reviewed compact schema 4. Both reading and
+2026-09-20 emergency capacity amendment to schema 3's former 64-MiB bound. Schema 4
+removes duplicate bundle contract arrays but does not promise unlimited growth;
+canonical contributions and source metadata still grow with archive history.
+Finite capacity and explicit manual rebuild/design inspection remain accepted.
+Both reading and
 publication enforce the same bound. An oversized publication preserves the prior
 complete checkpoint and fails visibly before replacement. Recovery requires a
 reviewed pinned deployment and offline rebuild; missed windows stay missing.

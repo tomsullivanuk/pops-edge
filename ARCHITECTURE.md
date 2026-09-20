@@ -1853,12 +1853,12 @@ state. Immutable archive Evidence remains the sole authority and recovery source
 Scientific matching, settlement, selection, population and publication contracts
 are unchanged; no backfill, archive repair, Policy or Governance authority is added.
 
-The checkpoint preserves exact source-manifest IDs, normalized source metadata,
+The schema-4 checkpoint preserves exact source-manifest IDs, compact source metadata,
 source object identities and local filesystem signatures, format/builder versions,
 build time and canonical per-manifest replay contributions. A full offline build
 independently verifies the complete archive and replays all relevant sources before
 atomic publication. A usable same-boundary checkpoint must reproduce byte-identical
-canonical operational state and contributions. The collector validates the current
+canonical operational state, contributions and compact metadata. The collector validates the current
 manifest boundary and source signatures, verifies a bounded append-only delta,
 replays any affected chronological suffix, and validates the entire current graph.
 Schema 3 gives each independent full build a fresh local lineage ID; incremental
@@ -1882,8 +1882,18 @@ the append and replay suffix bounds are each 256 manifests, and the serialized
 checkpoint bound is 128 MiB. The Product Owner approved this temporary capacity
 amendment on 2026-09-20 after schema 3 exhausted its former 64-MiB bound. It
 preserves all existing source, replay, publication and provider-authorization
-checks. Duplicate normalized payload storage remains an accepted temporary
-limitation; a separately reviewed compact schema 4 is the approved follow-up.
+checks. Schema 4 / builder `compact-source-metadata-1` removes duplicate `contracts`
+arrays from known normalized acquisition/contract bundles. Separate metadata reads
+serve integrity/dependency scans and session/acquisition rewind; full normalized
+payload reads remain mandatory for affected contribution derivation and validators
+that consume contracts. Other source fields and record kinds are retained to avoid
+weakening strict validation. Signature-bound metadata is not scientific authority.
+Schema 3 cache requires an independent offline source rebuild before activation;
+archive and durable marker bytes never migrate. Full replay compares compact
+metadata as well as contributions and canonical state before replacing a usable
+same-boundary checkpoint. Mismatch retains the durable lineage rejection behavior.
+The 128-MiB ceiling remains finite; history growth and manual capacity intervention
+remain accepted limitations. Chunking, databases and generalized recovery are deferred.
 Missed prospective windows remain missing and must not be backfilled.
 Full offline builds have a separate unlimited time
 budget. All replay decisions remain in existing canonical domain validators.

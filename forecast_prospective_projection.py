@@ -26,8 +26,19 @@ MAX_SOURCE_BYTES = 256 * 1024 * 1024
 MAX_SOURCE_OBJECTS = 8192
 MAX_PROJECTION_BYTES = 128 * 1024 * 1024
 MAX_DELTA_MANIFESTS = 256
-SCHEMA_VERSION = "3"
-BUILDER_VERSION = "canonical-supporting-checkpoint-1"
+SCHEMA_VERSION = "4"
+BUILDER_VERSION = "compact-source-metadata-1"
+
+
+def _compact_metadata(value):
+    """Keep scan/rewind metadata; full contracts are read only for derivation.
+
+    Only known bundle contract arrays are omitted. Other fields and record kinds
+    remain intact, including fields used by strict completion validators.
+    """
+    if value.get("record_kind") in {"pr17c1-acquisition-bundle", "pr17b1-contract-bundle"}:
+        return {key: item for key, item in value.items() if key != "contracts"}
+    return dict(value)
 
 
 def relevant_entries(entries):
@@ -51,6 +62,7 @@ class ProspectiveSourceBoundary(NamespaceArchive):
         self._entries = tuple(entries)
         self._bytes: dict[tuple[str, str], bytes] = {}
         self._json: dict[tuple[str, str], Any] = {}
+        self._metadata = {}
         self._integrity = None
         self._supporting_verification = None
         self._signatures = {}
@@ -94,7 +106,18 @@ class ProspectiveSourceBoundary(NamespaceArchive):
         key = (family, identity.split(":")[-1])
         if key not in self._json:
             self._json[key] = json.loads(self.read_verified(family, identity))
+            if family == "normalized":
+                self._metadata[key[1]] = _compact_metadata(self._json[key])
         return self._json[key]
+
+    def read_normalized_metadata(self, identity):
+        """Signature-bound scan data, never a scientific payload substitute."""
+        if time.monotonic() - self._started > self.budget_seconds:
+            raise OperationsError("projection-budget-exceeded", "metadata scan exceeded preparation budget")
+        digest = identity.split(":")[-1]
+        if digest not in self._metadata:
+            self.read_json_verified("normalized", identity)
+        return self._metadata[digest]
 
     def memoized_supporting_verification(self, key, verify):
         """Reuse successful canonical checks only during one immutable replay."""
@@ -201,7 +224,7 @@ def _read(archive):
         value = envelope["projection"]
         if (set(envelope) != {"projection", "sha256"} or
                 sha256_bytes(canonical_bytes(value)) != envelope["sha256"] or
-                set(value) != set(_material(archive, ())) | {"authority", "built_at", "normalized", "signatures", "contributions", "lineage"} or
+                set(value) != set(_material(archive, ())) | {"authority", "built_at", "source_metadata", "signatures", "contributions", "lineage"} or
                 not isinstance(value["lineage"], str) or
                 len(value["lineage"]) != 32 or
                 any(c not in "0123456789abcdef" for c in value["lineage"]) or
@@ -217,14 +240,15 @@ def _read(archive):
         raise OperationsError("projection-invalid", "projection content or version is invalid") from None
     try:
         ids = set(value["source_manifest_ids"])
-        if set(value["contributions"]) != ids or not isinstance(value["normalized"], dict):
+        if set(value["contributions"]) != ids or not isinstance(value["source_metadata"], dict):
             raise ValueError
         for key, signature in value["signatures"].items():
             family, digest = key.split(":")
             if family not in {"raw", "normalized"} or len(digest) != 64 or len(signature) != 5:
                 raise ValueError
-        for digest in value["normalized"]:
-            if "normalized:" + digest not in value["signatures"]:
+        for digest, metadata in value["source_metadata"].items():
+            if ("normalized:" + digest not in value["signatures"] or
+                    not isinstance(metadata, dict) or _compact_metadata(metadata) != metadata):
                 raise ValueError
     except (KeyError, TypeError, ValueError):
         raise OperationsError("projection-invalid", "checkpoint state is malformed") from None
@@ -286,7 +310,7 @@ def _publish(archive, boundary, at):
     value = {**_material(archive, boundary.entries()),
              "lineage": boundary._checkpoint_lineage,
              "authority": "non-authoritative-operations-checkpoint", "built_at": at.isoformat(),
-             "normalized": {key[1]: body for key, body in boundary._json.items() if key[0] == "normalized"},
+             "source_metadata": boundary._metadata,
              "signatures": {":".join(key): signature for key, signature in boundary._signatures.items()},
              "contributions": boundary._contributions}
     body = canonical_bytes({"projection": value, "sha256": sha256_bytes(canonical_bytes(value))})
@@ -343,7 +367,8 @@ def rebuild_projection(archive, at):
     if cached is not None and recorded["source_manifest_ids"] == current["source_manifest_ids"]:
         cached.budget_seconds = float("inf")
         if (_scientific_state_bytes(replay_boundary(cached, at)) != _scientific_state_bytes(state) or
-                canonical_bytes(cached._contributions) != canonical_bytes(boundary._contributions)):
+                canonical_bytes(cached._contributions) != canonical_bytes(boundary._contributions) or
+                canonical_bytes(cached._metadata) != canonical_bytes(boundary._metadata)):
             # Revoke the loaded lineage even if a prepared incremental consumer
             # has already replaced the checkpoint with one of its descendants.
             # Persist the negative fence before removing the current cache, so
@@ -390,7 +415,12 @@ def _prepare_checkpoint(archive, at):
     for key, signature in boundary._signatures.items():
         if _signature(boundary._path(*key)) != signature:
             raise OperationsError("projection-invalid", "checkpoint source changed or disappeared")
-    boundary._json = {("normalized", key): value for key, value in recorded["normalized"].items()}
+    expected_metadata = {entry["normalized_object_id"].split(":")[-1]
+                         for entry in boundary.entries()
+                         if entry["manifest_entry_id"] in old_ids and entry.get("normalized_object_id")}
+    if set(recorded["source_metadata"]) != expected_metadata:
+        raise OperationsError("projection-invalid", "checkpoint metadata boundary differs from sources")
+    boundary._metadata = recorded["source_metadata"]
     boundary._contributions = recorded["contributions"]
     # Replay the entire timestamp cohort at the insertion point. Never infer a
     # substantive order from the manifest digest of a new same-time publication.
@@ -405,14 +435,14 @@ def _prepare_checkpoint(archive, at):
     touched_groups = set()
     for entry in delta:
         if entry.get("normalized_object_id"):
-            value = boundary.read_json_verified("normalized", entry["normalized_object_id"])
+            value = boundary.read_normalized_metadata(entry["normalized_object_id"])
             session = value.get("session_id") or value.get("supporting_session_id")
             group = value.get("acquisition_id")
             if session: touched_sessions.add(session)
             if group: touched_groups.add(group)
     for entry in boundary.entries():
         if entry["manifest_entry_id"] not in old_ids or not entry.get("normalized_object_id"): continue
-        value = boundary._json[("normalized", entry["normalized_object_id"].split(":")[-1])]
+        value = boundary.read_normalized_metadata(entry["normalized_object_id"])
         if ((value.get("session_id") or value.get("supporting_session_id")) in touched_sessions or
                 value.get("acquisition_id") in touched_groups):
             cutoff = min(cutoff, entry["acquired_at"]["datetime_utc"])
