@@ -54,7 +54,13 @@ and prevents stale earlier contributions after a correction. Required old raw
 pages are verified if suffix derivation needs them. The graph is always validated
 by the existing scientific validator. Excessive suffixes require an offline build;
 no source or population is truncated. Newly read payloads retain the 8,192-object /
-256-MiB bounds. The checkpoint has a 64-MiB serialized format bound.
+256-MiB bounds. The checkpoint has a 128-MiB serialized format bound. This is the
+2026-09-20 emergency capacity amendment to schema 3's former 64-MiB bound, not
+unlimited growth: full normalized payload duplication remains a temporary accepted
+limitation pending the separately reviewed compact schema 4. Both reading and
+publication enforce the same bound. An oversized publication preserves the prior
+complete checkpoint and fails visibly before replacement. Recovery requires a
+reviewed pinned deployment and offline rebuild; missed windows stay missing.
 
 Publication writes and fsyncs a unique temporary file, checks the final boundary
 and source signatures and absence of its lineage's rejection fence under the
