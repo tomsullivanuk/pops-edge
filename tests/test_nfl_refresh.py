@@ -41,6 +41,18 @@ class ExcelTests(unittest.TestCase):
 
 
 class WorkflowTests(unittest.TestCase):
+    def test_inbox_selection_detects_same_path_replacement(self):
+        with tempfile.TemporaryDirectory() as d:
+            w=app.Workflow(Path(d));p=w.inbox/'selected.csv';p.write_bytes(b'first')
+            item=w.catalog()['files'][0];spec={'id':item['id'],'fingerprint':item['fingerprint']}
+            self.assertEqual(w.file_bytes(spec,'.csv')[0],b'first')
+            p.write_bytes(b'other')
+            self.assertEqual(w.catalog()['files'][0]['id'],item['id'])
+            self.assertNotEqual(w.catalog()['files'][0]['fingerprint'],item['fingerprint'])
+            with self.assertRaisesRegex(ValueError,'changed'):w.file_bytes(spec,'.csv')
+            p.unlink()
+            with self.assertRaises((ValueError,OSError)):w.file_bytes(spec,'.csv')
+
     def inputs(self,w):
         from tests.test_nfl_activity import raw,trade
         (w.inbox/'elway.xlsx').write_bytes(workbook())

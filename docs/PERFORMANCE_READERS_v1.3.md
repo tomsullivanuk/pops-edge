@@ -1,5 +1,49 @@
 # v1.3 Performance readers — adopted Part 2
 
+## Owner-adopted navigation correction — September 21, 2026
+
+This correction supersedes the earlier same-day weekly-only presentation and
+cumulative-summary deferral below. NFL uses MLB's Period, Team, custom dates and
+View matches controls; its normal view combines all saved weeks in the latest
+saved season into one chronological match table and one cumulative descriptive
+summary. Explicit older season/week URLs remain scoped and their scope is labelled.
+The summary remains cumulative for that saved scope while filters affect rows,
+as on MLB. This is the Owner's current display decision, superseding original
+filtered-summary presentation wording; pinned historical protocol bytes, weekly
+measurement populations, report identities and downloads remain unchanged.
+
+Aggregate each paired scored game's exact contribution once, never average weekly
+averages. ELWAY, Kalshi and the 50% reference share the paired population; ties
+retain payout0.5. Duplicate cross-week game identities fail visibly. Week1's fixed
+14-of-16 enrollment and all gaps remain visible. Weekly provenance, analysis times,
+baseline state, coverage and exact downloads remain in Details. Mixed weekly saved
+times are shown as a range, not a claim of a single fresh season acquisition.
+
+Navigation remembers per-view filters, NFL tabs, table sorting and selected server
+inbox files in browser session storage. Explicit query parameters take precedence.
+Restoration never refreshes providers or updates accounting. Files are bound to
+both inbox identity and content fingerprint; missing/replaced files require explicit
+reselection. Selections survive navigation in the same browser tab, not a browser
+session reset or a different browser. Disabled session storage leaves the normal
+stateless workflow available. No credentials or file contents are stored there.
+
+NFL read reuse is process-local and disposable: one private temporary snapshot,
+bounded to512MiB of source/report material, protected by a reader lock. Each request
+hashes current file contents and inventories paths (not merely mtimes), validates
+rule bytes and rejects symlinks. Changed inventories invalidate the entire snapshot;
+each response rechecks the source fingerprint after deriving results. Source changes
+during reading fail visibly rather than selecting stale results. Pure decoding is
+memoized within that immutable snapshot across weeks and legacy derivations. No
+new scientific report, archive index, provider operation or persistent cache service
+is created. The ordinary operational Performance engine remains uncached.
+
+Acceptance includes both-sport browser navigation, restored files/filters/tabs,
+multiweek cumulative reconciliation, exact downloads, tamper/deletion/change/race
+invalidation, concurrent reads and measured first/repeat load times. Timing goals on
+the current representative laptop/store are<=10seconds cold and<=2seconds warm;
+capacity beyond the bounded snapshot fails visibly and requires review, not hidden
+fallback. General provider-refresh refactoring and new inference remain deferred.
+
 ## NFL usability amendment — September 21, 2026
 
 Owner-approved NFL Results filters mirror MLB: Last 7/14/60/90 Days,

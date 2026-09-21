@@ -90,18 +90,22 @@ class Workflow:
         for p in sorted(self.inbox.glob('*')):
             if p.is_symlink() or not p.is_file() or p.suffix.lower() not in ('.xlsx','.csv'):continue
             identity=source.digest(str(p).encode());self.files[identity]=p
-            listing.append(dict(id=identity,name=p.name,kind=p.suffix.lower()))
+            fingerprint=source.digest(p.read_bytes()) if 0<p.stat().st_size<=excel.MAX_BYTES else None
+            listing.append(dict(id=identity,name=p.name,kind=p.suffix.lower(),fingerprint=fingerprint))
         return dict(files=listing,inbox=str(self.inbox),status=self.status,boards=sorted(self.boards),performance=self.performance_config())
 
     def file_bytes(self,spec,kind,with_time=False):
-        if not isinstance(spec,dict) or set(spec)!={'id'}:raise ValueError('Select a file from the NFL inbox')
+        if not isinstance(spec,dict) or set(spec) not in ({'id'},{'id','fingerprint'}):raise ValueError('Select a file from the NFL inbox')
         path=self.files.get(spec['id'])
         if not path or path.is_symlink() or path.resolve().parent!=self.inbox or path.suffix.lower()!=kind:raise ValueError('Selected inbox file is unavailable')
         if not 0<path.stat().st_size<=excel.MAX_BYTES:raise ValueError('Use a nonempty file up to 8 MB')
         if with_time:
             raw,file_time=forecast_time.read_file(path)
+            if 'fingerprint' in spec and source.digest(raw)!=spec['fingerprint']:raise ValueError('Selected file changed; select it again before refreshing')
             return raw,path.name,file_time
-        return path.read_bytes(),path.name
+        raw=path.read_bytes()
+        if 'fingerprint' in spec and source.digest(raw)!=spec['fingerprint']:raise ValueError('Selected file changed; select it again before refreshing')
+        return raw,path.name
 
     def generate(self,payload):
         if not self.lock.acquire(False):raise ValueError('A generation is already running')
@@ -246,6 +250,8 @@ def handler(workflow,token,mlb_reports=None,mlb_update_config=None):
             try:
                 if path=='/performance/nfl':
                     return self.send(200,nfl_reader.render(parse_qs(urlsplit(self.path).query,keep_blank_values=True)),'text/html; charset=utf-8')
+                if path=='/navigation-state.js':
+                    return self.send(200,Path(__file__).with_name('navigation_state.js').read_bytes(),'text/javascript; charset=utf-8')
                 if path=='/performance/mlb':
                     return self.send(200,mlb_reader.render(parse_qs(urlsplit(self.path).query,keep_blank_values=True),updates=updates,token=token),'text/html; charset=utf-8')
                 if path=='/api/mlb/performance/update':return self.send(200,updates.status())
@@ -277,7 +283,8 @@ def handler(workflow,token,mlb_reports=None,mlb_update_config=None):
                     return self.send(200,html.encode(),'text/html; charset=utf-8')
                 if path=='/season':
                     from nfl_season_board import assemble,render
-                    return self.send(200,render(assemble(workflow.data,list(workflow.boards.values()),workflow.candidate)).encode(),'text/html; charset=utf-8')
+                    html=render(assemble(workflow.data,list(workflow.boards.values()),workflow.candidate)).replace('</body>','<script src="/navigation-state.js"></script></body>')
+                    return self.send(200,html.encode(),'text/html; charset=utf-8')
                 if path=='/api/state':return self.send(200,workflow.catalog())
                 m=re.fullmatch(r'/board/(board-[a-f0-9]{32}|activity-[a-f0-9]{32})/(board.html|comparison.json|complete.json)',path)
                 if m:

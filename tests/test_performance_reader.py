@@ -45,18 +45,109 @@ class NFLReaderTests(unittest.TestCase):
         self.assertEqual(before,inventory(self.root))
         self.assertEqual(json.loads(self.reader.download(r['report_id'])),r)
 
-    def test_season_renders_latest_each_week_without_aggregate(self):
+    def test_season_renders_one_cumulative_summary_and_match_table(self):
         from copy import deepcopy
         self.fixture.refresh();self.fixture.finish();r=self.save()
         second=deepcopy(r);second['week']=2
+        for g in second['games']:g['game_id']+='-week2'
         with patch.object(self.reader,'catalog',return_value=[r,second]),patch.object(self.reader,'selected',side_effect=lambda season,week:r if week==1 else second) as selected,patch.object(self.reader,'game_dates',return_value={}):
             body=self.reader.render({}).decode()
             self.assertIn('Week 1',body);self.assertIn('Week 2',body)
             self.assertEqual(selected.call_count,2)
-            self.assertIn('No season aggregate',body)
+            self.assertIn('Cumulative',body)
+            self.assertEqual(body.count('<table aria-label="Comparison with 50% reference"'),1)
+            self.assertEqual(body.count('<table aria-label="Match results"'),1)
+            self.assertNotIn('<select name="week"',body)
+            self.assertNotIn('<select name="season"',body)
             self.assertEqual(body.count('Download exact weekly report'),2)
             body=self.reader.render({'week':['1']}).decode()
-            self.assertNotIn('· Week 2</h2>',body)
+            self.assertNotIn('<h3>Week 2</h3>',body)
+
+    def test_warm_snapshot_reuses_replay_but_rejects_same_size_source_damage(self):
+        from nfl_reader_cache import Replay
+        self.fixture.refresh();self.fixture.finish();r=self.save()
+        original=Replay.replay_report
+        calls=[]
+        def replay(engine,path):calls.append(path);return original(engine,path)
+        before=inventory(self.root)
+        with patch.object(Replay,'replay_report',replay),patch('requests.get',side_effect=AssertionError('provider')):
+            self.assertNotIn(b'weekly performance unavailable',self.reader.render({}))
+            self.assertNotIn(b'weekly performance unavailable',self.reader.render({'period':['custom']}))
+            self.assertEqual(len(calls),1)
+            self.assertEqual(before,inventory(self.root))
+            event=self.fixture.engine.events()[0]
+            key=next(iter(event['payload']['files'].values())) if 'files' in event['payload'] else event['payload']['raw']
+            p=self.root/'blobs'/key;stat=p.stat();raw=p.read_bytes()
+            p.write_bytes(bytes([raw[0]^1])+raw[1:]);os.utime(p,ns=(stat.st_atime_ns,stat.st_mtime_ns))
+            self.assertIn(b'weekly performance unavailable',self.reader.render({}))
+
+    def test_snapshot_detects_mutation_during_read(self):
+        self.fixture.refresh();self.fixture.finish();self.save()
+        original=self.reader._render
+        def changing(q):
+            result=original(q);(self.root/'new-file').write_bytes(b'changed');return result
+        with patch.object(self.reader,'_render',changing):
+            self.assertIn(b'changed while reading',self.reader.render({}))
+
+    def test_cumulative_uses_game_weights_and_preserves_ties(self):
+        from copy import deepcopy
+        self.fixture.refresh();self.fixture.finish();r=self.save()
+        second=deepcopy(r);second['week']=2
+        g=second['games'][0];g['game_id']+='second';g['scores']['elway_error']='0';g['scores']['kalshi_error']='0';g['outcome']['payout']='0.5'
+        third=deepcopy(g);third['game_id']+='third';second['games'].append(third);second['paired_games']=2
+        body=self.reader._cumulative([r,second],r['games']+second['games'])
+        self.assertIn('<td>0.12</td>',body)  # .366025 / 3, not / 2
+        self.assertIn('<td>0.08</td>',body)  # one win and two ties: .25 / 3
+        with self.assertRaisesRegex(ValueError,'Duplicate'):
+            self.reader._cumulative([r,r],r['games']+r['games'])
+
+    def test_parallel_readers_and_new_report_invalidate(self):
+        from concurrent.futures import ThreadPoolExecutor
+        self.fixture.refresh();self.fixture.finish();self.save()
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            results=list(pool.map(self.reader.render,[{},{}]))
+        self.assertEqual(results[0],results[1]);old=self.reader.cache.identity
+        self.fixture.clock.value='2026-09-11T04:00:00+00:00';self.save()
+        self.assertNotIn(b'weekly performance unavailable',self.reader.render({}))
+        self.assertNotEqual(old,self.reader.cache.identity)
+
+    def test_warm_deleted_dependency_and_alias_fail_closed(self):
+        self.fixture.refresh();self.fixture.finish();self.save()
+        self.reader.render({})
+        p=self.root/'activation.json';raw=p.read_bytes();p.unlink()
+        self.assertIn(b'weekly performance unavailable',self.reader.render({}))
+        p.write_bytes(raw);self.reader.render({})
+        copy=self.root/'activation-copy';copy.write_bytes(raw);p.unlink();p.symlink_to(copy)
+        self.assertIn(b'Aliased',self.reader.render({}))
+
+    def test_warm_corrupt_report_and_capacity_fail_closed(self):
+        self.fixture.refresh();self.fixture.finish();r=self.save();self.reader.render({})
+        p=self.root/'reports'/(r['report_id']+'.json');p.write_bytes(b'{}')
+        self.assertIn(b'identity is invalid',self.reader.render({}))
+        with patch.object(self.reader.cache,'MAX_BYTES',1):
+            self.assertIn(b'exceeds',self.reader.render({}))
+
+    def test_cached_replay_matches_original_engine_exactly(self):
+        from nfl_reader_cache import Replay
+        self.fixture.refresh();self.fixture.finish();r=self.save()
+        self.reader.render({})
+        engine=self.reader.cache.engine
+        self.assertIsInstance(engine,Replay)
+        self.assertEqual(engine.replay_report(engine.root/'reports'/(r['report_id']+'.json')),r)
+        self.assertEqual(self.reader.download(r['report_id']),(self.root/'reports'/(r['report_id']+'.json')).read_bytes())
+
+    def test_rule_content_change_invalidates_warm_snapshot(self):
+        self.fixture.refresh();self.fixture.finish();self.save()
+        rule=self.root/'test-rule';rule.write_bytes(b'one')
+        with patch('nfl_reader_cache.FILE_TIME_RULE_FILE',rule):
+            self.reader.render({});old=self.reader.cache.identity
+            rule.write_bytes(b'two');self.reader.render({})
+            self.assertNotEqual(old,self.reader.cache.identity)
+
+    def test_clock_rollback_does_not_accept_future_cached_report(self):
+        self.fixture.refresh();self.fixture.finish();self.save();self.reader.render({})
+        self.reader.cache.engine.clock=lambda:'2026-01-01T00:00:00+00:00'
+        self.assertIn(b'boundary is in the future',self.reader.render({}))
 
     def test_display_dates_ignore_later_events_beyond_saved_prefix(self):
         self.fixture.refresh();self.fixture.finish();r=self.save()
