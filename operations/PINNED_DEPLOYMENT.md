@@ -1,5 +1,15 @@
 # Clean pinned deployment gate
 
+Startup recovery amendment (September 21, 2026): the two scheduled CLI commands
+now pass a boot-session verification gate before provider work. Commissioning
+must run `verify-startup` using the pinned interpreter/checkout and activated
+configuration before reactivating jobs. This rebuilds offline on first use/new
+boot, with zero provider calls. Inspect any blocked/interrupted startup before
+explicit `verify-startup --retry-startup`; never add that retry flag to launchd.
+See [startup states and recovery limits](PROSPECTIVE_PROJECTION.md#bounded-startup-verification-september-21-2026).
+Offline fixture validation is not permission to reboot the host, deploy, or
+change operational state. Test restart behavior in isolation before commissioning.
+
 Commission only after independent amendment review, accepted integration, and
 explicit Product Owner deployment authorization. The current implementation does
 not create a deployment checkout or modify any scheduler state.
