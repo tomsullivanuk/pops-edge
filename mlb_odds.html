@@ -64,6 +64,9 @@ let data=null,requestId=0,poll=null,clockBad=false,lastStates='',wallStart=Date.
 // Request state survives every render. Server payloads describe saved attempts,
 // not failures to read them or submit a new action from this page.
 let requestedDay='',readPending=false,readFailure=null;
+const savedView=window.popsChoices?.read('mlb-sheet')||{};
+function rememberView(){window.popsChoices?.save('mlb-sheet',{day:requestedDay,team:$('team').value,omit:$('omitCompleted').checked});}
+$('omitCompleted').checked=savedView.omit===true;
 const actions=new Map();
 function loaded(){return data&&data.day===requestedDay;}
 function action(){return actions.get(requestedDay);}
@@ -152,11 +155,11 @@ async function load(day){
    else if(value.attempt&&value.attempt.id!==active.baseline)actions.delete(value.day);
   }
   $('day').value=value.day;
-  const previous=$('team').value,teams=new Map();
+  const previous=$('team').value||savedView.team,teams=new Map();
   for(const g of value.result?.games||[])for(const side of ['away','home'])teams.set(String(g[side].id),g[side].name);
   $('team').replaceChildren(new Option('All teams',''),...[...teams].sort((a,b)=>a[1].localeCompare(b[1])).map(([key,name])=>new Option(name,key)));
   if(teams.has(previous))$('team').value=previous;
-  render();
+  render();rememberView();
   if(value.running)poll=setTimeout(()=>{if(requestedDay===value.day)load(value.day);},1200);
  }catch(e){
   if(id!==requestId)return;
@@ -181,11 +184,11 @@ async function submit(){
 $('refresh').onclick=submit;
 $('rows').onclick=event=>{const button=event.target.closest('button[data-target]');if(!button)return;const row=document.getElementById('detail-'+button.dataset.target);row.hidden=!row.hidden;button.setAttribute('aria-expanded',String(!row.hidden));button.textContent=row.hidden?'Details':'Close';};
 $('reload').onclick=()=>load(requestedDay);
-$('day').onchange=()=>load($('day').value);$('team').onchange=render;$('omitCompleted').onchange=render;
+$('day').onchange=()=>load($('day').value);$('team').onchange=()=>{savedView.team=$('team').value;render();rememberView();};$('omitCompleted').onchange=()=>{render();rememberView();};
 $('today').onclick=()=>load(data?.today);$('tomorrow').onclick=()=>{if(data){const d=new Date(data.today+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+1);load(d.toISOString().slice(0,10));}};
 function states(){return JSON.stringify([validClock(),...(data?.result?.games||[]).map(g=>[pregame(g),quoteState(g,g.away_quote),quoteState(g,g.home_quote)])]);}
 function tick(){if(states()!==lastStates)render();}
 setInterval(()=>{if(!document.hidden)tick();},1000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)tick();});window.addEventListener('focus',tick);
-load();
+load(/^\d{4}-\d{2}-\d{2}$/.test(savedView.day||'')?savedView.day:undefined);
 </script></body></html>

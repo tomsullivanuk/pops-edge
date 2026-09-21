@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased — Performance and navigation correction
+
+- NFL cumulative summary and combined match rows with MLB-style filters, retaining weekly provenance and exact downloads.
+- Session navigation restores selected files, active tabs and filters; replaced inbox files require reselection.
+- Content-checked disposable reader snapshots reuse validated decoding across weeks and revisits without weakening replay, chronology or source integrity checks.
+
 ## Unreleased — NFL results filters and compact recorded trades
 
 - Add saved-season/week, MLB-style period/custom-date and team display filters

@@ -10,6 +10,7 @@ import hashlib
 import json
 import posixpath
 import re
+from nfl_reader_cache import ReaderCache
 
 import nfl_forecast_import as base
 from nfl_performance import Performance, instant
@@ -93,7 +94,7 @@ def navigation(sport, area):
     bet = '/mlb' if sport == 'mlb' else '/'
     def link(url, label, active):
         return f'<a href="{url}"'+(' aria-current="page"' if active else '')+f'>{label}</a>'
-    return ('<nav class="product-nav" aria-label="Area">'+link(bet,'Bet Sheet',area=='bet')+
+    return ('<script src="/navigation-state.js"></script><nav class="product-nav" aria-label="Area">'+link(bet,'Bet Sheet',area=='bet')+
         link('/performance/'+sport,'Performance',area=='performance')+'</nav>'+
         '<nav class="product-nav sports" aria-label="Sport">'+
         link('/performance/nfl' if area=='performance' else '/', 'NFL',sport=='nfl')+
@@ -116,6 +117,8 @@ def page(sport, body):
 class NFLReader:
     def __init__(self, root):
         self.root = Path(root).absolute()
+        self.cache = ReaderCache(self.root)
+        self._engine = None
 
     def catalog(self):
         folder = safe_path(self.root,'reports')
@@ -146,13 +149,15 @@ class NFLReader:
         for p in self.root.rglob('*'):
             if p.is_symlink():
                 raise ValueError('Aliased performance evidence is not allowed')
+        if self._engine is not None:
+            return self.cache.report(latest[0])
         engine = Performance(safe_path(self.root))
         r = engine.replay_report(self.root/'reports'/(latest[0]['report_id']+'.json'))
         return r
 
     def game_dates(self, report):
         """Display-only dates from the exact replay-validated report prefix."""
-        engine=Performance(safe_path(self.root));events=engine.events()
+        engine=self._engine or Performance(safe_path(self.root));events=engine.events()
         tip=report['source_boundary']
         if tip:
             indexes=[i for i,e in enumerate(events) if e['id']==tip]
@@ -171,11 +176,25 @@ class NFLReader:
         for e in events:
             p=e['payload']
             if e['kind']=='schedule' and instant(e['at'])<=at and (p.get('season'),p.get('week'))==(report['season'],report['week']):
-                decoded=engine.decode(e)
+                from nfl_performance_sources import LEGACY_OUTCOME_RULE
+                decoded=engine.decode(e,outcome_rule=report.get('outcome_rule',LEGACY_OUTCOME_RULE))
                 if not decoded.get('error'):observe(decoded['rows'])
         return {g['game_id']:dates.get(g['game_id']) if g['game_id'] not in conflicts and identities.get(g['game_id'])==(g['home'],g['away']) else None for g in report['games']}
 
     def render(self, query):
+        with self.cache.lock:
+            try:
+                self._engine = self.cache.prepare()
+                result = self._render(query)
+                self.cache.verify()
+                return result
+            except READER_ERRORS as exc:
+                self.cache.clear()
+                return page('nfl','<section class="panel"><h2>NFL weekly performance unavailable</h2><p class="notice">'+text(exc)+'</p></section>')
+            finally:
+                self._engine = None
+
+    def _render(self, query):
         try:
             if set(query)-{'season','week','period','from','to','team'} or any(len(v)!=1 for v in query.values()):
                 raise ValueError('Select one season and one week')
@@ -203,10 +222,10 @@ class NFLReader:
                 days=[instant(g['kickoff']).astimezone(CENTRAL).date() for g in games if g.get('kickoff')]
                 q.setdefault('from',[min(days+[cutoff.astimezone(CENTRAL).date()]).isoformat()])
                 q.setdefault('to',[cutoff.astimezone(CENTRAL).date().isoformat()])
-            options = lambda values, selected: ''.join(f'<option value="{v}"'+(' selected' if v==selected else '')+f'>{v}</option>' for v in values)
-            # Changing season clears the old week; week selection is an explicit GET.
-            filters = ('<form class="filters" method="get"><label>Season <select name="season" aria-label="Season" onchange="location.href=\'/performance/nfl?season=\'+this.value">'+options(seasons,season)+
-                '</select></label><label>Week <select name="week" aria-label="Week"><option value="all">All saved weeks</option>'+options([str(w) for w in weeks],week)+'</select></label>')
+            filters = '<form class="filters" method="get" action="/performance/nfl">'
+            # Older explicit week/season links remain scoped, without extra main controls.
+            for key in ('season','week'):
+                if key in q:filters+='<input type="hidden" name="'+key+'" value="'+text(q[key][0])+'">'
             period=q.get('period',['season'])[0]
             filters+='<label>Period <select name="period" onchange="this.form.submit()">'+''.join('<option value="'+v+'"'+(' selected' if period==v else '')+'>'+label+'</option>' for v,label in NFL_PERIODS)+'</select></label>'
             for key,label in [('from','From'),('to','To')]:
@@ -214,74 +233,80 @@ class NFLReader:
                     filters+='<label>'+label+' <input type="date" name="'+key+'" value="'+text(q.get(key,[''])[0])+'" max="'+cutoff.astimezone(CENTRAL).date().isoformat()+'" required></label>'
                 elif key in q:filters+='<input type="hidden" name="'+key+'" value="'+text(q[key][0])+'">'
             team=q.get('team',[''])[0]
-            filters+='<label>Team <select name="team"><option value="">All teams</option>'+''.join('<option value="'+text(t)+'"'+(' selected' if team==t else '')+'>'+text(t)+'</option>' for t in sorted({g[k] for g in games for k in ('home','away')}))+'</select></label><button>View results</button></form>'
-            body='<section class="panel"><h2>NFL performance results</h2>'+filters
-            body+='<p>Filters apply to match rows only; summaries remain full-week results. This Season includes all saved games in the selected season and week scope, including games not yet due. No season aggregate is calculated.</p><p>Preset periods end '+text(cutoff.astimezone(CENTRAL).date().isoformat())+' (saved Central data date); custom dates include both endpoints. Games with unknown kickoff are shown only in This Season.</p></section>'
+            filters+='<label>Team <select name="team"><option value="">All teams</option>'+''.join('<option value="'+text(t)+'"'+(' selected' if team==t else '')+'>'+text(t)+'</option>' for t in sorted({g[k] for g in games for k in ('home','away')}))+'</select></label><button>View matches</button></form>'
+            body=self._cumulative(selected, games)+'<section class="panel"><h2>Match results</h2>'+filters
+            body+='<p class="muted">Preset periods end '+text(cutoff.astimezone(CENTRAL).date().isoformat())+'. Filters apply to match rows; the summary remains cumulative.</p>'
             try:shown=nfl_filtered(games,q,cutoff)
-            except ValueError as exc:return page('nfl',body+'<p class="notice" role="alert">'+text(exc)+'</p>')
+            except ValueError as exc:return page('nfl',body+'<p class="notice" role="alert">'+text(exc)+'</p></section>')
             body+='<p>'+str(len(shown))+' of '+str(len(games))+' saved games shown.</p>'
-            for r in selected:
-                body+=self._render_week(r,[g for g in r['games'] if g in shown])
+            owners={g['game_id']:r for r in selected for g in r['games']}
+            shown=sorted(shown,key=lambda g:(g.get('kickoff') is None,instant(g['kickoff']).timestamp() if g.get('kickoff') else 0,g['game_id']))
+            body+='<div class="table-wrap"><table aria-label="Match results"><thead><tr><th>Match / result</th><th>ELWAY value</th><th>Kalshi value</th><th>ELWAY score</th><th>Kalshi score</th><th>Details</th></tr></thead><tbody>'
+            for g in shown:body+=self._match_row(owners[g['game_id']],g)
+            if not shown:body+='<tr><td colspan="6">No matches in this saved report match your filters.</td></tr>'
+            body+='</tbody></table></div></section><section class="panel"><details><summary>Report details and evidence</summary><p>Each game contributes once. Payout-adjusted Brier score means squared contract-value error against payout 1, 0 or 0.5 for a tie; it is not standard binary/multiclass Brier scoring, profit or proof of an edge. Both sources and the reference use the same paired scored games. Missing and excluded games are not scored. Unknown kickoff games appear only in This Season. This Season includes saved games not yet due; it does not imply complete season coverage.</p>'
+            for r in selected:body+=self._weekly_evidence(r)
+            body+='</details></section>'
             return page('nfl',body)
         except READER_ERRORS as exc:
             return page('nfl','<section class="panel"><h2>NFL weekly performance unavailable</h2><p class="notice">'+text(exc)+'</p><p>No substitute report was selected. Inspect the saved report or use the existing manual workflow; this page does not repair or update evidence.</p></section>')
 
-    def _render_week(self,r,shown):
-        try:
-            cohort=r.get('starting_cohort')
-            coverage = ' · '.join(f'{count} {LABELS.get(state,state.replace("-"," "))}' for state,count in r['coverage'].items())
-            body='<section class="panel"><h2>NFL '+str(r['season'])+' · Week '+str(r['week'])+'</h2>'
-            report_details='<p class="muted">Saved analysis: '+text(date(r['boundary']))+'. Opening this page does not update results.</p>'
-            if r.get('matching_version'):
-                report_details+='<p>Market matching correction: '+text(r['matching_version'])+'. Existing archived evidence is interpreted using explicit team aliases; no replacement observations were acquired. Legacy interpretation ID: '+text(r['legacy_interpretation_id'])+'. This ID does not imply that interpretation was published.</p>'
-            report_details+='<p>'+('Baseline frozen' if r['frozen'] else 'Baseline not yet frozen')+' · Cutoff: '+text(date(r['cutoff']))+'</p>'
-            if cohort:
-                report_details+='<p class="notice">Partial Week 1 — '+str(cohort['eligible_population'])+' enrolled of '+str(cohort['official_population'])+' official games. The two starting-cohort exclusions remain outside scoring.</p>'
-            report_details+='<p>'+str(r['population'])+' official games · '+str(r['paired_games'])+' scored pairs</p><p>'+text(coverage)+'</p>'
-            enrolled=cohort['eligible_population'] if cohort else r['population']
-            body+='<p class="muted">Results as of: '+text(date(r['boundary']))+'</p>'
-            body+='<p>'+str(r['paired_games'])+' of '+str(enrolled)+' enrolled games scored</p>'
-            if r['selection_issue']:
-                body+='<p class="notice">'+text(r['selection_issue'])+'</p>'
-            if not r['paired_games']:
-                body+='<p class="notice">No scored comparison available for this week. Missing inputs and unresolved outcomes are shown below.</p>'
-            report_details+='<h3>Payout-adjusted Brier score</h3><p>Lower is better. Both sources use the same scored games, without fees. Values in the table refer to the home-team contract.</p>'
-            reference, elway_gain, kalshi_gain = reference_comparison(r)
-            body+='<div class="table-wrap"><table aria-label="Comparison with 50% reference"><thead><tr><th>Metric</th><th>ELWAY</th><th>Kalshi</th><th>50% reference</th></tr></thead><tbody>'
-            body+='<tr><th scope="row">Payout-adjusted Brier score</th><td>'+number(r['means']['elway_error'])+'</td><td>'+number(r['means']['kalshi_error'])+'</td><td>'+number(reference)+'</td></tr>'
-            body+='<tr><th scope="row">Improvement over reference</th><td>'+number(elway_gain)+'</td><td>'+number(kalshi_gain)+'</td><td>—</td></tr></tbody></table></div></section>'
-            report_details+='<p>The 50% reference assigns a fixed home-team contract value of 0.50 to the same scored games. Its error is 0.25 for a home or away win and 0.00 for a tie. The average is calculated from the actual scored outcomes. This descriptive reference was adopted September 15, 2026, after the weekly study began; it does not change the saved measurement or population.</p>'
-            report_details+='<p>Improvement over reference is reference error minus source error. Positive means lower error than the reference; negative means higher error.</p>'
-            report_details+='<p>Direct ELWAY improvement versus Kalshi: '+number(r['means']['difference'])+'. This is Kalshi error minus ELWAY error. Positive means lower observed ELWAY error; negative means lower Kalshi error. Rounded values may appear equal. These are descriptive comparisons, not profit or proof of an edge.</p>'
-            body+='<div class="table-wrap"><table><thead><tr><th>Match / result</th><th>ELWAY value</th><th>Kalshi value</th><th>ELWAY score</th><th>Kalshi score</th><th>Details</th></tr></thead><tbody>'
-            forecast_label = ('File creation time — publication-time proxy' if (r['selected_forecast'] or {}).get('time_basis') else 'Forecast published')
-            if not shown:body+='<tr><td colspan="6">No matches in this saved week match your filters.</td></tr>'
-            for g in shown:
-                e,k,o,sc=g['elway'],g['kalshi'],g['outcome'],g['scores']
-                result=(f"Final: {g['away']} {o['away_score']} – {g['home']} {o['home_score']}" if o and o['state']=='final' else '')
-                body+='<tr><td><strong>'+text(g['away']+' at '+g['home'])+'</strong><small>'+text(date(g.get('kickoff')))+'</small>'+('<small>'+text(result)+'</small>' if result else '')+'</td>'
-                body+=''.join('<td>'+number(v,pct)+'</td>' for v,pct in [(e['central'] if e else None,True),(k['value'] if k else None,True),(sc['elway_error'] if sc else None,False),(sc['kalshi_error'] if sc else None,False)])
-                details=[('Evaluation status',LABELS.get(g['state'],g['state'].replace('-',' '))),('Result',result or 'Unresolved result'),(forecast_label,date((r['selected_forecast'] or {}).get('updated_at'))),('Forecast imported',date(r['selected_imported_at'])),('Outcome observed',date(o.get('observed_at')) if o else 'Unavailable')]
-                if k:
-                    details.extend((key.replace('_',' ').capitalize(),date(value) if key in ('started_at','received_at') else str(value)) for key,value in k.items() if key in ('started_at','received_at','retry'))
-                body+='<td><details><summary>Details</summary><p>'+text('; '.join(g['issues']+(o.get('issues',[]) if o else [])) or 'No additional exclusions recorded.')+'</p><dl>'+''.join('<dt>'+text(a)+'</dt><dd>'+text(b)+'</dd>' for a,b in details)+'</dl></details></td></tr>'
-            body+='</tbody></table></div>'
-            if r['diagnostics']:
-                body+='<section class="panel"><h3>Recorded attempt issues</h3>'+''.join('<p>'+text(d['error'])+'</p>' for d in r['diagnostics'])+'</section>'
-            body+='<section class="panel"><details><summary>Report details and evidence</summary>'+report_details+'<p>Payout-adjusted Brier score is the product label for squared contract-value error: squared error against the final contract payout, 1 for a home win, 0 for an away win, and 0.5 for a tie. Each game contributes once through its home-team equivalent value. The summary shows the mean across scored games. This descriptive label is not standard binary or multiclass Brier scoring.</p><p>Original source values, times, retries, diagnostics and identities are retained in the exact report download.</p><p>'+text(forecast_label)+': '+text(date((r['selected_forecast'] or {}).get('updated_at')))+'.</p>'+('<p>Publisher update time and model age are unknown. File creation is an owner-approved proxy, not a verified publication time.</p>' if (r['selected_forecast'] or {}).get('time_basis') else '')+'<a download href="/performance/nfl/report/'+r['report_id']+'.json">Download exact weekly report</a></details></section>'
-            return body
-        except READER_ERRORS as exc:
-            raise
+    def _cumulative(self, reports, games):
+        if len({g['game_id'] for g in games})!=len(games):
+            raise ValueError('Duplicate game identity across saved weeks; cumulative results unavailable')
+        scored=[g for g in games if g['state']=='scored']
+        if len(scored)!=sum(r['paired_games'] for r in reports):raise ValueError('Scored population does not reconcile')
+        with localcontext() as context:
+            context.prec=50
+            means={k:sum(Decimal(g['scores'][k]) for g in scored)/len(scored) if scored else None for k in ('elway_error','kalshi_error')}
+            reference=sum((Decimal('0.5')-Decimal(g['outcome']['payout']))**2 for g in scored)/len(scored) if scored else None
+            gains={k:reference-v if v is not None else None for k,v in means.items()}
+        boundaries=sorted({r['boundary'] for r in reports},key=instant)
+        enrolled=sum(r['starting_cohort']['eligible_population'] if r.get('starting_cohort') else r['population'] for r in reports)
+        body='<section class="panel"><h2>NFL Performance</h2><p class="muted">Cumulative · Season '+str(reports[0]['season'])+' · Saved weeks '+', '.join(str(r['week']) for r in reports)+' · Saved analyses '+text(date(boundaries[0]))+(' through '+text(date(boundaries[-1])) if len(boundaries)>1 else '')+'</p>'
+        body+='<p>'+str(len(scored))+' of '+str(enrolled)+' enrolled games scored'+(' — Limited coverage' if len(scored)<enrolled else '')+'</p>'
+        for r in reports:
+            if r.get('selection_issue'):body+='<p class="notice">Week '+str(r['week'])+': '+text(r['selection_issue'])+'</p>'
+            if r.get('diagnostics'):body+='<p class="notice">Week '+str(r['week'])+' has recorded attempt issues; see report details.</p>'
+        if not scored:body+='<p class="notice">No scored comparison available. Missing inputs and unresolved outcomes remain visible.</p>'
+        body+='<div class="table-wrap"><table aria-label="Comparison with 50% reference"><thead><tr><th>Metric</th><th>ELWAY</th><th>Kalshi</th><th>50% reference</th></tr></thead><tbody><tr><th scope="row">Payout-adjusted Brier score</th>'
+        body+=''.join('<td>'+number(v)+'</td>' for v in (means['elway_error'],means['kalshi_error'],reference))+'</tr><tr><th scope="row">Improvement over reference</th>'
+        return body+''.join('<td>'+number(gains[k])+'</td>' for k in ('elway_error','kalshi_error'))+'<td>—</td></tr></tbody></table></div></section>'
+
+    def _match_row(self,r,g):
+        e,k,o,sc=g['elway'],g['kalshi'],g['outcome'],g['scores']
+        result=(f"Final: {g['away']} {o['away_score']} – {g['home']} {o['home_score']}" if o and o['state']=='final' else '')
+        body='<tr><td><strong>'+text(g['away']+' at '+g['home'])+'</strong><small>'+text(date(g.get('kickoff')))+'</small>'+('<small>'+text(result)+'</small>' if result else '')+'</td>'
+        body+=''.join('<td>'+number(v,pct)+'</td>' for v,pct in [(e['central'] if e else None,True),(k['value'] if k else None,True),(sc['elway_error'] if sc else None,False),(sc['kalshi_error'] if sc else None,False)])
+        label='File creation time — publication-time proxy' if (r['selected_forecast'] or {}).get('time_basis') else 'Forecast published'
+        details=[('Week',str(r['week'])),('Saved analysis',date(r['boundary'])),('Evaluation status',LABELS.get(g['state'],g['state'].replace('-',' '))),('Result',result or 'Unresolved result'),(label,date((r['selected_forecast'] or {}).get('updated_at'))),('Forecast imported',date(r['selected_imported_at'])),('Outcome observed',date(o.get('observed_at')) if o else 'Unavailable')]
+        if k:details.extend((key.replace('_',' ').capitalize(),date(value) if key in ('started_at','received_at') else str(value)) for key,value in k.items() if key in ('started_at','received_at','retry'))
+        return body+'<td><details><summary>Details</summary><p>'+text('; '.join(g['issues']+(o.get('issues',[]) if o else [])) or 'No additional exclusions recorded.')+'</p><dl>'+''.join('<dt>'+text(a)+'</dt><dd>'+text(b)+'</dd>' for a,b in details)+'</dl></details></td></tr>'
+
+    def _weekly_evidence(self,r):
+        body='<h3>Week '+str(r['week'])+'</h3><p>Saved analysis: '+text(date(r['boundary']))+' · '+str(r['population'])+' official games · '+str(r['paired_games'])+' scored pairs</p>'
+        body+='<p>'+('Baseline frozen' if r['frozen'] else 'Baseline not yet frozen')+' · Cutoff: '+text(date(r['cutoff']))+'</p>'
+        if r.get('starting_cohort'):body+='<p>Partial Week 1 — 14 enrolled of 16 official games; the two starting-cohort exclusions remain outside scoring.</p>'
+        body+='<p>'+text(' · '.join(str(v)+' '+LABELS.get(k,k) for k,v in r['coverage'].items()))+'</p>'
+        if (r['selected_forecast'] or {}).get('time_basis'):body+='<p>File creation time — publication-time proxy. Publisher update time and model age are unknown.</p>'
+        if r.get('matching_version'):body+='<p>Market matching correction: '+text(r['matching_version'])+' · Legacy interpretation ID: '+text(r['legacy_interpretation_id'])+'. No replacement observations acquired.</p>'
+        body+='<p>Direct ELWAY improvement versus Kalshi: '+number(r['means']['difference'])+'. Positive means lower observed error, not proof of an edge.</p>'
+        body+=''.join('<p>'+text(d['error'])+'</p>' for d in r['diagnostics'])
+        return body+'<a download href="/performance/nfl/report/'+r['report_id']+'.json">Download exact weekly report</a>'
 
     def download(self, identity):
-        reports=self.catalog()
-        r=next((r for r in reports if r['report_id']==identity),None)
-        if not r:raise ValueError('Saved report unavailable')
-        for p in self.root.rglob('*'):
-            if p.is_symlink():raise ValueError('Aliased performance evidence is not allowed')
-        path=safe_path(self.root,'reports/'+identity+'.json')
-        Performance(safe_path(self.root)).replay_report(path)
-        return path.read_bytes()
+        with self.cache.lock:
+            try:
+                self.cache.prepare()
+                r=next((r for r in self.catalog() if r['report_id']==identity),None)
+                if not r:raise ValueError('Saved report unavailable')
+                self.cache.report(r)
+                raw=(self.cache.engine.root/'reports'/(identity+'.json')).read_bytes()
+                self.cache.verify()
+                return raw
+            except Exception:
+                self.cache.clear()
+                raise
 
 
 LABELS={'scored':'scored','excluded-starting-cohort':'outside starting cohort','unresolved-outcome':'unresolved result','missing-capture':'missing capture','candidate':'awaiting baseline freeze','awaiting-outcome':'awaiting result'}

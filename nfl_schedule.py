@@ -101,13 +101,14 @@ def capture(store,season,week,transport=fetch,clock=utc):
     return folder,receipt
 
 
-def replay(folder):
+def replay(folder, *, parse_rows=None):
+    parse_rows = parse_rows or parse
     folder=Path(folder);r=json.loads((folder/'receipt.json').read_text());raw=(folder/'source.html').read_bytes()
     if r['schema']!=VERSION or r['url']!=url(r['season'],r['week']) or r['error'] or r['status']!=200:raise ValueError('Invalid schedule receipt')
     if digest(raw)!=r['raw_sha256'] or aware(r['completed_at'])<aware(r['started_at']):raise ValueError('Schedule integrity/chronology failure')
     started=json.loads((folder/'started.json').read_text())
     if started!=dict(url=r['url'],started_at=r['started_at']):raise ValueError('Schedule start receipt mismatch')
-    if parse(raw,r['season'],r['week'])!=r['rows']:raise ValueError('Schedule differs from raw source')
+    if parse_rows(raw,r['season'],r['week'])!=r['rows']:raise ValueError('Schedule differs from raw source')
     return r
 
 

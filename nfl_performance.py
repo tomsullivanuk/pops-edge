@@ -176,12 +176,16 @@ class Performance:
                 (Path(tmp) / name).write_bytes(self.raw(key))
             yield Path(tmp)
 
+    def parsed(self, function, *args, **kwargs):
+        """Pure decoding hook; the normal operational engine does not cache."""
+        return function(*args, **kwargs)
+
     def decode(self, event, *, outcome_rule=sources.LEGACY_OUTCOME_RULE):
         p = event['payload']
         if event['kind'] == 'import':
             raw = self.raw(p['raw'])
             try:
-                value = excel.parse(raw,p.get('file_time'))
+                value = self.parsed(excel.parse,raw,p.get('file_time'))
                 if value.get('file_time'):
                     timing.validate(value['file_time'],raw,p['received_at'])
                 rows = [{k: v for k, v in r.items() if k != 'excel_row'} for r in value['rows'] if r['week'] == p['week']]
@@ -212,8 +216,8 @@ class Performance:
                     raise ValueError('Schedule chronology mismatch')
                 if r.get('error'):
                     return dict(error=r['error'])
-                schedule.replay(folder)
-                return dict(r, outcomes=sources.outcomes(raw, p['season'], p['week'], outcome_rule=outcome_rule))
+                schedule.replay(folder, parse_rows=lambda *args:self.parsed(schedule.parse,*args))
+                return dict(r, outcomes=self.parsed(sources.outcomes,raw, p['season'], p['week'], outcome_rule=outcome_rule))
         if event['kind'] == 'market':
             with self.bundle(p['files']) as folder:
                 r = kalshi.replay(folder)
