@@ -299,6 +299,75 @@ class LifecycleAcceptanceTests(unittest.TestCase):
         at=at or self.at
         self.state.append(OperationalHeartbeat('1',command,at,at,disposition,0,0,0,failure))
 
+    def test_lock_timeout_health_failure_and_later_recovery_remain_truthful(self):
+        rebuild_index(self.archive)
+        for command in ('capture-prospective','refresh-supporting','reconcile-outcomes',
+                        'rebuild-prospective-projection','rebuild-index','sync-secondary'):
+            self.heartbeat(command)
+        self.heartbeat('capture-prospective',self.at+timedelta(seconds=10),'failed','lock-timeout')
+        now=self.at+timedelta(seconds=20)
+        # Run actual phase execution and health logic against a synthetic archive.
+        # Acquisition phases are already completed/not due; no transport may run.
+        def no_provider(*args):raise AssertionError('unexpected provider call')
+        result=execute('lifecycle-cycle',self.config,clock=lambda:now,
+                       supporting_loader=no_provider,outcome_loader=no_provider,
+                       transport_factory=no_provider,free_disk=lambda _:10**9)
+        self.assertEqual(result['disposition'],'failed')
+        self.assertEqual(result['provider_calls'],0)
+        phase=result['phases'][-1]
+        self.assertEqual(phase['failure_code'],'phase-not-ready')
+        self.assertEqual(phase['health_blockers'],['capture-prospective:lock-timeout'])
+        failed_cycle=[x for x in self.state.entries() if x.command=='lifecycle-cycle'][0]
+        self.heartbeat('capture-prospective',now+timedelta(seconds=1),'no-due-work')
+        recovered=health_from_operational_state(archive=self.archive,state=self.state,
+                      trusted_at=now+timedelta(seconds=2),free_disk=lambda _:10**9)
+        self.assertTrue(recovered.ready,recovered.current_blockers)
+        self.assertIn('capture-prospective:lock-timeout',recovered.superseded_failures)
+        self.assertIn(failed_cycle,self.state.entries())
+        self.assertEqual(failed_cycle.disposition,'failed')
+        self.heartbeat('capture-prospective',now+timedelta(seconds=3),'failed','projection-invalid')
+        unsafe=health_from_operational_state(archive=self.archive,state=self.state,
+                      trusted_at=now+timedelta(seconds=4),free_disk=lambda _:10**9)
+        self.assertFalse(unsafe.ready)
+        self.assertIn('capture-prospective:projection-invalid',unsafe.current_blockers)
+
+    def test_health_phase_diagnostics_are_bounded_and_do_not_copy_payloads(self):
+        def run(command):
+            if command!='health-report':return {'disposition':'success','provider_calls':0}
+            return {'ready':False,'current_blockers':['capture-prospective:lock-timeout',
+                    'capture-prospective:SECRET_VALUE',{'password':'SECRET_VALUE'}]+['x'*100000]*20,
+                    'checkpoint_source_boundary':['SECRET_BOUNDARY'],'payload':'SECRET_PAYLOAD'}
+        result=run_cycle(archive=self.archive,state=self.state,clock=lambda:self.at,run=run)
+        reasons=result['phases'][-1]['health_blockers']
+        self.assertEqual(len(reasons),17)
+        self.assertEqual(reasons[0],'capture-prospective:lock-timeout')
+        self.assertEqual(reasons[-1],'health:additional-blockers-omitted')
+        rendered=json.dumps(result)
+        self.assertNotIn('SECRET',rendered)
+        self.assertNotIn('checkpoint_source_boundary',rendered)
+        self.assertLess(len(rendered),2500)
+
+    def test_missing_or_malformed_health_reasons_are_visible(self):
+        from forecast_operational_lifecycle import health_failure_reasons
+        for value in (None,'SECRET',{'password':'SECRET'}):
+            self.assertEqual(health_failure_reasons({'current_blockers':value}),
+                             ('health:unrecognized-blocker',))
+        self.assertEqual(health_failure_reasons({'ready':False}),('health:not-ready',))
+
+    def test_cli_returned_failure_exits_nonzero_preserving_other_results(self):
+        import io
+        from contextlib import redirect_stdout,redirect_stderr
+        import operate_forecast_standalone_activation as cli
+        from forecast_standalone_operations import ExitCode
+        for disposition,expected in [('failed',5),('not-ready',2),('success',0),
+                ('unchanged',0),('no-due-work',0),('skipped-cycle',0)]:
+            with self.subTest(disposition=disposition),patch.object(cli.DeploymentConfig,'from_json',return_value=self.config),patch.object(cli,'execute',return_value={'disposition':disposition}),redirect_stdout(io.StringIO()):
+                self.assertEqual(cli.main(['--config','unused','lifecycle-cycle']),expected)
+        for code,expected in [('lock-timeout',ExitCode.OPERATIONAL_FAILURE),
+                              ('integrity-unsafe',ExitCode.INTEGRITY_FAILURE)]:
+            with self.subTest(exception=code),patch.object(cli.DeploymentConfig,'from_json',return_value=self.config),patch.object(cli,'execute',side_effect=OperationsError(code,'fixture')),redirect_stderr(io.StringIO()):
+                self.assertEqual(cli.main(['--config','unused','lifecycle-cycle']),expected)
+
     def test_rebuild_retry_allows_downstream_maintenance_and_records_exhaustion(self):
         import forecast_prospective_projection as projection
         original = projection.rebuild_projection
