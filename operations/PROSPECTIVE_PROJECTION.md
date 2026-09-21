@@ -108,6 +108,61 @@ is introduced. Scientific capture windows and missing Coverage remain unchanged.
 
 ## One non-collector cycle
 
+### Bounded startup verification (September 21, 2026)
+
+The Owner approved a narrow exception to manual-only checkpoint recovery:
+both scheduled CLI entry points (`capture-prospective` and `lifecycle-cycle`)
+must pass a shared startup gate before any provider work. The gate identifies
+the host's kernel boot session (macOS `kern.bootsessionuuid`; Linux boot ID for
+portable offline execution). An unavailable identity fails closed, rather than
+guessing from wall time or treating a permissions failure as archive corruption.
+
+On first use, or after a new boot, the gate performs full offline archive
+verification and checkpoint rebuild, even when that calendar day's ordinary
+rebuild already completed. It does not ignore or overwrite cached filesystem
+signatures. Ordinary process/service restarts in the same verified boot reuse
+the receipt; all existing per-invocation source, lineage, marker and timing
+fences still apply. A receipt does not make an invalid checkpoint usable.
+
+One nonblocking OS lock serializes this gate across the two jobs. A competing
+invocation exits with `startup-recovery-busy` and zero provider calls. The normal
+job schedule can try again after the owner completes. Durable `running` intent
+is published before rebuilding; completion atomically publishes a checksummed
+`verified` receipt. One startup invocation permits the existing maximum three
+full preparations, retrying only `projection-stale`, not integrity failures.
+This is an attempt bound, not a new wall-clock timeout for full replay.
+
+Failure publishes `blocked`. Process interruption leaves `running`; after its
+lock is released that state is treated as blocked, not retried automatically.
+Neither a later scheduled tick nor another reboot clears a blocked/interrupted
+attempt. Both jobs stop before provider work. A rejected current lineage, or an
+unusable checkpoint with retained rejection records, requires explicit inspection
+and the existing operator rebuild procedure. Request/publication markers are never
+cleared, uncertain calls never repeated, and missed windows never reconstructed.
+
+Receipts and the lock live under `LOG_ROOT/startup-recovery/<config-and-root-hash>/`,
+outside the immutable archive and secondary copy. `verify-startup` and the calling
+job record operational heartbeat outcomes; CLI failures include concrete failure
+codes with zero provider calls during recovery. The original error and receipt
+must be inspected before an operator explicitly invokes:
+
+```sh
+python operate_forecast_standalone_activation.py --config /absolute/config.json verify-startup --retry-startup
+```
+
+That command repeats full verification; it does not waive a rejection fence or
+repair source Evidence. `verify-startup` without the flag checks the gate without
+granting a retry. Routine job invocations must never use the retry flag. A manual
+full rebuild alone does not clear a blocked startup receipt; explicit startup
+retry is still required. Corrupt receipt bytes also require explicit retry.
+
+First commissioning of this amendment requires the same startup verification
+before reactivation. This does not install new jobs, alter hourly/daily schedules,
+or authorize deployment. Independent review and controlled commissioning remain
+separate gates. Mid-boot source corruption remains fail-closed under the existing
+checks; generalized recovery, automatic marker repair and cloud watchdogs are
+out of scope.
+
 `lifecycle-cycle` is the only scheduled non-collector entry point. It takes a
 nonblocking whole-cycle lock and runs typed phases sequentially:
 

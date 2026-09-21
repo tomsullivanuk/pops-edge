@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased — bounded PR17C1 startup recovery
+
+- Gate the two scheduled jobs on full offline verification/rebuild once per kernel
+  boot session, independent of the ordinary daily rebuild schedule.
+- Serialize startup and persist intent before work; failed/interrupted recovery
+  blocks acquisition until explicit operator retry. Preserve rejection and request
+  fences, source verification and truthful missing Coverage.
+- Add isolated restart, interrupted-process, concurrency and unsafe-recovery tests.
+- Implementation candidate only; no deployment or activation implied.
+
 > Release allocation, September 8, 2026: v1.1.0 is the NFL comparison board;
 > the previously planned v1.1.0 MLB programme now targets v1.2.0. Historical
 > sections and PR numbers below remain unchanged. See

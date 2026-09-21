@@ -93,11 +93,19 @@ def load_live_supporting(*, archive, purpose, at, public_get, clock):
         raise failure from exc
 
 
-def execute(command,config,*,clock=lambda:datetime.now(timezone.utc),transport_factory=None,supporting_loader=None,outcome_loader=None,retrospective_runner=None,free_disk=None,session_completion_id=None,session_correction_reason=None,publication_protocol_id=None,expected_source_snapshot=None,schedule_reconciliation_runner=None):
+def execute(command,config,*,clock=lambda:datetime.now(timezone.utc),transport_factory=None,supporting_loader=None,outcome_loader=None,retrospective_runner=None,free_disk=None,session_completion_id=None,session_correction_reason=None,publication_protocol_id=None,expected_source_snapshot=None,schedule_reconciliation_runner=None,startup_check=False,startup_retry=False):
     archive=NamespaceArchive(config);state=OperationalState(config.log_root/"operational-state");started=clock()
     calls=typed=due=None;disposition="success";failure=None
     try:
         if config.mode is not OperatingMode.ACTIVATED:raise OperationsError("deployment-mode-invalid","PR17C1 CLI requires activated namespace")
+        if startup_check and command in {"capture-prospective","lifecycle-cycle"}:
+            calls=0
+            execute("verify-startup",config,clock=clock)
+            calls=None
+        if command=="verify-startup":
+            from forecast_startup_recovery import ensure_startup
+            calls=0
+            return ensure_startup(archive,clock=clock,retry=startup_retry)
         if command in {"refresh-supporting","reconcile-outcomes"}:
             from forecast_standalone_activation import APPROVED_ACTIVATION_AT,resolve_activated_authority
             resolve_activated_authority(archive,started)
@@ -197,12 +205,14 @@ def execute(command,config,*,clock=lambda:datetime.now(timezone.utc),transport_f
 
 def main(argv=None)->int:
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument("--config",type=Path);parser.add_argument("--fixture",type=Path);parser.add_argument("--trusted-at")
-    parser.add_argument("command",choices=("lifecycle-cycle","refresh-prospective-projection","initialize-activation","capture-prospective","refresh-supporting","refresh-retrospective-supporting","complete-retrospective-supporting-session","correct-retrospective-supporting-session","acquire-retrospective","reconcile-outcomes","reconcile-acquisitions","inspect","maintain","rebuild-index","rebuild-prospective-projection","sync-secondary","health-report","render-launchd","publish-retrospective-analysis","inspect-retrospective-publication","reconcile-prospective-schedule"));parser.add_argument("--output",type=Path);parser.add_argument("--maximum-opportunities",type=int);parser.add_argument("--start-date");parser.add_argument("--end-date");parser.add_argument("--session-id");parser.add_argument("--reason")
+    parser.add_argument("command",choices=("verify-startup","lifecycle-cycle","refresh-prospective-projection","initialize-activation","capture-prospective","refresh-supporting","refresh-retrospective-supporting","complete-retrospective-supporting-session","correct-retrospective-supporting-session","acquire-retrospective","reconcile-outcomes","reconcile-acquisitions","inspect","maintain","rebuild-index","rebuild-prospective-projection","sync-secondary","health-report","render-launchd","publish-retrospective-analysis","inspect-retrospective-publication","reconcile-prospective-schedule"));parser.add_argument("--output",type=Path);parser.add_argument("--maximum-opportunities",type=int);parser.add_argument("--start-date");parser.add_argument("--end-date");parser.add_argument("--session-id");parser.add_argument("--reason")
+    parser.add_argument("--retry-startup",action="store_true",help="Explicit operator retry after inspecting failed/interrupted startup")
     parser.add_argument("--expected-revision")
     parser.add_argument("--protocol-id");parser.add_argument("--source-snapshot")
     args=parser.parse_args(argv)
     try:
         if args.config is None:raise OperationsError("configuration-error","--config is required")
+        if args.retry_startup and args.command!="verify-startup":raise OperationsError("configuration-error","--retry-startup is restricted to verify-startup")
         if args.command=="publish-retrospective-analysis" and (args.trusted_at or args.fixture):raise OperationsError("configuration-error","publication requires the actual trusted clock and archived inputs, not --trusted-at or --fixture")
         if args.command=="reconcile-prospective-schedule" and args.trusted_at and not args.fixture:
             raise OperationsError("configuration-error","Live schedule reconciliation requires the actual clock")
@@ -305,7 +315,7 @@ def main(argv=None)->int:
                         return (args.fixture/("mlb-"+day+".json")).read_bytes()
                     return public_get(base,path)
                 schedule_runner=lambda archive,started:reconcile_schedule(archive=archive,started=started,start_date=first,end_date=last,public_get=schedule_get,clock=clock)
-            result=execute(args.command,config,clock=clock,transport_factory=factory,supporting_loader=supporting_loader,outcome_loader=outcome_loader,retrospective_runner=retrospective_runner,session_completion_id=args.session_id,session_correction_reason=args.reason,publication_protocol_id=args.protocol_id,expected_source_snapshot=args.source_snapshot,schedule_reconciliation_runner=schedule_runner)
+            result=execute(args.command,config,clock=clock,transport_factory=factory,supporting_loader=supporting_loader,outcome_loader=outcome_loader,retrospective_runner=retrospective_runner,session_completion_id=args.session_id,session_correction_reason=args.reason,publication_protocol_id=args.protocol_id,expected_source_snapshot=args.source_snapshot,schedule_reconciliation_runner=schedule_runner,startup_check=True,startup_retry=args.retry_startup)
         print(json.dumps(result,sort_keys=True,separators=(",",":"),default=lambda x:x.isoformat()))
         return int(ExitCode.SUCCESS if result.get("disposition")!="not-ready" else ExitCode.NOT_READY)
     except OperationsError as exc:
