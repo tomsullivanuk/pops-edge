@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased — NFL results filters and compact recorded trades
+
+- Add saved-season/week, MLB-style period/custom-date and team display filters
+  while preserving weekly report validation, metrics and exact downloads.
+- Project kickoff dates from each report's original archived schedule boundary.
+- Compact recorded-trade cells; retain provenance/caveats in Details and explicit
+  YES-scale labeling for NO trades. No acquisition or accounting changes.
+
 ## Unreleased — PR17C1 lifecycle health reporting
 
 - Return nonzero for failed lifecycle results and retain bounded, allowlisted

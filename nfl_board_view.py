@@ -126,15 +126,14 @@ def render(data):
                     cash_details+='<li>'+esc(l['side'].upper()+' '+l['yes_team'])+' · '+esc(l['quantity'])+' contracts · '+esc(l['kind'])+' · opened '+esc(display_time(l['opened']))+' · closed '+esc(display_time(l['closed']))+'<br>Purchase before fees $'+esc(l['cost'])+' · opening fee $'+esc(l['opening_fee'])+' · gross proceeds $'+esc(l['proceeds'])+' · closing fee $'+esc(l['closing_fee'])+' · realized profit $'+esc(l['profit'])+'<br>Imported '+esc(display_time(l['imported_at']))+' · saved source '+esc(l['source'])+'</li>'
                 cash_details='<p><b>Reconciled cash flows</b>. Proceeds include returned stake; profit deducts purchase cost and both fees.</p><ul>'+cash_details+'</ul>'
             if unresolved:
-                wager_cell+='<small>Recorded trade · current holding unverified</small>'
+                wager_details='<li>Recorded trade · current holding unverified</li>'+wager_details
             for t in wagers:
-                wager_cell+='<div class="recorded-trade"><b>'+esc(t['side'].upper()+' '+t['yes_team'])+'</b> · '+esc(t['quantity'])+' contracts'
-                wager_cell+='<small>Export YES price '+dollars(t['price'])+' · recorded fee '+dollars(t['fee'])+'</small>'
-                wager_cell+='<small>'+esc(display_time(t['at']))+' · export row '+esc(t['source_row'])+'</small></div>'
+                wager_cell+='<div class="recorded-trade"><b>'+esc(t['side'].upper()+' '+t['yes_team'])+'</b> · '+esc(t['quantity'])+' contracts · '+('YES-scale price ' if t['side']=='no' else 'price ')+dollars(t['price'])+'</div>'
+                wager_details+='<li>Export YES price '+dollars(t['price'])+' · recorded fee '+dollars(t['fee'])+' · '+esc(display_time(t['at']))+' · export row '+esc(t['source_row'])+'</li>'
                 if t['needs_review']:
                     wager_cell+='<small class="reason">Duplicate activity · review needed</small>'
             if wagers:
-                wager_cell+='<small>Trade direction only; purchase/sale not established here.</small>'
+                wager_details+='<li>Trade direction only; purchase/sale not established here.</li>'
                 wager_details=wager_details.replace(' · recorded price ', ' · export YES price ')
             problem_tickers={d.get('ticker') for d in data.get('diagnostics', [])}
             problem_tickers.update(d.get('ticker') for d in (activity or {}).get('diagnostics', []))

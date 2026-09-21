@@ -26,6 +26,46 @@ class NFLReaderTests(unittest.TestCase):
         self.root=Path(self.fixture.tmp.name);self.reader=NFLReader(self.root)
     def save(self):
         return self.fixture.engine.save_report(2026,1,self.fixture.clock())
+
+    def test_period_controls_and_read_only_custom_dates(self):
+        self.fixture.refresh();self.fixture.finish();r=self.save();before=inventory(self.root)
+        dates=self.reader.game_dates(r)
+        self.assertTrue(any(dates.values()))
+        with patch('requests.get',side_effect=AssertionError('provider request')):
+            body=self.reader.render({'period':['custom']}).decode()
+            for label in ('Last 7 Days','Last 14 Days','Last 60 Days','Last 90 Days','This Season','Custom Period','From','To','All teams'):
+                self.assertIn(label,body)
+            self.assertIn('type="date"',body)
+            self.assertIn('1 scored pairs',body)
+            for q in ({'period':['custom'],'from':[''],'to':['']},
+                      {'period':['custom'],'from':['2026-09-11'],'to':['2026-09-01']},
+                      {'period':['custom'],'from':['2026-09-01'],'to':['2099-01-01']},
+                      {'period':['bogus']},{'team':['NOT_A_TEAM']}):
+                self.assertIn('role="alert"',self.reader.render(q).decode())
+        self.assertEqual(before,inventory(self.root))
+        self.assertEqual(json.loads(self.reader.download(r['report_id'])),r)
+
+    def test_season_renders_latest_each_week_without_aggregate(self):
+        from copy import deepcopy
+        self.fixture.refresh();self.fixture.finish();r=self.save()
+        second=deepcopy(r);second['week']=2
+        with patch.object(self.reader,'catalog',return_value=[r,second]),patch.object(self.reader,'selected',side_effect=lambda season,week:r if week==1 else second) as selected,patch.object(self.reader,'game_dates',return_value={}):
+            body=self.reader.render({}).decode()
+            self.assertIn('Week 1',body);self.assertIn('Week 2',body)
+            self.assertEqual(selected.call_count,2)
+            self.assertIn('No season aggregate',body)
+            self.assertEqual(body.count('Download exact weekly report'),2)
+            body=self.reader.render({'week':['1']}).decode()
+            self.assertNotIn('· Week 2</h2>',body)
+
+    def test_display_dates_ignore_later_events_beyond_saved_prefix(self):
+        self.fixture.refresh();self.fixture.finish();r=self.save()
+        original=self.reader.game_dates(r)
+        events=self.fixture.engine.events()
+        from copy import deepcopy
+        later=deepcopy(events[-1]);later['id']='later';later['kind']='schedule'
+        with patch('nfl_performance.Performance.events',return_value=events+[later]):
+            self.assertEqual(self.reader.game_dates(r),original)
     def test_frozen_scores_replay_and_read_only_render(self):
         self.fixture.refresh();self.fixture.finish();r=self.save();before=inventory(self.root)
         with patch('requests.get',side_effect=AssertionError('provider request')):
@@ -90,6 +130,22 @@ class NFLReaderTests(unittest.TestCase):
     def test_query_does_not_accept_paths_or_multiple_values(self):
         for query in ({'path':['/etc/passwd']},{'week':['1','2']}):
             self.assertIn(b'Select one season',self.reader.render(query))
+
+
+class NFLDateFilterTests(unittest.TestCase):
+    def test_central_inclusive_boundaries_presets_unknown_and_team(self):
+        from performance_reader import nfl_filtered
+        from datetime import datetime
+        cutoff=datetime.fromisoformat('2026-09-22T01:00:00+00:00')
+        games=[dict(game_id=str(i),home='ATL',away='LAR',kickoff=t) for i,t in enumerate([
+            '2026-09-15T04:59:59+00:00','2026-09-15T05:00:00+00:00',
+            '2026-09-22T04:59:59+00:00','2026-09-22T05:00:00+00:00',None])]
+        self.assertEqual([g['game_id'] for g in nfl_filtered(games,{'period':['7']},cutoff)],['1','2'])
+        self.assertEqual(nfl_filtered(games,{'period':['season']},cutoff),games)
+        q={'period':['custom'],'from':['2026-09-15'],'to':['2026-09-21'],'team':['ATL']}
+        self.assertEqual([g['game_id'] for g in nfl_filtered(games,q,cutoff)],['1','2'])
+        q['from']=['2026-02-30']
+        with self.assertRaises(ValueError):nfl_filtered(games,q,cutoff)
 
 
 class MLBReaderTests(unittest.TestCase):

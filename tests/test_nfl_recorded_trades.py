@@ -39,6 +39,17 @@ class RecordedTradeTests(unittest.TestCase):
         self.assertEqual(data,before)
         self.assertEqual(len(data['accounting_notes']),1)
 
+    def test_compact_summary_moves_provenance_to_details(self):
+        import re
+        data=self.data();html=season.render(data)
+        quotes=''.join(re.findall(r'<tr class="quote">(.*?)</tr>',html))
+        details=''.join(re.findall(r'<tr class="detail" hidden>(.*?)</tr>',html))
+        self.assertIn('NO LAR</b> · 26.58 contracts · YES-scale price $0.64',quotes)
+        for value in ('recorded fee','export row','current holding unverified','purchase/sale not established'):
+            self.assertNotIn(value,quotes);self.assertIn(value,details)
+        trade=data['activity']['trades'][0];trade.update(side='yes',quantity='11.16',price='0.43')
+        self.assertIn('YES LAR</b> · 11.16 contracts · price $0.43',season.render(data))
+
     def test_closed_cost_and_profit_stay_separate_from_execution_rows(self):
         html=season.render(self.data(True))
         self.assertIn('NO LAR</b> · $10.00',html)

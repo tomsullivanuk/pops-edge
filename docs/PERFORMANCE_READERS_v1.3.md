@@ -1,5 +1,29 @@
 # v1.3 Performance readers — adopted Part 2
 
+## NFL usability amendment — September 21, 2026
+
+Owner-approved NFL Results filters mirror MLB: Last 7/14/60/90 Days,
+This Season, inclusive Custom Period and Team. Season and optional Week remain;
+the default is all saved weeks in the latest saved season. This Season means all
+saved games within that selected scope, not a claim of complete season coverage.
+Each week independently selects and replay-validates its latest saved report.
+Conflicts/corruption remain visible and are not bypassed. Each summary and exact
+download remains weekly; a cumulative NFL metric/chart is still deferred.
+
+Filters affect match rows only, not scores, coverage counts or weekly populations.
+This supersedes the earlier unfiltered summary/rows presentation requirement;
+the distinction is explicit on screen. Presets end on the latest selected saved
+analysis's Central date, not today's date. Custom dates include both endpoints,
+reject blank/invalid/reversed/future-to-data dates, and default to the saved range
+on first selection. Team and week filters remain explicit. Unknown kickoff games
+remain visible under This Season, not arbitrarily assigned a date.
+
+Kickoffs are a display-only projection of validated archived schedules within each
+report's exact event prefix and analysis boundary, including the initial cohort
+receipt. Later schedule observations do not change an older report's filter dates.
+Conflicting team identity yields unknown date. No report identity, source evidence,
+activation, scoring or provider behavior changes. Older weekly links remain valid.
+
 September 15, 2026: the Owner adopted and authorized implementation of weekly NFL
 results alongside the established MLB reader. This source candidate adds Bet Sheet /
 Performance navigation and sport selection to the existing local application.

@@ -1,5 +1,16 @@
 # Paired NFL accounting imports
 
+## Compact recorded trades — September 21, 2026
+
+The Owner-approved season-table summary now shows direction/team, exact quantity
+and price, e.g. YES ATL · 11.16 contracts · price $0.43. NO-direction rows explicitly
+say YES-scale price; no complementary purchase price is inferred. Export YES-price
+meaning, fees, timestamps, source row and holding/action caveats remain in Details.
+The column heading and table-level explanation still identify recorded trades,
+not verified current holdings. Genuine duplicate/accounting warnings remain visible.
+Reconciled closed costs/proceeds/profit and legacy weekly rendering are unchanged.
+This refines the September18 presentation, not accounting or import semantics.
+
 ## Recorded-trade presentation amendment — September 18, 2026
 
 Owner approved displaying matched activity records even without closed-position
