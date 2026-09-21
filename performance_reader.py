@@ -1,5 +1,6 @@
 """Read-only presentation adapters; never capture, publish, initialize or select reports."""
 from decimal import Decimal, localcontext
+from datetime import date as calendar_date, timedelta
 from html import escape
 from html.parser import HTMLParser
 from pathlib import Path
@@ -20,6 +21,26 @@ READER_ERRORS = (ValueError, OSError, KeyError, TypeError, OperationsError)
 CENTRAL = ZoneInfo('America/Chicago')
 HEX = r'[0-9a-f]{64}'
 DEFAULT_MLB = Path.home()/'PopsEdgeReports/mlb/real/2026-09-13-accepted/reports'
+NFL_PERIODS = [('7','Last 7 Days'),('14','Last 14 Days'),('60','Last 60 Days'),
+               ('90','Last 90 Days'),('season','This Season'),('custom','Custom Period')]
+
+
+def nfl_filtered(games, query, cutoff):
+    period=query.get('period',['season'])[0];team=query.get('team',[''])[0]
+    if period not in dict(NFL_PERIODS):raise ValueError('Choose a supported period')
+    if team and team not in {g[k] for g in games for k in ('home','away')}:
+        raise ValueError('Choose a team from these saved reports')
+    end=cutoff.astimezone(CENTRAL).date();start=None
+    if period=='custom':
+        try:
+            start=calendar_date.fromisoformat(query.get('from',[''])[0])
+            end=calendar_date.fromisoformat(query.get('to',[''])[0])
+        except ValueError:raise ValueError('Choose both From and To dates') from None
+        if start>end:raise ValueError('From must be on or before To')
+        if end>cutoff.astimezone(CENTRAL).date():raise ValueError('To cannot be after the saved data date')
+    elif period!='season':start=end-timedelta(days=int(period)-1)
+    return [g for g in games if (not team or team in (g['home'],g['away'])) and
+            (period=='season' or (g.get('kickoff') and start<=instant(g['kickoff']).astimezone(CENTRAL).date()<=end))]
 
 
 def safe_path(root, relative=''):
@@ -129,9 +150,34 @@ class NFLReader:
         r = engine.replay_report(self.root/'reports'/(latest[0]['report_id']+'.json'))
         return r
 
+    def game_dates(self, report):
+        """Display-only dates from the exact replay-validated report prefix."""
+        engine=Performance(safe_path(self.root));events=engine.events()
+        tip=report['source_boundary']
+        if tip:
+            indexes=[i for i,e in enumerate(events) if e['id']==tip]
+            if len(indexes)!=1:raise ValueError('Missing report source boundary')
+            events=events[:indexes[0]+1]
+        else:events=[]
+        dates={};identities={};conflicts=set();at=instant(report['boundary'])
+        def observe(rows):
+            for g in rows:
+                key=g['game_id'];identity=(g['home'],g['away'])
+                if key in identities and identities[key]!=identity:conflicts.add(key)
+                identities[key]=identity;dates[key]=g.get('kickoff')
+        if (report['season'],report['week'])==(2026,1):
+            cohort=engine.validate_starting_cohort()
+            if cohort and instant(engine.activation['effective_at'])<=at:observe(cohort['receipt']['rows'])
+        for e in events:
+            p=e['payload']
+            if e['kind']=='schedule' and instant(e['at'])<=at and (p.get('season'),p.get('week'))==(report['season'],report['week']):
+                decoded=engine.decode(e)
+                if not decoded.get('error'):observe(decoded['rows'])
+        return {g['game_id']:dates.get(g['game_id']) if g['game_id'] not in conflicts and identities.get(g['game_id'])==(g['home'],g['away']) else None for g in report['games']}
+
     def render(self, query):
         try:
-            if set(query)-{'season','week'} or any(len(v)!=1 for v in query.values()):
+            if set(query)-{'season','week','period','from','to','team'} or any(len(v)!=1 for v in query.values()):
                 raise ValueError('Select one season and one week')
             reports = self.catalog()
             if not reports:
@@ -141,17 +187,50 @@ class NFLReader:
             weeks = sorted({r['week'] for r in reports if r['season']==season})
             if not weeks:
                 raise ValueError('No saved reports for this season')
-            week = int(query.get('week',[str(max(weeks))])[0])
-            r = self.selected(season,week)
-            if r is None:
-                raise ValueError('No saved report for this week')
+            week = query.get('week',['all'])[0]
+            if week!='all' and int(week) not in weeks:raise ValueError('No saved report for this week')
+            selected=[self.selected(season,w) for w in weeks if week=='all' or w==int(week)]
+            # Kickoff is a display projection, not a change to saved report bytes.
+            projected=[]
+            for r in selected:
+                dates=self.game_dates(r)
+                projected.append(dict(r,games=[dict(g,kickoff=dates.get(g['game_id'])) for g in r['games']]))
+            selected=projected
+            games=[g for report in selected for g in report['games']]
+            cutoff=max(instant(report['boundary']) for report in selected)
+            q=dict(query)
+            if q.get('period')==['custom']:
+                days=[instant(g['kickoff']).astimezone(CENTRAL).date() for g in games if g.get('kickoff')]
+                q.setdefault('from',[min(days+[cutoff.astimezone(CENTRAL).date()]).isoformat()])
+                q.setdefault('to',[cutoff.astimezone(CENTRAL).date().isoformat()])
             options = lambda values, selected: ''.join(f'<option value="{v}"'+(' selected' if v==selected else '')+f'>{v}</option>' for v in values)
             # Changing season clears the old week; week selection is an explicit GET.
             filters = ('<form class="filters" method="get"><label>Season <select name="season" aria-label="Season" onchange="location.href=\'/performance/nfl?season=\'+this.value">'+options(seasons,season)+
-                '</select></label><label>Week <select name="week" aria-label="Week">'+options(weeks,week)+'</select></label><button>View week</button></form>')
+                '</select></label><label>Week <select name="week" aria-label="Week"><option value="all">All saved weeks</option>'+options([str(w) for w in weeks],week)+'</select></label>')
+            period=q.get('period',['season'])[0]
+            filters+='<label>Period <select name="period" onchange="this.form.submit()">'+''.join('<option value="'+v+'"'+(' selected' if period==v else '')+'>'+label+'</option>' for v,label in NFL_PERIODS)+'</select></label>'
+            for key,label in [('from','From'),('to','To')]:
+                if period=='custom':
+                    filters+='<label>'+label+' <input type="date" name="'+key+'" value="'+text(q.get(key,[''])[0])+'" max="'+cutoff.astimezone(CENTRAL).date().isoformat()+'" required></label>'
+                elif key in q:filters+='<input type="hidden" name="'+key+'" value="'+text(q[key][0])+'">'
+            team=q.get('team',[''])[0]
+            filters+='<label>Team <select name="team"><option value="">All teams</option>'+''.join('<option value="'+text(t)+'"'+(' selected' if team==t else '')+'>'+text(t)+'</option>' for t in sorted({g[k] for g in games for k in ('home','away')}))+'</select></label><button>View results</button></form>'
+            body='<section class="panel"><h2>NFL performance results</h2>'+filters
+            body+='<p>Filters apply to match rows only; summaries remain full-week results. This Season includes all saved games in the selected season and week scope, including games not yet due. No season aggregate is calculated.</p><p>Preset periods end '+text(cutoff.astimezone(CENTRAL).date().isoformat())+' (saved Central data date); custom dates include both endpoints. Games with unknown kickoff are shown only in This Season.</p></section>'
+            try:shown=nfl_filtered(games,q,cutoff)
+            except ValueError as exc:return page('nfl',body+'<p class="notice" role="alert">'+text(exc)+'</p>')
+            body+='<p>'+str(len(shown))+' of '+str(len(games))+' saved games shown.</p>'
+            for r in selected:
+                body+=self._render_week(r,[g for g in r['games'] if g in shown])
+            return page('nfl',body)
+        except READER_ERRORS as exc:
+            return page('nfl','<section class="panel"><h2>NFL weekly performance unavailable</h2><p class="notice">'+text(exc)+'</p><p>No substitute report was selected. Inspect the saved report or use the existing manual workflow; this page does not repair or update evidence.</p></section>')
+
+    def _render_week(self,r,shown):
+        try:
             cohort=r.get('starting_cohort')
             coverage = ' · '.join(f'{count} {LABELS.get(state,state.replace("-"," "))}' for state,count in r['coverage'].items())
-            body='<section class="panel"><h2>NFL weekly performance</h2>'+filters
+            body='<section class="panel"><h2>NFL '+str(r['season'])+' · Week '+str(r['week'])+'</h2>'
             report_details='<p class="muted">Saved analysis: '+text(date(r['boundary']))+'. Opening this page does not update results.</p>'
             if r.get('matching_version'):
                 report_details+='<p>Market matching correction: '+text(r['matching_version'])+'. Existing archived evidence is interpreted using explicit team aliases; no replacement observations were acquired. Legacy interpretation ID: '+text(r['legacy_interpretation_id'])+'. This ID does not imply that interpretation was published.</p>'
@@ -176,10 +255,11 @@ class NFLReader:
             report_details+='<p>Direct ELWAY improvement versus Kalshi: '+number(r['means']['difference'])+'. This is Kalshi error minus ELWAY error. Positive means lower observed ELWAY error; negative means lower Kalshi error. Rounded values may appear equal. These are descriptive comparisons, not profit or proof of an edge.</p>'
             body+='<div class="table-wrap"><table><thead><tr><th>Match / result</th><th>ELWAY value</th><th>Kalshi value</th><th>ELWAY score</th><th>Kalshi score</th><th>Details</th></tr></thead><tbody>'
             forecast_label = ('File creation time — publication-time proxy' if (r['selected_forecast'] or {}).get('time_basis') else 'Forecast published')
-            for g in r['games']:
+            if not shown:body+='<tr><td colspan="6">No matches in this saved week match your filters.</td></tr>'
+            for g in shown:
                 e,k,o,sc=g['elway'],g['kalshi'],g['outcome'],g['scores']
                 result=(f"Final: {g['away']} {o['away_score']} – {g['home']} {o['home_score']}" if o and o['state']=='final' else '')
-                body+='<tr><td><strong>'+text(g['away']+' at '+g['home'])+'</strong>'+('<small>'+text(result)+'</small>' if result else '')+'</td>'
+                body+='<tr><td><strong>'+text(g['away']+' at '+g['home'])+'</strong><small>'+text(date(g.get('kickoff')))+'</small>'+('<small>'+text(result)+'</small>' if result else '')+'</td>'
                 body+=''.join('<td>'+number(v,pct)+'</td>' for v,pct in [(e['central'] if e else None,True),(k['value'] if k else None,True),(sc['elway_error'] if sc else None,False),(sc['kalshi_error'] if sc else None,False)])
                 details=[('Evaluation status',LABELS.get(g['state'],g['state'].replace('-',' '))),('Result',result or 'Unresolved result'),(forecast_label,date((r['selected_forecast'] or {}).get('updated_at'))),('Forecast imported',date(r['selected_imported_at'])),('Outcome observed',date(o.get('observed_at')) if o else 'Unavailable')]
                 if k:
@@ -189,9 +269,9 @@ class NFLReader:
             if r['diagnostics']:
                 body+='<section class="panel"><h3>Recorded attempt issues</h3>'+''.join('<p>'+text(d['error'])+'</p>' for d in r['diagnostics'])+'</section>'
             body+='<section class="panel"><details><summary>Report details and evidence</summary>'+report_details+'<p>Payout-adjusted Brier score is the product label for squared contract-value error: squared error against the final contract payout, 1 for a home win, 0 for an away win, and 0.5 for a tie. Each game contributes once through its home-team equivalent value. The summary shows the mean across scored games. This descriptive label is not standard binary or multiclass Brier scoring.</p><p>Original source values, times, retries, diagnostics and identities are retained in the exact report download.</p><p>'+text(forecast_label)+': '+text(date((r['selected_forecast'] or {}).get('updated_at')))+'.</p>'+('<p>Publisher update time and model age are unknown. File creation is an owner-approved proxy, not a verified publication time.</p>' if (r['selected_forecast'] or {}).get('time_basis') else '')+'<a download href="/performance/nfl/report/'+r['report_id']+'.json">Download exact weekly report</a></details></section>'
-            return page('nfl',body)
+            return body
         except READER_ERRORS as exc:
-            return page('nfl','<section class="panel"><h2>NFL weekly performance unavailable</h2><p class="notice">'+text(exc)+'</p><p>No substitute report was selected. Inspect the saved report or use the existing manual workflow; this page does not repair or update evidence.</p></section>')
+            raise
 
     def download(self, identity):
         reports=self.catalog()
