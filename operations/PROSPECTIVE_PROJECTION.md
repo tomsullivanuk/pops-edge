@@ -178,8 +178,16 @@ Daily phases retry at a later hourly invocation if they lack a valid completion;
 there is no queue or automatic repair. Missing a day does not cause one run per
 missed date or retrospective quote acquisition. Failed phases produce typed
 failure records; later dependent phases record `dependency-failed` without running.
-Health still runs to expose the condition. `not-due` is a typed cycle result and
-never updates a last-valid-completion time. Counts are summed only when known;
+Health still runs to expose the condition. Failed lifecycle results exit nonzero
+even when returned rather than raised.
+The health phase retains up to 16 allowlisted `health_blockers` codes, with an
+explicit omission marker for excess entries. Unrecognized codes are redacted;
+an empty blocker list on a not-ready report retains a generic health reason.
+No provider payloads or checkpoint source boundaries are copied into this summary.
+A collector lock timeout remains blocking until later independent successful work
+supersedes it; a later recovery does not rewrite the original failed cycle.
+`not-due` is a typed cycle result and never updates a last-valid-completion time.
+Counts are summed only when known;
 unknown accounting remains unknown rather than becoming zero.
 
 A competing hourly invocation exits visibly as `skipped-cycle` with zero calls.

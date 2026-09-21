@@ -317,6 +317,8 @@ def main(argv=None)->int:
                 schedule_runner=lambda archive,started:reconcile_schedule(archive=archive,started=started,start_date=first,end_date=last,public_get=schedule_get,clock=clock)
             result=execute(args.command,config,clock=clock,transport_factory=factory,supporting_loader=supporting_loader,outcome_loader=outcome_loader,retrospective_runner=retrospective_runner,session_completion_id=args.session_id,session_correction_reason=args.reason,publication_protocol_id=args.protocol_id,expected_source_snapshot=args.source_snapshot,schedule_reconciliation_runner=schedule_runner,startup_check=True,startup_retry=args.retry_startup)
         print(json.dumps(result,sort_keys=True,separators=(",",":"),default=lambda x:x.isoformat()))
+        if result.get("disposition") == "failed":
+            return int(ExitCode.OPERATIONAL_FAILURE)
         return int(ExitCode.SUCCESS if result.get("disposition")!="not-ready" else ExitCode.NOT_READY)
     except OperationsError as exc:
         failure={"code":exc.code,"detail":exc.detail,"state":"failed"}

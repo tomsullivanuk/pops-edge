@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased — PR17C1 lifecycle health reporting
+
+- Return nonzero for failed lifecycle results and retain bounded, allowlisted
+  health-blocker reasons in phase summaries.
+- Preserve health thresholds, lock behavior, failed history and provider behavior.
+- Add offline exit-status, safe-diagnostic and transient-failure recovery tests.
+
 ## Unreleased — bounded PR17C1 startup recovery
 
 - Gate the two scheduled jobs on full offline verification/rebuild once per kernel

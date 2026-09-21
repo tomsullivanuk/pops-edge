@@ -23,6 +23,30 @@ class PhaseResult:
     disposition: PhaseDisposition
     provider_calls: int | None = None
     failure_code: str | None = None
+    health_blockers: tuple[str, ...] = ()
+
+
+def health_failure_reasons(output):
+    """Copy only bounded diagnostic codes, never arbitrary heartbeat text."""
+    commands = {"capture-prospective", "refresh-supporting", "reconcile-outcomes",
+                "rebuild-prospective-projection", "refresh-prospective-projection",
+                "rebuild-index", "sync-secondary", "archive-audit", "index"}
+    codes = {"stale-or-absent", "lock-timeout", "failed", "dependency-failed",
+             "projection-invalid", "projection-stale", "projection-rejected",
+             "projection-budget-exceeded", "prospective-publication-ambiguous",
+             "integrity-unsafe", "transport-timeout", "transport-connection-failure"}
+    allowed = {f"{command}:{code}" for command in commands for code in codes}
+    allowed.update({"archive:integrity-unresolved", "secondary:conflict-or-unexplained",
+                    "storage:insufficient", "prospective-projection:invalid",
+                    "prospective-projection:absent", "prospective-projection:rejected"})
+    values = output.get("current_blockers", ())
+    if not isinstance(values, (list, tuple)):
+        return ("health:unrecognized-blocker",)
+    reasons = tuple(value if isinstance(value, str) and value in allowed
+                    else "health:unrecognized-blocker" for value in values[:16])
+    if len(values) > 16:
+        reasons += ("health:additional-blockers-omitted",)
+    return reasons or ("health:not-ready",)
 
 
 def run_cycle(*, archive, state: OperationalState, clock, run):
@@ -90,7 +114,8 @@ def run_cycle(*, archive, state: OperationalState, clock, run):
                     output = run(command)
                     valid = output.get("disposition", "success" if output.get("ready") else "not-ready") in SUCCESS
                     result = PhaseResult(command, PhaseDisposition.SUCCESS if valid else PhaseDisposition.FAILED,
-                                         output.get("provider_calls") if command in {"refresh-supporting", "reconcile-outcomes"} else 0, None if valid else "phase-not-ready")
+                                         output.get("provider_calls") if command in {"refresh-supporting", "reconcile-outcomes"} else 0, None if valid else "phase-not-ready",
+                                         health_failure_reasons(output) if command == "health-report" and not valid else ())
                 except OperationsError as exc:
                     result = PhaseResult(command, PhaseDisposition.FAILED, getattr(exc, "provider_calls", None), exc.code)
                 phases.append(result)
