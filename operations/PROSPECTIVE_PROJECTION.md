@@ -90,6 +90,42 @@ then re-resolves trusted timing and slot authority. A separate collector lock
 continues to prevent duplicate requests. Provider latency is outside preparation;
 actual calls and their immutable dispositions are preserved unchanged.
 
+### Prospective market selection
+
+For an opportunity inside its capture window, discovery uses the latest completed
+`refresh-supporting` Kalshi catalog in the verified source boundary, including
+its verified MLB dependency. It re-verifies only those selected provider pages;
+it does not scan historical catalog payloads or make discovery provider calls.
+No-due invocations do not load catalog payloads. Existing source/time budgets,
+checkpoint schema and replay contributions are unchanged.
+
+The existing explicit settlement-rule matcher must identify the current
+scheduled occurrence, participants and home-team YES proposition. The catalog
+must report open/active status and aware open/close times containing the actual
+request start (`open <= start < close`). Exactly one candidate and its archived
+series must resolve. Historical series alone, retrospective catalogs, an earlier
+nonempty catalog, and ticker text are insufficient. Missing or ambiguous current
+evidence records an explicit no-call diagnostic and failure-inclusive Coverage.
+An unavailable latest catalog never falls back to an older market. Malformed or
+incomplete source acquisitions remain governed by the checkpoint integrity gate.
+
+All catalog parsing, settlement matching and series lookup finish before the
+fresh request-start clock and request marker. Only interval comparisons over the
+prepared identity-qualified candidates remain at that boundary; these include
+candidates opening during preparation, so new ambiguity also refuses a request.
+All five attempts retain one market identity, as required by the existing
+Snapshot contract. If a later catalog would switch that identity (including a
+previously unmapped window), remaining slots record `market-selection-changed`
+misses; no attempt is rewritten. A new schedule opportunity can select its own
+current replacement market. Empty order books on otherwise eligible markets
+remain invalid acquisitions. Historical attempts, Snapshots and gaps are unchanged.
+
+This uses the latest completed local discovery, not a guarantee of instantaneous
+provider status. Existing lifecycle cadence and occasional missed collection
+remain accepted; no new freshness SLA, retries, scheduler or recovery service is
+introduced. A deployment must include `forecast_prospective_market_selection.py`;
+no checkpoint migration or rebuild is required solely for this selector change.
+
 | Status | Meaning / next action |
 | --- | --- |
 | absent | No checkpoint; explicit offline build required before collector calls. |

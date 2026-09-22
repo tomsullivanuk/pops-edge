@@ -73,7 +73,9 @@ class OperationsTest(unittest.TestCase):
             root/"dry-run"/"fixture"/"secondary","https://fixture.invalid",RetryPolicy(3,2,10,(1,2),4),.05,
             root/"logs",schedule_parameters=(("prospective_interval_seconds","60"),))
         self.archive=NamespaceArchive(self.config)
-    def tearDown(self):self.temp.cleanup()
+    def tearDown(self):
+        self.doCleanups()  # Also used as a fixture by projection/startup tests.
+        self.temp.cleanup()
 
     def entry_values(self,disposition=Disposition.SUCCESS):
         return dict(command="acquire-retrospective",invocation_id="invocation:1",provider_id="kalshi",endpoint="fixture://candles",
@@ -92,6 +94,19 @@ class OperationsTest(unittest.TestCase):
         archive_pr17_authority(self.archive,(g["activation"],g["prospective"],g["opportunity"],g["prospective_classification"],context,result,g["legacy"]["outcome_history"],g["series"]),recorded_at=g["prospective_target"])
         from forecast_prospective_projection import rebuild_projection
         rebuild_projection(self.archive,g["prospective_target"])
+        # Synthetic scientific contracts have no provider catalog. Supply an
+        # explicit current catalog at that boundary; real page replay is tested
+        # separately in test_forecast_prospective_market_selection.
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from zoneinfo import ZoneInfo
+        schedule=g["legacy"]["outcome_history"].observations[0]
+        eastern=schedule.scheduled_start.astimezone(ZoneInfo("America/New_York"))
+        rule=eastern.strftime("%b %d, %Y at %I:%M %p %Z")
+        market={"ticker":g["series"].provider_market_id,"market_type":"binary","yes_sub_title":"Home","no_sub_title":"Away","rules_primary":f"If Home wins the Away vs Home professional baseball game originally scheduled for {rule}, then the market resolves to Yes.","status":"open","open_time":(g["prospective_target"]-timedelta(days=1)).isoformat(),"close_time":schedule.scheduled_start.isoformat()}
+        game=SimpleNamespace(event=SimpleNamespace(canonical_event_id=schedule.canonical_event_id),home_team=SimpleNamespace(display_name="Home",canonical_team_id=schedule.home_participant_id),away_team=SimpleNamespace(display_name="Away",canonical_team_id=schedule.away_participant_id))
+        catalog_patch=patch("forecast_prospective_market_selection.load_prospective_catalog",return_value=((market,),(game,),"latest-completed-live-catalog"))
+        catalog_patch.start();self.addCleanup(catalog_patch.stop)
         return g,at
 
     def prospective_response_at(self,g,at):
