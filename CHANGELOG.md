@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased — NFL refresh computation
+
+- Reuse pure parsing within one refresh under bounded memory/entry limits;
+  retain source rereads, integrity checks, fresh event selection and cutoff rules.
+- Preserve acquisition scope and requests; clarify evidence-validation progress.
+- Keep accounting, MLB reporting and production activation unchanged.
+
 ## Unreleased — Performance and navigation correction
 
 - NFL cumulative summary and combined match rows with MLB-style filters, retaining weekly provenance and exact downloads.

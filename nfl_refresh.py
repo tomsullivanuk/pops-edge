@@ -20,6 +20,7 @@ import nfl_schedule as schedule
 import nfl_comparison_board as board
 import retrieve_kalshi_nfl as kalshi
 from nfl_performance import Performance
+from nfl_refresh_replay import RefreshPerformance
 
 MAX_REQUEST=24*1024*1024
 
@@ -52,6 +53,7 @@ class Workflow:
         for week in range(1,19):
             self.performance_status=dict(state='running',message=f'Checking the Week {week} comparison schedule…')
             engine.observe_results(season,week)
+            self.performance_status=dict(state='running',message=f'Validating saved evidence for the Week {week} comparison window…')
             report=engine.report(season,week,kalshi.utc())
             if not report['cutoff']:
                 raise ValueError(f'Week {week} dates are unresolved. Use Advanced options to select a week.')
@@ -61,8 +63,8 @@ class Workflow:
                 return week
         return None
 
-    def capture_performance(self,raw,name,season,week,retry=False,file_time=None):
-        engine=Performance(self.data/'performance')
+    def capture_performance(self,raw,name,season,week,retry=False,file_time=None,engine=None):
+        engine=engine if engine is not None else RefreshPerformance(self.data/'performance')
         self.performance_status=dict(state='running',message=f'Capturing the Week {week} comparison…')
         event=engine.refresh(raw,name,season,week,retry=retry,**({'file_time':file_time} if file_time else {}))
         if event['kind']=='rejected':raise ValueError(event['payload']['error'])
@@ -159,12 +161,12 @@ class Workflow:
             engine=None;performance_errors=[]
             if performance_week is not None:
                 try:
-                    engine=Performance(self.data/'performance')
+                    engine=RefreshPerformance(self.data/'performance')
                     if performance_week=='auto':
                         performance_week=self.automatic_comparison_week(engine,season,candidate['weeks'])
                     if performance_week is not None:
                         if performance_week not in candidate['weeks']:raise ValueError('Selected week is absent from the workbook')
-                        engine=self.capture_performance(raw,name,season,performance_week,retry_missing,**({'file_time':candidate['file_time']} if candidate.get('file_time') else {}))
+                        engine=self.capture_performance(raw,name,season,performance_week,retry_missing,engine=engine,**({'file_time':candidate['file_time']} if candidate.get('file_time') else {}))
                     else:
                         self.performance_status=dict(state='complete',message='Model comparison: season capture windows closed. Saved results continue to update.')
                 except Exception as exc:
@@ -196,10 +198,13 @@ class Workflow:
                 try:
                     # Refresh previously enrolled weeks even with a one-week workbook.
                     for old_season,old_week in sorted(enrolled):
+                        self.status=dict(state='running',message=f'Validating saved evidence and updating Week {old_week} performance results…')
                         if old_season!=season or old_week not in candidate['weeks']:
                             engine.observe_results(old_season,old_week)
                         engine.save_report(old_season,old_week,kalshi.utc())
-                    if type(performance_week) is int:self.performance_summary(engine,season,performance_week)
+                    if type(performance_week) is int:
+                        self.status=dict(state='running',message=f'Finalizing Week {performance_week} performance summary…')
+                        self.performance_summary(engine,season,performance_week)
                 except Exception as exc:performance_errors.append(str(exc))
             if performance_errors:
                 self.performance_status=dict(state='attention',message='Weekly comparison: '+'; '.join(performance_errors))

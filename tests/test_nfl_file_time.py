@@ -97,7 +97,7 @@ class FileTimeTests(unittest.TestCase):
             (workflow.inbox/'elway.xlsx').write_bytes(raw)
             with patch.object(timing,'read_file',return_value=(raw,e)),patch.object(workflow,'performance_config',return_value={'enabled':True}),patch.object(app.threading,'Thread') as thread:
                 workflow.generate(payload);args=thread.call_args.kwargs['args']
-            with patch.object(app,'Performance'),patch.object(workflow,'automatic_comparison_week',return_value=1),patch.object(workflow,'capture_performance',return_value=None) as capture,patch.object(app.schedule,'capture',side_effect=ValueError('offline test')):
+            with patch.object(app,'RefreshPerformance'),patch.object(workflow,'automatic_comparison_week',return_value=1),patch.object(workflow,'capture_performance',return_value=None) as capture,patch.object(app.schedule,'capture',side_effect=ValueError('offline test')):
                 workflow.run(*args)
             self.assertEqual(capture.call_args.kwargs['file_time'],e)
             self.assertIn('publication-time proxy',workflow.status['message'])

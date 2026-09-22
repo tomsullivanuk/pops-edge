@@ -1,5 +1,28 @@
 # Pops' Edge - NFL v1.1.0
 
+## Refresh-local parsing reuse — September 21, 2026
+
+One explicit refresh now retains pure parser results keyed by parser function,
+content digest and complete parse arguments. Its private in-memory cache is bounded
+to 32 MiB of conservatively measured retained entries and 2048 entries; least-recent
+entries are evicted and oversized parses run uncached. This is optional acceleration,
+not a persisted store or authority. It is discarded with that refresh's engine.
+Returned values are copied so report calculations cannot mutate retained results.
+
+Every decode still rereads and hashes source blobs and checks receipt identity and
+chronology. Event chains, report selection, current clock/cutoff and outcome rules
+remain live calculations. Appended events are not hidden by a saved event list.
+No reports, decoded events, source files, activation state or provider responses are
+cached by this change. Automatic target selection, all-workbook scope, missing-price
+retry rules and provider requests remain unchanged. Progress distinguishes saved
+evidence validation and final performance results from schedule/price acquisition.
+
+Must hold: identical scientific outputs and failures, immutable provenance and honest
+Coverage, newly appended observations visible, corruption not bypassed. Accepted
+limits: bounded reuse can evict and fall back to ordinary parsing; network latency
+and full evidence validation remain. Deferred: MLB optimization, accounting UX,
+cross-refresh caching, altered acquisition scope and provider concurrency.
+
 The NFL workflow is merged through PR #33. The root VERSION file supplies the
 app's version badge. A source-version label does not publish a GitHub release
 or move a local deployment to a new checkout.
