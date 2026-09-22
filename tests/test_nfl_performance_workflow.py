@@ -5,6 +5,7 @@ import unittest
 from unittest.mock import patch
 import nfl_refresh as app
 from nfl_performance import Performance
+from nfl_refresh_replay import RefreshPerformance
 from tests.test_nfl_performance import Clock, Transport, book, game, source, AFTER
 from tests.test_nfl_activity import raw, trade
 
@@ -14,6 +15,7 @@ class IntegrationTests(unittest.TestCase):
         self.tmp=TemporaryDirectory();self.addCleanup(self.tmp.cleanup)
         self.w=app.Workflow(self.tmp.name);self.clock=Clock();self.transport=Transport()
         self.engine=Performance.initialize(self.w.data/'performance','offline test only',self.clock)
+        self.engine=RefreshPerformance(self.w.data/'performance',self.clock)
         (self.w.inbox/'forecast.xlsx').write_bytes(book())
         (self.w.inbox/'activity.csv').write_bytes(raw([dict(trade(),Original_Date='2026-09-09T15:00:00Z')]))
         self.g=game()
@@ -30,7 +32,7 @@ class IntegrationTests(unittest.TestCase):
         def market(store,start,end,**kw):
             return original_market(store,start,end,transport=self.transport,clock=self.clock)
         folder=self.w.data/'boards/board-fixture'
-        with patch.object(app,'Performance',return_value=self.engine),patch.object(app.kalshi,'utc',self.clock),patch.object(app.schedule,'capture',side_effect=schedule),patch.object(app.kalshi,'capture',side_effect=market),patch.object(app.board,'build',return_value=(folder,{})),patch.object(app.board,'replay'),patch.object(app.threading,'Thread') as thread:
+        with patch.object(app,'Performance',return_value=self.engine),patch.object(app,'RefreshPerformance',side_effect=lambda *a:RefreshPerformance(self.w.data/'performance',self.clock)),patch.object(app.kalshi,'utc',self.clock),patch.object(app.schedule,'capture',side_effect=schedule),patch.object(app.kalshi,'capture',side_effect=market),patch.object(app.board,'build',return_value=(folder,{})),patch.object(app.board,'replay'),patch.object(app.threading,'Thread') as thread:
             self.w.generate(payload);args=thread.call_args.kwargs['args'];self.w.run(*args)
         return self.engine.report(2026,1,self.clock())
     def test_default_request_automatically_resolves_target(self):
