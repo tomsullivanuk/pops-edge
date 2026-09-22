@@ -1344,6 +1344,8 @@ def discover_and_capture_prospective(*,archive:NamespaceArchive,
         protocol=protocols[0];activations={x.standalone_research_activation_boundary_id:x for x in state.bucket("activation_boundaries")};activation=activations.get(protocol.activation_boundary_id)
         if activation is None or activation.decision_effective_at>now:raise OperationsError("prospective-authority-invalid","activation authority is absent or future-effective")
         histories={x.canonical_event_id:x for x in state.bucket("outcome_histories")};contexts={x.research_capture_opportunity_id:x for x in state.bucket("eligibility_contexts")};results={x.research_capture_opportunity_id:x for x in state.bucket("eligibility_results")}
+        from forecast_prospective_market_selection import load_prospective_catalog,prepare_prospective_markets,select_prepared_market
+        catalog=None
         series_values=state.bucket("market_series");existing=list(state.bucket("attempts"));existing_snapshots=list(state.bucket("snapshots"))
         opportunities=tuple(x for x in state.bucket("opportunities") if x.protocol_id==protocol.standalone_probability_source_protocol_id)
         for opportunity in sorted(opportunities,key=lambda item:item.research_capture_opportunity_id):
@@ -1357,16 +1359,20 @@ def discover_and_capture_prospective(*,archive:NamespaceArchive,
             schedule,target=resolve_standalone_schedule_authority(protocol=protocol,activation=activation,opportunity=opportunity,
                 eligibility_context=context,eligibility_result=result,outcome_history=history,analysis_boundary=now)
             proposition=f"winner:{schedule.canonical_event_id}:{schedule.home_participant_id}"
-            matching_series=tuple(item for item in series_values if item.provider==PROVIDER_ID and item.proposition_id==proposition)
-            series=matching_series[0] if len(matching_series)==1 else None
-            provider_market_id=series.provider_market_id if series is not None else f"unmapped-kalshi:{schedule.canonical_event_id}"
-            mapping_diagnostic="unique-market" if series is not None else ("no-unambiguous-market" if not matching_series else "ambiguous-market")
             owned=[item for item in existing if item.opportunity_id==opportunity.research_capture_opportunity_id]
             if any(item.effective_at>now for item in owned):raise OperationsError("prospective-authority-invalid","future-effective attempt authority")
             by_slot={item.slot:item for item in owned};success=next((item for item in owned if isinstance(item.result,CapturedValid)),None)
             if any(item.opportunity_id==opportunity.research_capture_opportunity_id and item.effective_at>now for item in existing_snapshots):
                 raise OperationsError("prospective-authority-invalid","future-effective Snapshot authority")
             if existing_snapshots and any(item.opportunity_id==opportunity.research_capture_opportunity_id for item in existing_snapshots):continue
+            series=None;mapping_diagnostic="no-current-market-selection"
+            if target<=now<=target+timedelta(minutes=5) and success is None:
+                if catalog is None:catalog=load_prospective_catalog(boundary)
+                prepared_markets=prepare_prospective_markets(catalog,series_values,schedule)
+                series,mapping_diagnostic=select_prepared_market(prepared_markets,now)
+                if owned and series is not None and series.provider_market_id!=owned[0].provider_market_id:
+                    series=None;mapping_diagnostic="market-selection-changed"
+            provider_market_id=series.provider_market_id if series is not None else (owned[0].provider_market_id if owned else f"unmapped-kalshi:{schedule.canonical_event_id}")
             transport=None
             if target<=now<=target+timedelta(minutes=5) and success is None and series is not None:
                 transport=transport_factory(opportunity,series)
@@ -1385,6 +1391,11 @@ def discover_and_capture_prospective(*,archive:NamespaceArchive,
                     eligibility_context=context,eligibility_result=result,outcome_history=history,analysis_boundary=request_start)
                 if (refreshed_schedule.observation_id,refreshed_target)!=(schedule.observation_id,target):raise OperationsError("prospective-authority-invalid","authority changed before request authorization")
                 decision_time=request_start;at_terminal=request_start>target+timedelta(minutes=5)
+                if series is not None and not at_terminal:
+                    current_series,current_diagnostic=select_prepared_market(prepared_markets,request_start)
+                    if current_series is None or current_series.provider_market_id!=series.provider_market_id:
+                        if request_fence is not None:cancel_unissued_request(archive,request_fence);request_fence=None
+                        series=None;transport=None;mapping_diagnostic=current_diagnostic if current_series is None else "market-selection-changed"
                 if not at_terminal:current=slot_for_time(target,request_start)
                 if request_fence is not None and (at_terminal or current in by_slot):
                     cancel_unissued_request(archive,request_fence);request_fence=None
@@ -1443,7 +1454,7 @@ def discover_and_capture_prospective(*,archive:NamespaceArchive,
                     attempt=ProspectiveCaptureAttempt.create(protocol_id=protocol.standalone_probability_source_protocol_id,opportunity_id=opportunity.research_capture_opportunity_id,
                         schedule_observation_id=schedule.observation_id,canonical_event_id=schedule.canonical_event_id,proposition_id=proposition,home_participant_id=schedule.home_participant_id,
                         provider_market_id=series.provider_market_id,target_at=target,slot=slot,invocation_at=started,provider_call_occurred=True,result=attempt_result,
-                        effective_at=completed,diagnostics=("trusted-clock authority-derived capture",acquired.detail),provenance=result.provenance)
+                        effective_at=completed,diagnostics=("trusted-clock authority-derived capture",mapping_diagnostic,acquired.detail),provenance=result.provenance)
                     normalized=pr17_contract_bundle(*(contracts+(attempt,)));request_id=request_identity({"opportunity_id":opportunity.research_capture_opportunity_id,"slot":slot,"market_id":series.provider_market_id})
                     values=_entry_values(archive=archive,command="capture-prospective",request_id=request_id,invoked_at=completed,endpoint=archive.config.provider_base_url,
                         disposition=acquired.disposition,protocol_id=protocol.standalone_probability_source_protocol_id,design=DesignAuthority.PROSPECTIVE,
