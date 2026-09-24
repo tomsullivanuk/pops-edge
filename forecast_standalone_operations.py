@@ -1185,7 +1185,7 @@ def _contracts_from_entry(archive:NamespaceArchive,entry:Mapping[str,Any],prior_
             reconciled_at=datetime.fromisoformat(value["schedule_reconciled_at"]["datetime_utc"])
             if reconciled_at!=datetime.fromisoformat(entry["acquired_at"]["datetime_utc"]):raise OperationsError("schedule-date-conflict","Manual reconciliation chronology conflicts with manifest")
             expected=schedule_contracts(union=union,started=reconciled_at,prior_state=prior,union_rule=value.get("union_rule"))
-        elif family=="reconcile-outcomes" and provider=="mlb-stats-api":expected=reconcile_outcomes_from_raw(archive=None,mlb_raw=union,collected_at=started,prior_state=prior,derive_only=True)
+        elif family=="reconcile-outcomes" and provider=="mlb-stats-api":expected=reconcile_outcomes_from_raw(archive=None,mlb_raw=union,collected_at=started,prior_state=prior,derive_only=True,derivation_rule=value.get("derivation_rule"))
         elif family in {"refresh-supporting","refresh-retrospective-supporting"} and provider=="mlb-stats-api":expected=tuple(x for x in refresh_supporting_from_raw(archive=None,mlb_raw=union,kalshi_raw=b'{"cursor":"","markets":[]}',collected_at=started,prior_state=prior,derive_only=True,acquisition_command=family,union_rule=value.get("union_rule")) if type(x).__name__!="ProviderMarketSeries")
         elif family in {"refresh-supporting","refresh-retrospective-supporting"} and provider=="kalshi":
             dependencies=value.get("dependencies",())
@@ -1472,7 +1472,7 @@ def discover_and_capture_prospective(*,archive:NamespaceArchive,
             completion_elapsed=4 if completion_terminal else (max(-1,min(4,int((completion_time-target).total_seconds()//60))) if completion_time>=target else -1)
             for slot in range(completion_elapsed+1):
                 if slot not in by_slot:persist_no_call(slot,completion_time)
-            if len(by_slot)==5 and (completion_terminal or at_terminal or success is not None):
+            if len(by_slot)==5 and completion_time>=target+timedelta(minutes=5):
                 snapshot=reconcile_prospective_snapshot(protocol=protocol,opportunity=opportunity,activation=activation,eligibility_context=context,eligibility_result=result,
                     schedule_history=history,analysis_boundary=completion_time,attempts=tuple(by_slot.values()),window_closed_at=max(completion_time,target+timedelta(minutes=5)),provenance=result.provenance,limitations=("fixture-only inactive acquisition",))
                 values=_entry_values(archive=archive,command="capture-prospective",request_id=request_identity({"snapshot_id":snapshot.prospective_standalone_snapshot_id}),invoked_at=completion_time,

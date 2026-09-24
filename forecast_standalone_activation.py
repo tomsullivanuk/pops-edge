@@ -42,6 +42,7 @@ MLB_CORRECTION_LOOKBACK_DAYS=7
 ACQUISITION_UNION_RULE_VERSION="provider-pages-canonical-union-3"
 MLB_MULTIDATE_LINEAGE_RULE_VERSION="mlb-explicit-schedule-evolution-lineage-2"
 SUPPORTING_DERIVATION_RULE_VERSION="kalshi-mlb-explicit-rules-schedule-instant-4"
+OUTCOME_RECONCILIATION_RULE_VERSION="mlb-outcome-sequential-history-2"
 SUPPORTED_DERIVATION_UNION_RULES={
     "kalshi-mlb-explicit-rules-schedule-instant-2":"provider-pages-canonical-union-1",
     "kalshi-mlb-explicit-rules-schedule-instant-3":"provider-pages-canonical-union-2",
@@ -683,6 +684,7 @@ def publish_verified_acquisition(*,archive:NamespaceArchive,provider:str,union_r
         if fail_after_pages==position+1:raise OperationsError("injected-acquisition-interruption",group_id)
     acquisition_completed_at=page_values[-1][4];normalized={"schema_version":"1","record_kind":"pr17c1-acquisition-bundle","acquisition_id":group_id,"family":command,"provider":provider,"dependencies":tuple(sorted(set(dependencies))),"command_started_at":collected_at,"command_started_at_iso":collected_at.isoformat(),"acquisition_completed_at":acquisition_completed_at,"pages":tuple(descriptors),"union_rule":ACQUISITION_UNION_RULE_VERSION,"normalized_union_sha256":union_digest,"contracts":serialized}
     if retrospective_cutoff_at is not None:normalized["retrospective_cutoff_at"]=retrospective_cutoff_at
+    if command=="reconcile-outcomes":normalized["derivation_rule"]=OUTCOME_RECONCILIATION_RULE_VERSION
     if supporting_session_id:
         normalized["page_record_kind"]="pr17c2-supporting-session-page"
         normalized["supporting_session_id"]=supporting_session_id;normalized["derivation_rule"]=SUPPORTING_DERIVATION_RULE_VERSION
@@ -1105,7 +1107,7 @@ def _verify_acquisition_bundle(archive:NamespaceArchive,value:Mapping[str,Any],*
     return (derived,tuple(contracts)) if include_union else tuple(contracts)
 
 
-def reconcile_outcomes_from_raw(*,archive:NamespaceArchive|None,mlb_raw:bytes,collected_at:datetime,mlb_pages:Iterable[Any]=(),prior_state:Any=None,derive_only:bool=False)->Mapping[str,Any]|tuple[Any,...]:
+def reconcile_outcomes_from_raw(*,archive:NamespaceArchive|None,mlb_raw:bytes,collected_at:datetime,mlb_pages:Iterable[Any]=(),prior_state:Any=None,derive_only:bool=False,derivation_rule:str|None=OUTCOME_RECONCILIATION_RULE_VERSION)->Mapping[str,Any]|tuple[Any,...]:
     from forecast_standalone_operations import DesignAuthority,Disposition,_entry_values,pr17_contract_bundle,replay_pr17_archive,request_identity
     from mlb_outcome_adapter import MLBOutcomeAdapter
     from mlb_stats_api import MLBStatsAPIAdapter,MLBStatsAPIResponse
@@ -1113,31 +1115,47 @@ def reconcile_outcomes_from_raw(*,archive:NamespaceArchive|None,mlb_raw:bytes,co
     try:payload=json.loads(mlb_raw,object_pairs_hook=lambda pairs:_unique_object(pairs,"MLB"))
     except (UnicodeDecodeError,json.JSONDecodeError) as exc:raise OperationsError("malformed-response","MLB response is malformed") from exc
     response=MLBStatsAPIResponse("https://statsapi.mlb.com/api/v1/schedule",(),collected_at,200,"https://statsapi.mlb.com/api/v1/schedule",payload,mlb_raw);facts=MLBStatsAPIAdapter().parse_response(response);games=tuple(x.game for x in facts.games if x.game)
+    if derivation_rule not in (None,OUTCOME_RECONCILIATION_RULE_VERSION):raise OperationsError("acquisition-incompatible","unsupported Outcome reconciliation rule")
     results=MLBOutcomeAdapter().parse_response(response,canonical_games=games);state=prior_state or replay_pr17_archive(archive,analysis_boundary=collected_at);prior={x.canonical_event_id:x for x in state.bucket("outcome_histories")};changed=[];ignored_replayed_predecessors=0
-    def semantic(item):return (item.provider_status,item.scheduled_start,item.away_score,item.home_score,item.winning_participant_id,item.unresolved)
-    for result in results:
-        if result.observation is None:raise OperationsError("provider-data-invalid","MLB outcome is invalid")
-        observation=result.observation;history=prior.get(observation.canonical_event_id)
-        if history is not None:
-            latest=history.latest;latest_semantic=semantic(latest);current=semantic(observation)
-            if latest_semantic==current:continue
-            # A whole-date query can return the original postponed record after
-            # the same event's rescheduled final is already authoritative.  That
-            # exact earlier state is not a new Outcome or Schedule transition.
-            # Keep the raw page in the acquisition, but do not append a regressive
-            # duplicate.  A genuinely new state still reaches graph validation.
-            if (history.latest_authoritative_final is not None and not observation.authoritative_final
-                    and current in {semantic(item) for item in history.observations[:-1]}):
-                ignored_replayed_predecessors+=1;continue
-            history=history.append(observation)
-        else:history=OutcomeHistory(observation.canonical_event_id,"mlb-stats-api",(observation,))
-        changed.append(history)
-    if derive_only:return tuple(changed)
-    raw_pages=tuple(mlb_pages) or (mlb_raw,);pages=tuple(_mlb_page_tuple(item,index) for index,item in enumerate(raw_pages))
-    from forecast_standalone_schedule_reconciliation import validate_supporting_addition
+    raw_pages=(tuple(mlb_pages) or (mlb_raw,)) if not derive_only else ()
+    pages=tuple(_mlb_page_tuple(item,index) for index,item in enumerate(raw_pages))
     from event_contracts import ContractError
-    try:validate_supporting_addition(state,changed,collected_at)
-    except ContractError as exc:
+    def semantic(item):return (item.provider_status,item.scheduled_start,item.away_score,item.home_score,item.winning_participant_id,item.unresolved)
+    validating=False
+    try:
+        grouped={}
+        for result in results:
+            if result.observation is None:raise OperationsError("provider-data-invalid","MLB outcome is invalid")
+            grouped.setdefault(result.observation.canonical_event_id,[]).append(result.observation)
+        for event_id,observations in sorted(grouped.items()):
+            history=prior.get(event_id);event_changed=False
+            for position,observation in enumerate(observations):
+                if derivation_rule is None:history=prior.get(event_id)  # Exact historical replay of unversioned bundles.
+                current=semantic(observation)
+                if history is not None:
+                    if semantic(history.latest)==current:continue
+                    # Whole-date reads can repeat an already recorded predecessor
+                    # after a rescheduled final. It remains in the raw acquisition.
+                    if (history.latest_authoritative_final is not None and not observation.authoritative_final
+                            and current in {semantic(item) for item in history.observations[:-1]}):
+                        ignored_replayed_predecessors+=1;continue
+                if derivation_rule is not None and len(observations)>1:
+                    # All rows in a union share collected_at. The adapter identity
+                    # includes that actual collection time; the prefix preserves
+                    # verified date-lineage order without losing later corrections.
+                    identity=hashlib.sha256(canonical_bytes({"observation":observation.observation_id,"position":position,"rule":derivation_rule})).hexdigest()
+                    observation=replace(observation,observation_id=f"outcome-reconcile-lineage:{position:03d}:{identity}")
+                history=history.append(observation) if history is not None else OutcomeHistory(event_id,"mlb-stats-api",(observation,))
+                if derivation_rule is None:changed.append(history)
+                event_changed=True
+            if event_changed and derivation_rule is not None:changed.append(history)
+        if derive_only:return tuple(changed)
+        from forecast_standalone_schedule_reconciliation import validate_supporting_addition
+        validating=True
+        validate_supporting_addition(state,changed,collected_at)
+    except (ContractError,OperationsError) as exc:
+        if derive_only or (isinstance(exc,OperationsError) and exc.code!="outcome-history-conflict"):raise
+        conflict=not validating or isinstance(exc,OperationsError)
         # Outcome discovery is not sufficient Schedule/opportunity authority.
         # Preserve every received page, but publish no unusable partial graph.
         for index,item in enumerate(pages):
@@ -1146,9 +1164,11 @@ def reconcile_outcomes_from_raw(*,archive:NamespaceArchive|None,mlb_raw:bytes,co
                 request_id=request_identity({"requested_date":identity,"started":began,"position":index}),
                 invoked_at=completed,endpoint=endpoint,disposition=Disposition.VALIDATION_FAILURE,
                 protocol_id=None,design=DesignAuthority.SUPPORTING,
-                diagnostics=("outcome-authority-deferred","Bounded schedule reconciliation is required before Outcome-only authority can be admitted"))
+                diagnostics=(("outcome-history-conflict",) if conflict else ("outcome-authority-deferred","Bounded schedule reconciliation is required before Outcome-only authority can be admitted")))
             values["provider_id"]="mlb-stats-api"
             archive.record_failure(entry_values=values,raw_body=raw)
+        if isinstance(exc,OperationsError):raise
+        if conflict:raise OperationsError("outcome-history-conflict","Outcome history rejected before publication; exact response pages preserved without authority") from exc
         raise OperationsError("outcome-authority-deferred","Outcome material preserved without scientific authority; reconcile bounded missing schedule dates and retry independently") from exc
     with archive.mutation_lock():acquisition=publish_verified_acquisition(archive=archive,provider="mlb-stats-api",union_raw=mlb_raw,pages=pages,contracts=changed,collected_at=collected_at,protocol_id=None,command="reconcile-outcomes")
     return {"changed":len(changed),"ignored_replayed_terminal_predecessors":ignored_replayed_predecessors,"mlb_pages":len(pages),"outcome_manifest_id":acquisition["manifest_entry_id"],"disposition":"success" if changed else "unchanged"}
