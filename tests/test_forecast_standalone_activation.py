@@ -283,7 +283,11 @@ class ActivationTests(unittest.TestCase):
             from inspect_forecast_standalone_activation import fixtures
             root=Path(directory);config_path=root/"activated.json";repo=Path(__file__).resolve().parents[1];fixture=root/"fixtures";fixture.mkdir();mlb,catalog,book=fixtures();(fixture/"mlb.json").write_bytes(mlb);(fixture/"kalshi.json").write_bytes(catalog);(fixture/"orderbook.json").write_bytes(book);_,protocol=canonical_prospective_authority();trusted="2026-09-05T00:06:06-04:00"
             material={"activation_at":"2026-09-05T00:00:00-04:00","config_id":"render","fixture_response_path":str(fixture),"lock_timeout_seconds":1,"log_root":str(root/"logs"),"mode":"activated","namespace":"render","primary_root":str(root/"activated/render/primary"),"provider_base_url":"https://fixture.invalid","research_protocol_ids":[protocol.standalone_probability_source_protocol_id],"retry_policy":{"maximum_attempts":1,"request_timeout_seconds":1,"total_timeout_seconds":1,"backoff_seconds":[],"maximum_retry_after_seconds":0},"schedule_parameters":{"fixture_trusted_at":trusted},"secondary_root":str(root/"activated/render/secondary")}
-            config_path.write_text(json.dumps(material));config=DeploymentConfig.from_json(config_path);execute("initialize-activation",config,clock=lambda:datetime(2026,8,28,tzinfo=timezone.utc));paths=render_launchd_jobs(repository_root=repo,python_executable=Path(__import__('sys').executable),config_path=config_path,output_root=root/"rendered")
+            config_path.write_text(json.dumps(material));config=DeploymentConfig.from_json(config_path);execute("initialize-activation",config,clock=lambda:datetime(2026,8,28,tzinfo=timezone.utc))
+            # A fixed fixture clock otherwise gives supporting and outcome
+            # publications identical timestamps, leaving replay order arbitrary.
+            execute("refresh-supporting",config,clock=lambda:datetime.fromisoformat(trusted)-timedelta(seconds=2),supporting_loader=lambda _at:(mlb,catalog))
+            paths=render_launchd_jobs(repository_root=repo,python_executable=Path(__import__('sys').executable),config_path=config_path,output_root=root/"rendered")
             self.assertEqual(len(paths),2)
             for job_number,path in enumerate(paths):
                 material["schedule_parameters"]["fixture_trusted_at"]=(datetime.fromisoformat(trusted)+timedelta(seconds=job_number)).isoformat()
@@ -671,6 +675,129 @@ class ActivationTests(unittest.TestCase):
         unseen=self._reschedule_game(game_pk,"2026-05-25","2026-05-25T22:05:00Z","Scheduled")
         changed=reconcile_outcomes_from_raw(archive=None,mlb_raw=self._schedule_page("2026-05-25",unseen),collected_at=datetime(2026,9,11,tzinfo=timezone.utc),prior_state=state,derive_only=True)
         self.assertEqual((len(changed),changed[0].latest.scheduled_start.isoformat()),(1,"2026-05-25T22:05:00+00:00"))
+
+    def test_outcome_reconciliation_sequentially_extends_one_history_per_game(self):
+        original_day="2026-09-22";makeup_day="2026-09-23";game_pk=824785
+        scheduled=self._reschedule_game(game_pk,original_day,"2026-09-22T23:05:00Z","Scheduled")
+        postponed=self._reschedule_game(game_pk,original_day,"2026-09-22T23:05:00Z","Postponed",rescheduleDate=makeup_day,rescheduleGameDate=f"{makeup_day}T23:05:00Z")
+        final=self._reschedule_game(game_pk,makeup_day,f"{makeup_day}T23:05:00Z","Final",rescheduledFromDate=original_day,rescheduledFrom="2026-09-22T23:05:00Z")
+        before=datetime(2026,9,23,12,tzinfo=timezone.utc);at=before+timedelta(days=1);empty=SimpleNamespace(bucket=lambda _:())
+        first=reconcile_outcomes_from_raw(archive=None,mlb_raw=self._schedule_page(original_day,scheduled),collected_at=before,prior_state=empty,derive_only=True)[0]
+        state=SimpleNamespace(bucket=lambda name:(first,) if name=="outcome_histories" else ())
+        union=merge_mlb_schedule_responses((self._schedule_page(makeup_day,final),self._schedule_page(original_day,postponed)))
+        changed=reconcile_outcomes_from_raw(archive=None,mlb_raw=union,collected_at=at,prior_state=state,derive_only=True)
+        self.assertEqual(len(changed),1)
+        self.assertEqual([item.provider_status.value for item in changed[0].observations],["scheduled","postponed","final"])
+        self.assertTrue(changed[0].latest.authoritative_final)
+        self.assertEqual(changed,reconcile_outcomes_from_raw(archive=None,mlb_raw=union,collected_at=at,prior_state=state,derive_only=True))
+        legacy=reconcile_outcomes_from_raw(archive=None,mlb_raw=union,collected_at=at,prior_state=state,derive_only=True,derivation_rule=None)
+        self.assertEqual((len(legacy),[len(item.observations) for item in legacy]),(2,[2,2]))  # Exact historic branching rule for replay.
+
+    def test_outcome_conflict_retains_all_received_pages_without_authority(self):
+        original_day="2026-09-22";makeup_day="2026-09-23";game_pk=824785
+        postponed=self._reschedule_game(game_pk,original_day,"2026-09-22T23:05:00Z","Postponed",rescheduleDate=makeup_day,rescheduleGameDate=f"{makeup_day}T23:05:00Z")
+        final=self._reschedule_game(game_pk,makeup_day,f"{makeup_day}T23:05:00Z","Final",rescheduledFromDate=original_day,rescheduledFrom="2026-09-22T23:05:00Z")
+        pages=(self._schedule_page(original_day,postponed),self._schedule_page(makeup_day,final));union=merge_mlb_schedule_responses(pages)
+        with tempfile.TemporaryDirectory() as directory:
+            archive=self._supporting_retry_archive(Path(directory),"outcome-conflict")
+            with patch("forecast_standalone_schedule_reconciliation.validate_supporting_addition",side_effect=OperationsError("outcome-history-conflict","fixture conflict")):
+                with self.assertRaisesRegex(OperationsError,"outcome-history-conflict"):
+                    reconcile_outcomes_from_raw(archive=archive,mlb_raw=union,mlb_pages=pages,collected_at=datetime(2026,9,24,tzinfo=timezone.utc),prior_state=SimpleNamespace(bucket=lambda _:()))
+            entries=archive.entries()
+            self.assertEqual(len(entries),2)
+            self.assertCountEqual([archive.read_verified("raw",entry["raw_object_sha256"]) for entry in entries],pages)
+            self.assertTrue(all(entry["disposition"]==Disposition.VALIDATION_FAILURE.value and not entry["normalized_object_id"] for entry in entries))
+
+    def test_outcome_sequential_bundle_reconstructs_from_versioned_pages(self):
+        from forecast_standalone_operations import _contracts_from_entry
+        original_day="2026-09-22";makeup_day="2026-09-23";game_pk=824785
+        postponed=self._reschedule_game(game_pk,original_day,"2026-09-22T23:05:00Z","Postponed",rescheduleDate=makeup_day,rescheduleGameDate=f"{makeup_day}T23:05:00Z")
+        final=self._reschedule_game(game_pk,makeup_day,f"{makeup_day}T23:05:00Z","Final",rescheduledFromDate=original_day,rescheduledFrom="2026-09-22T23:05:00Z")
+        pages=(self._schedule_page(original_day,postponed),self._schedule_page(makeup_day,final));union=merge_mlb_schedule_responses(pages)
+        with tempfile.TemporaryDirectory() as directory:
+            archive=self._supporting_retry_archive(Path(directory),"outcome-sequential")
+            with patch("forecast_standalone_schedule_reconciliation.validate_supporting_addition"):
+                result=reconcile_outcomes_from_raw(archive=archive,mlb_raw=union,mlb_pages=pages,collected_at=datetime(2026,9,24,tzinfo=timezone.utc),prior_state=SimpleNamespace(bucket=lambda _:()))
+            entry=next(item for item in archive.entries() if item["command"]=="reconcile-outcomes")
+            value=archive.read_json_verified("normalized",entry["normalized_object_id"])
+            self.assertEqual(value["derivation_rule"],OUTCOME_RECONCILIATION_RULE_VERSION)
+            histories=_contracts_from_entry(archive,entry)
+            self.assertEqual((result["changed"],len(histories),[item.provider_status.value for item in histories[0].observations]),(1,1,["postponed","final"]))
+
+    def test_outcome_final_reversion_is_new_evidence_and_replays(self):
+        from forecast_standalone_operations import _contracts_from_entry
+        original_day="2026-09-22";makeup_day="2026-09-23";game_pk=824785
+        postponed=self._reschedule_game(game_pk,original_day,"2026-09-22T23:05:00Z","Postponed",rescheduleDate=makeup_day,rescheduleGameDate=f"{makeup_day}T23:05:00Z")
+        final_a=self._reschedule_game(game_pk,makeup_day,f"{makeup_day}T23:05:00Z","Final",rescheduledFromDate=original_day,rescheduledFrom="2026-09-22T23:05:00Z")
+        final_b=copy.deepcopy(final_a);final_b["teams"]["away"].update(score=4,isWinner=True);final_b["teams"]["home"].update(score=3,isWinner=False)
+        pages=(self._schedule_page(original_day,postponed),self._schedule_page(makeup_day,final_a));union=merge_mlb_schedule_responses(pages)
+        first_at=datetime(2026,9,24,tzinfo=timezone.utc);second_at=first_at+timedelta(days=1);third_at=second_at+timedelta(days=1)
+        state=lambda history:SimpleNamespace(bucket=lambda name:(history,) if name=="outcome_histories" else ())
+        first=reconcile_outcomes_from_raw(archive=None,mlb_raw=union,collected_at=first_at,prior_state=SimpleNamespace(bucket=lambda _:()),derive_only=True)[0]
+        second=reconcile_outcomes_from_raw(archive=None,mlb_raw=self._schedule_page(makeup_day,final_b),collected_at=second_at,prior_state=state(first),derive_only=True)[0]
+        third=reconcile_outcomes_from_raw(archive=None,mlb_raw=union,collected_at=third_at,prior_state=state(second),derive_only=True)[0]
+        self.assertEqual([len(item.observations) for item in (first,second,third)],[2,3,4])
+        self.assertEqual((first.latest.home_score,second.latest.away_score,third.latest.home_score),(3,4,3))
+        self.assertEqual(third.latest.collected_at,third_at)
+        self.assertNotEqual(first.latest.observation_id,third.latest.observation_id)
+        self.assertEqual(len({item.observation_id for item in third.observations}),4)
+        with tempfile.TemporaryDirectory() as directory:
+            archive=self._supporting_retry_archive(Path(directory),"outcome-reversion")
+            with archive.mutation_lock():publish_verified_acquisition(archive=archive,provider="mlb-stats-api",union_raw=union,pages=pages,contracts=(third,),collected_at=third_at,protocol_id=None,command="reconcile-outcomes")
+            entry=next(item for item in archive.entries() if item["command"]=="reconcile-outcomes")
+            self.assertEqual(_contracts_from_entry(archive,entry,prior_objects=(second,)),(third,))
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);_,protocol=canonical_prospective_authority()
+            config=DeploymentConfig("outcome-reversion-live","outcome-reversion-live",OperatingMode.ACTIVATED,
+                root/"activated/outcome-reversion-live/primary",root/"activated/outcome-reversion-live/secondary","https://fixture.invalid",RetryPolicy(1,1,1,(),0),1,root/"logs",
+                research_protocol_ids=(protocol.standalone_probability_source_protocol_id,),activation_at=APPROVED_ACTIVATION_AT)
+            archive=NamespaceArchive(config);initialize_activation(archive,datetime(2026,8,28,tzinfo=timezone.utc))
+            refresh_supporting_from_raw(archive=archive,mlb_raw=union,kalshi_raw=b'{"cursor":"","markets":[]}',mlb_pages=pages,collected_at=first_at)
+            corrected=self._schedule_page(makeup_day,final_b)
+            self.assertEqual(reconcile_outcomes_from_raw(archive=archive,mlb_raw=corrected,mlb_pages=(corrected,),collected_at=second_at)["changed"],1)
+            self.assertEqual(reconcile_outcomes_from_raw(archive=archive,mlb_raw=union,mlb_pages=pages,collected_at=third_at)["changed"],1)
+            from forecast_standalone_operations import replay_pr17_archive
+            actual=next(item for item in replay_pr17_archive(archive,analysis_boundary=third_at).bucket("outcome_histories") if item.canonical_event_id==third.canonical_event_id)
+            self.assertEqual([item.provider_status.value for item in actual.observations],["postponed","final","final","final"])
+            self.assertEqual((actual.latest.home_score,actual.latest.collected_at),(3,third_at))
+
+    def test_outcome_rejected_graph_retains_exact_pages_without_authority(self):
+        from forecast_standalone_operations import PR17_GRAPH_BUCKETS
+        original_day="2026-09-22";makeup_day="2026-09-23";game_pk=824785
+        postponed=self._reschedule_game(game_pk,original_day,"2026-09-22T23:05:00Z","Postponed",rescheduleDate=makeup_day,rescheduleGameDate=f"{makeup_day}T23:05:00Z")
+        final=self._reschedule_game(game_pk,makeup_day,f"{makeup_day}T23:05:00Z","Final",rescheduledFromDate=original_day,rescheduledFrom="2026-09-22T23:05:00Z")
+        pages=(self._schedule_page(original_day,postponed),self._schedule_page(makeup_day,final));union=merge_mlb_schedule_responses(pages)
+        graph=tuple((name,()) for name in sorted(set(PR17_GRAPH_BUCKETS.values())))
+        state=SimpleNamespace(bucket=lambda _:(),graph=graph)
+        with tempfile.TemporaryDirectory() as directory:
+            archive=self._supporting_retry_archive(Path(directory),"outcome-rejected-graph")
+            with self.assertRaisesRegex(OperationsError,"outcome-authority-deferred"):
+                reconcile_outcomes_from_raw(archive=archive,mlb_raw=union,mlb_pages=pages,collected_at=datetime(2026,9,24,tzinfo=timezone.utc),prior_state=state)
+            entries=archive.entries()
+            self.assertEqual(len(entries),2)
+            self.assertCountEqual([archive.read_verified("raw",entry["raw_object_sha256"]) for entry in entries],pages)
+            self.assertTrue(all(entry["command"]=="reconcile-outcomes-failure" and not entry["normalized_object_id"] for entry in entries))
+
+    def test_outcome_construction_conflict_retains_exact_pages(self):
+        from outcome_contracts import OutcomeHistory
+        original_day="2026-09-22";makeup_day="2026-09-23";game_pk=824785
+        postponed=self._reschedule_game(game_pk,original_day,"2026-09-22T23:05:00Z","Postponed",rescheduleDate=makeup_day,rescheduleGameDate=f"{makeup_day}T23:05:00Z")
+        final=self._reschedule_game(game_pk,makeup_day,f"{makeup_day}T23:05:00Z","Final",rescheduledFromDate=original_day,rescheduledFrom="2026-09-22T23:05:00Z")
+        pages=(self._schedule_page(original_day,postponed),self._schedule_page(makeup_day,final));union=merge_mlb_schedule_responses(pages)
+        at=datetime(2026,9,24,tzinfo=timezone.utc)
+        proposed=reconcile_outcomes_from_raw(archive=None,mlb_raw=union,collected_at=at,prior_state=SimpleNamespace(bucket=lambda _:()),derive_only=True)[0]
+        # An existing observation ID collision is a real construction error,
+        # not a mocked graph validator failure. It must still retain the pages.
+        prior=OutcomeHistory(proposed.canonical_event_id,"mlb-stats-api",(replace(proposed.latest,home_score=4),))
+        state=SimpleNamespace(bucket=lambda name:(prior,) if name=="outcome_histories" else ())
+        with tempfile.TemporaryDirectory() as directory:
+            archive=self._supporting_retry_archive(Path(directory),"outcome-construction-conflict")
+            with self.assertRaisesRegex(OperationsError,"outcome-history-conflict"):
+                reconcile_outcomes_from_raw(archive=archive,mlb_raw=union,mlb_pages=pages,collected_at=at,prior_state=state)
+            entries=archive.entries()
+            self.assertEqual(len(entries),2)
+            self.assertCountEqual([archive.read_verified("raw",entry["raw_object_sha256"]) for entry in entries],pages)
+            self.assertTrue(all(entry["command"]=="reconcile-outcomes-failure" and not entry["normalized_object_id"] for entry in entries))
 
     def test_multidate_identical_duplicate_is_safely_deduplicated(self):
         game=self._reschedule_game(824621,"2026-04-02","2026-04-02T23:05:00Z","Scheduled")

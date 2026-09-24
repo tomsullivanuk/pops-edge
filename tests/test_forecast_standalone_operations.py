@@ -312,6 +312,21 @@ class OperationsTest(unittest.TestCase):
         state=replay_pr17_archive(self.archive,analysis_boundary=g["prospective_target"]+timedelta(minutes=5));self.assertEqual(len(state.bucket("attempts")),5);self.assertEqual(len(state.bucket("snapshots")),1);self.assertEqual(terminal.provider_request_count,0)
         self.assertEqual(state.bucket("snapshots")[0].market_observation_id,g["observation"].observation_id)
 
+    def test_28a_success_does_not_publish_future_effective_terminal_snapshot(self):
+        g,at=self.seed_prospective();target=g["prospective_target"]
+        transport=SequenceTransport(HTTPResponse(200,json.dumps({"contract_json":g["observation"].to_json()}).encode(),{}))
+        first=discover_and_capture_prospective(archive=self.archive,transport_factory=lambda _o,_s:transport,clock=lambda:at)
+        early=target+timedelta(minutes=4,seconds=59)
+        second=discover_and_capture_prospective(archive=self.archive,transport_factory=lambda _o,_s:transport,clock=lambda:early)
+        self.assertEqual((first.provider_request_count,second.provider_request_count,len(transport.calls)),(1,0,1))
+        self.assertEqual(len(replay_pr17_archive(self.archive,analysis_boundary=early).bucket("snapshots")),0)
+        close=target+timedelta(minutes=5)
+        third=discover_and_capture_prospective(archive=self.archive,transport_factory=lambda _o,_s:transport,clock=lambda:close)
+        self.assertEqual((third.provider_request_count,len(third.created_snapshot_ids),len(transport.calls)),(0,1,1))
+        state=replay_pr17_archive(self.archive,analysis_boundary=close)
+        self.assertEqual((len(state.bucket("attempts")),len(state.bucket("snapshots"))),(5,1))
+        self.assertEqual(state.bucket("snapshots")[0].effective_at,close)
+
     def test_29_deterministic_publication_failpoints_reconcile_and_recover(self):
         stages={"before-raw":0,"after-raw":1,"after-normalized":2,"before-manifest":2,"after-manifest":0}
         for stage,orphan_count in stages.items():
