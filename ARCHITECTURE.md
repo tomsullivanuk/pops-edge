@@ -587,6 +587,13 @@ attempts with sanitized deterministic diagnostics. Expected provider-data
 failures cannot create Market Evidence or erase the executed call; unexpected
 internal, archive-integrity, and system failures are not relabeled as provider
 invalidity.
+The live prospective transport returns bounded HTTP results without first
+requiring success or decoding JSON; the acquisition classifier owns the typed
+disposition. Its supporting `get` interface remains strict. Oversized responses
+use the existing empty HTTP 413 sentinel and retain no truncated raw Evidence;
+secret-bearing failure bodies are suppressed. Known unsuccessful responses finish
+their request markers through ordinary immutable publication, not marker repair.
+Unknown interrupted calls retain the existing global negative fence.
 Before scientific deserialization, the adapter recursively validates every
 shared tagged-serialization marker (`__type__`, `__enum__`, `__date__`,
 `__datetime__`, `__decimal__`, and `__non_finite_decimal__`), including exact
@@ -1973,6 +1980,12 @@ computation provenance. It does not bypass old checks or admit arbitrary post-cu
 objects. Existing exact scoring helpers may be reused; no second scoring engine
 belongs in the renderer. Package validation checks exact same-context references,
 full failure-inclusive Coverage, required scopes and deterministic reconstruction.
+The frozen reporting archive view exposes normalized metadata through its same
+digest-verified full-payload cache; it neither selects a live checkpoint nor skips
+final byte/mutation verification. Outcome envelope derivation versions remain
+source authority: unversioned legacy and sequential histories use their respective
+reconstructors, and unknown rules fail closed. Separately pinned collector and
+report-worker releases require explicit reader/writer compatibility validation.
 
 Immutable derived packages live outside the source checkout and Evidence archive.
 A small non-authoritative current pointer changes only after a complete valid

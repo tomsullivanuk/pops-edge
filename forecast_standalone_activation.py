@@ -1259,7 +1259,8 @@ class BoundedLiveReadOnlyTransport:
     def __post_init__(self)->None:
         parsed=urlparse(self.base_url)
         if parsed.scheme!="https" or not parsed.netloc or self.timeout_seconds<1 or self.maximum_bytes<1:raise OperationsError("transport-configuration","live transport requires bounded TLS-only configuration")
-    def get(self,path:str)->bytes:
+    def _get_response(self,path:str,timeout:int):
+        """One signed GET; callers own response classification, never retries."""
         if not path.startswith("/") or ".." in path:raise OperationsError("transport-configuration","read-only path is invalid")
         headers={"Accept":"application/json"}
         if self.request_signer is not None:
@@ -1271,7 +1272,11 @@ class BoundedLiveReadOnlyTransport:
             # must use the explicit RSA signer above.
             if "kalshi" in self.base_url.lower():raise OperationsError("credential-incompatible","Kalshi RSA signing authority is absent")
             headers["X-Fixture-Credential"]=secret.decode("ascii")
-        status,body,response_headers=self.requester(self.base_url+path,headers,self.timeout_seconds,False)
+        return self.requester(self.base_url+path,headers,timeout,False)
+
+    def get(self,path:str)->bytes:
+        # Supporting acquisition retains its strict byte-returning contract.
+        status,body,response_headers=self._get_response(path,self.timeout_seconds)
         if 300<=status<400:raise OperationsError("transport-redirect","redirects are prohibited")
         if status!=200:raise OperationsError("transport-status","provider returned an unexpected status")
         if len(body)>self.maximum_bytes:raise OperationsError("transport-oversized","provider response exceeds the configured bound")
@@ -1282,12 +1287,16 @@ class BoundedLiveReadOnlyTransport:
 
     def request(self,method:str,url:str,*,params:Mapping[str,str],timeout:int,allow_redirects:bool):
         from forecast_standalone_operations import HTTPResponse
-        if method!="GET" or allow_redirects or timeout>self.timeout_seconds:raise OperationsError("transport-configuration","request exceeds read-only bounds")
+        if method!="GET" or allow_redirects or not 1<=timeout<=self.timeout_seconds:raise OperationsError("transport-configuration","request exceeds read-only bounds")
         market_id=params.get("market_id")
         if not isinstance(market_id,str) or not market_id or any(ch not in "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-" for ch in market_id):raise OperationsError("transport-configuration","provider market identity is invalid")
         path=f"/markets/{market_id}/orderbook"
-        raw=self.get(path)
-        return HTTPResponse(200,raw,{})
+        status,body,headers=self._get_response(path,timeout)
+        # Prospective acquisition owns the immutable typed disposition, including
+        # HTTP and malformed-body failures. Match the existing retrospective
+        # over-bound sentinel: never retain a truncated body as provider evidence.
+        if len(body)>self.maximum_bytes:return HTTPResponse(413,b"",{})
+        return HTTPResponse(status,body,headers)
 
 
 @dataclass(frozen=True,slots=True)

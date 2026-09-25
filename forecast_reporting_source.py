@@ -180,6 +180,11 @@ class _ReportingArchiveView:
             self._json[key] = json.loads(self.read_verified(family, identity))
         return self._json[key]
 
+    def read_normalized_metadata(self, identity):
+        # Reporting has no compact checkpoint payloads. Use the same verified
+        # frozen-view cache as full reads, including final unchanged checks.
+        return self.read_json_verified("normalized", identity)
+
     def memoized_supporting_verification(self, key, verify):
         # Original validators construct the keys, including parsed object identity
         # or all catalog-union inputs. Failures are never memoized.

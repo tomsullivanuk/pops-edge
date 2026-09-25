@@ -65,3 +65,29 @@ infer permission for provider calls from a successful renderer, checkpoint build
 review, or health result. Preserve missing prospective windows and failure history.
 A later revision requires a fresh accepted pinned checkout and explicit deployment
 authorization; do not update a running checkout in place.
+
+## Collector / reporting compatibility gate
+
+The MLB report worker is separately pinned; deploying a collector does not update
+that reader. A compatible reader must replay both unversioned legacy Outcome
+envelopes and `mlb-outcome-sequential-history-2` envelopes through their declared
+derivation, including rescheduled multirow corrections. A reader that only knows
+the legacy algorithm can reject valid new Evidence. Do not remove the version,
+rewrite archived contracts, or fall back to an unverified stored graph to make a
+report succeed.
+
+Before commissioning this correction, independently accept the reader's frozen
+archive metadata interface and run `tests.test_reporting_outcome_compatibility`
+and `tests.test_forecast_reporting_source` in the proposed report-worker checkout.
+Record and approve collector and report-worker pins separately; identical pins
+are not mandatory, demonstrated compatibility is. Update the worker configuration
+only under separate deployment authorization, preserving existing saved packages
+and source boundaries. A readable older report is not proof of a successful new
+update or current Coverage. Production report generation is a separate action.
+
+The provider-error correction also requires
+`tests.test_prospective_live_error_composition`: known bounded HTTP/format failures
+must publish an unsuccessful immutable attempt and permit a later independent
+capture. Oversized or secret-bearing responses retain no prohibited raw body.
+Genuinely unknown requests and internal/integrity failures remain fenced for
+manual inspection; this correction does not clear existing markers or backfill.
