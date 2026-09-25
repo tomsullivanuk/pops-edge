@@ -469,7 +469,7 @@ def acquire_prospective_once(*, transport: Transport, endpoint: str, request: Ma
     try: decoded = _decode_json(response.body)
     except OperationsError as exc:
         disp = Disposition.MALFORMED_RESPONSE if exc.code == "malformed-response" else Disposition.INCOMPLETE_RESPONSE
-        preserved=None if exc.code=="secret-material" else response.body
+        preserved=None if exc.code=="secret-material" else _safe_raw(response.body)
         return AcquisitionResult(disp, preserved, None, (AttemptRecord(1, started, completed, disp, 200, None),), exc.detail)
     try:
         normalized = raw_validator(decoded,response.body,started,completed) if raw_validator is not None else validator(decoded)
