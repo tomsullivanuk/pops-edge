@@ -6,6 +6,34 @@ checkpoint does not create Evidence, change Coverage, approve Policy, or permit
 backfill. It is local to one namespace, mode and filesystem; never copy it to a
 new deployment archive and treat its signatures as verified there.
 
+## Ordinary supporting refresh read reuse
+
+Ordinary `refresh-supporting` uses a disposable invocation-local full-namespace
+view for activation preflight and, separately, for derivation/publication. It
+does not use the prospective checkpoint as scientific authority. Each view
+discovers raw, normalized, manifest and partial files, checks source signatures,
+and runs the existing integrity, typed reconstruction, dependency, correction
+lineage and graph validators. Successful supporting-bundle verification and
+verified reads may be reused only within that view. Payload caching stops at
+256 MiB and falls back to verified uncached reads; this is not a new archive
+validity limit. No persistent cache or storage format changes are introduced.
+
+Preparation remains outside the namespace mutation lock. Pre-call activation
+resolution and final publication each recheck the exact physical inventory under
+the existing lock. A changed boundary fails with `supporting-source-changed`;
+it does not publish from stale preparation or automatically repeat provider
+requests. A busy append-only archive may therefore require a later ordinary
+invocation. Provider latency is never held inside this lock, and the pre-call
+check does not make remote requests atomic with local state.
+
+Publication keeps the original immutable manifest-last writer and lock. Each
+own write invalidates cached entry/integrity/verification results; the view
+closes when its fenced scope ends. Retrospective sessions, outcome reconciliation,
+collector request markers, checkpoint lineage rejection, matching, deadlines,
+Coverage and health rules are unchanged. Full canonical replay remains the
+independent comparison and recovery authority. These optimizations reduce
+repeated work; they do not guarantee a live archive will fit a latency budget.
+
 ## Checkpoint format and use
 
 Schema 4 / builder `compact-source-metadata-1` stores a checksum, exact

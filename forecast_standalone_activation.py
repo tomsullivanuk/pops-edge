@@ -123,6 +123,9 @@ def initialize_activation(archive:NamespaceArchive,at:datetime)->tuple[str,str]:
 
 def refresh_supporting_from_raw(*,archive:NamespaceArchive|None,mlb_raw:bytes,kalshi_raw:bytes,collected_at:datetime,catalog_pages:Iterable[KalshiCatalogPage]=(),mlb_pages:Iterable[bytes]=(),prior_state:Any=None,derive_only:bool=False,acquisition_command:str="refresh-supporting",retrospective_cutoff_at:datetime|None=None,supporting_session_id:str|None=None,supporting_provider_calls:int|None=None,requested_date_window:tuple[str,str]|None=None,supporting_correction_reason:str|None=None,predecessor_completion_manifest_id:str|None=None,union_rule:str=ACQUISITION_UNION_RULE_VERSION)->Mapping[str,Any]|tuple[Any,...]:
     """Decode live-shaped MLB/Kalshi material into established PR17 authority."""
+    if archive is not None and not derive_only and acquisition_command == "refresh-supporting" and prior_state is None:
+        from forecast_supporting_replay import SupportingReplayArchive
+        archive = SupportingReplayArchive(archive)
     from event_contracts import ValidationStatus
     from forecast_comparative_research import ResearchCaptureOpportunity
     from forecast_research_contracts import ResearchContractProvenance
