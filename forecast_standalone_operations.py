@@ -697,9 +697,15 @@ class NamespaceArchive:
         self._publish(self._path("manifest", entry.manifest_entry_id), canonical_bytes(entry)); return entry
 
     def read_verified(self, family: str, identity: str) -> bytes:
-        path = self._path(family, identity); body = path.read_bytes(); digest = identity.split(":")[-1]
+        path = self._path(family, identity); body = self._read_bytes(path); digest = identity.split(":")[-1]
         if sha256_bytes(body) != digest: raise OperationsError("archive-corrupt", str(path))
         return body
+
+    def _read_bytes(self, path: Path) -> bytes:
+        return path.read_bytes()
+
+    def _read_json(self, path: Path) -> Any:
+        return json.loads(self._read_bytes(path))
 
     def read_json_verified(self, family: str, identity: str) -> Any:
         return json.loads(self.read_verified(family, identity))
@@ -733,7 +739,7 @@ class NamespaceArchive:
 
     def _decode_manifest_path(self,path:Path)->Mapping[str,Any]:
         try:
-            value=json.loads(path.read_bytes());decoded=dict(value)
+            value=self._read_json(path);decoded=dict(value)
             for key in ("acquired_at","provider_effective_at"):
                 if decoded.get(key) is not None:decoded[key]=datetime.fromisoformat(decoded[key]["datetime_utc"])
             decoded["operating_mode"]=OperatingMode(decoded["operating_mode"]);decoded["disposition"]=Disposition(decoded["disposition"])
@@ -789,7 +795,7 @@ def reconcile_archive(archive:NamespaceArchive,*,_entries=None)->ArchiveIntegrit
     for item in valid:
         normalized_id=item.get("normalized_object_id")
         if not normalized_id:continue
-        try:value=(json.loads(archive._path("normalized",normalized_id).read_bytes()) if _entries is None else archive.read_normalized_metadata(normalized_id))
+        try:value=(archive._read_json(archive._path("normalized",normalized_id)) if _entries is None else archive.read_normalized_metadata(normalized_id))
         except (FileNotFoundError,UnicodeDecodeError,json.JSONDecodeError):continue
         if value.get("record_kind")=="pr17c2-supporting-session-page" and value.get("schema_version")=="2":
             for attempt in value.get("attempts",()):
@@ -804,7 +810,7 @@ def reconcile_archive(archive:NamespaceArchive,*,_entries=None)->ArchiveIntegrit
         for digest in sorted(expected):
             label=f"{family}:{digest}";path=actual.get(digest)
             if path is None:missing.append(label)
-            elif (not archive.verify_source_identity(family,digest) if hasattr(archive,"verify_source_identity") else sha256_bytes(archive.read_verified(family,digest) if _entries is not None else path.read_bytes())!=digest):corrupt.append(label)
+            elif (not archive.verify_source_identity(family,digest) if hasattr(archive,"verify_source_identity") else sha256_bytes(archive.read_verified(family,digest) if _entries is not None else archive._read_bytes(path))!=digest):corrupt.append(label)
             else:referenced.append(label)
     orphaned=tuple(sorted([f"raw:{key}" for key in set(actual_raw)-expected_raw]+[f"normalized:{key}" for key in set(actual_normalized)-expected_normalized]))
     malformed_paths=[]
@@ -818,7 +824,7 @@ def reconcile_archive(archive:NamespaceArchive,*,_entries=None)->ArchiveIntegrit
     for item in valid:
         identity=item.get("normalized_object_id")
         if not identity or identity.split(":")[-1] not in actual_normalized:continue
-        try:value=(json.loads(actual_normalized[identity.split(":")[-1]].read_bytes()) if _entries is None else archive.read_normalized_metadata(identity))
+        try:value=(archive._read_json(actual_normalized[identity.split(":")[-1]]) if _entries is None else archive.read_normalized_metadata(identity))
         except (OSError,json.JSONDecodeError):continue
         group=value.get("acquisition_id");kind=value.get("record_kind")
         if not isinstance(group,str):continue
@@ -839,7 +845,7 @@ def reconcile_archive(archive:NamespaceArchive,*,_entries=None)->ArchiveIntegrit
             page_values=[]
             for item in valid:
                 if item["manifest_entry_id"] not in pages:continue
-                page_values.append((item,json.loads(actual_normalized[item["normalized_object_id"].split(":")[-1]].read_bytes()) if _entries is None else archive.read_normalized_metadata(item["normalized_object_id"])))
+                page_values.append((item,archive._read_json(actual_normalized[item["normalized_object_id"].split(":")[-1]]) if _entries is None else archive.read_normalized_metadata(item["normalized_object_id"])))
             providers={value.get("provider") for _,value in page_values};families={item.get("command","")[:-5] for item,_ in page_values if item.get("command","").endswith("-page")}
             expected_authority=[{"position":value.get("position"),"request_identity":value.get("request_identity"),"endpoint":value.get("endpoint"),"raw_sha256":value.get("raw_sha256"),"started_at":value.get("started_at"),"completed_at":value.get("completed_at")} for _,value in sorted(page_values,key=lambda pair:pair[1].get("position",-1))]
             latest=max((datetime.fromisoformat(item["acquired_at"]["datetime_utc"]) for item,_ in page_values),default=None)

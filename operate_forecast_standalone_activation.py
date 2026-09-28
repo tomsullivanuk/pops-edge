@@ -108,7 +108,10 @@ def execute(command,config,*,clock=lambda:datetime.now(timezone.utc),transport_f
             return ensure_startup(archive,clock=clock,retry=startup_retry)
         if command in {"refresh-supporting","reconcile-outcomes"}:
             from forecast_standalone_activation import APPROVED_ACTIVATION_AT,resolve_activated_authority
-            resolve_activated_authority(archive,started)
+            if command == "refresh-supporting":
+                from forecast_supporting_replay import resolve_supporting_authority
+                resolve_supporting_authority(archive,started)
+            else:resolve_activated_authority(archive,started)
             if started<APPROVED_ACTIVATION_AT:
                 calls=typed=due=0;disposition="pre-activation-no-call"
                 return {"configuration_id":config.identity,"namespace":config.namespace,"provider_calls":0,
