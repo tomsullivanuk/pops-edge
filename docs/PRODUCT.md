@@ -738,6 +738,12 @@ section of `ARCHITECTURE.md` and `operations/PROSPECTIVE_PROJECTION.md`.
 
 ## NFL Model Performance — approved design, not yet implemented
 
+The September 28 [Week 2 clarification](NFL_WEEK2_2026_ASSESSMENT.md) preserves
+the original comparison, identifies the affected older baseline, and provides
+a separate whole-week exclusion sensitivity and historical forecast-only
+assessment. Its visible baseline check identifies the requested versus selected
+forecast; it does not change prospective eligibility or reopen frozen weeks.
+
 Add a descriptive comparison tab, independent of Wager History. Compare weekly
 ELWAY and Kalshi contract-value error on all common eligible games, without fees
 or selection by owner wagers. Capture Kalshi when a new weekly workbook is

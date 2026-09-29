@@ -25,6 +25,19 @@ DEFAULT_MLB = Path.home()/'PopsEdgeReports/mlb/real/2026-09-13-accepted/reports'
 NFL_PERIODS = [('7','Last 7 Days'),('14','Last 14 Days'),('60','Last 60 Days'),
                ('90','Last 90 Days'),('season','This Season'),('custom','Custom Period')]
 
+# A bounded, owner-approved incident note; never a change to saved Evidence.
+WEEK2_2026_FORECAST = '4d187fb9173dd8b2cf6d81e17f6eb055a66ad9f6fb50c02b7110b87daddf7da0'
+WEEK2_2026_NOTE = ('Week 2 collection limitation: this baseline uses the September 9 '
+    'ELWAY release imported September 14. The newer September 17 workbook failed '
+    'publication-time validation. These scores do not evaluate that newer release. '
+    'For a freshest-release comparison, Week 2 remains a coverage gap. '
+    'The original report and comparison prices are preserved.')
+
+
+def week2_2026_limitation(report):
+    return ((report['season'], report['week']) == (2026, 2) and
+            (report.get('selected_forecast') or {}).get('semantic') == WEEK2_2026_FORECAST)
+
 
 def nfl_filtered(games, query, cutoff):
     period=query.get('period',['season'])[0];team=query.get('team',[''])[0]
@@ -266,12 +279,26 @@ class NFLReader:
         body='<section class="panel"><h2>NFL Performance</h2><p class="muted">Cumulative · Season '+str(reports[0]['season'])+' · Saved weeks '+', '.join(str(r['week']) for r in reports)+' · Saved analyses '+text(date(boundaries[0]))+(' through '+text(date(boundaries[-1])) if len(boundaries)>1 else '')+'</p>'
         body+='<p>'+str(len(scored))+' of '+str(enrolled)+' enrolled games scored'+(' — Limited coverage' if len(scored)<enrolled else '')+'</p>'
         for r in reports:
+            if week2_2026_limitation(r):body+='<p class="notice">'+text(WEEK2_2026_NOTE)+'</p>'
             if r.get('selection_issue'):body+='<p class="notice">Week '+str(r['week'])+': '+text(r['selection_issue'])+'</p>'
             if r.get('diagnostics'):body+='<p class="notice">Week '+str(r['week'])+' has recorded attempt issues; see report details.</p>'
         if not scored:body+='<p class="notice">No scored comparison available. Missing inputs and unresolved outcomes remain visible.</p>'
         body+='<div class="table-wrap"><table aria-label="Comparison with 50% reference"><thead><tr><th>Metric</th><th>ELWAY</th><th>Kalshi</th><th>50% reference</th></tr></thead><tbody><tr><th scope="row">Payout-adjusted Brier score</th>'
         body+=''.join('<td>'+number(v)+'</td>' for v in (means['elway_error'],means['kalshi_error'],reference))+'</tr><tr><th scope="row">Improvement over reference</th>'
-        return body+''.join('<td>'+number(gains[k])+'</td>' for k in ('elway_error','kalshi_error'))+'<td>—</td></tr></tbody></table></div></section>'
+        body+=''.join('<td>'+number(gains[k])+'</td>' for k in ('elway_error','kalshi_error'))+'<td>—</td></tr></tbody></table></div>'
+        affected={g['game_id'] for r in reports if week2_2026_limitation(r) for g in r['games']}
+        if affected:
+            remaining=[g for g in scored if g['game_id'] not in affected]
+            body+='<details><summary>Sensitivity: exclude the entire affected Week 2</summary><p>'+str(len(scored)-len(remaining))+' scored games omitted; '+str(len(remaining))+' scored games remain. This retrospective sensitivity does not replace the cumulative result or establish a prospective freshest-release study.</p>'
+            if remaining:
+                with localcontext() as context:
+                    context.prec=50
+                    e,k=(sum(Decimal(g['scores'][key]) for g in remaining)/len(remaining) for key in ('elway_error','kalshi_error'))
+                    ref=sum((Decimal('0.5')-Decimal(g['outcome']['payout']))**2 for g in remaining)/len(remaining)
+                body+='<p>Mean payout-adjusted error: ELWAY '+number(e)+', Kalshi '+number(k)+', 50% reference '+number(ref)+'. Lower is better.</p>'
+            else:body+='<p>No scored games remain; sensitivity scores are unavailable.</p>'
+            body+='</details>'
+        return body+'</section>'
 
     def _match_row(self,r,g):
         e,k,o,sc=g['elway'],g['kalshi'],g['outcome'],g['scores']
@@ -285,6 +312,7 @@ class NFLReader:
 
     def _weekly_evidence(self,r):
         body='<h3>Week '+str(r['week'])+'</h3><p>Saved analysis: '+text(date(r['boundary']))+' · '+str(r['population'])+' official games · '+str(r['paired_games'])+' scored pairs</p>'
+        if week2_2026_limitation(r):body+='<p class="notice">'+text(WEEK2_2026_NOTE)+'</p>'
         body+='<p>'+('Baseline frozen' if r['frozen'] else 'Baseline not yet frozen')+' · Cutoff: '+text(date(r['cutoff']))+'</p>'
         if r.get('starting_cohort'):body+='<p>Partial Week 1 — 14 enrolled of 16 official games; the two starting-cohort exclusions remain outside scoring.</p>'
         body+='<p>'+text(' · '.join(str(v)+' '+LABELS.get(k,k) for k,v in r['coverage'].items()))+'</p>'

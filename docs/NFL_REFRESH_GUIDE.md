@@ -29,6 +29,15 @@ or move a local deployment to a new checkout.
 
 ## Start and refresh
 
+Before the first kickoff, check **Weekly baseline check** after refreshing:
+the requested workbook must match the selected forecast and every eligible
+game must have usable comparison prices. Read the selected workbook, its
+publication/proxy and import times, cutoff, and saved check time. A successful
+Bet Sheet refresh or upload alone is insufficient. Resolve rejected inputs or
+explicitly retry missing prices before cutoff; never backfill a closed week.
+See the [Week 2 clarification](NFL_WEEK2_2026_ASSESSMENT.md) for the known 2026
+incident and the limits of its separate sensitivity and historical assessment.
+
 Open `~/PopsEdge/Open NFL Bet Sheet.command` and leave its Terminal running.
 The local app is at http://127.0.0.1:8766/. The owner's launcher currently points
 to the configured NFL checkout; it is not automatically repointed by a merge.

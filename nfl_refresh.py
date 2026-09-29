@@ -13,6 +13,7 @@ from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
 from urllib.parse import urlsplit, parse_qs
 import uuid
 import webbrowser
+from zoneinfo import ZoneInfo
 import nfl_excel_import as excel
 import nfl_forecast_time as forecast_time
 import nfl_forecast_import as source
@@ -23,6 +24,10 @@ from nfl_performance import Performance
 from nfl_refresh_replay import RefreshPerformance
 
 MAX_REQUEST=24*1024*1024
+
+
+def baseline_time(value):
+    return kalshi.aware(value).astimezone(ZoneInfo('America/Chicago')).strftime('%b %d, %Y %I:%M %p %Z') if value else 'unresolved'
 
 
 class Workflow:
@@ -72,9 +77,9 @@ class Workflow:
         if event['kind']=='duplicate':engine.observe_results(season,week)
         return engine
 
-    def performance_summary(self,engine,season,week):
+    def performance_summary(self,engine,season,week,expected_raw=None):
         r=engine.save_report(season,week,kalshi.utc())
-        captured=sum(g['kalshi'] is not None for g in r['games'])
+        captured=sum(g['kalshi'] is not None and g['state'] in ('candidate','awaiting-outcome','scored') for g in r['games'])
         population=r.get('starting_cohort',{}).get('eligible_population',r['population'])
         missing=population-captured
         state='attention' if missing or not r['selected_import'] else 'complete'
@@ -84,6 +89,24 @@ class Workflow:
         if r.get('starting_cohort'):message=r['starting_cohort']['label']+'. '+message
         if r['selection_issue']:message+=' '+r['selection_issue']
         if missing:message+=(' Missing prices remain visible; no prices will be backfilled for this week.' if r['frozen'] else ' Missing prices remain visible; retry them explicitly before the first kickoff.')
+        events=engine.events()
+        selected=next((e for e in events if e['id']==r['selected_import']),None)
+        if selected:
+            forecast=r['selected_forecast']
+            basis='File creation time (publication-time proxy)' if forecast.get('time_basis') else 'Forecast published'
+            message+=f'\nSelected workbook: {selected["payload"]["name"]}. {basis}: {baseline_time(forecast["updated_at"])}. Imported: {baseline_time(r["selected_imported_at"])}.'
+        if expected_raw is not None:
+            imports=[e for e in events if e['kind']=='import' and
+                     e['payload'].get('raw')==source.digest(expected_raw) and
+                     (e['payload'].get('season'),e['payload'].get('week'))==(season,week)]
+            expected=engine.decode(imports[-1]) if imports else {}
+            semantic=expected.get('semantic')
+            if semantic and semantic==(r.get('selected_forecast') or {}).get('semantic'):
+                message+='\nRequested workbook matches the selected weekly forecast.'
+            else:
+                state='attention'
+                message+='\nRequested workbook is NOT the selected weekly forecast. The saved baseline may use an older release; inspect before kickoff. A frozen week cannot be reopened.'
+        message='Weekly baseline check — '+message+f'\nWeekly cutoff: {baseline_time(r["cutoff"])}. Checked: {baseline_time(r["boundary"])}. This saved check does not establish that the vendor has no newer release.'
         self.performance_status=dict(state=state,message=message,week=week,report_id=r['report_id'])
         return r
 
@@ -111,10 +134,11 @@ class Workflow:
 
     def generate(self,payload):
         if not self.lock.acquire(False):raise ValueError('A generation is already running')
+        config={}
         try:
+            config=self.performance_config()
             raw,name,file_time=self.file_bytes(payload.get('forecast'),'.xlsx',with_time=True)
             activity,activity_name=self.file_bytes(payload.get('activity'),'.csv')
-            config=self.performance_config()
             target=payload.get('performance_week','auto' if config['enabled'] else None);retry=payload.get('retry_missing',False)
             if type(retry) is not bool:raise ValueError('Invalid retry selection')
             if config['enabled']:
@@ -126,7 +150,12 @@ class Workflow:
             self.status=dict(state='running',message='Checking the selected files…')
             threading.Thread(target=self.run,args=(raw,name,activity,attempt,target,retry,file_time),daemon=True).start()
             return self.status
-        except Exception:self.lock.release();raise
+        except Exception as exc:
+            if config.get('enabled'):
+                self.performance_status=dict(state='attention',message='Weekly baseline check failed: '+str(exc)+'. This request did not confirm the requested workbook and comparison prices. Any previous baseline remains unchanged; resolve the issue before kickoff.')
+                self.status=dict(state='attention',message=str(exc)+'. Previous sheets remain available.')
+            self.lock.release()
+            raise
 
     def update_accounting(self, payload):
         """Local two-file accounting import; never calls schedule or price providers."""
@@ -204,7 +233,7 @@ class Workflow:
                         engine.save_report(old_season,old_week,kalshi.utc())
                     if type(performance_week) is int:
                         self.status=dict(state='running',message=f'Finalizing Week {performance_week} performance summary…')
-                        self.performance_summary(engine,season,performance_week)
+                        self.performance_summary(engine,season,performance_week,expected_raw=raw)
                 except Exception as exc:performance_errors.append(str(exc))
             if performance_errors:
                 self.performance_status=dict(state='attention',message='Weekly comparison: '+'; '.join(performance_errors))
@@ -220,6 +249,8 @@ class Workflow:
                 self.status['message']+=' '+forecast_time.LABEL+'. Publisher update time is unknown.'
         except Exception as exc:
             self.status=dict(state='attention',message=str(exc)+'. Previous sheets remain available.')
+            if performance_week is not None:
+                self.performance_status=dict(state='attention',message='Weekly baseline check failed: '+str(exc)+'. This refresh did not confirm the requested workbook and comparison prices. Any previous baseline remains unchanged; resolve the issue before kickoff.')
             source.write_once(attempt/'failed.json',source.encode(dict(at=kalshi.utc(),error=str(exc))))
         finally:self.lock.release()
 
