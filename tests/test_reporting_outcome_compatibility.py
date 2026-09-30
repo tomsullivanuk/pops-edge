@@ -67,13 +67,13 @@ class ReportingOutcomeCompatibilityTests(unittest.TestCase):
     def test_legacy_then_sequential_correction_and_saved_boundary(self):
         # Create an authentic unversioned envelope shape before immutable commit.
         # No retained evidence is edited, and all scientific validators run.
-        commit = self.archive._commit_locked
-        def legacy_commit(**kwargs):
+        commit = NamespaceArchive._commit_locked
+        def legacy_commit(source, **kwargs):
             value = kwargs.get('normalized', {})
             if value.get('family') == 'reconcile-outcomes':
                 kwargs['normalized'] = {k: v for k, v in value.items() if k != 'derivation_rule'}
-            return commit(**kwargs)
-        with patch.object(self.archive, '_commit_locked', side_effect=legacy_commit):
+            return commit(source, **kwargs)
+        with patch.object(NamespaceArchive, '_commit_locked', legacy_commit):
             reconcile_outcomes_from_raw(archive=self.archive, mlb_raw=self.corrected,
                 mlb_pages=(self.corrected,), collected_at=self.second, derivation_rule=None)
         old, old_state = self.freeze_and_verify(self.second)
@@ -93,13 +93,13 @@ class ReportingOutcomeCompatibilityTests(unittest.TestCase):
         self.assertEqual(envelopes[1]['derivation_rule'], OUTCOME_RECONCILIATION_RULE_VERSION)
 
     def test_unknown_outcome_rule_fails_closed_in_reporting(self):
-        commit = self.archive._commit_locked
-        def incompatible_commit(**kwargs):
+        commit = NamespaceArchive._commit_locked
+        def incompatible_commit(source, **kwargs):
             value = kwargs.get('normalized', {})
             if value.get('family') == 'reconcile-outcomes':
                 kwargs['normalized'] = {**value, 'derivation_rule': 'unknown-future-rule'}
-            return commit(**kwargs)
-        with patch.object(self.archive, '_commit_locked', side_effect=incompatible_commit):
+            return commit(source, **kwargs)
+        with patch.object(NamespaceArchive, '_commit_locked', incompatible_commit):
             reconcile_outcomes_from_raw(archive=self.archive, mlb_raw=self.corrected,
                 mlb_pages=(self.corrected,), collected_at=self.second)
         with self.assertRaisesRegex(OperationsError, 'acquisition-incompatible'):

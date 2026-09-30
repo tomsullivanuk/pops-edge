@@ -62,6 +62,17 @@ def sized_candidate(count):
 
 
 class PublicationTests(unittest.TestCase):
+    def test_cached_replay_does_not_expand_a_published_dependency_boundary(self):
+        from forecast_supporting_replay import SupportingReplayArchive
+        self.publish()
+        # An identical scientific object with a distinct, later-arriving manifest
+        # must not be inserted into an already published dependency closure.
+        archive_pr17_authority(self.archive,(self.g['retro_history'],),
+            recorded_at=self.boundary-timedelta(microseconds=1))
+        expected=replay_pr17_archive(self.archive,analysis_boundary=self.boundary)
+        actual=replay_pr17_archive(SupportingReplayArchive(self.archive),analysis_boundary=self.boundary)
+        self.assertEqual(actual,expected)
+
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
@@ -303,6 +314,11 @@ class PinnedSupportingAuthorityTests(unittest.TestCase):
         completion=self.complete()
         self.assertNotIn(completion["completion_manifest_id"],value["source_authority"]["dependency_manifest_ids"])
         self.assertEqual(replay_pr17_archive(self.archive,analysis_boundary=self.boundary+timedelta(seconds=1)).bucket("coverages"),before)
+        from forecast_supporting_replay import SupportingReplayArchive
+        view = SupportingReplayArchive(self.archive)
+        actual = replay_pr17_archive(view, analysis_boundary=self.boundary+timedelta(seconds=1))
+        self.assertEqual(actual, replay_pr17_archive(self.archive, analysis_boundary=self.boundary+timedelta(seconds=1)))
+        self.assertEqual(actual.bucket('coverages'), before)
         self.assertTrue(inspect_archive(self.archive).ready)
         self.assertNotEqual(publication_source(self.archive,self.boundary)[1],self.snapshot)
         with self.assertRaisesRegex(OperationsError,"snapshot changed"):
