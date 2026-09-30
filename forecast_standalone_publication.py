@@ -35,11 +35,28 @@ class _PinnedPublicationArchive:
         if not set(identities) <= entries.keys():
             raise OperationsError("archive-integrity-failure", "pinned publication manifest is missing")
         self._entries = tuple(entry for entry in archive.entries() if entry["manifest_entry_id"] in set(identities))
+        self._checks = {}
+        if getattr(archive, 'memoized_supporting_verification', None) is None:
+            self.memoized_supporting_verification = None
 
     def entries(self):
         return self._entries
 
+    def prospective_entries(self):
+        # Integrity was checked globally above. Replay authority is nevertheless
+        # exactly this publication's pinned dependency set, not the outer view.
+        return self._entries
+
+    def memoized_supporting_verification(self, key, verify):
+        # Verifiers depend on entries(), not just bytes. Never share their result
+        # with a wider (or differently pinned) archive view.
+        if key not in self._checks:
+            self._checks[key] = verify()
+        return self._checks[key]
+
     def __getattr__(self, name):
+        if name == "replay_contracts":
+            raise AttributeError(name)  # an outer replay hook has different authority
         return getattr(self._archive, name)
 
 
@@ -189,6 +206,14 @@ def _candidate(state, protocol_id, snapshot, boundary, namespace, source_authori
 
 def verify_publication(archive, value):
     """Exact source/digest and full graph gate shared by staging, replay and retry."""
+    memo = getattr(archive, 'memoized_supporting_verification', None)
+    if memo is not None:
+        key = ('publication', sha256_bytes(canonical_bytes(value)))
+        return memo(key, lambda: _verify_publication(archive, value))
+    return _verify_publication(archive, value)
+
+
+def _verify_publication(archive, value):
     from forecast_standalone_research import deserialize_v3
     required = {"schema_version", "record_kind", "protocol_id", "namespace", "source_snapshot",
                 "analysis_boundary", "provider_calls", "bundle_sha256", "bundle", "publication_id", "source_authority"}

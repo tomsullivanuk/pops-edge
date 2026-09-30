@@ -6,33 +6,64 @@ checkpoint does not create Evidence, change Coverage, approve Policy, or permit
 backfill. It is local to one namespace, mode and filesystem; never copy it to a
 new deployment archive and treat its signatures as verified there.
 
-## Ordinary supporting refresh read reuse
+## Supporting and outcome replay reuse
 
-Ordinary `refresh-supporting` uses a disposable invocation-local full-namespace
-view for activation preflight and, separately, for derivation/publication. It
+Ordinary `refresh-supporting` and `reconcile-outcomes` use disposable invocation-local full-namespace
+views for activation preflight, live request date selection, and derivation/publication. They
 does not use the prospective checkpoint as scientific authority. Each view
 discovers raw, normalized, manifest and partial files, checks source signatures,
 and runs the existing integrity, typed reconstruction, dependency, correction
 lineage and graph validators. Successful supporting-bundle verification and
 verified reads may be reused only within that view. Payload caching stops at
 256 MiB and falls back to verified uncached reads; this is not a new archive
-validity limit. No persistent cache or storage format changes are introduced.
+validity limit. The page-ownership lookup is built once per view from the same
+verified entries; every envelope still checks exact page membership, chronology,
+raw hashes, canonical unions and reconstructed contracts. Pinned retrospective
+publications have their own authority and verification scope: outer view entries
+and replay hooks must not leak into their dependency set. Repeated identical
+publication verification may be reused only within that same unchanged view.
+No persistent cache or storage format changes are introduced.
+
+Within one command only, request date selection may reuse the preflight's fully
+validated scientific state if the configuration, analysis time and exact physical
+inventory still match. It rechecks that inventory under the lock before any
+provider request. The reusable state is single-use and discarded at command end;
+a changed inventory requires fresh canonical preparation, not a stale read.
+After acquisition a new view independently checks the entire physical inventory
+against that prepared boundary. Only an exact configuration, time and inventory
+match permits reuse of the validated scientific state for derivation. The new
+view still verifies and warms publication reads outside the lock and checks the
+inventory again under the publication lock. Any intervening collector evidence
+invalidates reuse and requires the ordinary fresh canonical replay.
 
 Preparation remains outside the namespace mutation lock. Pre-call activation
-resolution and final publication each recheck the exact physical inventory under
+resolution, date selection and final publication each recheck the exact physical inventory under
 the existing lock. A changed boundary fails with `supporting-source-changed`;
 it does not publish from stale preparation or automatically repeat provider
 requests. A busy append-only archive may therefore require a later ordinary
 invocation. Provider latency is never held inside this lock, and the pre-call
-check does not make remote requests atomic with local state.
+check does not make remote requests atomic with local state. Derivation starts
+from a freshly checked view after acquisition, so writes during provider waiting
+are not silently ignored. Failed outcome graph validation retains every received page
+through the original non-authoritative failure writer, without reusing a closed
+publication view or retrying a provider.
 
 Publication keeps the original immutable manifest-last writer and lock. Each
 own write invalidates cached entry/integrity/verification results; the view
-closes when its fenced scope ends. Retrospective sessions, outcome reconciliation,
+closes when its fenced scope ends. Retrospective sessions, outcome reconciliation semantics,
 collector request markers, checkpoint lineage rejection, matching, deadlines,
 Coverage and health rules are unchanged. Full canonical replay remains the
 independent comparison and recovery authority. These optimizations reduce
 repeated work; they do not guarantee a live archive will fit a latency budget.
+
+Supporting and outcome command timings are written separately to
+`LOG_ROOT/replay-timings/`, retaining compatibility with existing operational
+heartbeat readers. They contain bounded stage names, elapsed monotonic seconds
+and counts, never provider payloads. Nested timings overlap and must not be
+summed as CPU time. Absent stages are unmeasured, not zero (for example a custom
+loader may not instrument provider waiting). Timing-write failure emits a safe
+warning but cannot reclassify a committed acquisition. These receipts do not
+change scientific identities, trusted chronology, scheduling or health limits.
 
 ## Checkpoint format and use
 

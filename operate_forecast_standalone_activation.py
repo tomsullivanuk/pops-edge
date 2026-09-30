@@ -5,6 +5,8 @@ import argparse,json,shutil,sys,time
 from datetime import date,datetime,timedelta,timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
+from forecast_replay_timings import timed, begin as begin_timings, finish as finish_timings
+from forecast_supporting_replay import begin_request_preparation, end_request_preparation
 from forecast_standalone_activation import APPROVED_EASTERN_DATE,APPROVED_TIMEZONE,RETROSPECTIVE_WINDOW_START,BoundedLiveReadOnlyTransport,KalshiCatalogPage,KalshiRequestSigner,MacOSKeychainCredentialProvider,OperationalHeartbeat,OperationalState,ProviderPageAcquisition,acquire_kalshi_catalog_pages,acquire_retrospective_catalog_pages,adapt_kalshi_candles,adapt_kalshi_orderbook,canonical_kalshi_candle_path,canonical_mlb_schedule_request,complete_supporting_session_from_archive,encoded_kalshi_catalog_path,encoded_kalshi_retrospective_catalog_path,health_from_operational_state,initialize_activation,invoke_activated_prospective,merge_kalshi_catalog_pages,merge_retrospective_catalog_pages,merge_mlb_schedule_responses,preserve_supporting_response,reconcile_outcomes_from_raw,refresh_supporting_from_raw,render_launchd_jobs,required_mlb_query_dates,rsa_pss_sha256_sign
 from forecast_standalone_operations import RETROSPECTIVE_SUPPORTING_RETRY_POLICY,DeploymentConfig,DesignAuthority,Disposition,ExitCode,HTTPResponse,NamespaceArchive,OperatingMode,OperationsError,RetrospectiveAcquisitionError,SupportingAcquisitionError,_entry_values,acquire_prospective_once,acquire_typed_supporting_fixture,acquire_with_retries,discover_and_acquire_retrospective,index_health,inspect_archive,rebuild_index,reconcile_incomplete_acquisitions,replay_pr17_archive,request_identity,sync_secondary
 
@@ -68,13 +70,16 @@ def load_live_supporting(*, archive, purpose, at, public_get, clock):
         nonlocal calls
         calls += 1
         try:
-            return public_get(base, path)
+            with timed('provider'):
+                return public_get(base, path)
         except TimeoutError as exc:
             raise OperationsError("transport-timeout", "Supporting provider request timed out") from exc
         except OSError as exc:
             raise OperationsError("transport-connection-failure", "Supporting provider request failed") from exc
     try:
-        histories = replay_pr17_archive(archive, analysis_boundary=at).bucket("outcome_histories")
+        from forecast_supporting_replay import replay_for_request_dates
+        with timed('date-selection'):
+            histories = replay_for_request_dates(archive, at).bucket("outcome_histories")
         mlb, mlb_pages = live_mlb_material(purpose, at, histories=histories,
                                          public_get=counted_get, clock=clock)
         if purpose == "outcomes":
@@ -96,6 +101,8 @@ def load_live_supporting(*, archive, purpose, at, public_get, clock):
 def execute(command,config,*,clock=lambda:datetime.now(timezone.utc),transport_factory=None,supporting_loader=None,outcome_loader=None,retrospective_runner=None,free_disk=None,session_completion_id=None,session_correction_reason=None,publication_protocol_id=None,expected_source_snapshot=None,schedule_reconciliation_runner=None,startup_check=False,startup_retry=False):
     archive=NamespaceArchive(config);state=OperationalState(config.log_root/"operational-state");started=clock()
     calls=typed=due=None;disposition="success";failure=None
+    timing_token = begin_timings() if command in {'refresh-supporting', 'reconcile-outcomes'} else None
+    preparation_token = begin_request_preparation() if timing_token is not None else None
     try:
         if config.mode is not OperatingMode.ACTIVATED:raise OperationsError("deployment-mode-invalid","PR17C1 CLI requires activated namespace")
         if startup_check and command in {"capture-prospective","lifecycle-cycle"}:
@@ -108,10 +115,9 @@ def execute(command,config,*,clock=lambda:datetime.now(timezone.utc),transport_f
             return ensure_startup(archive,clock=clock,retry=startup_retry)
         if command in {"refresh-supporting","reconcile-outcomes"}:
             from forecast_standalone_activation import APPROVED_ACTIVATION_AT,resolve_activated_authority
-            if command == "refresh-supporting":
+            with timed('authority'):
                 from forecast_supporting_replay import resolve_supporting_authority
                 resolve_supporting_authority(archive,started)
-            else:resolve_activated_authority(archive,started)
             if started<APPROVED_ACTIVATION_AT:
                 calls=typed=due=0;disposition="pre-activation-no-call"
                 return {"configuration_id":config.identity,"namespace":config.namespace,"provider_calls":0,
@@ -131,7 +137,9 @@ def execute(command,config,*,clock=lambda:datetime.now(timezone.utc),transport_f
             if supporting_loader is None:raise OperationsError("adapter-unavailable","configured MLB/Kalshi supporting adapters are absent")
             loaded=supporting_loader(started);mlb_raw,kalshi_raw=loaded[:2];pages=loaded[2] if len(loaded)>2 else ();mlb_pages=loaded[3] if len(loaded)>3 else ();cutoff_at=loaded[5] if len(loaded)>5 else None;session_id=loaded[6] if len(loaded)>6 else None;calls=loaded[4] if len(loaded)>4 else (len(mlb_pages) if mlb_pages else 1)+(len(pages) if pages else 1)
             requested_window=((mlb_pages[0].request_identity,mlb_pages[-1].request_identity) if command=="refresh-retrospective-supporting" and mlb_pages else None)
-            try:result=refresh_supporting_from_raw(archive=archive,mlb_raw=mlb_raw,kalshi_raw=kalshi_raw,collected_at=started,catalog_pages=pages,mlb_pages=mlb_pages,acquisition_command=command,retrospective_cutoff_at=cutoff_at,supporting_session_id=session_id,supporting_provider_calls=calls,requested_date_window=requested_window)
+            try:
+                with timed('derivation'):
+                    result=refresh_supporting_from_raw(archive=archive,mlb_raw=mlb_raw,kalshi_raw=kalshi_raw,collected_at=started,catalog_pages=pages,mlb_pages=mlb_pages,acquisition_command=command,retrospective_cutoff_at=cutoff_at,supporting_session_id=session_id,supporting_provider_calls=calls,requested_date_window=requested_window)
             except OperationsError as exc:
                 if not hasattr(exc,"provider_calls"):exc.provider_calls=calls
                 raise
@@ -140,7 +148,9 @@ def execute(command,config,*,clock=lambda:datetime.now(timezone.utc),transport_f
             if outcome_loader is None:raise OperationsError("adapter-unavailable","configured MLB outcome adapter is absent")
             loaded=outcome_loader(started);mlb_raw,mlb_pages=(loaded[:2] if isinstance(loaded,tuple) and len(loaded) in {2,3} else (loaded,()))
             calls=loaded[2] if isinstance(loaded,tuple) and len(loaded)==3 else len(mlb_pages) if mlb_pages else 1
-            result=reconcile_outcomes_from_raw(archive=archive,mlb_raw=mlb_raw,collected_at=started,mlb_pages=mlb_pages);typed=result["changed"];disposition=result["disposition"];output={"configuration_id":config.identity,"provider_calls":calls,**result}
+            with timed('derivation'):
+                result=reconcile_outcomes_from_raw(archive=archive,mlb_raw=mlb_raw,collected_at=started,mlb_pages=mlb_pages)
+            typed=result["changed"];disposition=result["disposition"];output={"configuration_id":config.identity,"provider_calls":calls,**result}
         elif command=="reconcile-prospective-schedule":
             if schedule_reconciliation_runner is None:raise OperationsError("configuration-error","Explicit reconciliation date bounds and MLB reader required")
             output=schedule_reconciliation_runner(archive,started);calls=output["provider_calls"];typed=output["contracts"];disposition=output["disposition"]
@@ -201,7 +211,11 @@ def execute(command,config,*,clock=lambda:datetime.now(timezone.utc),transport_f
         if calls is not None:error.provider_calls=calls
         raise error from exc
     finally:
+        if preparation_token is not None:
+            end_request_preparation(preparation_token)
         completed=clock()
+        if timing_token is not None:
+            finish_timings(timing_token, config.log_root, command, started, completed, disposition)
         try:state.append(OperationalHeartbeat("1",command,started,completed,disposition,calls,typed,due,failure))
         except OperationsError:
             if failure is None:raise

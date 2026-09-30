@@ -124,8 +124,9 @@ def initialize_activation(archive:NamespaceArchive,at:datetime)->tuple[str,str]:
 def refresh_supporting_from_raw(*,archive:NamespaceArchive|None,mlb_raw:bytes,kalshi_raw:bytes,collected_at:datetime,catalog_pages:Iterable[KalshiCatalogPage]=(),mlb_pages:Iterable[bytes]=(),prior_state:Any=None,derive_only:bool=False,acquisition_command:str="refresh-supporting",retrospective_cutoff_at:datetime|None=None,supporting_session_id:str|None=None,supporting_provider_calls:int|None=None,requested_date_window:tuple[str,str]|None=None,supporting_correction_reason:str|None=None,predecessor_completion_manifest_id:str|None=None,union_rule:str=ACQUISITION_UNION_RULE_VERSION)->Mapping[str,Any]|tuple[Any,...]:
     """Decode live-shaped MLB/Kalshi material into established PR17 authority."""
     if archive is not None and not derive_only and acquisition_command == "refresh-supporting" and prior_state is None:
-        from forecast_supporting_replay import SupportingReplayArchive
+        from forecast_supporting_replay import SupportingReplayArchive, prepared_derivation_state
         archive = SupportingReplayArchive(archive)
+        prior_state = prepared_derivation_state(archive, collected_at)
     from event_contracts import ValidationStatus
     from forecast_comparative_research import ResearchCaptureOpportunity
     from forecast_research_contracts import ResearchContractProvenance
@@ -226,7 +227,8 @@ def refresh_supporting_from_raw(*,archive:NamespaceArchive|None,mlb_raw:bytes,ka
     page_values=tuple(catalog_pages) or (KalshiCatalogPage(0,"",json.loads(kalshi_raw)["cursor"],kalshi_raw,tuple(json.loads(kalshi_raw)["markets"])),)
     raw_mlb_pages=tuple(mlb_pages) or (mlb_raw,);mlb_page_values=tuple(_mlb_page_tuple(item,index) for index,item in enumerate(raw_mlb_pages))
     kalshi_page_values=page_values
-    with archive.mutation_lock():
+    from forecast_replay_timings import timed
+    with timed('publication'), archive.mutation_lock():
         protocol_id=protocols[0].standalone_probability_source_protocol_id if len(protocols)==1 else None
         mlb_acquisition=publish_verified_acquisition(archive=archive,provider="mlb-stats-api",union_raw=mlb_raw,pages=mlb_page_values,contracts=mlb_contracts,collected_at=collected_at,protocol_id=protocol_id,command=acquisition_command,supporting_session_id=supporting_session_id,correction_reason=supporting_correction_reason)
         kalshi_acquisition=publish_verified_acquisition(archive=archive,provider="kalshi",union_raw=kalshi_raw,pages=kalshi_page_values,contracts=market_contracts,collected_at=collected_at,protocol_id=protocol_id,command=acquisition_command,dependencies=(mlb_acquisition["acquisition_id"],),retrospective_cutoff_at=retrospective_cutoff_at,supporting_session_id=supporting_session_id,correction_reason=supporting_correction_reason)
@@ -1069,13 +1071,34 @@ def _verify_acquisition_bundle(archive:NamespaceArchive,value:Mapping[str,Any],*
         if manifest_at!=completed:raise OperationsError("acquisition-chronology-conflict","page manifest chronology conflicts")
         prior_completion=completed
         raw_pages.append(raw)
-    referenced={page["manifest_entry_id"] for page in pages};group_pages=set()
-    for entry_id,entry in entries.items():
-        normalized_id=entry.get("normalized_object_id")
-        if not normalized_id:continue
-        candidate=archive.read_normalized_metadata(normalized_id)
-        if candidate.get("record_kind")=="pr17c1-provider-page" and candidate.get("acquisition_id")==group:group_pages.add(entry_id)
-        if value.get("page_record_kind")=="pr17c2-supporting-session-page" and candidate.get("record_kind")=="pr17c2-supporting-session-page" and group.startswith(candidate.get("session_id","")+":") and candidate.get("provider")==provider and candidate.get("purpose")!="historical-cutoff":group_pages.add(entry_id)
+    referenced={page["manifest_entry_id"] for page in pages}
+    def page_ownership():
+        ordinary={};sessions=[]
+        for entry_id,entry in entries.items():
+            normalized_id=entry.get("normalized_object_id")
+            if not normalized_id:continue
+            candidate=archive.read_normalized_metadata(normalized_id)
+            if candidate.get("record_kind")=="pr17c1-provider-page" and isinstance(candidate.get("acquisition_id"),str):
+                ordinary.setdefault(candidate.get("acquisition_id"),set()).add(entry_id)
+            if candidate.get("record_kind")=="pr17c2-supporting-session-page":
+                sessions.append((candidate.get("session_id",""),candidate.get("provider"),candidate.get("purpose"),entry_id))
+        return ordinary,sessions
+    memo=getattr(archive,"memoized_supporting_verification",None) if isinstance(group,str) else None
+    group_pages=set()
+    if memo is None:
+        # Preserve the independent canonical scan as the reference path.
+        for entry_id,entry in entries.items():
+            normalized_id=entry.get("normalized_object_id")
+            if not normalized_id:continue
+            candidate=archive.read_normalized_metadata(normalized_id)
+            if candidate.get("record_kind")=="pr17c1-provider-page" and candidate.get("acquisition_id")==group:group_pages.add(entry_id)
+            if value.get("page_record_kind")=="pr17c2-supporting-session-page" and candidate.get("record_kind")=="pr17c2-supporting-session-page" and group.startswith(candidate.get("session_id","")+":") and candidate.get("provider")==provider and candidate.get("purpose")!="historical-cutoff":group_pages.add(entry_id)
+    else:
+        ordinary,sessions=memo(("page-ownership",),page_ownership)
+        group_pages.update(ordinary.get(group,()))
+        if value.get("page_record_kind")=="pr17c2-supporting-session-page":
+            for session,source,purpose,entry_id in sessions:
+                if group.startswith(session+":") and source==provider and purpose!="historical-cutoff":group_pages.add(entry_id)
     if group_pages!=referenced:raise OperationsError("acquisition-page-conflict","acquisition has missing or unreferenced pages")
     if acquisition_completed!=prior_completion:raise OperationsError("acquisition-chronology-conflict","acquisition completion conflicts with pages")
     if provider=="kalshi":
@@ -1111,6 +1134,10 @@ def _verify_acquisition_bundle(archive:NamespaceArchive,value:Mapping[str,Any],*
 
 
 def reconcile_outcomes_from_raw(*,archive:NamespaceArchive|None,mlb_raw:bytes,collected_at:datetime,mlb_pages:Iterable[Any]=(),prior_state:Any=None,derive_only:bool=False,derivation_rule:str|None=OUTCOME_RECONCILIATION_RULE_VERSION)->Mapping[str,Any]|tuple[Any,...]:
+    if not derive_only and prior_state is None:
+        from forecast_supporting_replay import OutcomeReplayArchive, prepared_derivation_state
+        archive = OutcomeReplayArchive(archive)
+        prior_state = prepared_derivation_state(archive, collected_at)
     from forecast_standalone_operations import DesignAuthority,Disposition,_entry_values,pr17_contract_bundle,replay_pr17_archive,request_identity
     from mlb_outcome_adapter import MLBOutcomeAdapter
     from mlb_stats_api import MLBStatsAPIAdapter,MLBStatsAPIResponse
@@ -1173,7 +1200,8 @@ def reconcile_outcomes_from_raw(*,archive:NamespaceArchive|None,mlb_raw:bytes,co
         if isinstance(exc,OperationsError):raise
         if conflict:raise OperationsError("outcome-history-conflict","Outcome history rejected before publication; exact response pages preserved without authority") from exc
         raise OperationsError("outcome-authority-deferred","Outcome material preserved without scientific authority; reconcile bounded missing schedule dates and retry independently") from exc
-    with archive.mutation_lock():acquisition=publish_verified_acquisition(archive=archive,provider="mlb-stats-api",union_raw=mlb_raw,pages=pages,contracts=changed,collected_at=collected_at,protocol_id=None,command="reconcile-outcomes")
+    from forecast_replay_timings import timed
+    with timed('publication'), archive.mutation_lock():acquisition=publish_verified_acquisition(archive=archive,provider="mlb-stats-api",union_raw=mlb_raw,pages=pages,contracts=changed,collected_at=collected_at,protocol_id=None,command="reconcile-outcomes")
     return {"changed":len(changed),"ignored_replayed_terminal_predecessors":ignored_replayed_predecessors,"mlb_pages":len(pages),"outcome_manifest_id":acquisition["manifest_entry_id"],"disposition":"success" if changed else "unchanged"}
 
 

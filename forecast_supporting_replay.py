@@ -1,17 +1,30 @@
-"""Invocation-local full-namespace reads for ordinary supporting refresh.
+"""Invocation-local full-namespace reads for supporting and outcome work.
 
 Not a checkpoint, a persistent cache, or a collector authorization boundary.
 All canonical validators still run. Prepared publication requires an unchanged
 physical source inventory under the original namespace mutation lock.
 """
 import json
-from contextlib import contextmanager
+from contextlib import contextmanager, ExitStack
+from contextvars import ContextVar
 
 from forecast_standalone_operations import (
     NamespaceArchive, OperationsError, canonical_bytes, reconcile_archive,
     replay_pr17_archive, sha256_bytes,
 )
 from forecast_prospective_projection import MAX_SOURCE_BYTES, _signature
+from forecast_replay_timings import timed
+
+
+_request_preparation = ContextVar('supporting_request_preparation', default=None)
+
+
+def begin_request_preparation():
+    return _request_preparation.set({})
+
+
+def end_request_preparation(token):
+    _request_preparation.reset(token)
 
 
 class SupportingReplayArchive(NamespaceArchive):
@@ -22,10 +35,12 @@ class SupportingReplayArchive(NamespaceArchive):
         self._bytes = {}
         self._json = {}
         self._decoded = {}
+        self._metadata = {}
         self._verified = set()
         self._byte_count = 0
         self._entries = None
         self._integrity = None
+        self._authoritative = None
         self._checks = {}
         self._publishing = False
         self._closed = False
@@ -81,8 +96,16 @@ class SupportingReplayArchive(NamespaceArchive):
         return body
 
     def read_json_verified(self, family, identity):
+        self._assert_open()
+        key = (family, identity.split(':')[-1])
+        if key in self._metadata:
+            return self._metadata[key]
         self.read_verified(family, identity)
-        return self._read_json(self._path(family, identity))
+        path = self._path(family, identity)
+        value = self._read_json(path)
+        if path in self._bytes:
+            self._metadata[key] = value
+        return value
 
     def _decode_manifest_path(self, path):
         self._assert_open()
@@ -105,8 +128,10 @@ class SupportingReplayArchive(NamespaceArchive):
         if self._integrity.blocking:
             raise OperationsError('archive-integrity-failure',
                                   canonical_bytes(self._integrity).decode())
-        allowed = set(self._integrity.authoritative_manifest_ids)
-        return tuple(e for e in self.entries() if e['manifest_entry_id'] in allowed)
+        if self._authoritative is None:
+            allowed = set(self._integrity.authoritative_manifest_ids)
+            self._authoritative = tuple(e for e in self.entries() if e['manifest_entry_id'] in allowed)
+        return self._authoritative
 
     def memoized_supporting_verification(self, key, verify):
         self._assert_open()
@@ -119,10 +144,14 @@ class SupportingReplayArchive(NamespaceArchive):
         if self._publishing or self._closed:
             raise OperationsError('supporting-source-closed', 'view is single-use')
         try:
-            with self._archive.mutation_lock():
-                self.assert_current()
-                self._publishing = True
-                yield
+            with ExitStack() as stack:
+                with timed('lock-wait'):
+                    stack.enter_context(self._archive.mutation_lock())
+                with timed('lock-held'):
+                    with timed('source-check'):
+                        self.assert_current()
+                    self._publishing = True
+                    yield
         finally:
             self._publishing = False
             self._closed = True
@@ -140,7 +169,8 @@ class SupportingReplayArchive(NamespaceArchive):
         self._json.pop(target, None)
         self._decoded.pop(target, None)
         self._verified.discard(target)
-        self._entries = self._integrity = None
+        self._metadata.clear()
+        self._entries = self._integrity = self._authoritative = None
         self._checks.clear()
         return created
 
@@ -150,4 +180,57 @@ def resolve_supporting_authority(archive, at):
     view = SupportingReplayArchive(archive)
     state = replay_pr17_archive(view, analysis_boundary=at)
     with view.mutation_lock():
-        return resolve_activated_authority(archive, at, state=state)
+        authority = resolve_activated_authority(archive, at, state=state)
+        context = _request_preparation.get()
+        if context is not None:
+            context['prepared'] = (archive.config.identity, at, view._inventory, state)
+        return authority
+
+
+def replay_for_request_dates(archive, at):
+    """Full canonical replay followed by a short fence, before any provider call.
+
+    Derivation obtains a new view after acquisition and may reuse the scientific
+    state only when that view independently proves an identical source boundary.
+    """
+    view = SupportingReplayArchive(archive)
+    context = _request_preparation.get()
+    prepared = context.pop('prepared', None) if context is not None else None
+    if (prepared is not None and prepared[:2] == (archive.config.identity, at)
+            and prepared[2] == view._inventory):
+        # Single-use reuse for request selection. The existing under-lock fence
+        # still follows; later derivation has its own independent source check.
+        state = prepared[3]
+    else:
+        state = replay_pr17_archive(view, analysis_boundary=at)
+    with view.mutation_lock():
+        if context is not None:
+            context['derivation'] = (archive.config.identity, at, view._inventory, state)
+        return state
+
+
+def prepared_derivation_state(view, at):
+    """Reuse only after independently checking the post-acquisition inventory.
+
+    This is a full replay result, not a checkpoint. A changed source gets the
+    ordinary fresh replay; cached state never authorizes publication on its own.
+    The caller must still hold view.mutation_lock() for the final source fence.
+    """
+    context = _request_preparation.get()
+    prepared = context.pop('derivation', None) if context is not None else None
+    if (prepared is None or prepared[:2] != (view.config.identity, at)
+            or prepared[2] != view._inventory):
+        return None
+    # Warm and verify publication reads outside the mutation lock. This fresh
+    # view has no cached bytes or metadata from before the provider requests.
+    view.prospective_entries()
+    return prepared[3]
+
+
+class OutcomeReplayArchive(SupportingReplayArchive):
+    def record_failure(self, **kwargs):
+        # A rejected graph grants no scientific authority. Retain every failure
+        # page with the existing writer; don't close the single-use view after
+        # only the first page, or reuse its cached state after these writes.
+        self._closed = True
+        return self._archive.record_failure(**kwargs)
