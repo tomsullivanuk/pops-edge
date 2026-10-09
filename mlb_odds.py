@@ -14,7 +14,7 @@ from mlb_stats_api import MLBStatsAPIAdapter, MLBStatsAPIResponse
 VERSION = "mlb-operational-odds-1"
 EASTERN = ZoneInfo("America/New_York")
 CENTRAL = ZoneInfo("America/Chicago")
-VIEW_VERSION = "mlb-operational-view-2"
+VIEW_VERSION = "mlb-operational-view-3"
 MAX_AGE = 300
 RULE = re.compile(
     r"If (?P<winner>[A-Za-z .'-]+) wins the (?P<away>[A-Za-z .'-]+) vs "
@@ -153,8 +153,12 @@ def schedule_games(raw, selected_day, received_at):
             row["start"] = item.schedule_observation.scheduled_start.isoformat()
             if item.status_observation.status.value != "scheduled":
                 row["reasons"].append(row["official_status"] + ": pregame prices unavailable")
-        if record.get("gameType") != "R" or str(record.get("season")) != selected_day[:4]:
-            row["reasons"].append("Outside supported regular-season scope")
+        phase="regular-season" if record.get("gameType")=="R" else "postseason" if record.get("gameType") in {"F","D","L","W","S","C","P"} else "other"
+        row["phase"]=phase
+        if phase=="other" or str(record.get("season")) != selected_day[:4]:
+            row["reasons"].append("Outside supported MLB season scope")
+        if phase=="postseason" and (not row["start"] or aware(row["start"])<datetime(2026,10,11,tzinfo=CENTRAL)):
+            row["reasons"].append("Before October 11 postseason scope")
         if any(record.get(key) for key in ("resumeDate", "resumeGameDate", "resumedFrom", "resumedFromDate", "rescheduledFrom", "rescheduledFromDate", "rescheduleDate", "rescheduleGameDate")):
             row["reasons"].append("Changed schedule requires a separately supported market")
         if record.get("status", {}).get("startTimeTBD") or record.get("startTimeTBD"):

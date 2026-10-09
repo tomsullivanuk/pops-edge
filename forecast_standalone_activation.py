@@ -84,6 +84,35 @@ def canonical_prospective_authority()->tuple[Any,Any]:
     return activation,protocol
 
 
+POSTSEASON_GAME_START = datetime(2026, 10, 11, 0, 0, tzinfo=ZoneInfo("America/Chicago"))
+POSTSEASON_DECISION_REFERENCE = "docs/MLB_PHASE_EVALUATION_2026-10-09.md"
+
+
+def canonical_postseason_authority()->tuple[Any,Any]:
+    """Versioned disjoint cohort; original regular-season authority is unchanged."""
+    from forecast_research_contracts import ResearchContractProvenance
+    from forecast_standalone_research import StandaloneProbabilitySourceProtocol, StandaloneRule
+    activation, parent = canonical_prospective_authority()
+    parameters = dict(parent.scope_rule.parameters)
+    parameters.update(event_phase="postseason", game_start_boundary=POSTSEASON_GAME_START.isoformat(),
+                      game_start_timezone="America/Chicago",
+                      predecessor_protocol_id=parent.standalone_probability_source_protocol_id)
+    scope = StandaloneRule("scope", "2026-mlb-postseason", "1", tuple(sorted(parameters.items())))
+    provenance = ResearchContractProvenance("pops-edge:mlb-phase-evaluation", "1",
+        notes=(POSTSEASON_DECISION_REFERENCE, "prospective-only phase cohort; no historical repair"),
+        generated_at=datetime(2026, 10, 9, tzinfo=timezone.utc))
+    protocol = StandaloneProbabilitySourceProtocol.create(design_tag=parent.design_tag,
+        design=parent.design, source=parent.source, scope_rule=scope,
+        representation_rule=parent.representation_rule, scoring_rule=parent.scoring_rule,
+        calibration_rule=parent.calibration_rule, uncertainty_rule=parent.uncertainty_rule,
+        report_rule=parent.report_rule, provenance=provenance)
+    return activation, protocol
+
+
+def canonical_prospective_cohorts():
+    return (canonical_prospective_authority()[1], canonical_postseason_authority()[1])
+
+
 def canonical_retrospective_authority()->tuple[Any,Any]:
     """Construct the precommitted PR17C2 retrospective sibling authority."""
     from forecast_research_contracts import ResearchContractProvenance
@@ -106,16 +135,29 @@ def initialize_activation(archive:NamespaceArchive,at:datetime)->tuple[str,str]:
     activation,retrospective,protocol=canonical_activation_authorities()
     if archive.config.mode is not OperatingMode.ACTIVATED or archive.config.activation_at.isoformat()!=APPROVED_ACTIVATION_AT.isoformat():raise OperationsError("activation-authority-invalid","initialization requires exact activated namespace")
     configured_ids=set(archive.config.research_protocol_ids);prospective_id=protocol.standalone_probability_source_protocol_id;retrospective_id=retrospective.standalone_probability_source_protocol_id
-    if configured_ids not in ({prospective_id},{prospective_id,retrospective_id}):raise OperationsError("activation-authority-invalid","configuration names noncanonical Protocol authority")
+    postseason=canonical_postseason_authority()[1];postseason_id=postseason.standalone_probability_source_protocol_id
+    if prospective_id not in configured_ids or not configured_ids.issubset({prospective_id,retrospective_id,postseason_id}):raise OperationsError("activation-authority-invalid","configuration names noncanonical Protocol authority")
     if archive.entries():
         state=replay_pr17_archive(archive,analysis_boundary=at);existing=state.bucket("activation_boundaries")+state.bucket("protocols")
-    else:existing=()
-    if existing and not set(existing).issubset({activation,retrospective,protocol}):raise OperationsError("activation-authority-conflict","initialized authority conflicts")
+    else:existing=();state=None
+    if existing and not set(existing).issubset({activation,retrospective,protocol,postseason}):raise OperationsError("activation-authority-conflict","initialized authority conflicts")
     with archive.mutation_lock():
-        contracts=(activation,protocol) if configured_ids=={prospective_id} else (activation,retrospective,protocol)
+        contracts=(activation,protocol)+((retrospective,) if retrospective_id in configured_ids else ())+((postseason,) if postseason_id in configured_ids else ())
         for contract in contracts:
             if contract in existing:continue
-            normalized=pr17_contract_bundle(contract);raw=canonical_bytes(normalized);design=DesignAuthority.PROSPECTIVE if contract is protocol else DesignAuthority.RETROSPECTIVE if contract is retrospective else DesignAuthority.SUPPORTING;values=_entry_values(archive=archive,command="initialize-activation",request_id=request_identity({"contract_type":type(contract).__name__,"contract_sha256":hashlib.sha256(contract.to_json().encode()).hexdigest()}),invoked_at=at,endpoint="local://canonical-pr17c1-authority",disposition=Disposition.SUCCESS,protocol_id=getattr(contract,"standalone_probability_source_protocol_id",None),design=design,diagnostics=("canonical reviewed PR17C authority",),provider_effective_at=getattr(contract,"decision_effective_at",None));values["provider_id"]="canonical-pr17c-authority";archive._commit_locked(raw_body=raw,normalized=normalized,entry_values=values)
+            derived=[]
+            if contract is postseason and state is not None:
+                from forecast_standalone_research import expected_schedule_opportunities,select_authoritative_event_classifications,create_standalone_eligibility_authority
+                from forecast_research_contracts import ResearchContractProvenance
+                histories=state.bucket("outcome_histories")
+                classifications=state.bucket("classifications")
+                selected={x.canonical_event_id:x for x in select_authoritative_event_classifications(classifications,at)}
+                provenance=ResearchContractProvenance("pops-edge:phase-initialization","1",notes=("existing authoritative schedules; no prospective quote reconstruction",),generated_at=at)
+                for history in histories:
+                    for opportunity in expected_schedule_opportunities(protocol=postseason,activation=activation,schedule_histories=(history,),analysis_boundary=at):
+                        context,eligibility=create_standalone_eligibility_authority(protocol=postseason,opportunity=opportunity,outcome_history=history,classification=selected[history.canonical_event_id],classifications=classifications,analysis_boundary=at,provenance=provenance)
+                        derived.extend((opportunity,context,eligibility))
+            normalized=pr17_contract_bundle(contract,*derived);raw=canonical_bytes(normalized);design=DesignAuthority.PROSPECTIVE if contract in (protocol,postseason) else DesignAuthority.RETROSPECTIVE if contract is retrospective else DesignAuthority.SUPPORTING;values=_entry_values(archive=archive,command="initialize-activation",request_id=request_identity({"contract_type":type(contract).__name__,"contract_sha256":hashlib.sha256(contract.to_json().encode()).hexdigest()}),invoked_at=at,endpoint="local://canonical-pr17c1-authority",disposition=Disposition.SUCCESS,protocol_id=getattr(contract,"standalone_probability_source_protocol_id",None),design=design,diagnostics=("canonical reviewed PR17C authority",),provider_effective_at=getattr(contract,"decision_effective_at",None));values["provider_id"]="canonical-pr17c-authority";archive._commit_locked(raw_body=raw,normalized=normalized,entry_values=values)
     from forecast_prospective_projection import rebuild_projection
     rebuild_projection(archive,at)
     return activation.standalone_research_activation_boundary_id,protocol.standalone_probability_source_protocol_id
@@ -137,7 +179,7 @@ def refresh_supporting_from_raw(*,archive:NamespaceArchive|None,mlb_raw:bytes,ka
     from mlb_stats_api import MLBStatsAPIAdapter,MLBStatsAPIResponse
     from outcome_contracts import OutcomeHistory
     mlb_digest=hashlib.sha256(mlb_raw).hexdigest();kalshi_digest=hashlib.sha256(kalshi_raw).hexdigest();entries=archive.entries() if archive is not None else ()
-    if not derive_only and supporting_session_id is None and any(x.get("provider_id")=="mlb-stats-api" and x.get("raw_object_sha256")==mlb_digest for x in entries) and any(x.get("provider_id")=="kalshi" and x.get("raw_object_sha256")==kalshi_digest for x in entries):return {"events":0,"contracts":0,"disposition":"unchanged"}
+    if not derive_only and supporting_session_id is None and not any(x.get("protocol_id")==canonical_postseason_authority()[1].standalone_probability_source_protocol_id for x in entries) and any(x.get("provider_id")=="mlb-stats-api" and x.get("raw_object_sha256")==mlb_digest for x in entries) and any(x.get("provider_id")=="kalshi" and x.get("raw_object_sha256")==kalshi_digest for x in entries):return {"events":0,"contracts":0,"disposition":"unchanged"}
     try:mlb_payload=json.loads(mlb_raw,object_pairs_hook=lambda pairs:_unique_object(pairs,"MLB"));kalshi_payload=json.loads(kalshi_raw,object_pairs_hook=lambda pairs:_unique_object(pairs,"Kalshi"))
     except (UnicodeDecodeError,json.JSONDecodeError) as exc:raise OperationsError("malformed-response","provider JSON is malformed") from exc
     if not isinstance(mlb_payload,dict) or not isinstance(kalshi_payload,dict) or set(kalshi_payload)!={"markets","cursor"} or not isinstance(kalshi_payload["markets"],list):raise OperationsError("incomplete-response","supporting provider shape is incomplete")
@@ -196,7 +238,7 @@ def refresh_supporting_from_raw(*,archive:NamespaceArchive|None,mlb_raw:bytes,ka
     complete=tuple(x for x in market_results if x.series and x.observation and x.series.yes_semantic.participant_id==next(g.home_team.canonical_team_id for g in games if g.event.canonical_event_id==x.observation.canonical_event_id))
     by_event={}
     for item in complete:by_event.setdefault(item.observation.canonical_event_id,[]).append(item)
-    activation,canonical_retrospective,canonical_prospective=canonical_activation_authorities();archived_protocols={x.standalone_probability_source_protocol_id:x for x in state.bucket("protocols")};protocols=tuple(x for x in (canonical_retrospective,canonical_prospective) if x.standalone_probability_source_protocol_id in archived_protocols);contracts=list(changed_histories)+list(changed_classifications);opportunities=[];mapped=[];missing=[];ambiguous=[];prior_opportunity_ids={x.research_capture_opportunity_id for x in state.bucket("opportunities")};prior_series={x.series_id:x for x in state.bucket("market_series")}
+    activation,canonical_retrospective,canonical_prospective=canonical_activation_authorities();archived_protocols={x.standalone_probability_source_protocol_id:x for x in state.bucket("protocols")};protocols=tuple(x for x in (canonical_retrospective,canonical_prospective,canonical_postseason_authority()[1]) if x.standalone_probability_source_protocol_id in archived_protocols);contracts=list(changed_histories)+list(changed_classifications);opportunities=[];mapped=[];missing=[];ambiguous=[];prior_opportunity_ids={x.research_capture_opportunity_id for x in state.bucket("opportunities")};prior_series={x.series_id:x for x in state.bucket("market_series")}
     all_classifications=prior_classifications+tuple(changed_classifications)
     for event_id,history in sorted(histories.items()):
         classification=classifications[event_id]
@@ -209,6 +251,8 @@ def refresh_supporting_from_raw(*,archive:NamespaceArchive|None,mlb_raw:bytes,ka
                 retrospective=protocol.design_tag.value=="retrospective"
                 if retrospective and not (RETROSPECTIVE_WINDOW_START<=observation.scheduled_start<activation.activation_at):continue
                 if not retrospective and observation.scheduled_start<activation.activation_at:continue
+                scope=dict(protocol.scope_rule.parameters)
+                if scope.get("game_start_boundary") and observation.scheduled_start<datetime.fromisoformat(scope["game_start_boundary"]):continue
                 opportunity=ResearchCaptureOpportunity.create(protocol.standalone_probability_source_protocol_id,observation.observation_id,"winner")
                 if opportunity.research_capture_opportunity_id in prior_opportunity_ids:continue
                 context,eligibility=create_standalone_eligibility_authority(protocol=protocol,opportunity=opportunity,outcome_history=history,classification=classification,classifications=all_classifications,analysis_boundary=collected_at,provenance=provenance)
@@ -1206,7 +1250,7 @@ def reconcile_outcomes_from_raw(*,archive:NamespaceArchive|None,mlb_raw:bytes,co
 
 
 def resolve_activated_authority(archive:NamespaceArchive,at:datetime,*,state=None)->tuple[Any,Any]:
-    """Resolve exactly one archived prospective Protocol and its approved boundary."""
+    """Validate configured phase cohorts; return original Protocol and shared activation for compatibility."""
     from forecast_standalone_research import StandaloneDesignTag
     if at.tzinfo is None or at.utcoffset() is None:raise OperationsError("trusted-clock-invalid","trusted time must be timezone-aware")
     if archive.config.mode is not OperatingMode.ACTIVATED or archive.config.activation_at!=APPROVED_ACTIVATION_AT:raise OperationsError("activation-authority-invalid","activated namespace configuration is absent")
@@ -1214,7 +1258,9 @@ def resolve_activated_authority(archive:NamespaceArchive,at:datetime,*,state=Non
     if state is None:state=replay_pr17_archive(archive,analysis_boundary=at)
     configured=set(archive.config.research_protocol_ids)
     protocols=tuple(x for x in state.bucket("protocols") if x.design_tag is StandaloneDesignTag.PROSPECTIVE and x.standalone_probability_source_protocol_id in configured)
-    if len(protocols)!=1:raise OperationsError("activation-authority-invalid","exactly one configured prospective Protocol is required")
+    canonical=canonical_prospective_cohorts()
+    if not protocols or canonical[0] not in protocols or any(x not in canonical for x in protocols):raise OperationsError("activation-authority-invalid","configured prospective cohorts must be canonical and disjoint")
+    protocols=tuple(sorted(protocols,key=lambda x:x != canonical[0]))
     boundaries=tuple(x for x in state.bucket("activation_boundaries") if x.standalone_research_activation_boundary_id==protocols[0].activation_boundary_id)
     if len(boundaries)!=1 or boundaries[0].activation_at.isoformat()!=APPROVED_ACTIVATION_AT.isoformat() or boundaries[0].approved_calendar_date!=APPROVED_EASTERN_DATE or boundaries[0].timezone_name!=APPROVED_TIMEZONE:raise OperationsError("activation-authority-invalid","archived activation boundary conflicts with approval")
     return protocols[0],boundaries[0]

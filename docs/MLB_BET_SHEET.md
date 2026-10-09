@@ -69,7 +69,7 @@ depth at that price. Same-contract opposite-bid complements retain provenance;
 another team's NO contract is not a fallback. No normalization, last-trade/midpoint
 substitution, model-derived edge, confirmed holdings or guaranteed execution.
 
-Only supported regular-season pregame full-game markets. Complete settlement wording,
+Only supported regular-season and, from October 11, 2026 00:00 America/Chicago, postseason pregame full-game winner markets. Complete settlement wording,
 explicit $1 notional, exact participants/date/time/side and an open market are required.
 Unknown/contradictory clauses and ambiguous identity withhold prices. A missing side
 does not erase an independently valid other side. Unknown, postponed, suspended,
@@ -111,12 +111,12 @@ any separately authorized live acquisition; browser-check filters, expiry and do
 
 ## Accepted limitations and deferred work
 
-Local manual operation; selected-day current-season acquisition; supported regular-season
-pregame markets only; missing observations; one-contract best-ask before-fee illustration;
+Local manual operation; selected-day current-season acquisition; supported regular-season and admitted postseason
+pregame winner markets only; missing observations; one-contract best-ask before-fee illustration;
 no model or holdings; trusted local files/clocks with visible uncertainty and manual recovery.
 Live-provider commissioning remains separate from fixture validation.
 
-Defer in-play, postseason, other bet types, multi-level fills/route optimization, fees,
+Defer in-play, other bet types, multi-level fills/route optimization, fees,
 models, accounting, scoring, cross-sport ranking, shared-shell completion, automatic
 refresh/recovery, hosting migration, wagering and study closure. No new service required.
 
@@ -126,3 +126,5 @@ The Owner adopted scope and authorized implementation, including governing docum
 The documentation adoption precedes code in the working change; it can be split for
 integration review. Commits, push/PR/merge, live acquisition, initialization of live data,
 deployment and publication require their separate authorization.
+
+The October 9 phase amendment adds an All phases/Regular season/Postseason selector over saved rows. The selector does not acquire data. Existing saved version-2 views remain readable; new version-3 rows retain explicit phase. See [phase decision](MLB_PHASE_EVALUATION_2026-10-09.md).

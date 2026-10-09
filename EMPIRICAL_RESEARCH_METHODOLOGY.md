@@ -5253,3 +5253,9 @@ compatibility and worked examples. Any implementation requiring changed study
 membership, capture behavior or statistical procedure needs a separate methodological
 decision. The original PR17C/PR17D closure and final-report obligations remain;
 release approval does not perform closure or relabel an interim report as final.
+
+## MLB phase evaluation amendment — October 9, 2026
+
+The Owner authorized a separate prospective postseason winner-probability cohort for scheduled starts at or after October 11, 2026 00:00 America/Chicago (05:00 UTC). The accepted 2026 regular-season Protocol, Evidence, Coverage and results retain their identities and semantics. Earlier postseason games receive no prospective backfill. This amendment supersedes earlier regular-season-only scope statements solely for the new cohort; it does not extend the historical candle study.
+
+The new Protocol retains the home-team YES representation, T−6h target, five one-minute slots/five-minute window, Brier score, log loss, calibration and uncertainty rules. Phase comes from authoritative MLB classification Evidence. Populations, denominators, failure states and reports remain separate by Protocol. No pooled score or wagering edge follows from this extension. Capture timing can fall on the calendar day before the admitted game's start. Small postseason samples must remain visibly qualified. See [decision and boundaries](docs/MLB_PHASE_EVALUATION_2026-10-09.md).

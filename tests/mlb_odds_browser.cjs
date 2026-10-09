@@ -4,7 +4,7 @@ const {chromium}=require('playwright');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
-const html=fs.readFileSync(path.join(__dirname,'../mlb_odds.html'),'utf8').replace('__BRAND_CSS__','').replace('__BRAND_MARK__','').replace('__TOKEN__','fixture');
+const html=fs.readFileSync(path.join(__dirname,'../mlb_odds.html'),'utf8').replace('__BRAND_CSS__','').replace('__BRAND_MARK__','').replace('__TOKEN__','fixture').replace('__PRODUCT_NAV__','');
 const origin='http://127.0.0.1:59999';
 const now=new Date(),at=now.toISOString();
 const today=now.toLocaleDateString('en-CA',{timeZone:'America/Chicago'});
@@ -169,6 +169,17 @@ const settle=page=>page.waitForFunction(()=>!readPending);
   await page.locator('#omitCompleted').check();await page.clock.fastForward(301000);
   assert.match(await page.locator('#error').innerText(),/Catalog response is incomplete/);
   assert.equal(await page.locator('button.expand').getAttribute('aria-expanded'),'true');assert.equal(io.posts,0);
+ });
+ await fixture(async(page,io)=>{
+  io.get=route=>{const value=sheet(new URL(route.request().url()).searchParams.get('date')||today);const regular={...value.result.games[0],id:'regular',phase:'regular-season'};const post={...regular,id:'post',game_pk:778,phase:'postseason'};value.result.games=[regular,post];return route.fulfill({json:value});};
+  await page.locator('#day').fill(plus(1));await page.locator('#day').press('Tab');await settle(page);
+  assert.equal(await page.locator('#gameCount').innerText(),'2');
+  const reads=io.reads;
+  await page.locator('#phase').selectOption('postseason');assert.equal(await page.locator('#gameCount').innerText(),'1');
+  await page.locator('#phase').selectOption('regular-season');assert.equal(await page.locator('#gameCount').innerText(),'1');
+  await page.locator('#phase').selectOption('all');assert.equal(await page.locator('#gameCount').innerText(),'2');
+  assert.equal(io.reads,reads);assert.equal(io.posts,0);
+  await page.screenshot({path:'/tmp/pops-mlb-phase-selector.png',fullPage:true});
  });
  console.log(`PASS: ${cases} offline browser scenarios (failed reads/actions, filters/timers/focus, pending and reordered responses, manual recovery, cross-date actions, existing states, unified refresh, conditional recovery and completed-only filtering).`);
  }finally{await browser.close();}

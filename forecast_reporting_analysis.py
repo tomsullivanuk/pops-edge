@@ -199,10 +199,10 @@ def _authority(state, protocol_id):
     if len(protocols) != 1:
         _fail('exact Protocol authority required')
     protocol = protocols[0]
-    from forecast_standalone_activation import canonical_retrospective_authority, canonical_prospective_authority
+    from forecast_standalone_activation import canonical_retrospective_authority, canonical_prospective_authority, canonical_postseason_authority
     canonical = (canonical_retrospective_authority() if protocol.design_tag is legacy.StandaloneDesignTag.RETROSPECTIVE
                  else canonical_prospective_authority())
-    if protocol != canonical[1]:
+    if protocol != canonical[1] and protocol != canonical_postseason_authority()[1]:
         _fail('reporting supports the two existing canonical MLB studies only')
     activations = tuple(x for x in state.bucket('activation_boundaries')
                        if x.standalone_research_activation_boundary_id == protocol.activation_boundary_id)
@@ -233,7 +233,7 @@ def _specification(source, state, protocol_id, started, software_revision):
         bounded.append(_make(ReportEventScope, name='time-bounded', start=start, end=end,
                              endpoint_semantics='open-left-closed-right'))
     cumulative = _make(ReportEventScope, name='cumulative',
-        start=min(x.start for x in bounded) if retrospective else activation.activation_at,
+        start=min(x.start for x in bounded) if retrospective else datetime.fromisoformat(dict(protocol.scope_rule.parameters).get('game_start_boundary',activation.activation_at.isoformat())),
         end=activation.activation_at if retrospective else None,
         endpoint_semantics='protocol-population-from-governed-origin')
     rules = [f'{getattr(protocol, name).rule_id}:{getattr(protocol, name).rule_version}'

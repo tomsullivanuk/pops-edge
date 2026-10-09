@@ -34,7 +34,7 @@ __PRODUCT_NAV__
 <div class="controls toolbar">
 <label><span>Date</span><input id="day" type="date" title="Official MLB schedule date"></label>
 <div class="datebuttons"><button id="today">Today</button><button id="tomorrow">Tomorrow</button></div>
-<label><span>Team</span><select id="team"><option value="">All teams</option></select></label>
+<label>Phase <select id="phase"><option value="all">All phases</option><option value="regular-season">Regular season</option><option value="postseason">Postseason</option></select></label><label><span>Team</span><select id="team"><option value="">All teams</option></select></label>
 <label class="check"><input type="checkbox" id="omitCompleted"> Omit completed games</label>
 </div>
 <p class="filter-summary" aria-label="Selected view counts"><span id="gameCount">—</span> games · <span id="priceCount">—</span> captured prices · <span id="gapCount">—</span> <span id="gapLabel">prices not captured</span></p>
@@ -50,7 +50,7 @@ __PRODUCT_NAV__
 </section>
 <section class="panel bottom">
 <h2 style="font-size:18px">About these prices</h2>
-<p class="muted">Saved prices are pregame observations for regular-season game winners. They are not guaranteed available or closing prices. Missing prices are not zero. Game results are separate from Kalshi settlement, payout and profit. No model comparison is available.</p>
+<p class="muted">Saved prices are pregame observations for regular-season and admitted postseason game winners. They are not guaranteed available or closing prices. Missing prices are not zero. Game results are separate from Kalshi settlement, payout and profit. No model comparison is available.</p>
 <details><summary>Technical evidence and recovery</summary><p class="muted">Refresh MLB sheet updates the official schedule and game results for the selected date, then retrieves eligible pregame prices. For a past saved date, it updates results and retains earlier captured prices. Saved prices retain their original capture dates; current-price eligibility still ends after five minutes or at scheduled start. The date selects the official MLB schedule; Today and Tomorrow follow Central Time. Team and completion filters change the view only. Each contract keeps its own capture time. Failed books supply no new price; a compatible previous capture may remain visible with its original date; a failed official schedule keeps the previous sheet. If market discovery fails, valid game results can update while odds remain unavailable and earlier compatible captures keep their original dates. Verify the local clock before restarting after a clock warning. If an attempt was interrupted, check that no other app is refreshing, then start a new manual refresh. No research data is repaired.</p><div id="downloads" class="links"></div><div id="diagnostics"></div></details>
 </section>
 </main>
@@ -109,10 +109,11 @@ function render(){
  lastStates=states();
  const savedOpen=new Set([...document.querySelectorAll('tr[data-game]:not([hidden])')].map(x=>x.dataset.game));
  const result=loaded()?data.result:null,team=$('team').value;
- let games=(result?.games||[]).filter(g=>(!team||String(g.away.id)===team||String(g.home.id)===team)&&(!$('omitCompleted').checked||g.official_result?.state!=='final'));
+ let games=(result?.games||[]).filter(g=>($('phase').value==='all'||(g.phase||((g.reasons||[]).includes('Outside supported regular-season scope')?'other':'regular-season'))===$('phase').value)&&(!team||String(g.away.id)===team||String(g.home.id)===team)&&(!$('omitCompleted').checked||g.official_result?.state!=='final'));
  games.sort((a,b)=>Number(pregame(b))-Number(pregame(a))||(Date.parse(a.start)||Infinity)-(Date.parse(b.start)||Infinity)||a.id.localeCompare(b.id));
  $('rows').innerHTML=games.map(g=>`<tr class="${g.official_result?.state==='final'?'completed':''}"><td>${startTime(g.start)}</td><td class="match"><strong>${esc(g.away.name)} at ${esc(g.home.name)}</strong>${g.number?`<div class="muted">Game ${number(g.number)}</div>`:''}<div class="muted">${matchStatus(g)}</div></td><td>${price(g,'away')}</td><td>${price(g,'home')}</td><td><button class="expand" data-target="${esc(g.id)}" aria-expanded="${savedOpen.has(g.id)}" aria-controls="detail-${esc(g.id)}" aria-label="Details for ${esc(g.away.name)} at ${esc(g.home.name)}">${savedOpen.has(g.id)?'Close':'Details'}</button></td></tr><tr class="detailrow" data-game="${esc(g.id)}" id="detail-${esc(g.id)}" ${savedOpen.has(g.id)?'':'hidden'}><td colspan="5"><div class="detailbody">${quoteDetails(g)}</div></td></tr>`).join('');
  $('empty').hidden=games.length>0;
+ $('phase').onchange=render;
  $('empty').textContent=result?(result.games.length?'No games match these filters.':'The saved official schedule confirmed no games on this date.'):'No validated sheet saved for this date. Choose Refresh MLB sheet to retrieve it.';
  const priced=games.reduce((n,g)=>n+['away','home'].filter(s=>g[s+'_quote']).length,0);
  $('gameCount').textContent=games.length;$('priceCount').textContent=priced;$('gapCount').textContent=games.length*2-priced;$('gapLabel').textContent=games.length*2-priced===1?'price not captured':'prices not captured';
