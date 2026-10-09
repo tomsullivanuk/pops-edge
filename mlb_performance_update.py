@@ -126,7 +126,7 @@ class UpdateController:
         # released lock without silently overwriting a newer attempt.
 
     def observation(self,state,package_id):
-        if state.get('package',{}).get('package_id')!=package_id or not state.get('collection_sha256'):return None
+        if package_id not in {state.get('package',{}).get('package_id'),state.get('postseason_package',{}).get('package_id')} or not state.get('collection_sha256'):return None
         raw=self.download(state['attempt_id'])
         return json.loads(raw)
 
@@ -159,13 +159,21 @@ def run(config,attempt):
         before=scored(old)
         ref=delivery.generate_report(archive=archive,output=controller.root,study='live',expected_revision=config['revision'],update_live=True,prepare_matches=True)
         scientific_success=True
+        from forecast_standalone_activation import canonical_postseason_authority
+        postseason_id=canonical_postseason_authority()[1].standalone_probability_source_protocol_id
+        if postseason_id in archive.config.research_protocol_ids:
+            try:
+                state['postseason_package']=delivery.generate_report(archive=archive,output=controller.root/'postseason',study='live',expected_revision=config['revision'],update_live=True,prepare_matches=True,phase='postseason')
+            except Exception as exc:
+                state['postseason_error']=str(exc)
         state.update(package=ref,status='running',message='Report updated. Reading collection status…')
         # Scientific success is persisted before optional observation work. A later
         # failure cannot relabel a selected valid report as failed science.
         save()
         try:
             added=scored(ref)-before
-            state['message']='Report updated.' if added else 'Report updated. No additional scored results are available.'
+            state['message']='Report updated.' if added else 'Report updated. No additional scored results are available for the regular-season cohort.'
+            if state.get('postseason_error'):state['message']+=' Postseason report update failed; its previous report remains selected.'
             observation=snapshot(Path(config['operational_state']),datetime.now(timezone.utc))
             write(target/'collection.json',observation)
             state['collection_sha256']=hashlib.sha256((target/'collection.json').read_bytes()).hexdigest()

@@ -144,11 +144,14 @@ def render(reader, assets, state, query, *, updates=None, update_status=None, co
     report,projections,envelope,receipt_path,receipt=_retained(reader.root,'live',ref)
     spec=report.context.computation;projection=projections['scopes'][0];perf=report.performances[0]
     analysis=_json(assets['packages/'+ref['package_id']+'/analysis.json'])
-    body='<section class="panel"><div class="summary-heading"><h2>MLB Performance</h2>'+controls+'</div>'
+    phase=dict(spec.domain)['event_phase']
+    body='<section class="panel"><div class="summary-heading"><h2>MLB Performance · '+text(phase.replace('-', ' ').title())+'</h2>'+controls+'</div>'
+    if phase=='postseason':body+='<p>Prospective winner-probability evaluation from October 11, 2026 (America/Chicago). Earlier playoff games are outside this cohort. Small samples limit conclusions.</p>'
     # Preserve the Protocol's calendar origin; cutoff/update dates are Central.
     start=spec.cumulative_scope.start;end=spec.evidence_cutoff_at.astimezone(CENTRAL)
     label=lambda d:d.strftime('%b ')+str(d.day)
-    if (start.year,start.month)==(end.year,end.month):period=label(start)+'–'+str(end.day)+', '+str(end.year)
+    if end<start:period='Cohort begins '+label(start)+', '+str(start.year)
+    elif (start.year,start.month)==(end.year,end.month):period=label(start)+'–'+str(end.day)+', '+str(end.year)
     elif start.year==end.year:period=label(start)+'–'+label(end)+', '+str(end.year)
     else:period=label(start)+', '+str(start.year)+'–'+label(end)+', '+str(end.year)
     generated=report.context.report_generated_at.astimezone(CENTRAL)
@@ -186,7 +189,7 @@ def render(reader, assets, state, query, *, updates=None, update_status=None, co
     body+='<section class="panel"><details><summary>Report details and evidence</summary><p>Study status: '+text(report.context.report_status)+'.</p><p>Limited capture coverage; the sampling interval does not account for missing-capture bias.</p>'
     body+='<p>Brier score evaluates the saved home-win probability against the game outcome. Lower scores are better. Improvement over reference is reference score minus Kalshi score, using full precision before display rounding. The same scored opportunities govern both columns. Rounded ties do not imply exact equivalence.</p><p>The 50% reference was adopted '+text(projection['reference']['adopted_on'])+' after study commencement. These descriptive results grant no wagering or policy authority.</p>'
     body+='<p>Preset periods include the saved Central data date and the preceding calendar days. Custom Period includes both From and To dates. This Season includes all known opportunities in the report, including those not yet due. Filters affect rows only, not scientific populations or summary metrics.</p>'
-    body+='<p>Regular-season study origin: '+text(spec.cumulative_scope.start.strftime('%b %d, %Y'))+'. Evidence cutoff: '+text(date(spec.evidence_cutoff_at))+'.</p>'
+    body+='<p>Study cohort origin: '+text(spec.cumulative_scope.start.strftime('%b %d, %Y'))+'. Evidence cutoff: '+text(date(spec.evidence_cutoff_at))+'.</p>'
     body+='<p>Report generated: '+text(date(report.context.report_generated_at))+'. Original verification: '+text(date(receipt['verified_at']))+'.</p>'
     body+='<p>Unmeasured rows do not infer current game results. Missing match-display material is independent of scientific report completeness. Opening this page performs no updates.</p>'
     if attempt:

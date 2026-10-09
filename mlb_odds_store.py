@@ -424,7 +424,7 @@ class OddsStore:
         result = odds.decode((folder / "result.json").read_bytes())
         if not isinstance(result, dict) or result.get("schema") != odds.VERSION or result.get("day") != day:
             raise ValueError("Saved odds view has incompatible identity")
-        if result.get("view_version") not in (None, odds.VIEW_VERSION):
+        if result.get("view_version") not in (None, "mlb-operational-view-2", odds.VIEW_VERSION):
             raise ValueError("Saved odds view version is unsupported")
         return result, manifest
 

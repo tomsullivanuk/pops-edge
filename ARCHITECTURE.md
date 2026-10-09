@@ -2036,3 +2036,11 @@ The Owner authorized the [NFL-style MLB reader](docs/MLB_PERFORMANCE_READER_v1.3
 ## MLB Performance manual update — September 17, 2026
 
 The Owner adopted and authorized implementation of the [bounded update workflow](docs/MLB_PERFORMANCE_UPDATE_v1.3.md). This supersedes browser-update deferral only for an explicit MLB Performance action. It uses existing archived evidence, preserves scientific validation and historical selection, prepares matching rows before selecting the new report, and reads separately dated collection observations without acquisition. A clean pinned reporting worker remains distinct from the web runtime and collector. Full Administration and automatic refresh remain deferred. This is an implementation candidate, not deployment or real-generation authority.
+
+## MLB phase cohort extension — October 9, 2026
+
+The canonical regular-season prospective Protocol remains unchanged. A separately identified postseason Protocol inherits its source, representation, capture, scoring and reporting contracts and names the original Protocol as predecessor. Its scope fixes postseason phase and the October 11 Central game-start boundary. Existing activation authority retains its September 5 New York identity; the new cohort's start rule is additional population authority, not a rewritten activation record.
+
+An archive may hold the original retrospective Protocol and the two canonical, disjoint prospective Protocols. Initialization appends postseason authority and opportunities for already known admitted schedule states together, without quotes or capture attempts. Supporting replay maintains archived cohort opportunities even when capture configuration disables a cohort. The collector shares catalog preparation, binds each opportunity to its Protocol and rejects overlapping eligible opportunities before acquisition. Existing attempts prevent repeat provider calls.
+
+Each report belongs to one Protocol. Regular-season delivery retains its existing root and package selection; postseason delivery uses its `postseason/` child root with independent immutable packages and selection. Readers filter or select phase without acquisition. Saved Bet Sheet view version 3 records phase; version 2 remains readable. [Activation/rollback constraints](docs/MLB_PHASE_EVALUATION_2026-10-09_HANDOFF.md).

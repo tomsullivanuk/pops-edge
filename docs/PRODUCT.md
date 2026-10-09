@@ -828,3 +828,9 @@ The Owner authorized the [NFL-style MLB reader](MLB_PERFORMANCE_READER_v1.3.md),
 ## MLB Performance manual update — September 17, 2026
 
 The Owner adopted and authorized implementation of the [bounded update workflow](MLB_PERFORMANCE_UPDATE_v1.3.md). This supersedes browser-update deferral only for an explicit MLB Performance action. It uses existing archived evidence, preserves scientific validation and historical selection, prepares matching rows before selecting the new report, and reads separately dated collection observations without acquisition. A clean pinned reporting worker remains distinct from the web runtime and collector. Full Administration and automatic refresh remain deferred. This is an implementation candidate, not deployment or real-generation authority.
+
+## Adopted MLB phase evaluation — October 9, 2026
+
+The Owner authorized regular-season and postseason winner-probability evaluation, preserving all accepted regular-season lineage and adding a separate prospective postseason cohort from scheduled start October 11, 2026 00:00 America/Chicago. T−6h remains the observation target. Earlier postseason games are outside this extension; historical backfill and native-model changes are excluded.
+
+MLB Performance selects Regular season or Postseason and presents separate population, Coverage and scores; the established regular-season report remains the default. The manual Performance update prepares both reports when postseason collection authority is configured, with visible postseason failure while retaining the previous valid package. The MLB Bet Sheet offers All phases/Regular season/Postseason filtering of saved rows, and admits supported postseason pregame winner markets from the same boundary using existing identity and price checks. Navigation never starts acquisition. This adopted scope supersedes the earlier postseason deferral in the bounded Bet Sheet scope. [Decision](MLB_PHASE_EVALUATION_2026-10-09.md).

@@ -413,7 +413,8 @@ def _reference(manifest, report, anchor_key):
 
 
 def generate_report(*, archive, output, study, expected_revision, report_status='in-progress',
-                    update_live=False, clock=utc_now, synthetic_validation=False, prepare_matches=False):
+                    update_live=False, clock=utc_now, synthetic_validation=False, prepare_matches=False, phase="regular-season"):
+    if phase not in {"regular-season","postseason"} or (phase=="postseason" and study!="live"):_fail("unsupported report phase")
     output = validate_output_root(output, archive)
     with _local_writer(output), reporting_verification_scope():
         state = read_entry(output)
@@ -443,8 +444,8 @@ def generate_report(*, archive, output, study, expected_revision, report_status=
             _create(output/'anchors'/(key+'.json'), canonical_bytes(dict(version=VERSION,
                 anchor_key=key, boundary_id=source.boundary_id, retained_at=retained.isoformat())))
             _sync_directory(output/'anchors')
-            from forecast_standalone_activation import canonical_retrospective_authority, canonical_prospective_authority
-            _, protocol = canonical_retrospective_authority() if study == 'historical' else canonical_prospective_authority()
+            from forecast_standalone_activation import canonical_retrospective_authority, canonical_prospective_authority, canonical_postseason_authority
+            _, protocol = canonical_retrospective_authority() if study == 'historical' else canonical_postseason_authority() if phase=="postseason" else canonical_prospective_authority()
             report = analysis.create_standalone_report_analysis(archive=archive, source=source,
                 expected_source_boundary_id=_read_anchor(output,key)['boundary_id'],
                 protocol_id=protocol.standalone_probability_source_protocol_id,

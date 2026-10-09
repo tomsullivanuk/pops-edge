@@ -290,6 +290,8 @@ def validate_population_side(protocol: StandaloneProbabilitySourceProtocol,
     if protocol.activation_boundary_id != activation.standalone_research_activation_boundary_id: _fail("mismatched activation-boundary reference")
     if protocol.design_tag is StandaloneDesignTag.RETROSPECTIVE and not scheduled_start < activation.activation_at: _fail("retrospective opportunity is not strictly before activation")
     if protocol.design_tag is StandaloneDesignTag.PROSPECTIVE and not scheduled_start >= activation.activation_at: _fail("prospective opportunity is before activation")
+    boundary=dict(protocol.scope_rule.parameters).get("game_start_boundary")
+    if boundary and scheduled_start<datetime.fromisoformat(boundary): _fail("opportunity is before phase game-start boundary")
 
 
 def _rule_parameter(rule: StandaloneRule, name: str) -> str:
@@ -362,6 +364,7 @@ def create_standalone_eligibility_authority(*,protocol:StandaloneProbabilitySour
     participants=tuple(sorted((schedule.away_participant_id,schedule.home_participant_id)))
     if (classification.participant_ids,classification.home_participant_id,classification.away_participant_id)!=(participants,schedule.home_participant_id,schedule.away_participant_id):_fail("classification participant mapping conflicts with Schedule")
     scope=dict(protocol.scope_rule.parameters)
+    admitted_phase=scope.get("event_phase","regular-season")
     sport=classification.sport;competition=classification.competition;season=classification.season;phase=classification.event_phase
     values=(opportunity.research_capture_opportunity_id,pid,schedule.canonical_event_id,sport,competition,season,
         participants,classification.standalone_event_classification_evidence_id,phase,outcome_history.authoritative_provider_id,states,analysis_boundary)
@@ -371,7 +374,7 @@ def create_standalone_eligibility_authority(*,protocol:StandaloneProbabilitySour
     if outcome_history.authoritative_provider_id!=scope.get("schedule_provider_id","mlb-stats-api"):validation.append("non-authoritative-schedule-provider")
     if schedule.validation_status.value!="valid":validation.append("invalid-schedule-observation")
     if classification.mapping_validation_status is not EventClassificationValidationStatus.VALID:validation.extend(classification.validation_reasons)
-    if (sport,competition,season,phase.value)!=("baseball","mlb",scope.get("season","2026"),"regular-season"):reasons.append("outside-protocol-population")
+    if (sport,competition,season,phase.value)!=("baseball","mlb",scope.get("season","2026"),admitted_phase):reasons.append("outside-protocol-population")
     statuses=tuple(item.provider_status for item in visible)
     latest=visible[-1].provider_status
     if protocol.design_tag is StandaloneDesignTag.RETROSPECTIVE:
@@ -388,7 +391,8 @@ def create_standalone_eligibility_authority(*,protocol:StandaloneProbabilitySour
         if len({item.scheduled_start for item in visible})>1 and "explicit-mlb-resume-lineage" not in classification.limitations:reasons.append("rescheduled")
         if scope.get("ordinary_game","required")!="required":validation.append("unsupported-ordinary-game-rule")
     else:
-        if phase is not EventPhase.REGULAR_SEASON or season!=scope.get("season","2026"):reasons.append("outside-prospective-regular-season")
+        if phase.value!=admitted_phase or season!=scope.get("season","2026"):reasons.append("outside-prospective-regular-season" if admitted_phase=="regular-season" else "outside-prospective-postseason")
+        if scope.get("game_start_boundary") and schedule.scheduled_start<datetime.fromisoformat(scope["game_start_boundary"]):reasons.append("before-phase-game-start-boundary")
         if classification.mapping_validation_status is not EventClassificationValidationStatus.VALID:reasons.append("ambiguous-mapping")
         if latest is OutcomeStatus.CANCELLED:reasons.append("cancelled")
     disposition=PopulationEligibilityDisposition.ELIGIBLE if not reasons else PopulationEligibilityDisposition.EXCLUDED
@@ -413,6 +417,8 @@ def expected_schedule_opportunities(*,protocol:StandaloneProbabilitySourceProtoc
             if item.scheduled_start!=schedule_states[-1].scheduled_start:schedule_states.append(item)
         for item in schedule_states:
             belongs=item.scheduled_start<activation.activation_at if protocol.design_tag is StandaloneDesignTag.RETROSPECTIVE else item.scheduled_start>=activation.activation_at
+            boundary=dict(protocol.scope_rule.parameters).get("game_start_boundary")
+            if boundary and item.scheduled_start<datetime.fromisoformat(boundary):belongs=False
             if belongs:expected.append(ResearchCaptureOpportunity.create(protocol.standalone_probability_source_protocol_id,item.observation_id,"winner"))
     return _unique(expected,"schedule-derived opportunities",lambda item:item.research_capture_opportunity_id)
 
@@ -1315,7 +1321,11 @@ def validate_standalone_research_graph(*,activation_boundaries:Iterable[Standalo
     activation_values,activation_map=reg(activation_boundaries,"activation registry",lambda x:x.standalone_research_activation_boundary_id)
     protocol_values,protocol_map=reg(protocols,"Protocol registry",lambda x:x.standalone_probability_source_protocol_id)
     if not protocol_values:_fail("graph requires at least one standalone Protocol")
-    if len({x.design_tag for x in protocol_values})!=len(protocol_values):_fail("graph contains duplicate study-family Protocol authority")
+    if len({x.design_tag for x in protocol_values})!=len(protocol_values):
+        from forecast_standalone_activation import canonical_prospective_cohorts
+        prospective=tuple(x for x in protocol_values if x.design_tag is StandaloneDesignTag.PROSPECTIVE)
+        retrospective=tuple(x for x in protocol_values if x.design_tag is StandaloneDesignTag.RETROSPECTIVE)
+        if set(prospective)!=set(canonical_prospective_cohorts()) or len(retrospective)>1:_fail("graph contains duplicate study-family Protocol authority")
     for protocol in protocol_values:
         if protocol.activation_boundary_id not in activation_map:_fail("Protocol activation authority does not resolve")
     opp_values,opp_map=reg(opportunities,"opportunity registry",lambda x:x.research_capture_opportunity_id)

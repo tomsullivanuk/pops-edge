@@ -22,6 +22,7 @@ def main(argv=None):
         else:
             item.add_argument('--expected-revision', required=True)
             item.add_argument('--status', choices=('in-progress', 'interim'), default='in-progress')
+            if command!='generate-historical':item.add_argument('--phase',choices=('regular-season','postseason'),default='regular-season')
     for command in ('activate-display','rollback-display'):
         item=sub.add_parser(command);item.add_argument('--expected-revision',required=True)
         if command=='rollback-display':item.add_argument('--activation',required=True)
@@ -47,7 +48,7 @@ def main(argv=None):
         else:
             value = delivery.generate_report(output=args.output, archive=archive,
                 study='historical' if args.command == 'generate-historical' else 'live',
-                expected_revision=args.expected_revision, report_status=args.status, update_live=args.command == 'update-live')
+                expected_revision=args.expected_revision, report_status=args.status, update_live=args.command == 'update-live',phase=getattr(args,'phase','regular-season'))
         print(json.dumps(value, indent=2)); return 0
     except Exception as exc:
         print(f'Report command failed: {exc}', file=sys.stderr); return 1

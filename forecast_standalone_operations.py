@@ -1346,15 +1346,29 @@ def discover_and_capture_prospective(*,archive:NamespaceArchive,
         protocols=tuple(item for item in state.bucket("protocols") if item.design_tag is StandaloneDesignTag.PROSPECTIVE)
         configured=set(archive.config.research_protocol_ids)
         protocols=tuple(item for item in protocols if item.standalone_probability_source_protocol_id in configured)
-        if len(protocols)!=1:raise OperationsError("prospective-authority-invalid","configuration must resolve exactly one archived prospective Protocol")
+        if not protocols:raise OperationsError("prospective-authority-invalid","configuration must resolve a prospective Protocol")
+        if len(protocols)>1:
+            from forecast_standalone_activation import canonical_prospective_cohorts
+            if set(protocols)!=set(canonical_prospective_cohorts()):raise OperationsError("prospective-authority-invalid","only canonical disjoint phase cohorts may share collection")
         protocol=protocols[0];activations={x.standalone_research_activation_boundary_id:x for x in state.bucket("activation_boundaries")};activation=activations.get(protocol.activation_boundary_id)
         if activation is None or activation.decision_effective_at>now:raise OperationsError("prospective-authority-invalid","activation authority is absent or future-effective")
         histories={x.canonical_event_id:x for x in state.bucket("outcome_histories")};contexts={x.research_capture_opportunity_id:x for x in state.bucket("eligibility_contexts")};results={x.research_capture_opportunity_id:x for x in state.bucket("eligibility_results")}
         from forecast_prospective_market_selection import load_prospective_catalog,prepare_prospective_markets,select_prepared_market
         catalog=None
         series_values=state.bucket("market_series");existing=list(state.bucket("attempts"));existing_snapshots=list(state.bucket("snapshots"))
-        opportunities=tuple(x for x in state.bucket("opportunities") if x.protocol_id==protocol.standalone_probability_source_protocol_id)
+        protocol_by_id={x.standalone_probability_source_protocol_id:x for x in protocols}
+        opportunities=tuple(x for x in state.bucket("opportunities") if x.protocol_id in protocol_by_id)
+        eligible_keys=set()
+        for opportunity in opportunities:
+            result=results.get(opportunity.research_capture_opportunity_id)
+            context=contexts.get(opportunity.research_capture_opportunity_id)
+            if result and context and result.disposition is PopulationEligibilityDisposition.ELIGIBLE:
+                key=(context.canonical_event_id,opportunity.schedule_observation_id)
+                if key in eligible_keys:raise OperationsError("prospective-authority-invalid","overlapping eligible phase opportunities")
+                eligible_keys.add(key)
         for opportunity in sorted(opportunities,key=lambda item:item.research_capture_opportunity_id):
+            protocol=protocol_by_id[opportunity.protocol_id];activation=activations.get(protocol.activation_boundary_id)
+            if activation is None or activation.decision_effective_at>now:raise OperationsError("prospective-authority-invalid","activation authority is absent or future-effective")
             if opportunity.research_capture_opportunity_id in boundary.blocked_opportunities:
                 blocked.append(opportunity.research_capture_opportunity_id);continue
             context=contexts.get(opportunity.research_capture_opportunity_id);result=results.get(opportunity.research_capture_opportunity_id)

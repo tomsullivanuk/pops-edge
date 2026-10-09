@@ -390,17 +390,32 @@ class MLBReader:
         return assets,state
 
     def render(self, query=None, *, updates=None, token=""):
+        query=dict(query or {})
+        phases=query.pop('phase',['regular-season'])
+        if len(phases)!=1 or phases[0] not in {'regular-season','postseason'}:
+            return page('mlb','<p class="notice">Choose one supported MLB phase.</p>')
+        phase='postseason' if self.root.name=='postseason' else phases[0]
+        phase_controls='<form method="get" action="/performance/mlb"><label>Phase <select name="phase" onchange="this.form.submit()">'+''.join('<option value="'+v+'"'+(' selected' if phase==v else '')+'>'+label+'</option>' for v,label in [('regular-season','Regular season'),('postseason','Postseason')])+'</select></label></form>'
+        if phase=='postseason' and self.root.name!='postseason':
+            child=MLBReader(safe_path(self.root,'postseason'))
+            rendered=child.render(query,updates=updates,token=token).decode()
+            rendered=rendered.replace('/performance/mlb/saved/','/performance/mlb/saved/postseason/')
+            rendered=rendered.replace('<label>Period ', '<input type="hidden" name="phase" value="postseason"><label>Period ')
+            return rendered.encode()
         status=updates.status() if updates else None
         from mlb_performance_update_view import panel
         controls=panel(status,token) if status else ""
         try:
             assets,state=self.assets()
             from mlb_performance_view import render
-            return render(self,assets,state,query or {},updates=updates,update_status=status,controls=controls)
+            return render(self,assets,state,query or {},updates=updates,update_status=status,controls=phase_controls+controls)
         except READER_ERRORS as exc:
-            return page('mlb','<section class="panel"><div class="summary-heading"><h2>MLB Performance Report unavailable</h2>'+controls+'</div><p class="notice">'+text(exc)+'</p><p>No report was generated or selected. Use Update Performance Report when configured, or inspect the saved output with the manual reporting workflow.</p></section>')
+            return page('mlb','<section class="panel"><div class="summary-heading"><h2>MLB Performance Report unavailable</h2>'+phase_controls+controls+'</div><p class="notice">'+text(exc)+'</p><p>No report was generated or selected. Use Update Performance Report when configured, or inspect the saved output with the manual reporting workflow.</p></section>')
 
     def asset(self, name):
+        if name.startswith("postseason/"):
+            if self.root.name=="postseason":raise ValueError("Nested phase asset is not supported")
+            return MLBReader(safe_path(self.root,"postseason")).asset(name.removeprefix("postseason/"))
         assets,state=self.assets()
         if name not in assets:raise ValueError('Saved report asset unavailable')
         if name.endswith('/historical.html') or (state['historical'] and name.startswith('packages/'+state['historical']['package_id']+'/')):
