@@ -92,7 +92,7 @@ class PhaseCollection(unittest.TestCase):
         import tempfile
         from pathlib import Path
         from forecast_standalone_activation import initialize_activation, APPROVED_ACTIVATION_AT
-        from forecast_standalone_operations import DeploymentConfig,OperatingMode,RetryPolicy,NamespaceArchive,replay_pr17_archive
+        from forecast_standalone_operations import DeploymentConfig,OperatingMode,RetryPolicy,NamespaceArchive,replay_pr17_archive,OperationsError
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory);regular=canonical_prospective_authority()[1];post=canonical_postseason_authority()[1]
             config=DeploymentConfig('phase','phase',OperatingMode.ACTIVATED,root/'activated/phase/primary',root/'activated/phase/secondary','https://fixture.invalid',RetryPolicy(1,1,1,(),0),1,root/'logs',research_protocol_ids=(regular.standalone_probability_source_protocol_id,),activation_at=APPROVED_ACTIVATION_AT)
@@ -101,6 +101,17 @@ class PhaseCollection(unittest.TestCase):
             archive_events(archive,(sources,),now)
             before=tuple(archive.entries())
             upgraded=NamespaceArchive(replace(config,research_protocol_ids=(regular.standalone_probability_source_protocol_id,post.standalone_probability_source_protocol_id)))
+            changed_source=upgraded.raw_root/'changed-during-initialization'
+            def replay_then_change_source(view,**kwargs):
+                state=replay_pr17_archive(view,**kwargs)
+                changed_source.write_bytes(b'concurrent source publication')
+                return state
+            try:
+                with patch('forecast_standalone_operations.replay_pr17_archive',side_effect=replay_then_change_source):
+                    with self.assertRaisesRegex(OperationsError,'source changed during supporting preparation'):
+                        initialize_activation(upgraded,now)
+            finally:changed_source.unlink(missing_ok=True)
+            self.assertEqual(tuple(upgraded.entries()),before)
             initialize_activation(upgraded,now)
             state=replay_pr17_archive(upgraded,analysis_boundary=now)
             self.assertEqual(len(state.bucket('protocols')),2)

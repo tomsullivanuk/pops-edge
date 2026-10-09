@@ -137,11 +137,15 @@ def initialize_activation(archive:NamespaceArchive,at:datetime)->tuple[str,str]:
     configured_ids=set(archive.config.research_protocol_ids);prospective_id=protocol.standalone_probability_source_protocol_id;retrospective_id=retrospective.standalone_probability_source_protocol_id
     postseason=canonical_postseason_authority()[1];postseason_id=postseason.standalone_probability_source_protocol_id
     if prospective_id not in configured_ids or not configured_ids.issubset({prospective_id,retrospective_id,postseason_id}):raise OperationsError("activation-authority-invalid","configuration names noncanonical Protocol authority")
+    source_view=None
     if archive.entries():
-        state=replay_pr17_archive(archive,analysis_boundary=at);existing=state.bucket("activation_boundaries")+state.bucket("protocols")
+        from forecast_supporting_replay import SupportingReplayArchive
+        source_view=SupportingReplayArchive(archive)
+        state=replay_pr17_archive(source_view,analysis_boundary=at);existing=state.bucket("activation_boundaries")+state.bucket("protocols")
     else:existing=();state=None
     if existing and not set(existing).issubset({activation,retrospective,protocol,postseason}):raise OperationsError("activation-authority-conflict","initialized authority conflicts")
     with archive.mutation_lock():
+        if source_view is not None:source_view.assert_current()
         contracts=(activation,protocol)+((retrospective,) if retrospective_id in configured_ids else ())+((postseason,) if postseason_id in configured_ids else ())
         for contract in contracts:
             if contract in existing:continue
