@@ -135,7 +135,7 @@ def reconcile_market(market:dict,games:tuple[MLBGame,...],schedules:tuple[Schedu
             elif rule_instant.astimezone(schedule.scheduled_start.tzinfo)==schedule.scheduled_start:candidates.append((game,participant))
     if len(candidates)==1:
         game,participant=candidates[0];schedule=schedule_by_event[game.event.canonical_event_id]
-        if date_only and (game.game_type not in {"F","D","L","W","S","C","P"} or game.event.canonical_event_id in blocked_event_ids or schedule.status_evidence or schedule.provenance.validation_status is not ValidationStatus.VALID or (game.game_number or 1)!=1 or game.doubleheader_designation not in (None,"N","S") or (schedule.game_number or 1)!=1 or schedule.doubleheader_designation not in (None,"N","S")):
+        if date_only and (game.game_type not in {"F","D","L","W","S","C","P"} or game.event.canonical_event_id in blocked_event_ids or schedule.status_evidence or schedule.provenance.validation_status is not ValidationStatus.VALID or (game.game_number or 1)!=1 or game.doubleheader_designation not in (None,"N") or (schedule.game_number or 1)!=1 or schedule.doubleheader_designation not in (None,"N")):
             return None,(),(MarketIssue("date-only-ineligible-lineage","date-only matching is limited to unambiguous postseason games without doubleheader/reschedule evidence"),)
         return candidates[0],(game.event.canonical_event_id,),()
     code="ambiguous-event" if len(candidates)>1 else "no-matching-event"

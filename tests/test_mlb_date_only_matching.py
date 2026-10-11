@@ -38,14 +38,26 @@ class DateIdentityTests(unittest.TestCase):
   games=tuple(replace(g,game_type='R') for g in self.games)
   self.assertEqual(reconcile_market(market,games,self.schedules),reconcile_market(market,games,self.schedules,allow_date_only=True))
   self.assertEqual(reconcile_market(market,games,self.schedules)[0][0].game_pk,849809)
+ def test_precise_time_retains_legacy_doubleheader_semantics(self):
+  market=copy.deepcopy(self.market)
+  for key in ('rules_primary','rules_secondary'):market[key]=market[key].replace('Oct 11, 2026','Oct 11, 2026 at 8:00 PM EDT')
+  for marker in ('Y','S'):
+   for number in (1,2):
+    games=tuple(replace(g,doubleheader_designation=marker,game_number=number) if g.game_pk==849809 else g for g in self.games)
+    self.assertEqual(reconcile_market(market,games,self.schedules),reconcile_market(market,games,self.schedules,allow_date_only=True))
  def test_regular_date_only_excluded(self):self.assertIsNone(self.match(g=tuple(replace(g,game_type='R') for g in self.games))[0])
  def test_conflicting_rules_labels_and_missing_secondary_rejected(self):
   for field,value in [('rules_secondary','The following market refers to the Los Angeles D vs Milwaukee professional baseball game originally scheduled for Oct 12, 2026.'),('rules_secondary',self.market['rules_secondary'].replace('Los Angeles D vs Milwaukee','Milwaukee vs Los Angeles D')),('rules_secondary',''),('yes_sub_title','Los Angeles D'),('no_sub_title','Cleveland')]:
    with self.subTest(field=field):self.assertIsNone(self.match(m={**self.market,field:value})[0])
  def test_doubleheader_and_game_number_rejected(self):
-  for updates in ({'doubleheader_designation':'Y','game_number':1},{'game_number':2,'doubleheader_designation':'Y'}):
+  for updates in ({'doubleheader_designation':marker,'game_number':number} for marker in ('Y','S') for number in (1,2)):
    games=tuple(replace(g,**updates) if g.game_pk==849809 else g for g in self.games)
    with self.subTest(updates=updates):self.assertIsNone(self.match(g=games)[0])
+ def test_game_and_schedule_doubleheader_markers_independently_block(self):
+  for marker in ('Y','S'):
+   schedules=tuple(replace(x,doubleheader_designation=marker,game_number=1) if x.canonical_event_id=='mlb:849809' else x for x in self.schedules)
+   games=tuple(replace(g,doubleheader_designation=marker,game_number=1) if g.game_pk==849809 else g for g in self.games)
+   self.assertIsNone(self.match(s=schedules)[0]);self.assertIsNone(self.match(g=games)[0])
  def test_two_same_day_matchups_are_ambiguous(self):
   game=self.games[0];duplicate=replace(game,event=replace(game.event,canonical_event_id='mlb:999999',native_identifiers=tuple(replace(x,value='999999') for x in game.event.native_identifiers)),game_pk=999999)
   sched=replace(self.schedules[0],canonical_event_id='mlb:999999',provenance=replace(self.schedules[0].provenance,canonical_event_id='mlb:999999'),scheduled_start=self.schedules[0].scheduled_start+timedelta(hours=1))
@@ -88,6 +100,19 @@ class DateAcquisitionTests(unittest.TestCase):
    self.assertIsNotNone(series);self.assertEqual(series.yes_semantic.participant_id,schedule.home_participant_id);self.assertEqual(reason,'current-schedule-open-market')
   self.assertEqual(state.graph,replay_pr17_archive(self.archive,analysis_boundary=AT).graph)
   self.assertEqual(canonical_prospective_authority()[1].standalone_probability_source_protocol_id,'standalone-probability-source-protocol:f5303a5af20a0478e6192c4e6bdc9d133c85700fae3a410b48c81d6c6f0af2ec')
+ def test_supporting_and_catalog_abstain_for_all_doubleheader_designations(self):
+  for marker in ('Y','S'):
+   for number in (1,2):
+    with self.subTest(marker=marker,number=number):
+     self.setUp()  # Independent fixture archive per designation; no source correction.
+     payload=copy.deepcopy(FIXTURE['mlb']);payload['dates'][0]['games'][0].update(doubleHeader=marker,gameNumber=number)
+     with patch.dict(FIXTURE,{'mlb':payload}):result=self.publish()
+     self.assertEqual(result['mapped'],2)
+     rebuild_projection(self.archive,AT);boundary,state=load_projection(self.archive,AT)
+     self.assertFalse(any(x.provider_market_id=='KXMLBGAME-26OCT112000LADMIL-MIL' for x in state.bucket('market_series')))
+     schedule=next(x for x in state.bucket('outcome_histories') if x.canonical_event_id=='mlb:849809').observations[-1]
+     series,reason=select_prospective_market(load_prospective_catalog(boundary),state.bucket('market_series'),schedule,datetime(2026,10,11,18,tzinfo=timezone.utc))
+     self.assertIsNone(series);self.assertIn('date-only-ineligible-lineage',reason)
  def test_legacy_bundle_remains_unmapped_on_replay(self):
   # Publish a version-3 bundle with no date-only series, using the established publisher.
   from forecast_standalone_activation import publish_verified_acquisition,KalshiCatalogPage
