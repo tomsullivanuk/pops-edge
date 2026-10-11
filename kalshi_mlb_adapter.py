@@ -1,12 +1,12 @@
 """Bounded read-only Kalshi MLB winner-market adapter."""
 from __future__ import annotations
 import hashlib, json, re, time
-from datetime import datetime
+from datetime import datetime, date
 from decimal import Decimal, InvalidOperation
 from typing import Callable
 from zoneinfo import ZoneInfo
 import requests
-from event_contracts import ContractError, Provenance
+from event_contracts import ContractError, Provenance, ValidationStatus
 from market_contracts import *
 from mlb_contracts import MLBGame, ScheduleObservation
 
@@ -15,6 +15,10 @@ MARKET_SCHEDULE_RULE_VERSION="kalshi-mlb-explicit-rules-schedule-instant-2"
 _RULE_TAIL=r"(?P<away>[A-Za-z .'-]+?) vs (?P<home>[A-Za-z .'-]+?) professional baseball game originally scheduled for (?P<day>[A-Z][a-z]{2} [0-9]{1,2}, [0-9]{4}) at (?P<clock>[0-9]{1,2}:[0-9]{2} [AP]M) (?P<zone>[A-Z]{3,4})"
 _PRIMARY_RULE=re.compile(r"^If (?P<winner>[A-Za-z .'-]+?) wins the "+_RULE_TAIL)
 _SECONDARY_RULE=re.compile(r"(?:^|[.] )The following market refers to the "+_RULE_TAIL)
+DATE_ONLY_RULE_VERSION="kalshi-mlb-postseason-unique-date-1"
+_DATE_RULE_TAIL=_RULE_TAIL.split(" at ")[0]
+_PRIMARY_DATE_RULE=re.compile(r"^If (?P<winner>[A-Za-z .'-]+?) wins the "+_DATE_RULE_TAIL+r", then the market resolves to Yes[.]")
+_SECONDARY_DATE_RULE=re.compile(r"(?:^|[.] )The following market refers to the "+_DATE_RULE_TAIL+r"[.]")
 ALIASES={
     "arizona":"arizona diamondbacks","d-backs":"arizona diamondbacks","diamondbacks":"arizona diamondbacks",
     "a's":"athletics","oakland athletics":"athletics","atlanta":"atlanta braves","baltimore":"baltimore orioles",
@@ -40,10 +44,16 @@ def _price(m,key):
     value=_dec(m.get(key)); return value/Decimal(100) if value is not None else None
 def _digest(value): return hashlib.sha256(json.dumps(value,sort_keys=True,separators=(",",":"),default=str).encode()).hexdigest()
 
-def _settlement_identity(text,*,require_winner):
+def _settlement_identity(text,*,require_winner,allow_date_only=False):
     if not isinstance(text,str) or not text.strip():raise ValueError("settlement rule is absent")
     matchup=(_PRIMARY_RULE if require_winner else _SECONDARY_RULE).search(text)
-    if matchup is None:raise ValueError("settlement rule does not match the supported MLB winner template")
+    if matchup is None:
+        matchup=(_PRIMARY_DATE_RULE if require_winner else _SECONDARY_DATE_RULE).search(text) if allow_date_only else None
+        if matchup is None:raise ValueError("settlement rule does not match the supported MLB winner template")
+        away,home=_canon(matchup.group("away")),_canon(matchup.group("home"))
+        winner=_canon(matchup.group("winner")) if require_winner else None
+        if away==home or (winner is not None and winner not in {away,home}):raise ValueError("settlement rule participant identity is contradictory")
+        return winner,frozenset((away,home)),datetime.strptime(matchup.group("day"),"%b %d, %Y").date()
     zone=matchup.group("zone")
     if zone not in {"EDT","EST"}:raise ValueError("settlement rule timezone is unsupported")
     naive=datetime.strptime(matchup.group("day")+" "+matchup.group("clock"),"%b %d, %Y %I:%M %p");eastern=naive.replace(tzinfo=ZoneInfo("America/New_York"))
@@ -51,6 +61,21 @@ def _settlement_identity(text,*,require_winner):
     away,home=_canon(matchup.group("away")),_canon(matchup.group("home"));winner_name=_canon(matchup.group("winner")) if require_winner else None
     if away==home or (winner_name is not None and winner_name not in {away,home}):raise ValueError("settlement rule participant identity is contradictory")
     return winner_name,frozenset((away,home)),eastern
+
+def blocked_date_only_events(schedule_payload):
+    """Reject uncertain calendar identity/lineage before date-only admission."""
+    blocked={f"mlb:{x['gamePk']}" for x in schedule_payload.get("_popsEdgeMlbLineages",())}
+    lineage_keys=("rescheduledFromDate","rescheduledGameDate","rescheduleDate","rescheduleGameDate","resumeDate","resumeGameDate","resumedFrom","resumedFromDate")
+    for day in schedule_payload.get("dates",()):
+        for record in day.get("games",()):
+            event_id=f"mlb:{record.get('gamePk')}"
+            try:
+                eastern_date=_dt(record["gameDate"]).astimezone(ZoneInfo("America/New_York")).date().isoformat()
+                calendar_agrees=record.get("officialDate")==day.get("date")==eastern_date
+            except (KeyError,TypeError,ValueError,AttributeError):calendar_agrees=False
+            if not calendar_agrees or any(record.get(key) for key in lineage_keys):blocked.add(event_id)
+    return frozenset(blocked)
+
 
 class KalshiReadOnlyClient:
     def __init__(self,transport:Callable=requests.get,timeout=15,retries=2): self.transport=transport; self.timeout=timeout; self.retries=retries
@@ -66,7 +91,7 @@ class KalshiReadOnlyClient:
     def markets(self,limit=100,cursor=None): return self.get("/markets",{"limit":min(limit,1000),"cursor":cursor or "","status":"open"})
     def orderbook(self,ticker): return self.get(f"/markets/{ticker}/orderbook",{"depth":100})
 
-def reconcile_market(market:dict,games:tuple[MLBGame,...],schedules:tuple[ScheduleObservation,...]):
+def reconcile_market(market:dict,games:tuple[MLBGame,...],schedules:tuple[ScheduleObservation,...],*,allow_date_only=False,blocked_event_ids=()):
     if market.get("market_type")!="binary":return None,(),(MarketIssue("unsupported-market-type","MLB winner market must be explicitly binary"),)
     yes_label=market.get("yes_sub_title") or market.get("yes_label")
     if not yes_label: return None,(),(MarketIssue("ambiguous-side","YES participant is not explicitly identified"),)
@@ -76,13 +101,23 @@ def reconcile_market(market:dict,games:tuple[MLBGame,...],schedules:tuple[Schedu
     if not primary and not secondary:return None,(),(MarketIssue("missing-settlement-identity","settlement rules do not establish event identity"),)
     try:
         identities=[]
-        if primary:identities.append(_settlement_identity(primary,require_winner=True))
-        if secondary:identities.append(_settlement_identity(secondary,require_winner=False))
+        if primary:identities.append(_settlement_identity(primary,require_winner=True,allow_date_only=allow_date_only))
+        if secondary:identities.append(_settlement_identity(secondary,require_winner=False,allow_date_only=allow_date_only))
     except (TypeError,ValueError) as exc:return None,(),(MarketIssue("malformed-settlement-identity",str(exc)),)
     rule_winner=next((item[0] for item in identities if item[0] is not None),None)
     if rule_winner is None or any((item[1],item[2])!=(identities[0][1],identities[0][2]) for item in identities[1:]):return None,(),(MarketIssue("conflicting-settlement-identity","primary and secondary settlement identity evidence conflicts"),)
     if yes_name!=rule_winner:return None,(),(MarketIssue("settlement-yes-conflict","structured YES label conflicts with settlement-rule winner"),)
     rule_participants,rule_instant=identities[0][1],identities[0][2]
+    date_only=isinstance(rule_instant,date) and not isinstance(rule_instant,datetime)
+    if date_only and (not primary or not secondary):return None,(),(MarketIssue("date-only-incomplete-rules","date-only identity requires agreeing primary and secondary rules"),)
+    if date_only:
+        primary_match=_PRIMARY_DATE_RULE.search(primary);secondary_match=_SECONDARY_DATE_RULE.search(secondary)
+        rule_order=tuple(_canon(primary_match.group(side)) for side in ("away","home"))
+        if rule_order!=tuple(_canon(secondary_match.group(side)) for side in ("away","home")):
+            return None,(),(MarketIssue("conflicting-settlement-identity","date-only rules disagree on home/away orientation"),)
+        by_event={}
+        for item in schedules:by_event.setdefault(item.canonical_event_id,set()).add(item.scheduled_start)
+        blocked_event_ids=set(blocked_event_ids)|{key for key,values in by_event.items() if len(values)!=1}
     schedule_by_event={x.canonical_event_id:x for x in schedules}; candidates=[];side_matches=False
     for game in games:
         home_name,away_name=_canon(game.home_team.display_name),_canon(game.away_team.display_name);participant=None
@@ -93,8 +128,16 @@ def reconcile_market(market:dict,games:tuple[MLBGame,...],schedules:tuple[Schedu
         if participant:
             side_matches=True
             if schedule is None:continue
-            if rule_instant.astimezone(schedule.scheduled_start.tzinfo)==schedule.scheduled_start:candidates.append((game,participant))
-    if len(candidates)==1: return candidates[0],(candidates[0][0].event.canonical_event_id,),()
+            if date_only:
+                if (away_name,home_name)!=rule_order or schedule.scheduled_start.astimezone(ZoneInfo("America/New_York")).date()!=rule_instant:continue
+                # Count every same-day matchup before applying phase/lineage gates.
+                candidates.append((game,participant))
+            elif rule_instant.astimezone(schedule.scheduled_start.tzinfo)==schedule.scheduled_start:candidates.append((game,participant))
+    if len(candidates)==1:
+        game,participant=candidates[0];schedule=schedule_by_event[game.event.canonical_event_id]
+        if date_only and (game.game_type not in {"F","D","L","W","S","C","P"} or game.event.canonical_event_id in blocked_event_ids or schedule.status_evidence or schedule.provenance.validation_status is not ValidationStatus.VALID or (game.game_number or 1)!=1 or game.doubleheader_designation not in (None,"N") or (schedule.game_number or 1)!=1 or schedule.doubleheader_designation not in (None,"N")):
+            return None,(),(MarketIssue("date-only-ineligible-lineage","date-only matching is limited to unambiguous postseason games without doubleheader/reschedule evidence"),)
+        return candidates[0],(game.event.canonical_event_id,),()
     code="ambiguous-event" if len(candidates)>1 else "no-matching-event"
     detail="market cannot be uniquely reconciled from explicit complementary participants and canonical schedule instant" if side_matches else "structured YES/NO participants do not exactly equal an MLB event's two participants"
     return None,tuple(x[0].event.canonical_event_id for x in candidates),(MarketIssue(code,detail),)
@@ -130,11 +173,11 @@ def _settlement_evidence(market):
     settlement_ts=market.get("settlement_ts")
     return evidence + ((f"notional_value_dollars={notional}",) if notional not in (None,"") else ()) + ((f"settlement_ts={settlement_ts}",) if settlement_ts else ())
 
-def adapt_market(market:dict,*,games:tuple[MLBGame,...],schedules:tuple[ScheduleObservation,...],collected_at:datetime,orderbook_payload:dict|None=None,orderbook_collected_at:datetime|None=None,metadata_collected_at:datetime|None=None)->MarketAdapterResult:
+def adapt_market(market:dict,*,games:tuple[MLBGame,...],schedules:tuple[ScheduleObservation,...],collected_at:datetime,orderbook_payload:dict|None=None,orderbook_collected_at:datetime|None=None,metadata_collected_at:datetime|None=None,allow_date_only=False,blocked_event_ids=())->MarketAdapterResult:
     raw=_digest(market); market_id=str(market.get("ticker") or market.get("id") or "unknown")
     required=(market.get("ticker"),market.get("title"))
     if not all(required): return MarketAdapterResult(MarketAdapterOutcome.REJECTED,market_id,None,None,None,(MarketIssue("malformed-market","ticker and title are required"),),raw_evidence_sha256=raw)
-    matched,candidates,issues=reconcile_market(market,games,schedules)
+    matched,candidates,issues=reconcile_market(market,games,schedules,allow_date_only=allow_date_only,blocked_event_ids=blocked_event_ids)
     if matched is None:
         outcome=MarketAdapterOutcome.AMBIGUOUS if candidates or any(x.code=="ambiguous-side" for x in issues) else MarketAdapterOutcome.REJECTED
         return MarketAdapterResult(outcome,market_id,None,None,None,issues,candidates,raw)
@@ -179,7 +222,9 @@ def adapt_market(market:dict,*,games:tuple[MLBGame,...],schedules:tuple[Schedule
         side_levels=[x for x in book if x.acquisition_side is side]
         if side_levels and intended_ask[side] is not None and min(x.acquisition_price for x in side_levels)!=intended_ask[side]:
             return MarketAdapterResult(MarketAdapterOutcome.REJECTED,market_id,None,None,None,(MarketIssue("conflicting-quote-book",f"{side.value} ask conflicts with executable book"),),candidates,raw)
-    prov=Provenance("kalshi",market_id,game.event.canonical_event_id,capture_start,transformations=("parsed-provider-market","complemented-resting-bids-when-direct-asks-absent") if orderbook_payload else ("parsed-provider-market",),raw_evidence_ref=raw,source_url=BASE+f"/markets/{market_id}",collector_version=ADAPTER_VERSION)
+    identity_time=_settlement_identity(market["rules_primary"],require_winner=True,allow_date_only=True)[2] if allow_date_only else None
+    date_only=isinstance(identity_time,date) and not isinstance(identity_time,datetime)
+    prov=Provenance("kalshi",market_id,game.event.canonical_event_id,capture_start,transformations=("parsed-provider-market","complemented-resting-bids-when-direct-asks-absent") if orderbook_payload else ("parsed-provider-market",),raw_evidence_ref=raw,source_url=BASE+f"/markets/{market_id}",collector_version=DATE_ONLY_RULE_VERSION if date_only else ADAPTER_VERSION)
     series=ProviderMarketSeries(f"market-series:kalshi:{market_id}","kalshi",market_id,market["ticker"],proposition.proposition_id,SideSemantic(MarketSide.YES,proposition.proposition_id,participant_id,True,str(yes_label)),SideSemantic(MarketSide.NO,proposition.proposition_id,other.canonical_team_id,False,other.display_name),str(market["title"]),market.get("subtitle") or market.get("sub_title"),market.get("event_ticker"),_dt(market.get("open_time")),_dt(market.get("close_time")),settlement,prov)
     obs_seed=f"{market_id}|{capture_start.isoformat()}|{metadata_at.isoformat()}|{book_at.isoformat() if orderbook_payload else ''}|{raw}|{_digest(orderbook_payload) if orderbook_payload else ''}"
     try: obs=MarketObservation("market-observation:"+hashlib.sha256(obs_seed.encode()).hexdigest(),series.series_id,market_id,game.event.canonical_event_id,proposition.proposition_id,"capture:"+hashlib.sha256(obs_seed.encode()).hexdigest(),capture_start,status,quote,book,tuple(components),prov,_dec(market.get("volume_fp") or market.get("volume")),_dec(market.get("open_interest_fp") or market.get("open_interest")),tuple(local_issues))

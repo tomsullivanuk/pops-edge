@@ -39,11 +39,12 @@ RETROSPECTIVE_WINDOW_START=datetime(2026,3,25,0,0,tzinfo=ZoneInfo("America/New_Y
 RETROSPECTIVE_WINDOW_SECONDS=14_169_600
 MLB_DATE_RULE_VERSION="eastern-unresolved-obligations-lookback-2"
 MLB_CORRECTION_LOOKBACK_DAYS=7
-ACQUISITION_UNION_RULE_VERSION="provider-pages-canonical-union-3"
+ACQUISITION_UNION_RULE_VERSION="provider-pages-canonical-union-4"
 MLB_MULTIDATE_LINEAGE_RULE_VERSION="mlb-explicit-schedule-evolution-lineage-2"
-SUPPORTING_DERIVATION_RULE_VERSION="kalshi-mlb-explicit-rules-schedule-instant-4"
+SUPPORTING_DERIVATION_RULE_VERSION="kalshi-mlb-postseason-unique-date-5"
 OUTCOME_RECONCILIATION_RULE_VERSION="mlb-outcome-sequential-history-2"
 SUPPORTED_DERIVATION_UNION_RULES={
+    "kalshi-mlb-explicit-rules-schedule-instant-4":"provider-pages-canonical-union-3",
     "kalshi-mlb-explicit-rules-schedule-instant-2":"provider-pages-canonical-union-1",
     "kalshi-mlb-explicit-rules-schedule-instant-3":"provider-pages-canonical-union-2",
     SUPPORTING_DERIVATION_RULE_VERSION:ACQUISITION_UNION_RULE_VERSION,
@@ -178,7 +179,7 @@ def refresh_supporting_from_raw(*,archive:NamespaceArchive|None,mlb_raw:bytes,ka
     from forecast_research_contracts import ResearchContractProvenance
     from forecast_standalone_operations import DesignAuthority,Disposition,_entry_values,pr17_contract_bundle,replay_pr17_archive,request_identity
     from forecast_standalone_research import EventClassificationValidationStatus,EventPhase,StandaloneEventClassificationEvidence,create_standalone_eligibility_authority
-    from kalshi_mlb_adapter import adapt_markets
+    from kalshi_mlb_adapter import adapt_markets,blocked_date_only_events
     from mlb_outcome_adapter import MLBOutcomeAdapter
     from mlb_stats_api import MLBStatsAPIAdapter,MLBStatsAPIResponse
     from outcome_contracts import OutcomeHistory
@@ -238,7 +239,9 @@ def refresh_supporting_from_raw(*,archive:NamespaceArchive|None,mlb_raw:bytes,ka
             if current is not None:values.update(supersedes_classification_id=current.standalone_event_classification_evidence_id,correction_reason="authoritative MLB classification changed")
             classification=StandaloneEventClassificationEvidence.create(**values);changed_classifications.append(classification)
         classifications[event_id]=classification
-    market_results=adapt_markets(kalshi_payload["markets"],games=games,schedules=schedules,collected_at=collected_at)
+    blocked_date_events=set(blocked_date_only_events(mlb_payload))
+    blocked_date_events.update(event_id for event_id,history in histories.items() if len({x.scheduled_start for x in history.observations})>1)
+    market_results=adapt_markets(kalshi_payload["markets"],games=games,schedules=schedules,collected_at=collected_at,allow_date_only=union_rule=="provider-pages-canonical-union-4" and acquisition_command=="refresh-supporting",blocked_event_ids=blocked_date_events)
     complete=tuple(x for x in market_results if x.series and x.observation and x.series.yes_semantic.participant_id==next(g.home_team.canonical_team_id for g in games if g.event.canonical_event_id==x.observation.canonical_event_id))
     by_event={}
     for item in complete:by_event.setdefault(item.observation.canonical_event_id,[]).append(item)
@@ -565,7 +568,7 @@ def merge_mlb_schedule_responses(responses:Iterable[bytes],*,union_rule:str=ACQU
         for game in reconciled:
             day=game["officialDate"];grouped.setdefault(day,[]).append(game)
     result={"dates":[{"date":day,"games":grouped[day]} for day in sorted(grouped)]}
-    if lineages and union_rule==ACQUISITION_UNION_RULE_VERSION:result["_popsEdgeMlbLineages"]=lineages
+    if lineages and union_rule in {"provider-pages-canonical-union-3",ACQUISITION_UNION_RULE_VERSION}:result["_popsEdgeMlbLineages"]=lineages
     return canonical_bytes(result)
 
 

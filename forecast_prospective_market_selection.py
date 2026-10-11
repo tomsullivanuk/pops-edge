@@ -9,6 +9,15 @@ from datetime import datetime
 from forecast_standalone_operations import OperationsError
 
 
+class CatalogGames(tuple):
+    """Verified complete catalog-dependent schedule, preserving tuple callers."""
+    def __new__(cls,games,schedules,blocked_event_ids,allow_date_only):
+        value=super().__new__(cls,games)
+        value.schedules=tuple(schedules);value.blocked_event_ids=frozenset(blocked_event_ids)
+        value.allow_date_only=allow_date_only
+        return value
+
+
 def load_prospective_catalog(boundary):
     """Read only the latest completed live catalog and its schedule dependency.
 
@@ -72,7 +81,10 @@ retrospective catalogs, or fall back to an older nonempty catalog.
         if prior and (prior.home_team.canonical_team_id, prior.away_team.canonical_team_id) != (game.home_team.canonical_team_id, game.away_team.canonical_team_id):
             raise OperationsError("market-catalog-conflict", "schedule participants conflict")
         games[key] = game
-    return tuple(json.loads(catalog_raw)["markets"]), tuple(games.values()), "latest-completed-live-catalog"
+    from kalshi_mlb_adapter import blocked_date_only_events
+    blocked=blocked_date_only_events(json.loads(raw))
+    schedules=tuple(fact.schedule_observation for fact in facts.games if fact.schedule_observation)
+    return tuple(json.loads(catalog_raw)["markets"]), CatalogGames(games.values(),schedules,blocked,value.get("union_rule")=="provider-pages-canonical-union-4"), "latest-completed-live-catalog"
 
 
 def prepare_prospective_markets(catalog, series_values, schedule):
@@ -82,11 +94,15 @@ def prepare_prospective_markets(catalog, series_values, schedule):
     markets, games, diagnostic = catalog
     if diagnostic != "latest-completed-live-catalog":
         return (), diagnostic
-    candidates = {}
+    candidates = {}; rejection_codes=set()
     proposition = f"winner:{schedule.canonical_event_id}:{schedule.home_participant_id}"
     for market in markets:
-        matched, _, _ = reconcile_market(market, games, (schedule,))
+        authority_schedules=getattr(games,"schedules",(schedule,))
+        matches=tuple(x for x in authority_schedules if x.canonical_event_id==schedule.canonical_event_id)
+        date_allowed=getattr(games,"allow_date_only",False) and len({x.scheduled_start for x in matches})==1 and matches and matches[0].scheduled_start==schedule.scheduled_start
+        matched, _, issues = reconcile_market(market, games, authority_schedules if date_allowed else (schedule,),allow_date_only=bool(date_allowed),blocked_event_ids=getattr(games,"blocked_event_ids",()))
         if matched is None:
+            rejection_codes.update(x.code for x in issues if x.code not in {"no-matching-event"})
             continue
         game, yes_participant = matched
         if (game.event.canonical_event_id != schedule.canonical_event_id or
@@ -111,6 +127,8 @@ def prepare_prospective_markets(catalog, series_values, schedule):
                            item.yes_semantic.participant_id == schedule.home_participant_id and
                            item.no_semantic.participant_id == schedule.away_participant_id)
             candidates[market_id] = (opened, closed, series)
+    if not candidates and rejection_codes:
+        return (), "market-identity-rejected:"+",".join(sorted(rejection_codes))
     return tuple(candidates.values()), diagnostic
 
 
