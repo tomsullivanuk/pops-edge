@@ -168,7 +168,7 @@ class MarketSelectionTests(unittest.TestCase):
         for changes in ({"status":"settled"},{"status":"paused"},{"open_time":None},{"close_time":None},{"close_time":self.at.isoformat()},{"open_time":(self.at+timedelta(seconds=1)).isoformat()},{"close_time":"invalid"},{"close_time":"2026-09-06T00:00:00"},{"yes_sub_title":"Away Club"}):
             with self.subTest(changes=changes):
                 result=select_prospective_market((({**markets[0],**changes},),games,reason),state.bucket("market_series"),schedule,self.at)
-                self.assertEqual(result,(None,"market-unavailable"))
+                self.assertEqual(result,(None,"market-identity-rejected:settlement-yes-conflict" if changes.get("yes_sub_title")=="Away Club" else "market-unavailable"))
 
     def test_absent_catalog_and_corrupt_selected_page_fail_closed(self):
         boundary,_=load_projection(self.archive,self.at)

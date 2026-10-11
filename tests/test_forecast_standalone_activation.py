@@ -874,7 +874,7 @@ class ActivationTests(unittest.TestCase):
             with self.subTest(pages=pages),self.assertRaisesRegex(OperationsError,"paired fields disagree"):merge_mlb_schedule_responses(pages)
 
     def test_versioned_session_rules_require_exact_union_pairing(self):
-        self.assertEqual(SUPPORTED_DERIVATION_UNION_RULES,{"kalshi-mlb-explicit-rules-schedule-instant-2":"provider-pages-canonical-union-1","kalshi-mlb-explicit-rules-schedule-instant-3":"provider-pages-canonical-union-2","kalshi-mlb-explicit-rules-schedule-instant-4":"provider-pages-canonical-union-3"})
+        self.assertEqual(SUPPORTED_DERIVATION_UNION_RULES,{"kalshi-mlb-explicit-rules-schedule-instant-2":"provider-pages-canonical-union-1","kalshi-mlb-explicit-rules-schedule-instant-3":"provider-pages-canonical-union-2","kalshi-mlb-explicit-rules-schedule-instant-4":"provider-pages-canonical-union-3","kalshi-mlb-postseason-unique-date-5":"provider-pages-canonical-union-4"})
 
 
 if __name__ == "__main__": unittest.main()

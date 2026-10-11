@@ -1,0 +1,884 @@
+{
+  "source": "retained production acquisition, October 11 17:09 UTC",
+  "source_kalshi_bundle": "provider-acquisition:211c3dc9b834991d5d1aaaab64ca89103e35afda11164daa22a65fddd1a41026",
+  "source_mlb_bundle": "provider-acquisition:d5b03f3fac1eabc0803caa931fec860311511d0046628cc68fc7df8cfa876877",
+  "mlb": {
+    "dates": [
+      {
+        "date": "2026-10-11",
+        "games": [
+          {
+            "calendarEventID": "14-849809-2026-10-11",
+            "content": {
+              "link": "/api/v1/game/849809/content"
+            },
+            "dayNight": "night",
+            "description": "NLCS Game 1",
+            "doubleHeader": "N",
+            "gameDate": "2026-10-12T00:00:00Z",
+            "gameGuid": "9d51b5a1-3ad0-414a-87ce-99ae9bc40fb8",
+            "gameNumber": 1,
+            "gamePk": 849809,
+            "gameType": "L",
+            "gamedayType": "P",
+            "gamesInSeries": 7,
+            "ifNecessary": "N",
+            "ifNecessaryDescription": "Normal Game",
+            "inningBreakLength": 175,
+            "link": "/api/v1.1/game/849809/feed/live",
+            "officialDate": "2026-10-11",
+            "publicFacing": true,
+            "recordSource": "S",
+            "reverseHomeAwayStatus": false,
+            "scheduledInnings": 9,
+            "season": "2026",
+            "seasonDisplay": "2026",
+            "seriesDescription": "NL Championship Series",
+            "seriesGameNumber": 1,
+            "status": {
+              "abstractGameCode": "P",
+              "abstractGameState": "Preview",
+              "codedGameState": "P",
+              "detailedState": "Pre-Game",
+              "startTimeTBD": false,
+              "statusCode": "P"
+            },
+            "teams": {
+              "away": {
+                "leagueRecord": {
+                  "losses": 0,
+                  "pct": ".000",
+                  "ties": 0,
+                  "wins": 0
+                },
+                "probablePitcher": {
+                  "fullName": "Tarik Skubal",
+                  "id": 669373,
+                  "link": "/api/v1/people/669373"
+                },
+                "score": 0,
+                "seriesNumber": 2,
+                "splitSquad": false,
+                "springLeague": {
+                  "abbreviation": "CL",
+                  "id": 114,
+                  "link": "/api/v1/league/114",
+                  "name": "Cactus League"
+                },
+                "team": {
+                  "abbreviation": "LAD",
+                  "active": true,
+                  "allStarStatus": "N",
+                  "clubName": "Dodgers",
+                  "division": {
+                    "id": 203,
+                    "link": "/api/v1/divisions/203",
+                    "name": "National League West"
+                  },
+                  "fileCode": "la",
+                  "firstYearOfPlay": "1884",
+                  "franchiseName": "Los Angeles",
+                  "id": 119,
+                  "league": {
+                    "id": 104,
+                    "link": "/api/v1/league/104",
+                    "name": "National League"
+                  },
+                  "link": "/api/v1/teams/119",
+                  "locationName": "Los Angeles",
+                  "name": "Los Angeles Dodgers",
+                  "season": 2026,
+                  "shortName": "LA Dodgers",
+                  "sport": {
+                    "id": 1,
+                    "link": "/api/v1/sports/1",
+                    "name": "Major League Baseball"
+                  },
+                  "springLeague": {
+                    "abbreviation": "CL",
+                    "id": 114,
+                    "link": "/api/v1/league/114",
+                    "name": "Cactus League"
+                  },
+                  "springVenue": {
+                    "id": 3809,
+                    "link": "/api/v1/venues/3809"
+                  },
+                  "teamCode": "lan",
+                  "teamName": "Dodgers",
+                  "venue": {
+                    "id": 22,
+                    "link": "/api/v1/venues/22",
+                    "name": "UNIQLO Field at Dodger Stadium"
+                  }
+                }
+              },
+              "home": {
+                "leagueRecord": {
+                  "losses": 0,
+                  "pct": ".000",
+                  "ties": 0,
+                  "wins": 0
+                },
+                "probablePitcher": {
+                  "fullName": "Jacob Misiorowski",
+                  "id": 694819,
+                  "link": "/api/v1/people/694819"
+                },
+                "score": 0,
+                "seriesNumber": 2,
+                "splitSquad": false,
+                "springLeague": {
+                  "abbreviation": "CL",
+                  "id": 114,
+                  "link": "/api/v1/league/114",
+                  "name": "Cactus League"
+                },
+                "team": {
+                  "abbreviation": "MIL",
+                  "active": true,
+                  "allStarStatus": "N",
+                  "clubName": "Brewers",
+                  "division": {
+                    "id": 205,
+                    "link": "/api/v1/divisions/205",
+                    "name": "National League Central"
+                  },
+                  "fileCode": "mil",
+                  "firstYearOfPlay": "1968",
+                  "franchiseName": "Milwaukee",
+                  "id": 158,
+                  "league": {
+                    "id": 104,
+                    "link": "/api/v1/league/104",
+                    "name": "National League"
+                  },
+                  "link": "/api/v1/teams/158",
+                  "locationName": "Milwaukee",
+                  "name": "Milwaukee Brewers",
+                  "season": 2026,
+                  "shortName": "Milwaukee",
+                  "sport": {
+                    "id": 1,
+                    "link": "/api/v1/sports/1",
+                    "name": "Major League Baseball"
+                  },
+                  "springLeague": {
+                    "abbreviation": "CL",
+                    "id": 114,
+                    "link": "/api/v1/league/114",
+                    "name": "Cactus League"
+                  },
+                  "springVenue": {
+                    "id": 2518,
+                    "link": "/api/v1/venues/2518"
+                  },
+                  "teamCode": "mil",
+                  "teamName": "Brewers",
+                  "venue": {
+                    "id": 32,
+                    "link": "/api/v1/venues/32",
+                    "name": "American Family Field"
+                  }
+                }
+              }
+            },
+            "tiebreaker": "N",
+            "venue": {
+              "active": true,
+              "id": 32,
+              "link": "/api/v1/venues/32",
+              "name": "American Family Field",
+              "season": "2026"
+            }
+          }
+        ]
+      },
+      {
+        "date": "2026-10-12",
+        "games": [
+          {
+            "calendarEventID": "14-849812-2026-10-12",
+            "content": {
+              "link": "/api/v1/game/849812/content"
+            },
+            "dayNight": "day",
+            "description": "NLCS Game 2",
+            "doubleHeader": "N",
+            "gameDate": "2026-10-12T21:00:00Z",
+            "gameGuid": "fd803070-af85-4adb-94b3-7b5972e38f3a",
+            "gameNumber": 1,
+            "gamePk": 849812,
+            "gameType": "L",
+            "gamedayType": "P",
+            "gamesInSeries": 7,
+            "ifNecessary": "N",
+            "ifNecessaryDescription": "Normal Game",
+            "inningBreakLength": 175,
+            "link": "/api/v1.1/game/849812/feed/live",
+            "officialDate": "2026-10-12",
+            "publicFacing": true,
+            "recordSource": "S",
+            "reverseHomeAwayStatus": false,
+            "scheduledInnings": 9,
+            "season": "2026",
+            "seasonDisplay": "2026",
+            "seriesDescription": "NL Championship Series",
+            "seriesGameNumber": 2,
+            "status": {
+              "abstractGameCode": "P",
+              "abstractGameState": "Preview",
+              "codedGameState": "S",
+              "detailedState": "Scheduled",
+              "startTimeTBD": false,
+              "statusCode": "S"
+            },
+            "teams": {
+              "away": {
+                "leagueRecord": {
+                  "losses": 0,
+                  "pct": ".000",
+                  "ties": 0,
+                  "wins": 0
+                },
+                "probablePitcher": {
+                  "fullName": "Yoshinobu Yamamoto",
+                  "id": 808967,
+                  "link": "/api/v1/people/808967"
+                },
+                "seriesNumber": 2,
+                "splitSquad": false,
+                "springLeague": {
+                  "abbreviation": "CL",
+                  "id": 114,
+                  "link": "/api/v1/league/114",
+                  "name": "Cactus League"
+                },
+                "team": {
+                  "abbreviation": "LAD",
+                  "active": true,
+                  "allStarStatus": "N",
+                  "clubName": "Dodgers",
+                  "division": {
+                    "id": 203,
+                    "link": "/api/v1/divisions/203",
+                    "name": "National League West"
+                  },
+                  "fileCode": "la",
+                  "firstYearOfPlay": "1884",
+                  "franchiseName": "Los Angeles",
+                  "id": 119,
+                  "league": {
+                    "id": 104,
+                    "link": "/api/v1/league/104",
+                    "name": "National League"
+                  },
+                  "link": "/api/v1/teams/119",
+                  "locationName": "Los Angeles",
+                  "name": "Los Angeles Dodgers",
+                  "season": 2026,
+                  "shortName": "LA Dodgers",
+                  "sport": {
+                    "id": 1,
+                    "link": "/api/v1/sports/1",
+                    "name": "Major League Baseball"
+                  },
+                  "springLeague": {
+                    "abbreviation": "CL",
+                    "id": 114,
+                    "link": "/api/v1/league/114",
+                    "name": "Cactus League"
+                  },
+                  "springVenue": {
+                    "id": 3809,
+                    "link": "/api/v1/venues/3809"
+                  },
+                  "teamCode": "lan",
+                  "teamName": "Dodgers",
+                  "venue": {
+                    "id": 22,
+                    "link": "/api/v1/venues/22",
+                    "name": "UNIQLO Field at Dodger Stadium"
+                  }
+                }
+              },
+              "home": {
+                "leagueRecord": {
+                  "losses": 0,
+                  "pct": ".000",
+                  "ties": 0,
+                  "wins": 0
+                },
+                "probablePitcher": {
+                  "fullName": "Logan Henderson",
+                  "id": 701656,
+                  "link": "/api/v1/people/701656"
+                },
+                "seriesNumber": 2,
+                "splitSquad": false,
+                "springLeague": {
+                  "abbreviation": "CL",
+                  "id": 114,
+                  "link": "/api/v1/league/114",
+                  "name": "Cactus League"
+                },
+                "team": {
+                  "abbreviation": "MIL",
+                  "active": true,
+                  "allStarStatus": "N",
+                  "clubName": "Brewers",
+                  "division": {
+                    "id": 205,
+                    "link": "/api/v1/divisions/205",
+                    "name": "National League Central"
+                  },
+                  "fileCode": "mil",
+                  "firstYearOfPlay": "1968",
+                  "franchiseName": "Milwaukee",
+                  "id": 158,
+                  "league": {
+                    "id": 104,
+                    "link": "/api/v1/league/104",
+                    "name": "National League"
+                  },
+                  "link": "/api/v1/teams/158",
+                  "locationName": "Milwaukee",
+                  "name": "Milwaukee Brewers",
+                  "season": 2026,
+                  "shortName": "Milwaukee",
+                  "sport": {
+                    "id": 1,
+                    "link": "/api/v1/sports/1",
+                    "name": "Major League Baseball"
+                  },
+                  "springLeague": {
+                    "abbreviation": "CL",
+                    "id": 114,
+                    "link": "/api/v1/league/114",
+                    "name": "Cactus League"
+                  },
+                  "springVenue": {
+                    "id": 2518,
+                    "link": "/api/v1/venues/2518"
+                  },
+                  "teamCode": "mil",
+                  "teamName": "Brewers",
+                  "venue": {
+                    "id": 32,
+                    "link": "/api/v1/venues/32",
+                    "name": "American Family Field"
+                  }
+                }
+              }
+            },
+            "tiebreaker": "N",
+            "venue": {
+              "active": true,
+              "id": 32,
+              "link": "/api/v1/venues/32",
+              "name": "American Family Field",
+              "season": "2026"
+            }
+          },
+          {
+            "calendarEventID": "14-849820-2026-10-12",
+            "content": {
+              "link": "/api/v1/game/849820/content"
+            },
+            "dayNight": "night",
+            "description": "ALCS Game 1",
+            "doubleHeader": "N",
+            "gameDate": "2026-10-13T00:00:00Z",
+            "gameGuid": "b8e020a5-54ec-41bd-95f4-f864a213536f",
+            "gameNumber": 1,
+            "gamePk": 849820,
+            "gameType": "L",
+            "gamedayType": "P",
+            "gamesInSeries": 7,
+            "ifNecessary": "N",
+            "ifNecessaryDescription": "Normal Game",
+            "inningBreakLength": 175,
+            "link": "/api/v1.1/game/849820/feed/live",
+            "officialDate": "2026-10-12",
+            "publicFacing": true,
+            "recordSource": "S",
+            "reverseHomeAwayStatus": false,
+            "scheduledInnings": 9,
+            "season": "2026",
+            "seasonDisplay": "2026",
+            "seriesDescription": "AL Championship Series",
+            "seriesGameNumber": 1,
+            "status": {
+              "abstractGameCode": "P",
+              "abstractGameState": "Preview",
+              "codedGameState": "S",
+              "detailedState": "Scheduled",
+              "startTimeTBD": false,
+              "statusCode": "S"
+            },
+            "teams": {
+              "away": {
+                "leagueRecord": {
+                  "losses": 0,
+                  "pct": ".000",
+                  "ties": 0,
+                  "wins": 0
+                },
+                "probablePitcher": {
+                  "fullName": "Foster Griffin",
+                  "id": 656492,
+                  "link": "/api/v1/people/656492"
+                },
+                "seriesNumber": 1,
+                "splitSquad": false,
+                "springLeague": {
+                  "abbreviation": "CL",
+                  "id": 114,
+                  "link": "/api/v1/league/114",
+                  "name": "Cactus League"
+                },
+                "team": {
+                  "abbreviation": "CLE",
+                  "active": true,
+                  "allStarStatus": "N",
+                  "clubName": "Guardians",
+                  "division": {
+                    "id": 202,
+                    "link": "/api/v1/divisions/202",
+                    "name": "American League Central"
+                  },
+                  "fileCode": "cle",
+                  "firstYearOfPlay": "1901",
+                  "franchiseName": "Cleveland",
+                  "id": 114,
+                  "league": {
+                    "id": 103,
+                    "link": "/api/v1/league/103",
+                    "name": "American League"
+                  },
+                  "link": "/api/v1/teams/114",
+                  "locationName": "Cleveland",
+                  "name": "Cleveland Guardians",
+                  "season": 2026,
+                  "shortName": "Cleveland",
+                  "sport": {
+                    "id": 1,
+                    "link": "/api/v1/sports/1",
+                    "name": "Major League Baseball"
+                  },
+                  "springLeague": {
+                    "abbreviation": "CL",
+                    "id": 114,
+                    "link": "/api/v1/league/114",
+                    "name": "Cactus League"
+                  },
+                  "springVenue": {
+                    "id": 3834,
+                    "link": "/api/v1/venues/3834"
+                  },
+                  "teamCode": "cle",
+                  "teamName": "Guardians",
+                  "venue": {
+                    "id": 5,
+                    "link": "/api/v1/venues/5",
+                    "name": "Progressive Field"
+                  }
+                }
+              },
+              "home": {
+                "leagueRecord": {
+                  "losses": 0,
+                  "pct": ".000",
+                  "ties": 0,
+                  "wins": 0
+                },
+                "probablePitcher": {
+                  "fullName": "Drew Rasmussen",
+                  "id": 656876,
+                  "link": "/api/v1/people/656876"
+                },
+                "seriesNumber": 1,
+                "splitSquad": false,
+                "springLeague": {
+                  "abbreviation": "GL",
+                  "id": 115,
+                  "link": "/api/v1/league/115",
+                  "name": "Grapefruit League"
+                },
+                "team": {
+                  "abbreviation": "TB",
+                  "active": true,
+                  "allStarStatus": "N",
+                  "clubName": "Rays",
+                  "division": {
+                    "id": 201,
+                    "link": "/api/v1/divisions/201",
+                    "name": "American League East"
+                  },
+                  "fileCode": "tb",
+                  "firstYearOfPlay": "1996",
+                  "franchiseName": "Tampa Bay",
+                  "id": 139,
+                  "league": {
+                    "id": 103,
+                    "link": "/api/v1/league/103",
+                    "name": "American League"
+                  },
+                  "link": "/api/v1/teams/139",
+                  "locationName": "St. Petersburg",
+                  "name": "Tampa Bay Rays",
+                  "season": 2026,
+                  "shortName": "Tampa Bay",
+                  "sport": {
+                    "id": 1,
+                    "link": "/api/v1/sports/1",
+                    "name": "Major League Baseball"
+                  },
+                  "springLeague": {
+                    "abbreviation": "GL",
+                    "id": 115,
+                    "link": "/api/v1/league/115",
+                    "name": "Grapefruit League"
+                  },
+                  "springVenue": {
+                    "id": 2534,
+                    "link": "/api/v1/venues/2534"
+                  },
+                  "teamCode": "tba",
+                  "teamName": "Rays",
+                  "venue": {
+                    "id": 12,
+                    "link": "/api/v1/venues/12",
+                    "name": "Tropicana Field"
+                  }
+                }
+              }
+            },
+            "tiebreaker": "N",
+            "venue": {
+              "active": true,
+              "id": 12,
+              "link": "/api/v1/venues/12",
+              "name": "Tropicana Field",
+              "season": "2026"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "markets": [
+    {
+      "can_close_early": true,
+      "close_time": "2026-10-15T00:00:00Z",
+      "created_time": "2026-10-08T16:45:37.90374Z",
+      "custom_strike": {
+        "baseball_team": "5ee3dc32-f192-4b80-ac4a-fd285f36dc1a"
+      },
+      "early_close_condition": "This market will close and expire after a winner is declared.",
+      "event_ticker": "KXMLBGAME-26OCT112000LADMIL",
+      "exchange_index": 3,
+      "expected_expiration_time": "2026-10-12T03:00:00Z",
+      "expiration_time": "2026-10-15T00:00:00Z",
+      "expiration_value": "",
+      "last_price_dollars": "0.5100",
+      "latest_expiration_time": "2026-10-15T00:00:00Z",
+      "market_type": "binary",
+      "no_ask_dollars": "0.5000",
+      "no_bid_dollars": "0.4900",
+      "no_sub_title": "Los Angeles D",
+      "notional_value_dollars": "1.0000",
+      "occurrence_datetime": "2026-10-12T03:00:00Z",
+      "open_interest_fp": "1224924.84",
+      "open_time": "2026-10-08T16:55:00Z",
+      "previous_price_dollars": "0.5000",
+      "previous_yes_ask_dollars": "0.5000",
+      "previous_yes_bid_dollars": "0.4900",
+      "price_level_structure": "linear_cent",
+      "price_ranges": [
+        {
+          "end": "1.0000",
+          "start": "0.0000",
+          "step": "0.0100"
+        }
+      ],
+      "result": "",
+      "rules_primary": "If Los Angeles D wins the Los Angeles D vs Milwaukee professional baseball game originally scheduled for Oct 11, 2026, then the market resolves to Yes.",
+      "rules_secondary": "The following market refers to the Los Angeles D vs Milwaukee professional baseball game originally scheduled for Oct 11, 2026. If this game is postponed or delayed, the market will remain open and close after the rescheduled game has finished (within two days). If the game is cancelled or rescheduled to over two days away, the market will resolve to a fair price in accordance with the rules.\n\nKalshi is not affiliated, associated, authorized, endorsed by, or in any way officially connected with the Governing League. All trademarks, logos, and brand names are the property of their respective owners.",
+      "settlement_bounds_type": "default",
+      "settlement_timer_seconds": 120,
+      "status": "active",
+      "strike_type": "structured",
+      "ticker": "KXMLBGAME-26OCT112000LADMIL-LAD",
+      "title": "Los Angeles D wins",
+      "updated_time": "2026-10-08T16:55:00.581974Z",
+      "volume_24h_fp": "1057539.91",
+      "volume_fp": "1315837.02",
+      "yes_ask_dollars": "0.5100",
+      "yes_ask_size_fp": "3925613.40",
+      "yes_bid_dollars": "0.5000",
+      "yes_bid_size_fp": "819954.31",
+      "yes_sub_title": "Los Angeles D"
+    },
+    {
+      "can_close_early": true,
+      "close_time": "2026-10-15T00:00:00Z",
+      "created_time": "2026-10-08T16:45:37.90374Z",
+      "custom_strike": {
+        "baseball_team": "087f0ae7-c231-4dcd-b7e5-f026c1769e40"
+      },
+      "early_close_condition": "This market will close and expire after a winner is declared.",
+      "event_ticker": "KXMLBGAME-26OCT112000LADMIL",
+      "exchange_index": 3,
+      "expected_expiration_time": "2026-10-12T03:00:00Z",
+      "expiration_time": "2026-10-15T00:00:00Z",
+      "expiration_value": "",
+      "last_price_dollars": "0.5000",
+      "latest_expiration_time": "2026-10-15T00:00:00Z",
+      "market_type": "binary",
+      "no_ask_dollars": "0.5100",
+      "no_bid_dollars": "0.5000",
+      "no_sub_title": "Milwaukee",
+      "notional_value_dollars": "1.0000",
+      "occurrence_datetime": "2026-10-12T03:00:00Z",
+      "open_interest_fp": "971392.81",
+      "open_time": "2026-10-08T16:55:00Z",
+      "previous_price_dollars": "0.5100",
+      "previous_yes_ask_dollars": "0.5100",
+      "previous_yes_bid_dollars": "0.5000",
+      "price_level_structure": "linear_cent",
+      "price_ranges": [
+        {
+          "end": "1.0000",
+          "start": "0.0000",
+          "step": "0.0100"
+        }
+      ],
+      "result": "",
+      "rules_primary": "If Milwaukee wins the Los Angeles D vs Milwaukee professional baseball game originally scheduled for Oct 11, 2026, then the market resolves to Yes.",
+      "rules_secondary": "The following market refers to the Los Angeles D vs Milwaukee professional baseball game originally scheduled for Oct 11, 2026. If this game is postponed or delayed, the market will remain open and close after the rescheduled game has finished (within two days). If the game is cancelled or rescheduled to over two days away, the market will resolve to a fair price in accordance with the rules.\n\nKalshi is not affiliated, associated, authorized, endorsed by, or in any way officially connected with the Governing League. All trademarks, logos, and brand names are the property of their respective owners.",
+      "settlement_bounds_type": "default",
+      "settlement_timer_seconds": 120,
+      "status": "active",
+      "strike_type": "structured",
+      "ticker": "KXMLBGAME-26OCT112000LADMIL-MIL",
+      "title": "Milwaukee wins",
+      "updated_time": "2026-10-08T16:55:00.581974Z",
+      "volume_24h_fp": "881375.88",
+      "volume_fp": "1043976.43",
+      "yes_ask_dollars": "0.5000",
+      "yes_ask_size_fp": "3334189.02",
+      "yes_bid_dollars": "0.4900",
+      "yes_bid_size_fp": "1384001.05",
+      "yes_sub_title": "Milwaukee"
+    },
+    {
+      "can_close_early": true,
+      "close_time": "2026-10-16T00:00:00Z",
+      "created_time": "2026-10-11T03:15:32.301917Z",
+      "custom_strike": {
+        "baseball_team": "60097777-bab8-4215-8d29-b92466b5bb65"
+      },
+      "early_close_condition": "This market will close and expire after a winner is declared.",
+      "event_ticker": "KXMLBGAME-26OCT122000CLETB",
+      "exchange_index": 3,
+      "expected_expiration_time": "2026-10-13T03:00:00Z",
+      "expiration_time": "2026-10-16T00:00:00Z",
+      "expiration_value": "",
+      "last_price_dollars": "0.4000",
+      "latest_expiration_time": "2026-10-16T00:00:00Z",
+      "market_type": "binary",
+      "no_ask_dollars": "0.6100",
+      "no_bid_dollars": "0.6000",
+      "no_sub_title": "Cleveland",
+      "notional_value_dollars": "1.0000",
+      "occurrence_datetime": "2026-10-13T03:00:00Z",
+      "open_interest_fp": "9971.90",
+      "open_time": "2026-10-11T03:25:00Z",
+      "previous_price_dollars": "0.0000",
+      "previous_yes_ask_dollars": "0.0000",
+      "previous_yes_bid_dollars": "0.0000",
+      "price_level_structure": "linear_cent",
+      "price_ranges": [
+        {
+          "end": "1.0000",
+          "start": "0.0000",
+          "step": "0.0100"
+        }
+      ],
+      "result": "",
+      "rules_primary": "If Cleveland wins the Cleveland vs Tampa Bay professional baseball game originally scheduled for Oct 12, 2026, then the market resolves to Yes.",
+      "rules_secondary": "The following market refers to the Cleveland vs Tampa Bay professional baseball game originally scheduled for Oct 12, 2026. If this game is postponed or delayed, the market will remain open and close after the rescheduled game has finished (within two days). If the game is cancelled or rescheduled to over two days away, the market will resolve to a fair price in accordance with the rules.\n\nKalshi is not affiliated, associated, authorized, endorsed by, or in any way officially connected with the Governing League. All trademarks, logos, and brand names are the property of their respective owners.",
+      "settlement_bounds_type": "default",
+      "settlement_timer_seconds": 120,
+      "status": "active",
+      "strike_type": "structured",
+      "ticker": "KXMLBGAME-26OCT122000CLETB-CLE",
+      "title": "Cleveland wins",
+      "updated_time": "2026-10-11T03:25:00.535092Z",
+      "volume_24h_fp": "11279.32",
+      "volume_fp": "11658.97",
+      "yes_ask_dollars": "0.4000",
+      "yes_ask_size_fp": "10549.74",
+      "yes_bid_dollars": "0.3900",
+      "yes_bid_size_fp": "67548.00",
+      "yes_sub_title": "Cleveland"
+    },
+    {
+      "can_close_early": true,
+      "close_time": "2026-10-16T00:00:00Z",
+      "created_time": "2026-10-11T03:15:32.301917Z",
+      "custom_strike": {
+        "baseball_team": "942f3f85-869a-4f7a-8e5a-336365c5294b"
+      },
+      "early_close_condition": "This market will close and expire after a winner is declared.",
+      "event_ticker": "KXMLBGAME-26OCT122000CLETB",
+      "exchange_index": 3,
+      "expected_expiration_time": "2026-10-13T03:00:00Z",
+      "expiration_time": "2026-10-16T00:00:00Z",
+      "expiration_value": "",
+      "last_price_dollars": "0.6000",
+      "latest_expiration_time": "2026-10-16T00:00:00Z",
+      "market_type": "binary",
+      "no_ask_dollars": "0.4100",
+      "no_bid_dollars": "0.4000",
+      "no_sub_title": "Tampa Bay",
+      "notional_value_dollars": "1.0000",
+      "occurrence_datetime": "2026-10-13T03:00:00Z",
+      "open_interest_fp": "40446.97",
+      "open_time": "2026-10-11T03:25:00Z",
+      "previous_price_dollars": "0.0000",
+      "previous_yes_ask_dollars": "0.0000",
+      "previous_yes_bid_dollars": "0.0000",
+      "price_level_structure": "linear_cent",
+      "price_ranges": [
+        {
+          "end": "1.0000",
+          "start": "0.0000",
+          "step": "0.0100"
+        }
+      ],
+      "result": "",
+      "rules_primary": "If Tampa Bay wins the Cleveland vs Tampa Bay professional baseball game originally scheduled for Oct 12, 2026, then the market resolves to Yes.",
+      "rules_secondary": "The following market refers to the Cleveland vs Tampa Bay professional baseball game originally scheduled for Oct 12, 2026. If this game is postponed or delayed, the market will remain open and close after the rescheduled game has finished (within two days). If the game is cancelled or rescheduled to over two days away, the market will resolve to a fair price in accordance with the rules.\n\nKalshi is not affiliated, associated, authorized, endorsed by, or in any way officially connected with the Governing League. All trademarks, logos, and brand names are the property of their respective owners.",
+      "settlement_bounds_type": "default",
+      "settlement_timer_seconds": 120,
+      "status": "active",
+      "strike_type": "structured",
+      "ticker": "KXMLBGAME-26OCT122000CLETB-TB",
+      "title": "Tampa Bay wins",
+      "updated_time": "2026-10-11T03:25:00.535092Z",
+      "volume_24h_fp": "44140.60",
+      "volume_fp": "44418.77",
+      "yes_ask_dollars": "0.6000",
+      "yes_ask_size_fp": "263060.45",
+      "yes_bid_dollars": "0.5900",
+      "yes_bid_size_fp": "51633.24",
+      "yes_sub_title": "Tampa Bay"
+    },
+    {
+      "can_close_early": true,
+      "close_time": "2026-10-16T00:00:00Z",
+      "created_time": "2026-10-08T16:45:39.719308Z",
+      "custom_strike": {
+        "baseball_team": "5ee3dc32-f192-4b80-ac4a-fd285f36dc1a"
+      },
+      "early_close_condition": "This market will close and expire after a winner is declared.",
+      "event_ticker": "KXMLBGAME-26OCT122000LADMIL",
+      "exchange_index": 3,
+      "expected_expiration_time": "2026-10-13T03:00:00Z",
+      "expiration_time": "2026-10-16T00:00:00Z",
+      "expiration_value": "",
+      "last_price_dollars": "0.5500",
+      "latest_expiration_time": "2026-10-16T00:00:00Z",
+      "market_type": "binary",
+      "no_ask_dollars": "0.4600",
+      "no_bid_dollars": "0.4500",
+      "no_sub_title": "Los Angeles D",
+      "notional_value_dollars": "1.0000",
+      "occurrence_datetime": "2026-10-13T03:00:00Z",
+      "open_interest_fp": "35489.42",
+      "open_time": "2026-10-08T16:55:00Z",
+      "previous_price_dollars": "0.5300",
+      "previous_yes_ask_dollars": "0.5300",
+      "previous_yes_bid_dollars": "0.5200",
+      "price_level_structure": "linear_cent",
+      "price_ranges": [
+        {
+          "end": "1.0000",
+          "start": "0.0000",
+          "step": "0.0100"
+        }
+      ],
+      "result": "",
+      "rules_primary": "If Los Angeles D wins the Los Angeles D vs Milwaukee professional baseball game originally scheduled for Oct 12, 2026, then the market resolves to Yes.",
+      "rules_secondary": "The following market refers to the Los Angeles D vs Milwaukee professional baseball game originally scheduled for Oct 12, 2026. If this game is postponed or delayed, the market will remain open and close after the rescheduled game has finished (within two days). If the game is cancelled or rescheduled to over two days away, the market will resolve to a fair price in accordance with the rules.\n\nKalshi is not affiliated, associated, authorized, endorsed by, or in any way officially connected with the Governing League. All trademarks, logos, and brand names are the property of their respective owners.",
+      "settlement_bounds_type": "default",
+      "settlement_timer_seconds": 120,
+      "status": "active",
+      "strike_type": "structured",
+      "ticker": "KXMLBGAME-26OCT122000LADMIL-LAD",
+      "title": "Los Angeles D wins",
+      "updated_time": "2026-10-08T23:10:51.32956Z",
+      "volume_24h_fp": "26789.83",
+      "volume_fp": "42195.49",
+      "yes_ask_dollars": "0.5500",
+      "yes_ask_size_fp": "69.41",
+      "yes_bid_dollars": "0.5400",
+      "yes_bid_size_fp": "805.23",
+      "yes_sub_title": "Los Angeles D"
+    },
+    {
+      "can_close_early": true,
+      "close_time": "2026-10-16T00:00:00Z",
+      "created_time": "2026-10-08T16:45:39.719308Z",
+      "custom_strike": {
+        "baseball_team": "087f0ae7-c231-4dcd-b7e5-f026c1769e40"
+      },
+      "early_close_condition": "This market will close and expire after a winner is declared.",
+      "event_ticker": "KXMLBGAME-26OCT122000LADMIL",
+      "exchange_index": 3,
+      "expected_expiration_time": "2026-10-13T03:00:00Z",
+      "expiration_time": "2026-10-16T00:00:00Z",
+      "expiration_value": "",
+      "last_price_dollars": "0.4600",
+      "latest_expiration_time": "2026-10-16T00:00:00Z",
+      "market_type": "binary",
+      "no_ask_dollars": "0.5600",
+      "no_bid_dollars": "0.5400",
+      "no_sub_title": "Milwaukee",
+      "notional_value_dollars": "1.0000",
+      "occurrence_datetime": "2026-10-13T03:00:00Z",
+      "open_interest_fp": "18392.10",
+      "open_time": "2026-10-08T16:55:00Z",
+      "previous_price_dollars": "0.4800",
+      "previous_yes_ask_dollars": "0.4800",
+      "previous_yes_bid_dollars": "0.4700",
+      "price_level_structure": "linear_cent",
+      "price_ranges": [
+        {
+          "end": "1.0000",
+          "start": "0.0000",
+          "step": "0.0100"
+        }
+      ],
+      "result": "",
+      "rules_primary": "If Milwaukee wins the Los Angeles D vs Milwaukee professional baseball game originally scheduled for Oct 12, 2026, then the market resolves to Yes.",
+      "rules_secondary": "The following market refers to the Los Angeles D vs Milwaukee professional baseball game originally scheduled for Oct 12, 2026. If this game is postponed or delayed, the market will remain open and close after the rescheduled game has finished (within two days). If the game is cancelled or rescheduled to over two days away, the market will resolve to a fair price in accordance with the rules.\n\nKalshi is not affiliated, associated, authorized, endorsed by, or in any way officially connected with the Governing League. All trademarks, logos, and brand names are the property of their respective owners.",
+      "settlement_bounds_type": "default",
+      "settlement_timer_seconds": 120,
+      "status": "active",
+      "strike_type": "structured",
+      "ticker": "KXMLBGAME-26OCT122000LADMIL-MIL",
+      "title": "Milwaukee wins",
+      "updated_time": "2026-10-08T23:10:51.32956Z",
+      "volume_24h_fp": "13424.76",
+      "volume_fp": "23198.64",
+      "yes_ask_dollars": "0.4600",
+      "yes_ask_size_fp": "579.21",
+      "yes_bid_dollars": "0.4400",
+      "yes_bid_size_fp": "722.00",
+      "yes_sub_title": "Milwaukee"
+    }
+  ]
+}

@@ -1387,7 +1387,10 @@ def discover_and_capture_prospective(*,archive:NamespaceArchive,
             if existing_snapshots and any(item.opportunity_id==opportunity.research_capture_opportunity_id for item in existing_snapshots):continue
             series=None;mapping_diagnostic="no-current-market-selection"
             if target<=now<=target+timedelta(minutes=5) and success is None:
-                if catalog is None:catalog=load_prospective_catalog(boundary)
+                if catalog is None:
+                    catalog=load_prospective_catalog(boundary)
+                    if hasattr(catalog[1],"blocked_event_ids"):
+                        catalog[1].blocked_event_ids |= frozenset(key for key,h in histories.items() if len({x.scheduled_start for x in h.observations})>1)
                 prepared_markets=prepare_prospective_markets(catalog,series_values,schedule)
                 series,mapping_diagnostic=select_prepared_market(prepared_markets,now)
                 if owned and series is not None and series.provider_market_id!=owned[0].provider_market_id:
@@ -1494,7 +1497,7 @@ def discover_and_capture_prospective(*,archive:NamespaceArchive,
                 if slot not in by_slot:persist_no_call(slot,completion_time)
             if len(by_slot)==5 and completion_time>=target+timedelta(minutes=5):
                 snapshot=reconcile_prospective_snapshot(protocol=protocol,opportunity=opportunity,activation=activation,eligibility_context=context,eligibility_result=result,
-                    schedule_history=history,analysis_boundary=completion_time,attempts=tuple(by_slot.values()),window_closed_at=max(completion_time,target+timedelta(minutes=5)),provenance=result.provenance,limitations=("fixture-only inactive acquisition",))
+                    schedule_history=history,analysis_boundary=completion_time,attempts=tuple(by_slot.values()),window_closed_at=max(completion_time,target+timedelta(minutes=5)),provenance=result.provenance,limitations=(("activated prospective acquisition",) if archive.config.mode is OperatingMode.ACTIVATED else ("fixture-only inactive acquisition",)))
                 values=_entry_values(archive=archive,command="capture-prospective",request_id=request_identity({"snapshot_id":snapshot.prospective_standalone_snapshot_id}),invoked_at=completion_time,
                     endpoint="local://snapshot-replay",disposition=Disposition.SKIPPED_AFTER_SUCCESS if success else Disposition.MISSED,protocol_id=protocol.standalone_probability_source_protocol_id,
                     design=DesignAuthority.PROSPECTIVE,diagnostics=(f"opportunity:{opportunity.research_capture_opportunity_id}","terminal-snapshot"))
