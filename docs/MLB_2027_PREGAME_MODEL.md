@@ -86,3 +86,7 @@ Tom hypothesizes that recent AI/mathematical advances could offer an advantage a
 ## Verified setup due diligence — October 12
 
 The [read-only access/compute review](MLB_2027_MODEL_ACCESS_COMPUTE_REVIEW.md) found a material 3.5 eligibility blocker: the actual weight terms exclude consumers, and hosted-service terms do likewise. Personal hobby research/use of predictions for manual wagers is not automatically covered. Direct permission is needed before pursuing 3.5; the more permissive standalone v2 license is an explicit alternative, not an adopted version switch. Local CPU/MPS hardware/software compatibility was investigated privately, matching wheels and current cloud list prices were checked, but no runtime benchmark or model download occurred. No account, acceptance, installation, purchase, data upload or fit is authorized by this investigation.
+
+## Licensing inquiry sent — October 12
+
+The parent confirms the Owner-approved personal-research licensing inquiry was sent. The [access review](MLB_2027_MODEL_ACCESS_COMPUTE_REVIEW.md) records its narrow performance-analytics research scope and pending permission; correspondence details remain private. The parent will handle the reply. No access acceptance, installation, acquisition, new fit or v2 switch has been authorized.

@@ -169,3 +169,9 @@ This review corrects the earlier broad research-availability assumption: **3.5
 eligibility is unresolved for the stated personal use.** PR #86 remains draft;
 existing collectors, T−6h protocols, model artifacts and failed-result history
 are unchanged.
+
+## Licensing inquiry status — October 12 follow-up
+
+The coordinating parent confirms that an Owner-approved inquiry was sent to the model vendor about personal baseball-performance analytics, private research/experimentation, the consumer exclusion, permission options and costs. This supersedes the earlier “no message has been sent” status for that specific inquiry only. The approved inquiry scope is narrow; it does not establish permission for broader product uses. Personal correspondence identifiers and account details remain private.
+
+Vendor permission remains pending. No terms acceptance, login, installation, model download, training, spending or v2 substitution is approved. The parent owns receipt/review of the response; this task will not send a duplicate or broaden the inquiry. Any response must be recorded with its actual scope before treating access as cleared.
