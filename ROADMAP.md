@@ -168,3 +168,9 @@ Pops' Edge should become increasingly capable of distinguishing:
 > **We do not yet know.**
 
 Supported knowledge should produce governed, traceable decisions. Insufficient evidence preserves uncertainty.
+
+## 2027 regular-season in-house pregame track — October 12, 2026
+
+Separate from release acceptance and existing T−6h studies, the Owner has reopened native-model planning toward a paper-alert prototype for selective manual decisions at Kalshi executable prices. This supersedes the earlier deferral solely for planning and documentation; no release target, model execution, production collection or wagering is authorized.
+
+Next decision: discuss the [single strength-rating experiment](docs/MLB_2027_PREGAME_MODEL.md), its five-day cap and continuation gate. If approved, freeze inputs/evaluation before execution and record failures as well as gains. A passing development comparison earns consideration for a separately governed same-time regular-season paper trial, whose forecast and selected net-return evidence remain distinct. Availability timing investigation continues separately without blocking offline modeling or duplicating the current observer.
