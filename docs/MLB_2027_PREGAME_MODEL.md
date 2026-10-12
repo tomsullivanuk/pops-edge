@@ -61,6 +61,19 @@ The observer reports successful official MLB live-feed baseline reads shortly af
 
 Finite scope: 15-minute polling more than three hours before start, five-minute polling within three hours; maximum 240 requests; hard stop October 13 00:30 UTC; each game stops at first observed live/final/postponed/canceled state. Record complete unique nine-player orders with agreeing slot codes, first observed availability and previous absence interval, left censoring, order/probable-pitcher changes, schedule revisions and latency/missing intervals. Exact publication and explicit confirmation times remain unknown when not supplied. BDL trial access is unavailable to that runner; no purchases or credential changes are authorized.
 
+### Interim observation — October 12, 18:05 UTC
+
+The coordinating parent supplied this verified checkpoint from the single observer's MLB feed polls for game `849812` (Milwaukee–Los Angeles), scheduled for 21:00 UTC:
+
+| Batting order | Previous observed absence | First observed complete order | Time before scheduled start |
+| --- | --- | --- | --- |
+| Milwaukee | 17:05:28 UTC | 17:20:28 UTC | 3 hours 40 minutes |
+| Los Angeles | 17:20:28 UTC | 17:35:28 UTC | 3 hours 25 minutes |
+
+Both orders remained complete at 18:05:29 UTC. These are polling bounds on feed availability, not exact announcement times or evidence of an explicit confirmation field. Probable pitchers were present; their explicit confirmation remains unknown. This supports the working assumption of pregame lineup availability for one observed postseason game only. It does not establish regular-season reliability, availability through our eventual provider, or paired executable Kalshi depth.
+
+Guardians–Rays orders remained absent at this checkpoint. The parent reported the observer alive with 38 requests and zero HTTP failures, a recorded 13:00:57–13:50:24 UTC observation gap, and five-minute cadence for the first game. The finite run is still underway; its final record will supersede this checkpoint. No additional observer, training run or product-timing change follows from this observation.
+
 Raw responses stay private. Finite results will be added as aggregate findings with truthful observation times and limitations. Two playoff games cannot establish 2027 regular-season completeness. Source-history linkage: [MLB source research](MLB_SOURCE_RESEARCH_v1.1.0.md).
 
 ## Approved execution record — October 12
