@@ -56,3 +56,12 @@ because execution stopped at the first training fit.
 The original freeze and failure remain preserved. Draft PR #86 is unmerged;
 production, prior experiments and T−6h studies remain untouched. The separate
 3.5 inquiry remains pending and is not a dependency.
+
+
+## Approved normalized restart — second numerical stop
+
+Tom approved whole-objective/gradient normalization; amended implementation was frozen at `b6da89a`. The synthetic gradient check passed within 1.75e-11. The gamma=0.1 baseline passed the new per-PA gradient gate at 5.72e-10; its 2023 inner forecast loss was computed transiently for the preset selection routine. The next gamma=1 baseline terminated at floating-point objective precision with gradient 2.6684222170921877e-9 after 58 iterations, above the 1e-9 gate. Execution stopped again. No challenger fit, completed inner selection, outer forecast or component performance comparison exists. No inner performance value was inspected to choose a numerical threshold.
+
+Both receipts are preserved in [restart_numerical_receipts.json](restart_numerical_receipts.json). Whole-objective scaling did not change model definitions or relative penalties. This second stop exposes another overly strict numerical acceptance choice; it provides no evidence for or against component accuracy.
+
+Propose one further documented numerical amendment: use 1e-8 per-PA gradient tolerance for both optimizer and acceptance, keeping all other frozen controls. This is a numerical criterion, not an accuracy or economic tolerance. It is of the order of square-root double-precision machine epsilon, although that heuristic alone does not guarantee solution accuracy. Convergence, gradient checks, probability replay and the original predictive gate would still be required. Restart remains unapproved until Tom agrees; any further failure stops.

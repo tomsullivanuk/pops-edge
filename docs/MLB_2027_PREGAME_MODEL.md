@@ -132,3 +132,8 @@ Tom approved the one-season pass. [Results](../research/pregame_2027/component_r
 ## Experiment 03 authorized; numerical stop — October 12
 
 Tom approved the bounded PA component experiment. Full-source validation and feature preparation passed across 2022–2025; implementation was frozen at `0e0f94f`. The first baseline training fit then failed the absolute summed-gradient convergence requirement and stopped before any validation scores, challenger fit or outer forecast. [The failure record](../research/pregame_2027/experiment_03/RESULTS.md) is a numerical stop, not evidence that the component failed its accuracy gate. [A narrow numerical amendment](../research/pregame_2027/experiment_03/NUMERICAL_AMENDMENT.md), preserving the model objective's minimizer through whole-objective normalization, remains for Tom's agreement before a restart. No more fit is authorized automatically.
+
+
+## Normalized restart stopped — October 12
+
+Tom approved whole-objective normalization; the first baseline configuration passed, but the next configuration failed the amended gradient gate (2.67e-9 versus 1e-9). No challenger or outer evaluation occurred. [Failure record](../research/pregame_2027/experiment_03/RESULTS.md) and [proposed 1e-8 tolerance amendment](../research/pregame_2027/experiment_03/TOLERANCE_AMENDMENT.md) preserve the stopped run and next decision. No accuracy conclusion or automatic restart.
