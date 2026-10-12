@@ -189,3 +189,8 @@ October 12 setup review: the [actual license/access and compute assessment](docs
 The authorized local comparison is complete; this supersedes earlier pending-status entries. [Experiment 02 results](research/pregame_2027/experiment_02/RESULTS.md) record exact reference replay, 7,280 chronological development forecasts, and independent score/bootstrap verification. TabPFN-v2 improved average annual Brier by 0.000057915 versus the required 0.001; CatBoost worsened it by 0.000479901. Both fail their frozen gates. Sportsbook opening consensus remains better on both proper scores in each year on the original common population. These are reused development seasons, not untouched holdouts. Retain the reference and promote neither learner; no further tuning is authorized automatically.
 
 The pinned v2 checkpoint worked on local Metal without paid compute or model-service uploads. The separate 3.5 licensing inquiry remains pending. Existing collectors, T−6h studies, production pins and schedules remain intact; draft PR 86 remains for review and is not approved for merge.
+
+
+## Proposed next readiness gate — October 12
+
+The authorized read-only [player-component feasibility review](docs/MLB_2027_COMPONENT_FEASIBILITY.md) is complete. Extensive player-game totals do not supply a validated season-scale PA/pitch corpus; only four distinct detailed games are retained. Propose one bounded Retrosheet PA readiness pass, then one starter–batter categorical outcome experiment against a strong matchup baseline if Tom agrees its frozen protocol. Acquisition, fitting and integration remain unapproved. Component accuracy is a separate gate from game-winner improvement against the sportsbook proxy.
