@@ -127,3 +127,8 @@ The proposed immediate gate is a one-day, one-season Retrosheet readiness pass w
 ## Approved readiness pass completed — October 12
 
 Tom approved the one-season pass. [Results](../research/pregame_2027/component_readiness/RESULTS.md): 100 frozen games, 7,496 PA, exact sampled count reconciliation, usable IDs/labels and distinct suspended-play dates; 17.44 MB transferred. Sample-level feasibility passes, with whole-season/multi-season validation still required. This supersedes preceding unapproved-readiness status, without changing prior failed experiments. The [concrete experiment 03 protocol](../research/pregame_2027/component_experiment/PROTOCOL.md) is proposed for agreement before additional seasons or fitting. No model fit occurred.
+
+
+## Experiment 03 authorized; numerical stop — October 12
+
+Tom approved the bounded PA component experiment. Full-source validation and feature preparation passed across 2022–2025; implementation was frozen at `0e0f94f`. The first baseline training fit then failed the absolute summed-gradient convergence requirement and stopped before any validation scores, challenger fit or outer forecast. [The failure record](../research/pregame_2027/experiment_03/RESULTS.md) is a numerical stop, not evidence that the component failed its accuracy gate. [A narrow numerical amendment](../research/pregame_2027/experiment_03/NUMERICAL_AMENDMENT.md), preserving the model objective's minimizer through whole-objective normalization, remains for Tom's agreement before a restart. No more fit is authorized automatically.
