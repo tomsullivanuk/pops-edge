@@ -1,0 +1,88 @@
+{
+  "sample_rule": "all regular-season games",
+  "sample_games": 2430,
+  "season_game_types": {
+    "regular": 2430,
+    "allstar": 1,
+    "wildcard": 11,
+    "divisionseries": 18,
+    "lcs": 11,
+    "worldseries": 7
+  },
+  "sample_game_types": {
+    "regular": 2430
+  },
+  "counts": {
+    "play_rows": 189939,
+    "pa": 182926,
+    "unknown_batter_hand": 0,
+    "unknown_pitcher_hand": 0,
+    "pa_by_initial_batter": 176009,
+    "starter_pa": 106516,
+    "starter_iw": 87,
+    "iw": 556,
+    "k_safe": 56,
+    "label_other": 126902,
+    "starter_label_other": 74969,
+    "label_K": 40645,
+    "starter_label_K": 23242,
+    "label_BB": 14823,
+    "starter_label_BB": 8218,
+    "non_pa_rows": 7013
+  },
+  "sample_pitching_rows": 20868,
+  "sample_team_rows": 4860,
+  "initial_starters": 4860,
+  "sample_date_range": [
+    "20250318",
+    "20250928"
+  ],
+  "issues": {
+    "initial_lineup_disagreement": 3
+  },
+  "suspended_games": {
+    "BOS202507010": {
+      "original": "20250701",
+      "resume": "20250702",
+      "play_dates": [
+        "20250701",
+        "20250702"
+      ],
+      "in_sample": true
+    },
+    "CIN202506060": {
+      "original": "20250606",
+      "resume": "20250607",
+      "play_dates": [
+        "20250606",
+        "20250607"
+      ],
+      "in_sample": true
+    },
+    "CIN202508020": {
+      "original": "20250802",
+      "resume": "20250803",
+      "play_dates": [
+        "20250802",
+        "20250803"
+      ],
+      "in_sample": true
+    },
+    "MIN202505190": {
+      "original": "20250519",
+      "resume": "20250521",
+      "play_dates": [
+        "20250519",
+        "20250521"
+      ],
+      "in_sample": true
+    }
+  },
+  "source_hashes": {
+    "2025allplayers.csv": "20f3f1f3573eb0e985a32808b94c61107e926e6b1798c16e3e76da30791c5117",
+    "2025gameinfo.csv": "d56becd2427fe846f562cf94c7569c6dad97764caf79037047f3897a6c9e914b",
+    "2025pitching.csv": "1c7556cf743939d396464d32a88eaee42c6264aa91520c49ffaa1a5f08eff64e",
+    "2025plays.csv": "2c58a5ceeae9b653dddc8b4d20fa9b3810bfd3a6d40c29786509c5e060a5f23f",
+    "2025teamstats.csv": "9f37b2a1ff6a7786ca03de1918f8c2364590b06bb703b077d590200f32ddc943"
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "sample_rule": "all regular-season games",
+  "sample_games": 2430,
+  "season_game_types": {
+    "regular": 2430,
+    "allstar": 1,
+    "wildcard": 9,
+    "divisionseries": 16,
+    "lcs": 9,
+    "worldseries": 6
+  },
+  "sample_game_types": {
+    "regular": 2430
+  },
+  "counts": {
+    "play_rows": 187969,
+    "pa": 182052,
+    "unknown_batter_hand": 0,
+    "unknown_pitcher_hand": 0,
+    "pa_by_initial_batter": 175820,
+    "starter_pa": 106541,
+    "starter_iw": 80,
+    "iw": 475,
+    "k_safe": 76,
+    "label_K": 40812,
+    "starter_label_K": 22988,
+    "label_other": 126387,
+    "starter_label_other": 75607,
+    "label_BB": 14378,
+    "starter_label_BB": 7866,
+    "non_pa_rows": 5917
+  },
+  "sample_pitching_rows": 20878,
+  "sample_team_rows": 4860,
+  "initial_starters": 4860,
+  "sample_date_range": [
+    "20220407",
+    "20221005"
+  ],
+  "issues": {
+    "initial_lineup_disagreement": 2,
+    "first_pa_not_recorded_starter": 1
+  },
+  "suspended_games": {
+    "MIN202205110": {
+      "original": "20220511",
+      "resume": "20220512",
+      "play_dates": [
+        "20220511",
+        "20220512"
+      ],
+      "in_sample": true
+    }
+  },
+  "source_hashes": {
+    "2022allplayers.csv": "a51da885ace4058b9a2380261fb6b1359e1187e1950522b0b99c738658dbcad8",
+    "2022gameinfo.csv": "e31c013d209959bb80c21bfca99bc8d9a46d0a63ec5f561c286ebd8df60d53a3",
+    "2022pitching.csv": "7dfbfcd354484a70d4f1040a78a352996887687c01ab77763435c8cf8a7de15d",
+    "2022plays.csv": "c4fb40bc1778788f2172e6666888a683e6dd6fdcc37ad2fabf979bd2a7549a52",
+    "2022teamstats.csv": "b9c24b96f9aaf3f905142e28fbfd94d3c02a41ae4d75c89cf339e994c07ab1c7"
+  }
+}
