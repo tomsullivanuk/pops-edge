@@ -158,3 +158,8 @@ Stop visibly if bounds or scientific checks fail. Then return the concrete froze
 experiment protocol for agreement before acquiring more seasons or training.
 The [separate readiness handoff](MLB_2027_COMPONENT_READINESS_HANDOFF.md) is a
 proposal, not execution authority. No need to wait for the unrelated 3.5 inquiry.
+
+
+## Approved readiness pass completed — October 12
+
+Tom approved the one-season pass. [Results](../research/pregame_2027/component_readiness/RESULTS.md): 100 frozen games, 7,496 PA, exact sampled count reconciliation, usable IDs/labels and distinct suspended-play dates; 17.44 MB transferred. Sample-level feasibility passes, with whole-season/multi-season validation still required. This supersedes preceding unapproved-readiness status, without changing prior failed experiments. The [concrete experiment 03 protocol](../research/pregame_2027/component_experiment/PROTOCOL.md) is proposed for agreement before additional seasons or fitting. No model fit occurred.

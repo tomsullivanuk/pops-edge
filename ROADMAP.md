@@ -194,3 +194,8 @@ The pinned v2 checkpoint worked on local Metal without paid compute or model-ser
 ## Proposed next readiness gate — October 12
 
 The authorized read-only [player-component feasibility review](docs/MLB_2027_COMPONENT_FEASIBILITY.md) is complete. Extensive player-game totals do not supply a validated season-scale PA/pitch corpus; only four distinct detailed games are retained. Propose one bounded Retrosheet PA readiness pass, then one starter–batter categorical outcome experiment against a strong matchup baseline if Tom agrees its frozen protocol. Acquisition, fitting and integration remain unapproved. Component accuracy is a separate gate from game-winner improvement against the sportsbook proxy.
+
+
+## Approved readiness pass completed — October 12
+
+Tom approved the one-season pass. [Results](research/pregame_2027/component_readiness/RESULTS.md): 100 frozen games, 7,496 PA, exact sampled count reconciliation, usable IDs/labels and distinct suspended-play dates; 17.44 MB transferred. Sample-level feasibility passes, with whole-season/multi-season validation still required. This supersedes preceding unapproved-readiness status, without changing prior failed experiments. The [concrete experiment 03 protocol](research/pregame_2027/component_experiment/PROTOCOL.md) is proposed for agreement before additional seasons or fitting. No model fit occurred.

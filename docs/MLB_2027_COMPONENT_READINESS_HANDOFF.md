@@ -1,6 +1,6 @@
 # Proposed handoff: starter–batter PA readiness
 
-Status: **for Owner agreement; not authorized to execute**. October 12, 2026.
+Status: **approved by Tom and completed; sample readiness passed**. October 12, 2026.
 Task name: `Pops | MLB 2027 | Starter–batter PA component | Data readiness | PR #86`.
 
 Read [the feasibility review](MLB_2027_COMPONENT_FEASIBILITY.md), current main
@@ -9,7 +9,7 @@ and AGENTS.md before execution. Main at assessment was
 local checkout and all original evidence; use the existing isolated documentation
 worktree or another explicitly authorized isolated workspace.
 
-If Tom approves this exact scope, obtain only the publicly offered Retrosheet
+Approved execution scope: obtain only the publicly offered Retrosheet
 2023 parsed annual archive and the minimum same-season game/player metadata
 needed to identify starters and dates. Keep acquisition under 100 MB compressed,
 1 GB expanded and one focused working day. Record source URLs, hashes, license
@@ -40,3 +40,8 @@ On success, write equations, frozen baseline/challenger settings, chronological
 evaluation, proposed 0.5% component gate and effort cap as a separate protocol
 for Tom's agreement. Success authorizes neither that fit nor more acquisition.
 Keep PR #86 draft; no merge, production changes, trades or purchases.
+
+
+## Completion
+
+The approved pass is complete. [Readiness results](../research/pregame_2027/component_readiness/RESULTS.md) record 17.44 MB transferred, 100 frozen games, 7,496 PA, no sampled discrepancies and a separate arithmetic check. The [concrete fitting protocol](../research/pregame_2027/component_experiment/PROTOCOL.md) remains for Tom's agreement; no additional acquisition or fit is authorized by readiness completion.
