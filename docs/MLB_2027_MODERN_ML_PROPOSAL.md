@@ -1,6 +1,8 @@
 # Modern ML: one proposed next comparison
 
-October 12, 2026. **Discussion proposal, not authorization to install, accept
+October 12, 2026. **Setup due diligence now identifies a consumer-eligibility blocker for 3.5.** Read the [access/compute review](MLB_2027_MODEL_ACCESS_COMPUTE_REVIEW.md) before this conditional proposal; v2 is an explicit alternative requiring a new decision.
+
+**Discussion proposal, not authorization to install, accept
 licenses, create credentials, download weights or train.** This follows Tom's
 hypothesis that recent AI/mathematical advances might provide an advantage against
 well-resourced sportsbooks. The hypothesis is worth testing; neither the resource
