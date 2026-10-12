@@ -139,3 +139,8 @@ History decay and the 365-day window use complete-game availability date, consis
 ## Approved numerical amendment — October 12
 
 Tom explicitly approved whole-objective and gradient normalization per PA. The [amendment](NUMERICAL_AMENDMENT.md) now governs numerical acceptance: normalized gradient infinity at most 1e-9, with the same optimizer, model and relative penalties. Restart uses a separate private fit directory. Original frozen code and numerical failure remain preserved. Synthetic gradient check passed within 1.75e-11 before restart.
+
+
+## Approved tolerance amendment
+
+Tom approved [the 1e-8 per-PA gradient criterion](TOLERANCE_AMENDMENT.md) for both optimizer and acceptance. It supersedes the 1e-9 numerical criterion only; preserve both prior stops and all model/evaluation settings.

@@ -100,11 +100,11 @@ def matrix(a,idx,model,stats=None):
 
 def fit(a,train,model,gamma,path):
     z,stats=matrix(a,train,model);pen=np.full(z.shape[1],100.);pen[:10]=gamma;pen[0]=0
-    start=time.monotonic();res=minimize(objective,np.zeros(2*z.shape[1]),args=(z,a['y'][train],pen),jac=True,method='L-BFGS-B',options={'maxiter':1000,'gtol':1e-9,'ftol':0,'maxls':40})
+    start=time.monotonic();res=minimize(objective,np.zeros(2*z.shape[1]),args=(z,a['y'][train],pen),jac=True,method='L-BFGS-B',options={'maxiter':1000,'gtol':1e-8,'ftol':0,'maxls':40})
     receipt={'model':model,'gamma':gamma,'rows':len(train),'iterations':int(res.nit),'seconds':time.monotonic()-start,'success':bool(res.success),'message':str(res.message),'gradient_infinity':float(np.abs(res.jac).max()),'objective':float(res.fun),'equivalent_summed_objective':float(res.fun)*len(train),'equivalent_summed_gradient_infinity':float(np.abs(res.jac).max())*len(train),'stats':stats}
     Path(str(path)+'.json').write_text(json.dumps(receipt,indent=2)+'\n');np.save(Path(str(path)+'.npy'),res.x)
     print(model,gamma,len(train),'iter',res.nit,'gradient',receipt['gradient_infinity'],'seconds',round(receipt['seconds'],1),flush=True)
-    if not res.success or receipt['gradient_infinity']>1e-9 or not np.isfinite(res.fun):raise RuntimeError('Frozen convergence requirement failed; stop specification')
+    if not res.success or receipt['gradient_infinity']>1e-8 or not np.isfinite(res.fun):raise RuntimeError('Frozen convergence requirement failed; stop specification')
     return res.x,stats
 
 
