@@ -1,6 +1,8 @@
 # Next model proposal: predict the score pair, then the winner
 
-October 12, 2026. **Read-only assessment and discussion proposal; no experiment
+October 12, 2026. **Structural alternative; deprioritized as the immediate next test after the modern-ML research review.** See the [current learner-comparison proposal](MLB_2027_MODERN_ML_PROPOSAL.md). Retain these score-model notes for discussion.
+
+**Read-only assessment and discussion proposal; no experiment
 or implementation authorized.** The previous strength-rating challenger failed
 its gate and stays unpromoted. The sportsbook opening consensus remains the
 agreed historical proxy for Kalshi. Changing benchmark venue is not an answer
