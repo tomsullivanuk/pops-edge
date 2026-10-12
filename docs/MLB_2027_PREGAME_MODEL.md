@@ -70,3 +70,7 @@ The [frozen protocol](../research/pregame_2027/experiment_01/PROTOCOL.md), [sour
 ## Experiment 01 result — October 12
 
 The [completed result and verification](../research/pregame_2027/experiment_01/RESULTS.md) records all three folds, the failed practical gate and reused-development limitations. Average annual Brier gain was 0.000334; conditional 14-day 95% interval [−0.000257, +0.000790]. Pooled log loss improved and coverage stayed identical, but the agreed 0.001 gain threshold was not met. Retain the existing reference; do not promote this challenger, retune it or start a second variant automatically. No same-time Kalshi or selected-return experiment has been run. The effort cap is satisfied; this is a completed negative continuation decision, not unfinished work waiting five calendar days.
+
+## Next-step proposal — October 12, after failed challenger
+
+The [unchanged-reference matched-measurement proposal](MLB_2027_MATCHED_PAPER_PILOT_PROPOSAL.md) recommends a two-focused-day offline rehearsal before any separately approved finite live pilot. It addresses live player-ID/count compatibility, contemporaneous model/market pairing, executable depth, fees and delayed paper probes. It is not a model variant, challenger promotion or selection-policy approval. Implementation and live capture remain unapproved. Playoff data can verify plumbing but cannot establish regular-season accuracy or profitability.
