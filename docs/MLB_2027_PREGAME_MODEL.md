@@ -1,11 +1,11 @@
 # 2027 pregame model: experiment 01 proposal
 
-October 12, 2026. Status: **discussion proposal; no model execution authorized**.
+October 12, 2026. Status: **single offline comparison authorized October 12; execution protocol frozen before challenger fitting**.
 Repository inspected at main `9564b12dcd80f0b3347b4860b95984763f2e3061`.
 
 ## Goal and authority
 
-Agreed direction: an in-house regular-season baseball winner model, eventually identifying selective, understandable opportunities at Kalshi executable prices for small manual wagers. Paper alerts come first. Documentation is authorized; model experiments require discussion with Tom. No trading, purchases, new credentials, production changes or merge are authorized. No release is assigned.
+Agreed direction: an in-house regular-season baseball winner model, eventually identifying selective, understandable opportunities at Kalshi executable prices for small manual wagers. Paper alerts come first. Tom approved the proposed single offline comparison, five focused working-day effort cap and continuation gate after discussion. No trading, purchases, new credentials, production changes or merge are authorized. No release is assigned.
 
 Existing postseason collection, its T−6h protocol, regular-season collection and historical evidence remain intact. T−6h does not constrain this new product. Assume services will provide lineups before first pitch while observed timing is investigated separately; the already-running bounded postseason observer is not duplicated. Its findings cannot establish regular-season availability by themselves.
 
@@ -49,9 +49,9 @@ For quantity N, probability p and total acquisition cost C, net expected profit 
 
 - Agreed: regular-season focus, paper first, existing studies preserved, GitHub documentation, lineup availability working assumption.
 - Proposed: the single rating challenger, five-day cap, development gate and three-check product window.
-- Authorized now: inspect sources and prepare this documentation in a draft PR.
-- Pending next Owner decision: approve or revise this one bounded offline comparison and its continuation gate before execution.
-- Results: none; no model experiment launched. Timing observer findings pending from the coordinating parent.
+- Authorized now: the one offline comparison and documentation updates in draft PR #86.
+- Owner decision October 12: “Yes, let’s move forward as you propose.” This authorizes the single comparison, cap and gate; paper-alert implementation, collection and wagering remain separate.
+- Execution: reference annual fits reproduced exactly; five synthetic chronology/equation checks passed. Challenger results pending. Timing observer findings remain separate.
 
 ## Authorized finite availability observation — separate work
 
@@ -62,3 +62,7 @@ The observer reports successful official MLB live-feed baseline reads shortly af
 Finite scope: 15-minute polling more than three hours before start, five-minute polling within three hours; maximum 240 requests; hard stop October 13 00:30 UTC; each game stops at first observed live/final/postponed/canceled state. Record complete unique nine-player orders with agreeing slot codes, first observed availability and previous absence interval, left censoring, order/probable-pitcher changes, schedule revisions and latency/missing intervals. Exact publication and explicit confirmation times remain unknown when not supplied. BDL trial access is unavailable to that runner; no purchases or credential changes are authorized.
 
 Raw responses stay private. Finite results will be added as aggregate findings with truthful observation times and limitations. Two playoff games cannot establish 2027 regular-season completeness. Source-history linkage: [MLB source research](MLB_SOURCE_RESEARCH_v1.1.0.md).
+
+## Approved execution record — October 12
+
+The [frozen protocol](../research/pregame_2027/experiment_01/PROTOCOL.md), [source manifest](../research/pregame_2027/experiment_01/input_manifest.json) and [offline runner](../research/pregame_2027/experiment_01/run.py) make the approved comparison reproducible. The earlier proposal text records the decision presented to Tom; this dated authorization supersedes its pending-execution statements only. Paper window and policy details remain proposals. No release or production state changes.
