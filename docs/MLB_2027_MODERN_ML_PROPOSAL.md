@@ -93,7 +93,7 @@ of independent supervised examples. There is no demonstrated large-network
 training dataset merely because aggregate stat rows contain many counts.
 
 Retained batting-event rows total 202,701 across 2022–2025; pitching-appearance
-rows total 104,037 across 2022–2026. These are **player-game aggregates**, not
+rows total 103,937 across 2022–2026. These are **player-game aggregates**, not
 paired pitch sequences or individual batter-versus-pitcher plate appearances.
 The batting audit lists raw fields such as doubles/triples/HR/K, beyond the
 processed OBP/ISO input subset, but field presence does not prove reliable,
