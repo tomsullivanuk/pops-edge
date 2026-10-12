@@ -1,0 +1,44 @@
+{
+  "checkpoint_sha256": "cf8c519c01eaf1613ee91239006d57b1c806ff5f23ac1aeb1315ba1015210e49",
+  "external_independent_reviewer": false,
+  "folds": [
+    {
+      "catboost_prediction_replay_max_difference": 0.0,
+      "evaluation_games": 2426,
+      "later_test_feature_mutation_max_difference": 0.0,
+      "no_calibration_or_threshold_tuning": true,
+      "split_and_selection_verified": true,
+      "tabpfn_prediction_replay_max_difference": 0.0,
+      "training_games": 4852,
+      "year": 2024
+    },
+    {
+      "catboost_prediction_replay_max_difference": 0.0,
+      "evaluation_games": 2426,
+      "later_test_feature_mutation_max_difference": 0.0,
+      "no_calibration_or_threshold_tuning": true,
+      "split_and_selection_verified": true,
+      "tabpfn_prediction_replay_max_difference": 0.0,
+      "training_games": 7278,
+      "year": 2025
+    },
+    {
+      "catboost_prediction_replay_max_difference": 0.0,
+      "evaluation_games": 2428,
+      "later_test_feature_mutation_max_difference": 0.0,
+      "no_calibration_or_threshold_tuning": true,
+      "split_and_selection_verified": true,
+      "tabpfn_prediction_replay_max_difference": 0.0,
+      "training_games": 9704,
+      "year": 2026
+    }
+  ],
+  "full_and_common_annual_scores_recomputed": true,
+  "gate_reconstruction_passed": true,
+  "model_artifact_hashes_verified": true,
+  "new_private_row_outputs": true,
+  "no_model_network_calls": true,
+  "original_market_common_games": 7144,
+  "raw_feature_builder_reexecuted": false,
+  "unique_games": 7280
+}

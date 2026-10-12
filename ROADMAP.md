@@ -182,3 +182,10 @@ October 12 result: the [single strength experiment](research/pregame_2027/experi
 October 12 research discussion: Tom’s hypothesis is that modern AI methods may improve native forecasts against the agreed sportsbook proxy. The [current modern-ML proposal](docs/MLB_2027_MODERN_ML_PROPOSAL.md) recommends a conditional single TabPFN core comparison with a bounded boosting control, before larger player/pitch models. This is not approved training, model admission, access/license acceptance or production scope; the failed strength challenger remains closed.
 
 October 12 setup review: the [actual license/access and compute assessment](docs/MLB_2027_MODEL_ACCESS_COMPUTE_REVIEW.md) identifies 3.5 consumer eligibility as unresolved for the personal hobby use. Local compute is plausible but unbenchmarked; v2 is an explicit, unapproved alternative. No installation, license acceptance, model acquisition or training has occurred.
+
+
+## Completed bounded v2 comparison — October 12
+
+The authorized local comparison is complete; this supersedes earlier pending-status entries. [Experiment 02 results](research/pregame_2027/experiment_02/RESULTS.md) record exact reference replay, 7,280 chronological development forecasts, and independent score/bootstrap verification. TabPFN-v2 improved average annual Brier by 0.000057915 versus the required 0.001; CatBoost worsened it by 0.000479901. Both fail their frozen gates. Sportsbook opening consensus remains better on both proper scores in each year on the original common population. These are reused development seasons, not untouched holdouts. Retain the reference and promote neither learner; no further tuning is authorized automatically.
+
+The pinned v2 checkpoint worked on local Metal without paid compute or model-service uploads. The separate 3.5 licensing inquiry remains pending. Existing collectors, T−6h studies, production pins and schedules remain intact; draft PR 86 remains for review and is not approved for merge.

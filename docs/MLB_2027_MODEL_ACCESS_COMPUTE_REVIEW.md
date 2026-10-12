@@ -175,3 +175,10 @@ are unchanged.
 The coordinating parent confirms that an Owner-approved inquiry was sent to the model vendor about personal baseball-performance analytics, private research/experimentation, the consumer exclusion, permission options and costs. This supersedes the earlier “no message has been sent” status for that specific inquiry only. The approved inquiry scope is narrow; it does not establish permission for broader product uses. Personal correspondence identifiers and account details remain private.
 
 Vendor permission remains pending. No terms acceptance, login, installation, model download, training, spending or v2 substitution is approved. The parent owns receipt/review of the response; this task will not send a duplicate or broaden the inquiry. Any response must be recorded with its actual scope before treating access as cleared.
+
+
+## Completed bounded v2 comparison — October 12
+
+The authorized local comparison is complete; this supersedes earlier pending-status entries. [Experiment 02 results](../research/pregame_2027/experiment_02/RESULTS.md) record exact reference replay, 7,280 chronological development forecasts, and independent score/bootstrap verification. TabPFN-v2 improved average annual Brier by 0.000057915 versus the required 0.001; CatBoost worsened it by 0.000479901. Both fail their frozen gates. Sportsbook opening consensus remains better on both proper scores in each year on the original common population. These are reused development seasons, not untouched holdouts. Retain the reference and promote neither learner; no further tuning is authorized automatically.
+
+The pinned v2 checkpoint worked on local Metal without paid compute or model-service uploads. The separate 3.5 licensing inquiry remains pending. Existing collectors, T−6h studies, production pins and schedules remain intact; draft PR 86 remains for review and is not approved for merge.

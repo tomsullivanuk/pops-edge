@@ -1,0 +1,11 @@
+{
+  "notebook_code_cells": 5,
+  "all_executed_without_errors": true,
+  "figures_visually_inspected": [
+    "native_gains.png",
+    "sportsbook_gap.png"
+  ],
+  "figures_readable": true,
+  "full_rendered_notebook_layout_reviewed": false,
+  "limitation": "Full rendered notebook layout was not inspected; execution, tables and standalone figures were checked."
+}

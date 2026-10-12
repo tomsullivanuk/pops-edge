@@ -188,3 +188,10 @@ and draft PR #86 preserve proposal versus authorization and failed-result histor
 ## October 12 authorization update
 
 Tom explicitly chose v2 in the interim. The [frozen execution protocol](../research/pregame_2027/experiment_02/PROTOCOL.md) supersedes the pending-execution/version-choice statements above for this v2 comparison only. The 3.5 inquiry remains pending, and its license is not accepted. V2 setup/checkpoint verification and synthetic readiness passed; one bounded chronological reference/CatBoost/v2 comparison is authorized. No broader feature, version, cloud, policy or production scope follows.
+
+
+## Completed bounded v2 comparison — October 12
+
+The authorized local comparison is complete; this supersedes earlier pending-status entries. [Experiment 02 results](../research/pregame_2027/experiment_02/RESULTS.md) record exact reference replay, 7,280 chronological development forecasts, and independent score/bootstrap verification. TabPFN-v2 improved average annual Brier by 0.000057915 versus the required 0.001; CatBoost worsened it by 0.000479901. Both fail their frozen gates. Sportsbook opening consensus remains better on both proper scores in each year on the original common population. These are reused development seasons, not untouched holdouts. Retain the reference and promote neither learner; no further tuning is authorized automatically.
+
+The pinned v2 checkpoint worked on local Metal without paid compute or model-service uploads. The separate 3.5 licensing inquiry remains pending. Existing collectors, T−6h studies, production pins and schedules remain intact; draft PR 86 remains for review and is not approved for merge.
