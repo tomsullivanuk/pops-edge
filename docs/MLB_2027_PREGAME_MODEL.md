@@ -74,3 +74,7 @@ The [completed result and verification](../research/pregame_2027/experiment_01/R
 ## Next-step proposal — October 12, after failed challenger
 
 The [unchanged-reference matched-measurement proposal](MLB_2027_MATCHED_PAPER_PILOT_PROPOSAL.md) recommends a two-focused-day offline rehearsal before any separately approved finite live pilot. It addresses live player-ID/count compatibility, contemporaneous model/market pairing, executable depth, fees and delayed paper probes. It is not a model variant, challenger promotion or selection-policy approval. Implementation and live capture remain unapproved. Playoff data can verify plumbing but cannot establish regular-season accuracy or profitability.
+
+## Owner clarification and revised priority — October 12
+
+Tom clarified that sportsbook consensus is the intended historical proxy for unavailable Kalshi history; there is no evidence materially different Kalshi prices would rescue the weak model. Improving native probability estimates remains the priority. This supersedes the preceding matched-measurement proposal as the recommended next step; its notes stay as background and no collector is authorized. The [one score-model proposal](MLB_2027_SCORE_MODEL_PROPOSAL.md) assesses a materially different final-score likelihood using existing lagged team/starter inputs, with the sportsbook proxy as the main winner-probability comparator. It is a discussion proposal, not an approved experiment. The failed challenger remains closed and unpromoted.

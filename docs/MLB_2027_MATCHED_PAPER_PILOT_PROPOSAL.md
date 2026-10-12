@@ -1,6 +1,8 @@
 # Next step: unchanged-reference matched pregame measurement
 
-October 12, 2026. **Proposal only: no implementation or live capture authorized.**
+October 12, 2026. **Background feasibility notes only; deprioritized after Tom’s benchmark-proxy clarification. No implementation or live capture authorized.**
+
+Tom clarified that sportsbook consensus is intentionally the historical Kalshi proxy and that better probabilities, not changing benchmark venue, are the immediate problem. This supersedes the recommended next-step priority below; retain the useful capture specifications as background. The current [next model discussion](MLB_2027_SCORE_MODEL_PROPOSAL.md) is separate and unapproved.
 Experiment 01 [failed its continuation gate](../research/pregame_2027/experiment_01/RESULTS.md).
 Keep that decision intact: no challenger promotion, retuning, threshold search or
 new model variant. This proposal addresses the missing operational comparison,
