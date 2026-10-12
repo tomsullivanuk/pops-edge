@@ -134,3 +134,8 @@ credentials, purchases or wagers. The 3.5 inquiry remains unrelated and pending.
 ## Pre-fit implementation clarifications
 
 History decay and the 365-day window use complete-game availability date, consistently with the conservative delayed release. Continuous columns alone use training-only standardization; handedness indicators keep their category units. Full audits found three zero-completed-PA starters and nine initial batters replaced before their first PA. Pitching starting-role records agree with team starting-fielding metadata; replaced initial batters have no PA in those games. Retain original identities, zero exposure and substitutions rather than substitute first-completed-PA identities. These are reconciled cases, not excluded games. Inner selection uses all-role PA log loss as specified; primary outer continuation remains starter-only.
+
+
+## Approved numerical amendment — October 12
+
+Tom explicitly approved whole-objective and gradient normalization per PA. The [amendment](NUMERICAL_AMENDMENT.md) now governs numerical acceptance: normalized gradient infinity at most 1e-9, with the same optimizer, model and relative penalties. Restart uses a separate private fit directory. Original frozen code and numerical failure remain preserved. Synthetic gradient check passed within 1.75e-11 before restart.

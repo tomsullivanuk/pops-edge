@@ -1,6 +1,6 @@
 # Proposed numerical amendment: normalize the same PA objective
 
-Status: **for Tom's agreement; no restart authorized by this document**.
+Status: **approved by Tom; bounded restart authorized**.
 The [original run stopped](RESULTS.md) before validation/evaluation scores.
 
 Propose divide **the entire penalized summed objective and its gradient** by
