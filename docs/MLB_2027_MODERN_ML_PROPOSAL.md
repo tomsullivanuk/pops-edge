@@ -184,3 +184,7 @@ covered retained team/starter GAM protocols/results, batting/pitching audits,
 player-game fields and experiment 01, in addition to the independent model review.
 No new predictive results support this proposal. [Product record](MLB_2027_PREGAME_MODEL.md)
 and draft PR #86 preserve proposal versus authorization and failed-result history.
+
+## October 12 authorization update
+
+Tom explicitly chose v2 in the interim. The [frozen execution protocol](../research/pregame_2027/experiment_02/PROTOCOL.md) supersedes the pending-execution/version-choice statements above for this v2 comparison only. The 3.5 inquiry remains pending, and its license is not accepted. V2 setup/checkpoint verification and synthetic readiness passed; one bounded chronological reference/CatBoost/v2 comparison is authorized. No broader feature, version, cloud, policy or production scope follows.

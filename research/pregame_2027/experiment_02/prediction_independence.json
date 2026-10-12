@@ -1,0 +1,9 @@
+{
+  "baseball_inputs_accessed": false,
+  "batch_vs_isolated_max_absolute_difference": 1.4901161193847656e-07,
+  "device": "mps",
+  "later_test_row_mutation_max_absolute_difference": 0.0,
+  "passed": true,
+  "synthetic_only": true,
+  "tolerance": 1e-06
+}

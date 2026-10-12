@@ -90,3 +90,9 @@ The [read-only access/compute review](MLB_2027_MODEL_ACCESS_COMPUTE_REVIEW.md) f
 ## Licensing inquiry sent — October 12
 
 The parent confirms the Owner-approved personal-research licensing inquiry was sent. The [access review](MLB_2027_MODEL_ACCESS_COMPUTE_REVIEW.md) records its narrow performance-analytics research scope and pending permission; correspondence details remain private. The parent will handle the reply. No access acceptance, installation, acquisition, new fit or v2 switch has been authorized.
+
+## TabPFN-v2 authorized and ready — October 12
+
+Tom approved proceeding with v2 while the separate 3.5 inquiry is pending. The parent confirmed isolated local setup, synthetic capacity checks, then the bounded v2/reference/boosting comparison, without paid compute. The official v2 default checkpoint/license was pinned and checked; local dependencies installed separately from production. CPU/Metal small synthetic tests and the complete 9,704-row Metal capacity test passed; model use has network access disabled. No 3.5 weights, new account/credential or model API is used.
+
+The [experiment 02 protocol](../research/pregame_2027/experiment_02/PROTOCOL.md) and [settings](../research/pregame_2027/experiment_02/SETTINGS.json) freeze the comparison before baseball fitting. Four intrinsic v2 estimators, eight training-only boosting configurations, original ten columns, unchanged populations, no post-fit calibration and original development gate. Sportsbook opening consensus stays the historical proxy. Setup and full comparison are now authorized solely within this bounded protocol; production/policy/merge remain unchanged. Results pending.
