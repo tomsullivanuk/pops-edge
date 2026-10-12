@@ -1,6 +1,6 @@
 # 2027 pregame model: experiment 01 proposal
 
-October 12, 2026. Status: **single offline comparison authorized October 12; execution protocol frozen before challenger fitting**.
+October 12, 2026. Status: **approved offline comparison completed October 12; continuation gate failed**.
 Repository inspected at main `9564b12dcd80f0b3347b4860b95984763f2e3061`.
 
 ## Goal and authority
@@ -51,7 +51,7 @@ For quantity N, probability p and total acquisition cost C, net expected profit 
 - Proposed: the single rating challenger, five-day cap, development gate and three-check product window.
 - Authorized now: the one offline comparison and documentation updates in draft PR #86.
 - Owner decision October 12: “Yes, let’s move forward as you propose.” This authorizes the single comparison, cap and gate; paper-alert implementation, collection and wagering remain separate.
-- Execution: reference annual fits reproduced exactly; five synthetic chronology/equation checks passed. Challenger results pending. Timing observer findings remain separate.
+- Results October 12: single challenger completed and failed the gate. Average annual Brier gain 0.000334 versus required 0.001; improved 2025/2026, worsened 2024. Existing reference retained; no automatic next model experiment. Timing observer findings remain separate.
 
 ## Authorized finite availability observation — separate work
 
@@ -66,3 +66,7 @@ Raw responses stay private. Finite results will be added as aggregate findings w
 ## Approved execution record — October 12
 
 The [frozen protocol](../research/pregame_2027/experiment_01/PROTOCOL.md), [source manifest](../research/pregame_2027/experiment_01/input_manifest.json) and [offline runner](../research/pregame_2027/experiment_01/run.py) make the approved comparison reproducible. The earlier proposal text records the decision presented to Tom; this dated authorization supersedes its pending-execution statements only. Paper window and policy details remain proposals. No release or production state changes.
+
+## Experiment 01 result — October 12
+
+The [completed result and verification](../research/pregame_2027/experiment_01/RESULTS.md) records all three folds, the failed practical gate and reused-development limitations. Average annual Brier gain was 0.000334; conditional 14-day 95% interval [−0.000257, +0.000790]. Pooled log loss improved and coverage stayed identical, but the agreed 0.001 gain threshold was not met. Retain the existing reference; do not promote this challenger, retune it or start a second variant automatically. No same-time Kalshi or selected-return experiment has been run. The effort cap is satisfied; this is a completed negative continuation decision, not unfinished work waiting five calendar days.

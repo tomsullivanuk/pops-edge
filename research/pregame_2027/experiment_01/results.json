@@ -1,0 +1,652 @@
+{
+  "annual": {
+    "2024": {
+      "challenger": {
+        "brier": 0.2432490491734925,
+        "games": 2426,
+        "log_loss": 0.6794904886669992
+      },
+      "reference": {
+        "brier": 0.24313430808069328,
+        "games": 2426,
+        "log_loss": 0.679227637314904
+      }
+    },
+    "2025": {
+      "challenger": {
+        "brier": 0.24364691463833885,
+        "games": 2426,
+        "log_loss": 0.6800603633880764
+      },
+      "reference": {
+        "brier": 0.2438857476025804,
+        "games": 2426,
+        "log_loss": 0.6805903780643378
+      }
+    },
+    "2026": {
+      "challenger": {
+        "brier": 0.24525750867430104,
+        "games": 2428,
+        "log_loss": 0.6834895352761772
+      },
+      "reference": {
+        "brier": 0.2461360897304831,
+        "games": 2428,
+        "log_loss": 0.6853464178742614
+      }
+    }
+  },
+  "annual_brier_gains": {
+    "2024": -0.0001147410927992143,
+    "2025": 0.0002388329642415421,
+    "2026": 0.0008785810561820484
+  },
+  "bootstrap": {
+    "14": {
+      "annual": {
+        "2024": {
+          "brier": {
+            "lower": -0.0009436689198023157,
+            "upper": 0.0006369926464340601
+          },
+          "log_loss": {
+            "lower": -0.0019747315616806546,
+            "upper": 0.0012903000544605418
+          }
+        },
+        "2025": {
+          "brier": {
+            "lower": -0.0010367721333934387,
+            "upper": 0.0011337196871372558
+          },
+          "log_loss": {
+            "lower": -0.002093169627697444,
+            "upper": 0.0023541089584024413
+          }
+        },
+        "2026": {
+          "brier": {
+            "lower": 8.401661604303393e-05,
+            "upper": 0.00164654732917933
+          },
+          "log_loss": {
+            "lower": 0.00025201407361880013,
+            "upper": 0.003417049673703116
+          }
+        }
+      },
+      "block_days": 14,
+      "equal_weight_annual_brier": {
+        "lower": -0.00025678086330088896,
+        "upper": 0.0007901242989798034
+      },
+      "replicates": 5000,
+      "seed": 20261012,
+      "sign": "reference loss minus challenger loss; positive favors challenger"
+    },
+    "7": {
+      "annual": {
+        "2024": {
+          "brier": {
+            "lower": -0.0010259175867619065,
+            "upper": 0.0006328252038772875
+          },
+          "log_loss": {
+            "lower": -0.0021294100954625185,
+            "upper": 0.0012817336163397364
+          }
+        },
+        "2025": {
+          "brier": {
+            "lower": -0.00082512485637847,
+            "upper": 0.001140959171786979
+          },
+          "log_loss": {
+            "lower": -0.0016651148237611531,
+            "upper": 0.0024009597822681602
+          }
+        },
+        "2026": {
+          "brier": {
+            "lower": 0.0001847496219512081,
+            "upper": 0.0015925797402756997
+          },
+          "log_loss": {
+            "lower": 0.00045405445140730163,
+            "upper": 0.0033327161572952375
+          }
+        }
+      },
+      "block_days": 7,
+      "equal_weight_annual_brier": {
+        "lower": -0.00020012265156691528,
+        "upper": 0.0007725020578458367
+      },
+      "replicates": 5000,
+      "seed": 20261012,
+      "sign": "reference loss minus challenger loss; positive favors challenger"
+    }
+  },
+  "calibration": {
+    "2024": {
+      "challenger": {
+        "bins": [
+          {
+            "games": 0,
+            "home_win_rate": null,
+            "lower": 0.0,
+            "mean_probability": null,
+            "upper": 0.1
+          },
+          {
+            "games": 0,
+            "home_win_rate": null,
+            "lower": 0.1,
+            "mean_probability": null,
+            "upper": 0.2
+          },
+          {
+            "games": 2,
+            "home_win_rate": 0.0,
+            "lower": 0.2,
+            "mean_probability": 0.28640617775745125,
+            "upper": 0.3
+          },
+          {
+            "games": 132,
+            "home_win_rate": 0.36363636363636365,
+            "lower": 0.3,
+            "mean_probability": 0.36932407562267433,
+            "upper": 0.4
+          },
+          {
+            "games": 750,
+            "home_win_rate": 0.46,
+            "lower": 0.4,
+            "mean_probability": 0.45803639395221957,
+            "upper": 0.5
+          },
+          {
+            "games": 1114,
+            "home_win_rate": 0.5368043087971275,
+            "lower": 0.5,
+            "mean_probability": 0.5488032884017382,
+            "upper": 0.6
+          },
+          {
+            "games": 406,
+            "home_win_rate": 0.6428571428571429,
+            "lower": 0.6,
+            "mean_probability": 0.6360685605887493,
+            "upper": 0.7
+          },
+          {
+            "games": 22,
+            "home_win_rate": 0.6363636363636364,
+            "lower": 0.7,
+            "mean_probability": 0.7212662670710274,
+            "upper": 0.8
+          },
+          {
+            "games": 0,
+            "home_win_rate": null,
+            "lower": 0.8,
+            "mean_probability": null,
+            "upper": 0.9
+          },
+          {
+            "games": 0,
+            "home_win_rate": null,
+            "lower": 0.9,
+            "mean_probability": null,
+            "upper": 1.0
+          }
+        ],
+        "diagnostic_only": true,
+        "home_win_rate": 0.5218466611706513,
+        "intercept": -0.022086980999367612,
+        "mean_probability": 0.5269288716224252,
+        "slope": 1.0112282567885291
+      },
+      "reference": {
+        "bins": [
+          {
+            "games": 0,
+            "home_win_rate": null,
+            "lower": 0.0,
+            "mean_probability": null,
+            "upper": 0.1
+          },
+          {
+            "games": 0,
+            "home_win_rate": null,
+            "lower": 0.1,
+            "mean_probability": null,
+            "upper": 0.2
+          },
+          {
+            "games": 6,
+            "home_win_rate": 0.3333333333333333,
+            "lower": 0.2,
+            "mean_probability": 0.2890650885701477,
+            "upper": 0.3
+          },
+          {
+            "games": 147,
+            "home_win_rate": 0.3741496598639456,
+            "lower": 0.3,
+            "mean_probability": 0.3698229789276755,
+            "upper": 0.4
+          },
+          {
+            "games": 718,
+            "home_win_rate": 0.4568245125348189,
+            "lower": 0.4,
+            "mean_probability": 0.45711917842575883,
+            "upper": 0.5
+          },
+          {
+            "games": 1096,
+            "home_win_rate": 0.5328467153284672,
+            "lower": 0.5,
+            "mean_probability": 0.547470416081418,
+            "upper": 0.6
+          },
+          {
+            "games": 428,
+            "home_win_rate": 0.6448598130841121,
+            "lower": 0.6,
+            "mean_probability": 0.6355854169270766,
+            "upper": 0.7
+          },
+          {
+            "games": 31,
+            "home_win_rate": 0.6774193548387096,
+            "lower": 0.7,
+            "mean_probability": 0.7200436634657138,
+            "upper": 0.8
+          },
+          {
+            "games": 0,
+            "home_win_rate": null,
+            "lower": 0.8,
+            "mean_probability": null,
+            "upper": 0.9
+          },
+          {
+            "games": 0,
+            "home_win_rate": null,
+            "lower": 0.9,
+            "mean_probability": null,
+            "upper": 1.0
+          }
+        ],
+        "diagnostic_only": true,
+        "home_win_rate": 0.5218466611706513,
+        "intercept": -0.020163805689939186,
+        "mean_probability": 0.5270772574529861,
+        "slope": 0.9871392886521542
+      }
+    },
+    "2025": {
+      "challenger": {
+        "bins": [
+          {
+            "games": 0,
+            "home_win_rate": null,
+            "lower": 0.0,
+            "mean_probability": null,
+            "upper": 0.1
+          },
+          {
+            "games": 0,
+            "home_win_rate": null,
+            "lower": 0.1,
+            "mean_probability": null,
+            "upper": 0.2
+          },
+          {
+            "games": 10,
+            "home_win_rate": 0.4,
+            "lower": 0.2,
+            "mean_probability": 0.27236852336501677,
+            "upper": 0.3
+          },
+          {
+            "games": 132,
+            "home_win_rate": 0.3560606060606061,
+            "lower": 0.3,
+            "mean_probability": 0.35886953080736594,
+            "upper": 0.4
+          },
+          {
+            "games": 773,
+            "home_win_rate": 0.5058214747736093,
+            "lower": 0.4,
+            "mean_probability": 0.4591915738794377,
+            "upper": 0.5
+          },
+          {
+            "games": 1090,
+            "home_win_rate": 0.5458715596330275,
+            "lower": 0.5,
+            "mean_probability": 0.5470754240786742,
+            "upper": 0.6
+          },
+          {
+            "games": 374,
+            "home_win_rate": 0.6363636363636364,
+            "lower": 0.6,
+            "mean_probability": 0.6376910422102947,
+            "upper": 0.7
+          },
+          {
+            "games": 47,
+            "home_win_rate": 0.8723404255319149,
+            "lower": 0.7,
+            "mean_probability": 0.7243641711644155,
+            "upper": 0.8
+          },
+          {
+            "games": 0,
+            "home_win_rate": null,
+            "lower": 0.8,
+            "mean_probability": null,
+            "upper": 0.9
+          },
+          {
+            "games": 0,
+            "home_win_rate": null,
+            "lower": 0.9,
+            "mean_probability": null,
+            "upper": 1.0
+          }
+        ],
+        "diagnostic_only": true,
+        "home_win_rate": 0.5424567188788129,
+        "intercept": 0.08495933501635297,
+        "mean_probability": 0.5251044220882772,
+        "slope": 0.8599084807318746
+      },
+      "reference": {
+        "bins": [
+          {
+            "games": 0,
+            "home_win_rate": null,
+            "lower": 0.0,
+            "mean_probability": null,
+            "upper": 0.1
+          },
+          {
+            "games": 0,
+            "home_win_rate": null,
+            "lower": 0.1,
+            "mean_probability": null,
+            "upper": 0.2
+          },
+          {
+            "games": 13,
+            "home_win_rate": 0.23076923076923078,
+            "lower": 0.2,
+            "mean_probability": 0.27562463439736445,
+            "upper": 0.3
+          },
+          {
+            "games": 133,
+            "home_win_rate": 0.40601503759398494,
+            "lower": 0.3,
+            "mean_probability": 0.3654643229049731,
+            "upper": 0.4
+          },
+          {
+            "games": 771,
+            "home_win_rate": 0.5019455252918288,
+            "lower": 0.4,
+            "mean_probability": 0.457987497072189,
+            "upper": 0.5
+          },
+          {
+            "games": 1078,
+            "home_win_rate": 0.5463821892393321,
+            "lower": 0.5,
+            "mean_probability": 0.5470510631296366,
+            "upper": 0.6
+          },
+          {
+            "games": 392,
+            "home_win_rate": 0.6454081632653061,
+            "lower": 0.6,
+            "mean_probability": 0.6380408079705898,
+            "upper": 0.7
+          },
+          {
+            "games": 39,
+            "home_win_rate": 0.7692307692307693,
+            "lower": 0.7,
+            "mean_probability": 0.7225659258879935,
+            "upper": 0.8
+          },
+          {
+            "games": 0,
+            "home_win_rate": null,
+            "lower": 0.8,
+            "mean_probability": null,
+            "upper": 0.9
+          },
+          {
+            "games": 0,
+            "home_win_rate": null,
+            "lower": 0.9,
+            "mean_probability": null,
+            "upper": 1.0
+          }
+        ],
+        "diagnostic_only": true,
+        "home_win_rate": 0.5424567188788129,
+        "intercept": 0.08740139598473286,
+        "mean_probability": 0.5248604078005096,
+        "slope": 0.8432225071502947
+      }
+    },
+    "2026": {
+      "challenger": {
+        "bins": [
+          {
+            "games": 0,
+            "home_win_rate": null,
+            "lower": 0.0,
+            "mean_probability": null,
+            "upper": 0.1
+          },
+          {
+            "games": 0,
+            "home_win_rate": null,
+            "lower": 0.1,
+            "mean_probability": null,
+            "upper": 0.2
+          },
+          {
+            "games": 1,
+            "home_win_rate": 0.0,
+            "lower": 0.2,
+            "mean_probability": 0.2624493923494153,
+            "upper": 0.3
+          },
+          {
+            "games": 90,
+            "home_win_rate": 0.4,
+            "lower": 0.3,
+            "mean_probability": 0.3755220554020558,
+            "upper": 0.4
+          },
+          {
+            "games": 708,
+            "home_win_rate": 0.4646892655367232,
+            "lower": 0.4,
+            "mean_probability": 0.4611109909356076,
+            "upper": 0.5
+          },
+          {
+            "games": 1236,
+            "home_win_rate": 0.5453074433656958,
+            "lower": 0.5,
+            "mean_probability": 0.5478171776180413,
+            "upper": 0.6
+          },
+          {
+            "games": 371,
+            "home_win_rate": 0.6172506738544474,
+            "lower": 0.6,
+            "mean_probability": 0.6305315859258624,
+            "upper": 0.7
+          },
+          {
+            "games": 22,
+            "home_win_rate": 0.7272727272727273,
+            "lower": 0.7,
+            "mean_probability": 0.7211217221204015,
+            "upper": 0.8
+          },
+          {
+            "games": 0,
+            "home_win_rate": null,
+            "lower": 0.8,
+            "mean_probability": null,
+            "upper": 0.9
+          },
+          {
+            "games": 0,
+            "home_win_rate": null,
+            "lower": 0.9,
+            "mean_probability": null,
+            "upper": 1.0
+          }
+        ],
+        "diagnostic_only": true,
+        "home_win_rate": 0.528830313014827,
+        "intercept": 0.007635858048565851,
+        "mean_probability": 0.5302388565741298,
+        "slope": 0.8875391103801439
+      },
+      "reference": {
+        "bins": [
+          {
+            "games": 0,
+            "home_win_rate": null,
+            "lower": 0.0,
+            "mean_probability": null,
+            "upper": 0.1
+          },
+          {
+            "games": 0,
+            "home_win_rate": null,
+            "lower": 0.1,
+            "mean_probability": null,
+            "upper": 0.2
+          },
+          {
+            "games": 2,
+            "home_win_rate": 0.0,
+            "lower": 0.2,
+            "mean_probability": 0.2787355125348804,
+            "upper": 0.3
+          },
+          {
+            "games": 101,
+            "home_win_rate": 0.3564356435643564,
+            "lower": 0.3,
+            "mean_probability": 0.3739829781789401,
+            "upper": 0.4
+          },
+          {
+            "games": 696,
+            "home_win_rate": 0.4885057471264368,
+            "lower": 0.4,
+            "mean_probability": 0.46079908681315784,
+            "upper": 0.5
+          },
+          {
+            "games": 1218,
+            "home_win_rate": 0.5394088669950738,
+            "lower": 0.5,
+            "mean_probability": 0.5469475364096468,
+            "upper": 0.6
+          },
+          {
+            "games": 388,
+            "home_win_rate": 0.6108247422680413,
+            "lower": 0.6,
+            "mean_probability": 0.6325717832831844,
+            "upper": 0.7
+          },
+          {
+            "games": 23,
+            "home_win_rate": 0.6086956521739131,
+            "lower": 0.7,
+            "mean_probability": 0.7192486117275996,
+            "upper": 0.8
+          },
+          {
+            "games": 0,
+            "home_win_rate": null,
+            "lower": 0.8,
+            "mean_probability": null,
+            "upper": 0.9
+          },
+          {
+            "games": 0,
+            "home_win_rate": null,
+            "lower": 0.9,
+            "mean_probability": null,
+            "upper": 1.0
+          }
+        ],
+        "diagnostic_only": true,
+        "home_win_rate": 0.528830313014827,
+        "intercept": 0.020580704029819912,
+        "mean_probability": 0.5301518062494485,
+        "slope": 0.7816068307865037
+      }
+    }
+  },
+  "continuation_gate_passed": false,
+  "coverage": {
+    "fallback_days": 0,
+    "invalid_outcomes": 0,
+    "rating_days": 914,
+    "targets_by_year": {
+      "2022": 2429,
+      "2023": 2423,
+      "2024": 2426,
+      "2025": 2426,
+      "2026": 2428
+    }
+  },
+  "equal_weight_annual_brier_gain": 0.0003342243092081254,
+  "gate": {
+    "average_annual_brier_gain_at_least_0_001": false,
+    "no_new_hindsight_dependence": true,
+    "pooled_log_loss_no_worse": true,
+    "positive_gain_in_at_least_two_years": true,
+    "unchanged_target_coverage": true
+  },
+  "market_comparison_performed": false,
+  "pooled": {
+    "challenger": {
+      "brier": 0.2440514889105365,
+      "games": 7280,
+      "log_loss": 0.6810141426835401
+    },
+    "reference": {
+      "brier": 0.2443858627683015,
+      "games": 7280,
+      "log_loss": 0.681722473613839
+    }
+  },
+  "reused_development_seasons": [
+    2024,
+    2025,
+    2026
+  ]
+}
