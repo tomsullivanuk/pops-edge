@@ -214,3 +214,10 @@ Tom approved whole-objective normalization; the first baseline configuration pas
 ## Experiment 03 complete — October 12
 
 After Tom approved the final numerical criterion, the bounded conditional PA comparison completed with all sixteen fits accepted and exact saved-forecast replay. [Results](research/pregame_2027/experiment_03/RESULTS.md): average annual relative log-loss reduction 0.095041%, 14-day interval [0.077841%, 0.113720%], below the agreed 0.5% gate. Both years and Brier improve, but the practical-size gate fails. Close this specification without automatic tuning, promotion or game-level integration. Preserve this small conditional component gain and both earlier numerical stops; no winner-probability or market-edge conclusion. The separate 3.5 inquiry remains pending.
+
+
+## Player-information assessment and final lineup evidence — October 12
+
+The [WAR/player-input gap assessment](docs/MLB_2027_PLAYER_INFORMATION_GAPS.md) distinguishes retained winner inputs, tested extensions, owned raw information and missing player-quality measures. Recommend discussing one timestamped preseason lineup-offense projection comparison against our lagged rates, holding lineups/weights/game learner fixed; external vintage, membership/export access and identity readiness must be verified first. This is a read-only proposal, with no new acquisition or fit authorized.
+
+The [final two-game lineup observation](docs/MLB_2027_LINEUP_OBSERVATION_FINAL.md) supersedes interim pending status: all four complete orders appeared more than three hours before scheduled starts. Preserve the process-loss gap, first-game premature Warmup stop and corrected second-game stop; actual first pitch and explicit pitcher confirmation remain unknown. The single observer has ended. This supports the practical working assumption for two games, not general reliability or model edge; T−6h studies remain intact.
