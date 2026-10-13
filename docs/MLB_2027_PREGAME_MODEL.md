@@ -159,3 +159,8 @@ The [updated player-information assessment](MLB_2027_PLAYER_INFORMATION_GAPS.md#
 ## Projection data comparison ready for agreement
 
 All four Owner-supplied exports are readable locally, with high measured coverage and a conflict-free 1,022-player official/Retrosheet bridge. [One concrete proposal](MLB_2027_PROJECTION_COMPARISON_PROPOSAL.md) compares fixed preseason event-rate estimates with our lagged estimates under the same winner learner/lineup weights, retaining missing-player fallbacks. Year assignment of the numbered additional files awaits one specific confirmation. No model fit is authorized or executed. Information-improvement and market-competitiveness gates remain distinct.
+
+
+## Projection year assignments resolved
+
+Four Owner-labelled replacement exports match the original four CSVs byte-for-byte and by normalized records. The previous provisional year mapping is confirmed by the supplied provenance, with no data correction. Year-specific coverage audits pass again; raw originals/replacements remain private. [The comparison proposal](MLB_2027_PROJECTION_COMPARISON_PROPOSAL.md) is ready for explicit experiment agreement. No further year-confirmation question is needed; no training has started. Historic archive publication/revision limitations remain explicit.

@@ -1,6 +1,6 @@
 # One proposed comparison: preseason Steamer versus our lagged batting rates
 
-Status: **data/identity feasibility passes; year-file confirmation pending;
+Status: **data/identity/year association readiness passes;
 proposal for agreement, no training authorized.** October 12, 2026.
 Prior experiments remain closed and unpromoted. Read the
 [information assessment](MLB_2027_PLAYER_INFORMATION_GAPS.md) and
@@ -23,10 +23,11 @@ Report the unchanged native model and sportsbook proxy as separate references.
 ## Input readiness
 
 All four supplied CSVs are readable on this executor, outside Git. The 2024
-file is linked to Tom's exact `steamer_2024` batting URL. The other files are
-named `projections-2`, `-3`, `-4`, without year/system columns; one specific
-confirmation of their 2022/2023/2025 mapping is pending. Content examples are
-consistent with that mapping but not used as independent proof of vintage.
+file is linked to Tom's exact `steamer_2024` batting URL. Tom supplied replacement exports labelled 2022, 2023, 2024 and 2025 immediately
+after selecting each historical year. All match the corresponding earlier files
+byte-for-byte and by normalized content: -2=2022, -3=2023, -4=2025. No correction
+to the provisional mapping was needed. This is Owner-supplied year provenance,
+not independently observed browser actions.
 Original release timestamps and archive revisions are unverified limitations;
 do not call these contemporaneously retained preseason bytes or daily snapshots.
 
@@ -125,8 +126,8 @@ retuning. Neither paid access nor training happens under this proposal alone.
 
 ## Decision
 
-Repository, field and identity readiness: **go**. Source-year association: pending
-the specific numbered-file confirmation; no other vague vintage approval loop.
+Repository, field and identity readiness: **go**. Source-year association: **reconciled by the labelled replacement exports**;
+no further year-confirmation request is needed.
 Historical publication/revision limitations remain visible in the protocol.
 Training: **no-go until Tom agrees this bounded comparison**, its fallback and
 two distinct success gates. No purchases, credentials, collector/pin/schedule
