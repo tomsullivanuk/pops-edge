@@ -1,0 +1,213 @@
+{
+  "coverage": {
+    "2024": {
+      "eligible_initial_PA": 174413,
+      "non_PA_rows": 7080,
+      "substitute_PA": 6843,
+      "zero_denominator_PA": 985,
+      "iw_zero_denominator": 475,
+      "sh_zero_denominator": 412,
+      "xi_zero_denominator": 98,
+      "initial_hitter_games_zero_opportunity": 12,
+      "side_aggregation_incomplete": 12,
+      "scored_hitter_games": 43656,
+      "scored_complete_sides": 4840
+    },
+    "2025": {
+      "eligible_initial_PA": 174612,
+      "non_PA_rows": 6999,
+      "substitute_PA": 6898,
+      "zero_denominator_PA": 1118,
+      "iw_zero_denominator": 526,
+      "sh_zero_denominator": 509,
+      "xi_zero_denominator": 83,
+      "initial_hitter_games_zero_opportunity": 19,
+      "side_aggregation_incomplete": 18,
+      "scored_hitter_games": 43649,
+      "scored_complete_sides": 4834
+    }
+  },
+  "annual": {
+    "2024": {
+      "opportunity": {
+        "units": 174413,
+        "control_mean_squared_error": 0.2707205274796896,
+        "steamer_mean_squared_error": 0.27073301473938693,
+        "gain": -1.2487259697301545e-05
+      },
+      "hitter_game": {
+        "units": 43656,
+        "control_mean_squared_error": 0.06934759404493651,
+        "steamer_mean_squared_error": 0.06943116961483455,
+        "gain": -8.357556989803738e-05
+      },
+      "complete_side": {
+        "units": 4840,
+        "control_mean_squared_error": 0.008913451495354718,
+        "steamer_mean_squared_error": 0.009151005580496602,
+        "gain": -0.00023755408514188097
+      }
+    },
+    "2025": {
+      "opportunity": {
+        "units": 174612,
+        "control_mean_squared_error": 0.273597562505045,
+        "steamer_mean_squared_error": 0.2734445274193421,
+        "gain": 0.0001530350857029042
+      },
+      "hitter_game": {
+        "units": 43649,
+        "control_mean_squared_error": 0.07052760625960379,
+        "steamer_mean_squared_error": 0.07039185064396622,
+        "gain": 0.00013575561563757154
+      },
+      "complete_side": {
+        "units": 4834,
+        "control_mean_squared_error": 0.009171412560075757,
+        "steamer_mean_squared_error": 0.009272421091529004,
+        "gain": -0.0001010085314532484
+      }
+    }
+  },
+  "uncertainty": {
+    "opportunity": {
+      "14": {
+        "annual": {
+          "2024": [
+            -0.00019364517305047818,
+            0.00013988093667703882
+          ],
+          "2025": [
+            7.660924341972498e-07,
+            0.00029673768036083726
+          ]
+        },
+        "equal_year": [
+          -4.9266243623837276e-05,
+          0.00017227294421131326
+        ]
+      },
+      "7": {
+        "annual": {
+          "2024": [
+            -0.00016273604271541196,
+            0.00012267000050652808
+          ],
+          "2025": [
+            2.3381531537880014e-05,
+            0.00028200211079754535
+          ]
+        },
+        "equal_year": [
+          -3.2052897543280174e-05,
+          0.00015984595164281803
+        ]
+      }
+    },
+    "hitter_game": {
+      "14": {
+        "annual": {
+          "2024": [
+            -0.0002587125942868412,
+            7.014592057746452e-05
+          ],
+          "2025": [
+            -3.574627249808044e-05,
+            0.0002832581305965357
+          ]
+        },
+        "equal_year": [
+          -9.768272704654998e-05,
+          0.0001327337870474431
+        ]
+      },
+      "7": {
+        "annual": {
+          "2024": [
+            -0.00023035476079356692,
+            5.2273650985992724e-05
+          ],
+          "2025": [
+            -7.507891618161951e-06,
+            0.0002670812630246774
+          ]
+        },
+        "equal_year": [
+          -7.913422191294617e-05,
+          0.00011824292959219991
+        ]
+      }
+    },
+    "complete_side": {
+      "14": {
+        "annual": {
+          "2024": [
+            -0.000314764881062734,
+            -0.00017457078649064773
+          ],
+          "2025": [
+            -0.00017592340530303986,
+            -3.962107017878467e-05
+          ]
+        },
+        "equal_year": [
+          -0.00022397537064732922,
+          -0.0001270793986575536
+        ]
+      },
+      "7": {
+        "annual": {
+          "2024": [
+            -0.0003087230280483557,
+            -0.00017169914076021765
+          ],
+          "2025": [
+            -0.0001626714959961212,
+            -4.263454443898881e-05
+          ]
+        },
+        "equal_year": [
+          -0.00021615155971405016,
+          -0.00012719452825950923
+        ]
+      }
+    }
+  },
+  "trace": {
+    "2024": {
+      "games": 2426,
+      "mean_absolute_probability_change": 0.02227878276085906,
+      "mean_data_logit_change": 0.0012667808653772565,
+      "mean_absolute_data_logit_change": 0.07113483943402901,
+      "mean_coefficient_logit_change": -0.000447288933044638,
+      "mean_absolute_coefficient_logit_change": 0.03167830750476602,
+      "mean_absolute_lineup_offense_change": 0.009614706011939414
+    },
+    "2025": {
+      "games": 2426,
+      "mean_absolute_probability_change": 0.022313206537119722,
+      "mean_data_logit_change": -0.0008565209057201985,
+      "mean_absolute_data_logit_change": 0.07759619955128788,
+      "mean_coefficient_logit_change": -0.0004605645556458187,
+      "mean_absolute_coefficient_logit_change": 0.02528502742607083,
+      "mean_absolute_lineup_offense_change": 0.0091454470854551
+    }
+  },
+  "equal_year": {
+    "opportunity": {
+      "control_mean_squared_error": 0.2721590449923673,
+      "steamer_mean_squared_error": 0.2720887710793645,
+      "gain": 7.027391300280133e-05
+    },
+    "hitter_game": {
+      "control_mean_squared_error": 0.06993760015227016,
+      "steamer_mean_squared_error": 0.06991151012940039,
+      "gain": 2.6090022869767077e-05
+    },
+    "complete_side": {
+      "control_mean_squared_error": 0.009042432027715238,
+      "steamer_mean_squared_error": 0.009211713336012804,
+      "gain": -0.0001692813082975647
+    }
+  }
+}

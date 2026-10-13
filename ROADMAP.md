@@ -241,3 +241,8 @@ Four Owner-labelled replacement exports match the original four CSVs byte-for-by
 ## Approved Steamer comparison completed
 
 Tom approved the matched winner comparison at `1d64e15`; implementation was frozen at `43d8161` before fitting. [Experiment 04 results](research/pregame_2027/experiment_04/RESULTS.md): 2024 control-minus-Steamer Brier +0.001005688, 2025 −0.000057538; average +0.000474075 versus required +0.001, with 14-day interval [−0.000423151,+0.001021038]. Both information-improvement and sportsbook-competitiveness gates fail. Exact prediction replay and separate measurement/bootstrap checks pass, with every game retained and declared missing-player fallbacks. Close this tested specification without retuning, promotion or integration. Reused-development and archive-vintage limitations remain explicit; production/T−6h protocols stay intact.
+
+
+## Approved information-chain diagnostic completed
+
+Tom approved a one-session no-fit batting/translation diagnostic, frozen at `b87d364`. [Decision memo](research/pregame_2027/information_chain/DECISION.md): 349,025 comparable initial-nine opportunities; Steamer is slightly worse in 2024 and better in 2025, with equal-year MSE gain +0.000070274 and 14-day interval [−0.000049266,+0.000172273]. Saved winner models visibly respond (about 2.23 pp mean absolute probability change). Weighted side-level accuracy is worse, but it is not the model's home-away differential target and does not locate a causal aggregation failure. Independent raw-value, score, trace and block verification passes. Conclusion inconclusive; explicitly stop without a fifth fit or translator rewrite. Existing failed gates remain failed; raw events/traces stay private.
