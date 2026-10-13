@@ -154,3 +154,8 @@ The [final two-game lineup observation](MLB_2027_LINEUP_OBSERVATION_FINAL.md) su
 ## Projection repository feasibility resolved — October 12
 
 The [updated player-information assessment](MLB_2027_PLAYER_INFORMATION_GAPS.md#the-scientific-question-our-checks-and-toms-decisions) specifies four preseason hitter files (2022–2025), rate/vintage/ID fields and exact populations. All 9,704 native games join uniquely to retained initial lineups, with 174,672 slots / 1,022 unique batter RetroIDs; independent post-join scores and lineup registry checks pass. No external projection files or provider-player bridge are retained, and actual forecast coverage/vintages remain unverified. Read-only provider discovery is already authorized and owned by the coordinating researcher. No further routine approval is needed; only a concrete paid/new-account option or the eventual frozen experiment requires Tom's decision. No acquisition or training occurred.
+
+
+## Projection data comparison ready for agreement
+
+All four Owner-supplied exports are readable locally, with high measured coverage and a conflict-free 1,022-player official/Retrosheet bridge. [One concrete proposal](MLB_2027_PROJECTION_COMPARISON_PROPOSAL.md) compares fixed preseason event-rate estimates with our lagged estimates under the same winner learner/lineup weights, retaining missing-player fallbacks. Year assignment of the numbered additional files awaits one specific confirmation. No model fit is authorized or executed. Information-improvement and market-competitiveness gates remain distinct.
