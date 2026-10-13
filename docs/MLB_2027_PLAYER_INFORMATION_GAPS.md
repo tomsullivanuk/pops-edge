@@ -149,7 +149,114 @@ through an authenticated account here. Batting run-value recalculation alone is
 available from owned data, but mostly repackages existing outcomes; it is a weaker
 answer to the question of genuinely richer external player information.
 
-Next discussion: agree that lineup-specific offensive quality is the priority,
-then authorize only a bounded projection-vintage/access/identity readiness assessment and freeze
-one game-level comparison protocol. No new experiment, data purchase, credential,
-collector, production policy or merge follows from this document.
+## The scientific question, our checks and Tom's decisions
+
+**Scientific question:** do established preseason player forecasts improve
+paired game-win probability scores over our own lagged batting rates when
+lineups, exposure weights and the learner are held fixed? WAR is not the question
+Tom needs to settle, and a projection product's existence does not answer it.
+
+**Already authorized research:** source discovery, vintage/schema inspection,
+identity reconciliation, expected coverage and permitted access/cost verification.
+These are our tasks; Tom need not supply the technical answers or approve each
+routine read. The following repository-side assessment is now complete.
+
+### Exact minimum seasons and populations
+
+Require **four frozen preseason hitter files: 2022, 2023, 2024 and 2025**.
+Train through 2023/evaluate 2024; train through 2024/evaluate 2025. If inner
+selection is used, train 2022/evaluate 2023, then rolling earlier years only.
+Thus evaluation-year files alone are insufficient. No 2026 file or historical
+daily rest-of-season archive is required for this first fixed-preseason test.
+Existing 2021 team warm-up remains unchanged; it does not require 2021 projections.
+
+| Season | Native games | Unique retained game joins | Initial-lineup slots | Distinct initial batter RetroIDs |
+| --- | ---: | ---: | ---: | ---: |
+| 2022 | 2,429 | 2,429 | 43,722 | 678 |
+| 2023 | 2,423 | 2,423 | 43,614 | 643 |
+| 2024 | 2,426 | 2,426 | 43,668 | 645 |
+| 2025 | 2,426 | 2,426 | 43,668 | 661 |
+
+This is 9,704 game joins and 174,672 lineup slots, covering 1,022 distinct batter
+RetroIDs across years (2,627 player-season requirements). No historical game was
+dropped. [Coverage code/aggregates](../research/pregame_2027/projection_feasibility/repository_coverage.json)
+and [separate validation](../research/pregame_2027/projection_feasibility/join_verification.json)
+record these facts. Private ID lists and candidate joins are retained locally,
+not published as raw player records.
+
+Match original game date and explicit season/team aliases; resolve doubleheaders
+using retained **final official schedule gameNumber**, not final scores or
+incidental order. That resolves 136 / 70 / 58 / 56 games annually requiring the
+number. The 2025 Athletics code is ATH rather than OAK. One 2022 makeup game
+has Retrosheet home-bats-first/site-home semantics; its explicit `htbf` field
+reconciles designated home with the official team identity. No original source
+or native input was rewritten. All joins are one-to-one. Separately checked final
+scores agree for all 9,704; scores were not used to select joins. Two team sides,
+unique nine-player orders and same-season player registry IDs validate throughout.
+This is an identity-feasibility result, not a newly fitted dataset acceptance.
+
+### Minimum external file contract
+
+Each year's **full offered hitter projection table**, with no retrospective
+filter to successful/known MLB participants, needs:
+
+- System, target season, preseason/version label, release/vintage evidence,
+  source URL, acquisition time and content hash. Release must precede its
+  evaluated games; acquisition today does not prove historic availability.
+- Stable provider player ID plus an auditable mapping to Retrosheet ID; preferably
+  MLBAM IDs as an intermediate. Names are display/disambiguation evidence only,
+  never an automatic namesake merge. No FanGraphs/Steamer player bridge exists yet.
+- Projected overall offensive rate (preferably wOBA) with documented scale,
+  context/park convention and denominator, and projected PA for coverage/precision
+  diagnostics. Annual projected PA will not replace common game-day slot weights.
+- If the file lacks a comparable rate: sufficient projected event counts and
+  denominators to reconstruct the same run-value index in both arms. Do not
+  silently treat OPS, wRC+, WAR and wOBA as interchangeable. A real sample is
+  needed to choose this representation; no schema is presumed verified.
+
+Platoon forecasts, defense/WAR, bullpen projections and tracking fields are not
+minimum requirements. Retain the same hand handling in both arms. For each year,
+report coverage by batter IDs, lineup slots and entire-game both-side availability,
+plus missing/new-player counts. The table above is required demand, **not expected
+100% projection coverage**: preseason tables may omit later debutants/call-ups.
+Preserve every target with a predeclared shared fallback or explicit unavailable
+forecast; agree that policy before fitting. Never drop missing players/games to
+make the provider look stronger. Actual matched projection coverage cannot be
+computed without the external files and ID crosswalk.
+
+### What exists and what is still missing
+
+Retained source data already supply game identities, initial orders, batter
+RetroIDs, batting outcomes/hand histories, canonical winner labels, original
+native features and sportsbook proxy records. This controlled projection test
+needs no new pitch corpus, live collector or Kalshi history acquisition.
+Filename/provider discovery across the inspected project archive found no
+Steamer/ZiPS/FanGraphs/Depth Charts projection files. Existing software artifacts
+called “projection” concern internal forecast reporting, not preseason hitter
+estimates. This finding is scoped to the inspected repository/project archive,
+not every private folder or account. No external file was obtained here.
+
+The coordinating public-source researcher reports indexed **Historical Preseason
+Projections** entries for Steamer/ZiPS 2022–2025. This supports candidate year
+availability; it does not verify sample content, full coverage or release vintage.
+The [official FanGraphs membership page](https://plus.fangraphs.com/product/fangraphs-membership/)
+was read: $15/month, $80/year or $200/three years, automatically renewing, with
+historical/platoon projections and exports included. No purchase or account
+entitlement check was performed. The [Steamer preseason archive](https://www.steamerprojections.com/index.php/projections/pre-season-projections)
+visibly lists 2022–2024 hitter files; the researcher reports free registration
+for access. No new registration is authorized or made, and a usable 2025 file
+has not been verified on that route. Do not combine different systems or assume
+registration provides the missing year. Prices are source-page listings, not a
+budget commitment or verified personal-use/export/redistribution rights.
+
+**Remaining blockers:** inspect permitted sample files and release evidence;
+confirm all four seasons and rate fields; build the provider player-ID bridge;
+measure projection coverage and freeze missing-player treatment; then write the
+concrete pre-fit protocol and market-comparison value gate. Provider investigation
+is proceeding separately; do not duplicate it with acquisition or an account.
+
+**Tom's actual decisions:** none is needed to continue already-authorized read-only
+feasibility checks. If the verified route needs new registration or paid access,
+present that specific option/cost for agreement first. After readiness is resolved,
+Tom decides whether to run one bounded, frozen comparison. No vague blanket
+approval, purchase, new credential, model fit, collector or merge is implied.

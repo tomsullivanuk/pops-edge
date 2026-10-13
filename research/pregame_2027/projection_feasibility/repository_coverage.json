@@ -1,0 +1,38 @@
+{
+  "2022": {
+    "native_targets": 2429,
+    "retrosheet_regular_games": 2430,
+    "joined_games": 2429,
+    "unresolved_games": 0,
+    "required_initial_lineup_slots": 43722,
+    "distinct_initial_batter_retrosheet_ids": 678,
+    "joined_with_retained_final_schedule_number": 136
+  },
+  "2023": {
+    "native_targets": 2423,
+    "retrosheet_regular_games": 2430,
+    "joined_games": 2423,
+    "unresolved_games": 0,
+    "required_initial_lineup_slots": 43614,
+    "distinct_initial_batter_retrosheet_ids": 643,
+    "joined_with_retained_final_schedule_number": 70
+  },
+  "2024": {
+    "native_targets": 2426,
+    "retrosheet_regular_games": 2429,
+    "joined_games": 2426,
+    "unresolved_games": 0,
+    "required_initial_lineup_slots": 43668,
+    "distinct_initial_batter_retrosheet_ids": 645,
+    "joined_with_retained_final_schedule_number": 58
+  },
+  "2025": {
+    "native_targets": 2426,
+    "retrosheet_regular_games": 2430,
+    "joined_games": 2426,
+    "unresolved_games": 0,
+    "required_initial_lineup_slots": 43668,
+    "distinct_initial_batter_retrosheet_ids": 661,
+    "joined_with_retained_final_schedule_number": 56
+  }
+}
