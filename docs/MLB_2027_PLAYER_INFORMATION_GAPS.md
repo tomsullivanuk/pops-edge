@@ -260,3 +260,16 @@ feasibility checks. If the verified route needs new registration or paid access,
 present that specific option/cost for agreement first. After readiness is resolved,
 Tom decides whether to run one bounded, frozen comparison. No vague blanket
 approval, purchase, new credential, model fit, collector or merge is implied.
+
+
+## First Owner-supplied export: fields and 2024 coverage verified
+
+The uploaded `fangraphs-leaderboard-projections.csv` was materialized through the supported Library route into this task's private executor workspace. Local readable bytes and Library identity metadata were verified: 3,213,054 bytes, SHA256 `9ca0ec996bd1c8d8174a202d6b64b3e36c3af7c86531f60f322a36ef8892fcc8`. The raw licensed file remains outside Git. No browser credentials, databases or account settings were accessed.
+
+Actual content is comma-separated UTF-8 CSV: 3,711 rows, comprising 3,710 rows with unique nonblank FanGraphs PlayerId and MLBAMID, plus one unnamed record with blank IDs. Keep that unidentified row visible and out of player joins; its nature is not inferred. No exact duplicate rows. Required PA/AB/hit-event/BB/IBB/HBP/SF/wOBA fields are finite and nonnegative. Projected PA, wOBA, event counts, wRC+, WAR and additional fields exist; their existence does not authorize adding every metric to the comparison.
+
+A direct MLBAMID join to the preserved 2024 actual-lineup lineage matches all 645 required batters, all 43,668 slots, and both nines in all 2,426 native games. No namesake inference or prospective coverage assumption is involved. The preserved lineage provides a supported direct projection-ID route for this check, even though the new Retrosheet-to-provider control bridge is not yet finalized. [Reproducible audit](../research/pregame_2027/projection_feasibility/audit_export.py) and [aggregate receipt](../research/pregame_2027/projection_feasibility/first_export_audit.json) record the exact scope. This is coverage of 2024 players, not proof that the forecast values are from 2024.
+
+**Remaining file blocker: source/vintage evidence.** The CSV has no season, system or release field. The reported user export path (Historical Preseason, Steamer, 2024, Batters) is provenance context, not independently verified content metadata. The page URL has not been supplied. Request that exact URL and its displayed archive/system/year selection; no credentials are needed. Then reconcile the archive's preseason/version meaning and obtain the remaining 2022/2023/2025 files through permitted UI/file transfers. Do not treat membership signup or an export's generic filename as historic-vintage proof.
+
+The signed-in Mac browser could not be controlled from this task's exposed capabilities; the in-app open action only queued a tab, and screen-reading is voice-only. No Safari-specific or OS permission denial was observed. The Library file transfer itself succeeded locally; there is no materialization blocker and no retry was needed. Membership/session entitlement was not independently inspected, although an Owner-supplied readable export now exists. No training or additional paid acquisition occurred.
