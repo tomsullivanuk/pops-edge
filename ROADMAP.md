@@ -236,3 +236,8 @@ All four Owner-supplied exports are readable locally, with high measured coverag
 ## Projection year assignments resolved
 
 Four Owner-labelled replacement exports match the original four CSVs byte-for-byte and by normalized records. The previous provisional year mapping is confirmed by the supplied provenance, with no data correction. Year-specific coverage audits pass again; raw originals/replacements remain private. [The comparison proposal](docs/MLB_2027_PROJECTION_COMPARISON_PROPOSAL.md) is ready for explicit experiment agreement. No further year-confirmation question is needed; no training has started. Historic archive publication/revision limitations remain explicit.
+
+
+## Approved Steamer comparison completed
+
+Tom approved the matched winner comparison at `1d64e15`; implementation was frozen at `43d8161` before fitting. [Experiment 04 results](research/pregame_2027/experiment_04/RESULTS.md): 2024 control-minus-Steamer Brier +0.001005688, 2025 −0.000057538; average +0.000474075 versus required +0.001, with 14-day interval [−0.000423151,+0.001021038]. Both information-improvement and sportsbook-competitiveness gates fail. Exact prediction replay and separate measurement/bootstrap checks pass, with every game retained and declared missing-player fallbacks. Close this tested specification without retuning, promotion or integration. Reused-development and archive-vintage limitations remain explicit; production/T−6h protocols stay intact.

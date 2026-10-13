@@ -136,3 +136,8 @@ changes, T−6h changes, trading, merge or deployment follow from agreement to r
 ## Execution approval
 
 Tom explicitly answered yes to running this proposal at `1d64e15`. Authority covers the bounded offline comparison and draft results only. Implementation uses identical C=1 lbfgs logistics, tol=1e-8, max_iter=10000, one BLAS thread, four annual arm fits and saved native references. Slot opportunities count every valid regular-season PA in native training games, including substitutions/IW; source lineup position assigns the slot. Raw exports remain private.
+
+
+## Completed execution
+
+[Experiment 04](../research/pregame_2027/experiment_04/RESULTS.md) is complete and verified. Both agreed gates fail; the specification is closed without automatic tuning or further evaluation. The approval covered this completed bounded run, not a new experiment or production promotion.
