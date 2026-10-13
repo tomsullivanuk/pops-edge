@@ -1,67 +1,48 @@
-# Experiment 03: stopped at numerical gate before evaluation
+# Experiment 03 complete: small component gain, continuation gate failed
 
-October 12, 2026. **Incomplete comparison; no predictive result and no promotion.**
-Tom approved the bounded offline experiment. The frozen implementation was
-published at commit `0e0f94f` before fitting. The first inner baseline fit failed
-the protocol's convergence acceptance check; execution stopped as required.
+October 12, 2026. **Do not promote or integrate this challenger automatically.**
+Tom approved the experiment and both numerical amendments. The final pre-fit freeze is `71aadb0`. All sixteen fits passed; earlier stops remain in [numerical history](NUMERICAL_HISTORY.md).
 
-The information used here was obtained free of charge from and is copyrighted
-by Retrosheet. Interested parties may contact Retrosheet at 20 Sunset Rd.,
-Newark, DE 19711.
+The information used here was obtained free of charge from and is copyrighted by Retrosheet. Interested parties may contact Retrosheet at 20 Sunset Rd., Newark, DE 19711.
 
-## Data and feature readiness
+## Primary comparison
 
-Additional 2022/2024/2025 season bundles transferred 29,607,055 bytes, within the
-100 MB additional cap. Required extracted files across 2022–2025 remain below
-1 GB. Existing 2023 inputs were reused unchanged. No paid access or credentials.
+Conditional three-class PA prediction against initial starters, excluding intentional walks identically. Lower log loss and multiclass Brier are better. These are reused development seasons, not untouched holdouts or game-win targets.
 
-Full regular-season PA audits: 182,052 / 184,104 / 182,449 / 182,926 annually.
-After predeclared intentional-walk removal, 729,517 PA supply features/labels.
-No count, label, unknown-hand or ID discrepancies remain. Three recorded starters
-have zero completed-PA exposure; nine initial batters are replaced before any PA.
-The starting-role/fielding records agree and replaced batters have no PA;
-retain these cases and original identities, not first-completed-PA substitutions.
-Detailed annual aggregates and exception-resolution receipts accompany the freeze.
+| Season | Starter PA | Baseline log loss | Challenger log loss | Relative reduction |
+| --- | ---: | ---: | ---: | ---: |
+| 2024 | 106,845 | 0.759468030 | 0.758812781 | 0.086277% |
+| 2025 | 106,429 | 0.760425012 | 0.759635649 | 0.103805% |
 
-Direct weighted history checks on 60 representative PA agree within 2.82e-13;
-same/future outcome mutation changes those independently rebuilt features by zero.
-The analytic objective gradient passes a synthetic finite-difference check within
-2.64e-10. These are same-assistant validation checks, not external review.
+| Season | Baseline multiclass Brier | Challenger multiclass Brier |
+| --- | ---: | ---: |
+| 2024 | 0.440725151 | 0.440406684 |
+| 2025 | 0.440743290 | 0.440433716 |
 
-## Why fitting stopped
+Equal-average annual relative log-loss reduction is **0.095041%**, versus the agreed **0.5%** requirement. Its paired 14-day 95% interval is **[0.077841%, 0.113720%]**; 7-day sensitivity is **[0.077313%, 0.113910%]**. Both years improve and Brier is lower, but the practical-size gate fails. An interval above zero does not override that gate. This is a small conditional component gain, not a probability-point winner advantage, economic return, selection-adjusted discovery or market edge.
 
-The first fit is the gamma=0.1 baseline trained on 181,577 eligible 2022 PA for
-2023 inner validation. L-BFGS returned after 61 iterations / about one second
-with a relative-objective-change termination at floating-point precision. Its
-reported summed objective is 140,416.50179047725; gradient infinity norm is
-0.00010391837730386409. The frozen requirement is at most 0.000001, so the fit
-does **not** meet acceptance even though the optimizer reports success.
+Equal-game log loss also improves: 0.763215 to 0.762539 in 2024 and 0.763918 to 0.763172 in 2025. Neither a different weighting nor the initial-batter/all-role diagnostics rescues the failed primary gate. [Full diagnostic results](results.json) remain visible. League-only log loss is substantially worse (0.775166 / 0.777104), supporting the stronger continuation comparator.
 
-No inner validation scores, outer forecasts, challenger fits or 2024/2025
-performance results were produced. The incomplete baseline archive stays private;
-the scrubbed numerical receipt contains no fitted player IDs or contexts.
-This is a numerical-validity stop, not a failed component-accuracy gate.
+## Data, fits and calibration
 
-The absolute summed-gradient requirement is sensitive to training population
-size. Its observed value divided by N is about 5.72e-10 per PA, but that does not
-retroactively satisfy the agreed rule. [A proposed numerical amendment](NUMERICAL_AMENDMENT.md)
-rescales the same objective and penalties together; it remains for Tom's agreement.
-No optimizer/model switch or hyperparameter expansion is proposed.
+Regular-season source audits covered 182,052 / 184,104 / 182,449 / 182,926 PA in 2022–2025. The fixed intentional-walk rule leaves 729,517 feature/label rows. Known zero-exposure starters and early batter substitutions are reconciled and preserved, without outcome-driven game removal. Actual matchup occurrence is outside this conditional task.
 
-During inspection, the artifact filename helper also proved to strip suffixes
-after decimal gamma values. A proposed append-suffix correction preserves full
-gamma/year names before any additional fit. No existing evaluation was affected,
-because execution stopped at the first training fit.
+Both models select gamma=10 from the three-value training-only grid in both outer years. Final training populations are 365,207 and 547,147 all-role PA. The challenger keeps the fixed 100 individual-effect penalty; no pair table, new feature or calibration was applied. Sixteen fits took 55.3 CPU fit seconds total, excluding parsing, predictions and verification. Whole-objective rescaling includes penalties, preserving mathematical minimizers. No paid compute or model API.
 
-The original freeze and failure remain preserved. Draft PR #86 is unmerged;
-production, prior experiments and T−6h studies remain untouched. The separate
-3.5 inquiry remains pending and is not a dependency.
+Class calibration remains imperfect. Challenger mean K probabilities are 22.34% / 22.31%, versus observed 21.98% / 21.84%; mean BB probabilities are 7.84% / 7.87%, versus observed 7.55% / 7.72%. [Class reliability bins](calibration.json) are diagnostic only. No calibrator was fitted or player-level certainty inferred.
 
+## Verification and limitations
 
-## Approved normalized restart — second numerical stop
+- All 213,274 primary PA use identical paired populations. Saved coefficients replay every annual all-role forecast exactly (maximum difference zero).
+- Separate scalar log-loss arithmetic agrees for all three populations/models/years; independent scalar Brier agrees on primary starter PA.
+- All 5,000 paired bootstrap replicates were rebuilt with block-multiplicity weights; interval endpoints agree within 2.19e-16.
+- Later test-row changes leave earlier predictions unchanged. Unseen IDs have zero residual columns and valid categorical probabilities.
+- Direct history/future-mutation and synthetic gradient checks pass; every fit meets normalized gradient infinity <=1e-8.
 
-Tom approved whole-objective/gradient normalization; amended implementation was frozen at `b6da89a`. The synthetic gradient check passed within 1.75e-11. The gamma=0.1 baseline passed the new per-PA gradient gate at 5.72e-10; its 2023 inner forecast loss was computed transiently for the preset selection routine. The next gamma=1 baseline terminated at floating-point objective precision with gradient 2.6684222170921877e-9 after 58 iterations, above the 1e-9 gate. Execution stopped again. No challenger fit, completed inner selection, outer forecast or component performance comparison exists. No inner performance value was inspected to choose a numerical threshold.
+[Fit/replay verification](verification.json), [additional checks](extra_verification.json), [selection](selection.json), [runner](run.py), [measurement](measure.py) and [verification code](verify_extra.py) support these claims. These are same-assistant checks, not external review or a full independent fit rerun. Raw data, per-PA predictions and fitted contexts remain private outside Git.
 
-Both receipts are preserved in [restart_numerical_receipts.json](restart_numerical_receipts.json). Whole-objective scaling did not change model definitions or relative penalties. This second stop exposes another overly strict numerical acceptance choice; it provides no evidence for or against component accuracy.
+No full-game simulation, sportsbook/Kalshi comparison or economic evaluation occurred. These categories omit contact severity, baserunning, starter duration and reliever selection. Even a passed component gate would not establish winner improvement; this one fails its agreed gate.
 
-Propose one further documented numerical amendment: use 1e-8 per-PA gradient tolerance for both optimizer and acceptance, keeping all other frozen controls. This is a numerical criterion, not an accuracy or economic tolerance. It is of the order of square-root double-precision machine epsilon, although that heuristic alone does not guarantee solution accuracy. Convergence, gradient checks, probability replay and the original predictive gate would still be required. Restart remains unapproved until Tom agrees; any further failure stops.
+## Decision
+
+Close this tested specification without promotion, automatic retuning, weaker thresholds or new families. Preserve the small improvement as conditional matchup evidence of insufficient measured size under the agreed rule. Any further work requires a distinct hypothesis and discussion; no game-level integration follows. Draft PR #86 stays unmerged; production collectors/pins/schedules and T−6h studies remain untouched.

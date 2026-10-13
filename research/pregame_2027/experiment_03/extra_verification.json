@@ -1,0 +1,16 @@
+{
+  "2024": {
+    "independent_brier": "passed",
+    "later_row_prediction_mutation_difference": 0,
+    "unseen_ids_have_zero_residual_columns": true,
+    "valid_cold_probabilities": true
+  },
+  "2025": {
+    "independent_brier": "passed",
+    "later_row_prediction_mutation_difference": 0,
+    "unseen_ids_have_zero_residual_columns": true,
+    "valid_cold_probabilities": true
+  },
+  "bootstrap_14_independent_weight_rebuild_max_difference": 4.163336342344337e-17,
+  "bootstrap_7_independent_weight_rebuild_max_difference": 2.185751579730777e-16
+}

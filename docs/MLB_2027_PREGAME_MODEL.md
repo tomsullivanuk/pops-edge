@@ -137,3 +137,8 @@ Tom approved the bounded PA component experiment. Full-source validation and fea
 ## Normalized restart stopped — October 12
 
 Tom approved whole-objective normalization; the first baseline configuration passed, but the next configuration failed the amended gradient gate (2.67e-9 versus 1e-9). No challenger or outer evaluation occurred. [Failure record](../research/pregame_2027/experiment_03/RESULTS.md) and [proposed 1e-8 tolerance amendment](../research/pregame_2027/experiment_03/TOLERANCE_AMENDMENT.md) preserve the stopped run and next decision. No accuracy conclusion or automatic restart.
+
+
+## Experiment 03 complete — October 12
+
+After Tom approved the final numerical criterion, the bounded conditional PA comparison completed with all sixteen fits accepted and exact saved-forecast replay. [Results](../research/pregame_2027/experiment_03/RESULTS.md): average annual relative log-loss reduction 0.095041%, 14-day interval [0.077841%, 0.113720%], below the agreed 0.5% gate. Both years and Brier improve, but the practical-size gate fails. Close this specification without automatic tuning, promotion or game-level integration. Preserve this small conditional component gain and both earlier numerical stops; no winner-probability or market-edge conclusion. The separate 3.5 inquiry remains pending.
