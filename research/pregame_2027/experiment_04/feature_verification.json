@@ -1,0 +1,8 @@
+{
+  "direct_player_slots_checked": 216,
+  "max_control_rate_difference": 3.164135620181696e-15,
+  "same_future_mutation_independence": true,
+  "unchanged_native_columns": true,
+  "identical_shared_hand_columns": true,
+  "missing_projection_exact_control_fallback": true
+}

@@ -1,0 +1,7 @@
+{
+  "python": "3.14.5",
+  "numpy": "2.5.3",
+  "scipy": "1.18.1",
+  "sklearn": "1.9.1",
+  "runtime": "existing isolated experiment-02 environment; no installation or production change"
+}

@@ -1,7 +1,7 @@
 # One proposed comparison: preseason Steamer versus our lagged batting rates
 
 Status: **data/identity/year association readiness passes;
-proposal for agreement, no training authorized.** October 12, 2026.
+approved by Tom for bounded offline execution.** October 12, 2026.
 Prior experiments remain closed and unpromoted. Read the
 [information assessment](MLB_2027_PLAYER_INFORMATION_GAPS.md) and
 [export/coverage receipts](../research/pregame_2027/projection_feasibility/).
@@ -129,6 +129,10 @@ retuning. Neither paid access nor training happens under this proposal alone.
 Repository, field and identity readiness: **go**. Source-year association: **reconciled by the labelled replacement exports**;
 no further year-confirmation request is needed.
 Historical publication/revision limitations remain visible in the protocol.
-Training: **no-go until Tom agrees this bounded comparison**, its fallback and
-two distinct success gates. No purchases, credentials, collector/pin/schedule
+Training: **approved by Tom**, including the stated fallback and two distinct gates. No purchases, credentials, collector/pin/schedule
 changes, T−6h changes, trading, merge or deployment follow from agreement to research.
+
+
+## Execution approval
+
+Tom explicitly answered yes to running this proposal at `1d64e15`. Authority covers the bounded offline comparison and draft results only. Implementation uses identical C=1 lbfgs logistics, tol=1e-8, max_iter=10000, one BLAS thread, four annual arm fits and saved native references. Slot opportunities count every valid regular-season PA in native training games, including substitutions/IW; source lineup position assigns the slot. Raw exports remain private.
