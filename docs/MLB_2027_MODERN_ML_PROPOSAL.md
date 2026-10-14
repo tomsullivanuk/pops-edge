@@ -1,5 +1,7 @@
 # Modern ML: one proposed next comparison
 
+Canonical research inventory: [MLB model experiment register](MLB_MODEL_EXPERIMENT_REGISTER.md) — 23 completed campaigns/studies/diagnostics/evaluations, with stable IDs, source lineage and current decisions. Use it for cross-experiment discussion; dated proposals and decisions below retain their history.
+
 October 12, 2026. **Setup due diligence now identifies a consumer-eligibility blocker for 3.5.** Read the [access/compute review](MLB_2027_MODEL_ACCESS_COMPUTE_REVIEW.md) before this conditional proposal; v2 is an explicit alternative requiring a new decision.
 
 **Discussion proposal, not authorization to install, accept

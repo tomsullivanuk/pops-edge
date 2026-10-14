@@ -1,5 +1,7 @@
 # Next model proposal: predict the score pair, then the winner
 
+Canonical research inventory: [MLB model experiment register](MLB_MODEL_EXPERIMENT_REGISTER.md) — 23 completed campaigns/studies/diagnostics/evaluations, with stable IDs, source lineage and current decisions. Use it for cross-experiment discussion; dated proposals and decisions below retain their history.
+
 October 12, 2026. **Structural alternative; deprioritized as the immediate next test after the modern-ML research review.** See the [current learner-comparison proposal](MLB_2027_MODERN_ML_PROPOSAL.md). Retain these score-model notes for discussion.
 
 **Read-only assessment and discussion proposal; no experiment

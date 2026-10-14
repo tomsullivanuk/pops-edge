@@ -1,5 +1,7 @@
 # PRODUCT
 
+Canonical research inventory: [MLB model experiment register](MLB_MODEL_EXPERIMENT_REGISTER.md) — 23 completed campaigns/studies/diagnostics/evaluations, with stable IDs, source lineage and current decisions. Use it for cross-experiment discussion; dated proposals and decisions below retain their history.
+
 ## v1.3 Part 2 — adopted Performance readers
 
 The Owner adopted weekly NFL results alongside the established MLB reader. Performance is read-only; cumulative NFL charts/season aggregates and Administration update controls are explicitly deferred. See [reader contract](PERFORMANCE_READERS_v1.3.md). The implementation candidate adds the previously deferred reader without changing measurement authority.

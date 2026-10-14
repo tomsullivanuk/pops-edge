@@ -1,5 +1,7 @@
 # Pops' Edge Roadmap
 
+Canonical research inventory: [MLB model experiment register](docs/MLB_MODEL_EXPERIMENT_REGISTER.md) — 23 completed campaigns/studies/diagnostics/evaluations, with stable IDs, source lineage and current decisions. Use it for cross-experiment discussion; dated proposals and decisions below retain their history.
+
 ## September 15, 2026 — Performance slice adopted
 
 Part 2 exposes existing NFL weekly results alongside the established MLB reader. Weekly scope is adopted; cumulative NFL charts and Administration controls are deferred. See [contract](docs/PERFORMANCE_READERS_v1.3.md). This is an implementation candidate, not a deployed or published release.

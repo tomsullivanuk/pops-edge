@@ -1,0 +1,378 @@
+{
+  "schema_version": 1,
+  "purpose": "Source-level provenance for canonical register; no raw licensed data or host paths. Hashes pin inspected source bytes, not revalidated historical fits.",
+  "completed_entry_counts": {
+    "winner_model_campaigns": 15,
+    "component_studies": 1,
+    "diagnostics": 4,
+    "annual_evaluation_refit_campaigns": 3,
+    "total": 23
+  },
+  "original_report_packages": 17,
+  "source_root_definitions": {
+    "retained_native_archive": "Owner local retained Pops Edge project archive",
+    "independent_review_archive": "Owner local October 9 task-3 independent review directory",
+    "repository": "This repository root"
+  },
+  "sources": [
+    {
+      "source_root": "retained_native_archive",
+      "path": "native_2025_comparison_2026-09-29/RESULTS_REPORT.md",
+      "access": "local_only",
+      "entry_ids": [
+        "V01"
+      ],
+      "sha256": "1eeff341fb9c0b1d78e9283ac47d979a1846986a2e879a36cf818037445ef5f5"
+    },
+    {
+      "source_root": "retained_native_archive",
+      "path": "native_2025_retraining_2026-09-29/RESULTS_REPORT.md",
+      "access": "local_only",
+      "entry_ids": [
+        "V02"
+      ],
+      "sha256": "5351fe3f6cfa9d16e9c947e22b7482b1d8fb839aefc16faffeb10013c7cc2302"
+    },
+    {
+      "source_root": "retained_native_archive",
+      "path": "native_2026_evaluation_2026-09-30/RESULTS_REPORT.md",
+      "access": "local_only",
+      "entry_ids": [
+        "V03"
+      ],
+      "sha256": "25b963010b0692ef2e614f991b0399f100b9b30613b91fddacd748510b3edeac"
+    },
+    {
+      "source_root": "retained_native_archive",
+      "path": "native_actual_lineup_2026-09-29/RESULTS_REPORT.md",
+      "access": "local_only",
+      "entry_ids": [
+        "M09"
+      ],
+      "sha256": "b0b05aebd06b5c160f40bff723895c1904fa2f2e84c5ca553ef74daa04d8edb8"
+    },
+    {
+      "source_root": "retained_native_archive",
+      "path": "native_batting_unit_2026-09-29/RESULTS_REPORT.md",
+      "access": "local_only",
+      "entry_ids": [
+        "M07"
+      ],
+      "sha256": "822db961955cda188ecdab18c3af2fe9a46add07c82d198ed09f85f26d2b5f7d"
+    },
+    {
+      "source_root": "retained_native_archive",
+      "path": "native_bullpen_2026-09-28/RESULTS_REPORT.md",
+      "access": "local_only",
+      "entry_ids": [
+        "M04"
+      ],
+      "sha256": "8cc5d96860f89db0d4ccf998ffcfb2298e72869d466f2e4f3b61761f9e487053"
+    },
+    {
+      "source_root": "retained_native_archive",
+      "path": "native_calibration_2026-09-30/RESULTS_REPORT.md",
+      "access": "local_only",
+      "entry_ids": [
+        "M10"
+      ],
+      "sha256": "60406dbecf666bc06d57cb8e783460bb158bb48d15fcb0ac08b291f577d09a22"
+    },
+    {
+      "source_root": "retained_native_archive",
+      "path": "native_combined_2026-09-29/RESULTS_REPORT.md",
+      "access": "local_only",
+      "entry_ids": [
+        "M08"
+      ],
+      "sha256": "558ffaf8372c63df62fe658a61bd7763928361328f7ae42db03a94a9c2aa18cd"
+    },
+    {
+      "source_root": "retained_native_archive",
+      "path": "native_diagnostics_2026-09-29/RESULTS_REPORT.md",
+      "access": "local_only",
+      "entry_ids": [
+        "D02"
+      ],
+      "sha256": "66ef41630cf297c9d4de5bc37ec6d22f2e5f6c3373878b97a217b92f234df9a3"
+    },
+    {
+      "source_root": "retained_native_archive",
+      "path": "native_gam_2026-09-28/RESULTS_REPORT.md",
+      "access": "local_only",
+      "entry_ids": [
+        "M02"
+      ],
+      "sha256": "c47c7fd894d63fc74da11300f5d5958803159c524c2bc0d36dac1342f77be1ff"
+    },
+    {
+      "source_root": "retained_native_archive",
+      "path": "native_logistic_2026-09-28/RESULTS_REPORT.md",
+      "access": "local_only",
+      "entry_ids": [
+        "M01"
+      ],
+      "sha256": "9596136ceb8ecb1793a366fd4e461d787eb8c012e6b200926cabab7473d94581"
+    },
+    {
+      "source_root": "retained_native_archive",
+      "path": "native_market_comparison_2026-09-28/RESULTS_REPORT.md",
+      "access": "local_only",
+      "entry_ids": [
+        "D01"
+      ],
+      "sha256": "f0e2a243e5576b7d24cb439f86f426451e37d3ca57b44a12d9cb2f42333181b5"
+    },
+    {
+      "source_root": "retained_native_archive",
+      "path": "native_market_diagnostic_2026-10-01/RESULTS_REPORT.md",
+      "access": "local_only",
+      "entry_ids": [
+        "M12",
+        "D03"
+      ],
+      "sha256": "7e8a1b621839e44164af1cbbcb52432a15d7c3b9627f789bba4f8bc599d3293b"
+    },
+    {
+      "source_root": "retained_native_archive",
+      "path": "native_offense_prevention_2026-09-29/RESULTS_REPORT.md",
+      "access": "local_only",
+      "entry_ids": [
+        "M05"
+      ],
+      "sha256": "a51e9fc31c7c0667d5690b0c8d4dba7c62aa605b0c60b3fbe7f35231619fd332"
+    },
+    {
+      "source_root": "retained_native_archive",
+      "path": "native_opponent_2026-09-29/RESULTS_REPORT.md",
+      "access": "local_only",
+      "entry_ids": [
+        "M06"
+      ],
+      "sha256": "54941f9c22e78a7780396f76521cf52e36e766647cd1157fc8cbc99df45bf044"
+    },
+    {
+      "source_root": "retained_native_archive",
+      "path": "native_starter_2026-09-28/RESULTS_REPORT.md",
+      "access": "local_only",
+      "entry_ids": [
+        "M03"
+      ],
+      "sha256": "f65938166f19c0ecbcbfb3a376bcffb95d3e5b35b7a26819e39ff61ae41c879b"
+    },
+    {
+      "source_root": "retained_native_archive",
+      "path": "native_starter_gam_2026-09-30/RESULTS_REPORT.md",
+      "access": "local_only",
+      "entry_ids": [
+        "M11"
+      ],
+      "sha256": "30df489132e9f7e147a902d1c8d15e30f67360d0d905de8afa392da165ea54ee"
+    },
+    {
+      "source_root": "repository",
+      "path": "research/pregame_2027/experiment_01/RESULTS.md",
+      "access": "public_repository",
+      "entry_ids": [
+        "M13"
+      ],
+      "sha256": "3db2fe7d9b2eba317019881b62dd727c685e4ce1eb92489a1806c34afd50a2d3"
+    },
+    {
+      "source_root": "repository",
+      "path": "research/pregame_2027/experiment_01/PROTOCOL.md",
+      "access": "public_repository",
+      "entry_ids": [
+        "M13"
+      ],
+      "sha256": "6067e86953c6efd4af262d0b9afb67732fc48debb8714d8336aa3c0ef07062c3"
+    },
+    {
+      "source_root": "repository",
+      "path": "research/pregame_2027/experiment_01/results.json",
+      "access": "public_repository",
+      "entry_ids": [
+        "M13"
+      ],
+      "sha256": "025fae500c41d1c81e67915ada3f6047059c10b103211d641db8d47dc55ef460"
+    },
+    {
+      "source_root": "repository",
+      "path": "research/pregame_2027/experiment_02/RESULTS.md",
+      "access": "public_repository",
+      "entry_ids": [
+        "M14"
+      ],
+      "sha256": "543048955b2affe696446c26124dddf15061c0cdf0bebb9065fc28d46af2274d"
+    },
+    {
+      "source_root": "repository",
+      "path": "research/pregame_2027/experiment_02/PROTOCOL.md",
+      "access": "public_repository",
+      "entry_ids": [
+        "M14"
+      ],
+      "sha256": "d0551372315bc0962be35f821fa2ad80b7da7aebbe4107195719b65c6d221641"
+    },
+    {
+      "source_root": "repository",
+      "path": "research/pregame_2027/experiment_02/results.json",
+      "access": "public_repository",
+      "entry_ids": [
+        "M14"
+      ],
+      "sha256": "2a2d410892b606edb242c128268ee0466c6fa0223957475b9fb315885a23736a"
+    },
+    {
+      "source_root": "repository",
+      "path": "research/pregame_2027/experiment_03/RESULTS.md",
+      "access": "public_repository",
+      "entry_ids": [
+        "C01"
+      ],
+      "sha256": "6b4c3695277bee11a82d7423965c23484c7c2b15eb1677d41700641220c42900"
+    },
+    {
+      "source_root": "repository",
+      "path": "research/pregame_2027/experiment_03/PROTOCOL.md",
+      "access": "public_repository",
+      "entry_ids": [
+        "C01"
+      ],
+      "sha256": "9c5adb893bc7b93213153fbe8ce553da5f0153f20317793702d476ff21beb71a"
+    },
+    {
+      "source_root": "repository",
+      "path": "research/pregame_2027/experiment_03/results.json",
+      "access": "public_repository",
+      "entry_ids": [
+        "C01"
+      ],
+      "sha256": "9a977310d531cf2225a0d6dc8d79949116ff9362994fd7cd543dd27ef2731ea3"
+    },
+    {
+      "source_root": "repository",
+      "path": "research/pregame_2027/experiment_04/RESULTS.md",
+      "access": "public_repository",
+      "entry_ids": [
+        "M15"
+      ],
+      "sha256": "b1b5d89664003a99def87da057da0583bf03f1349c606c8034941f8a9faface2"
+    },
+    {
+      "source_root": "repository",
+      "path": "research/pregame_2027/experiment_04/PROTOCOL.md",
+      "access": "public_repository",
+      "entry_ids": [
+        "M15"
+      ],
+      "sha256": "129c912e22473bdaf4720e763da9b416aca3101e9a38381c2115001f5283a810"
+    },
+    {
+      "source_root": "repository",
+      "path": "research/pregame_2027/experiment_04/results.json",
+      "access": "public_repository",
+      "entry_ids": [
+        "M15"
+      ],
+      "sha256": "d094ba7382c610b706254af45b4575e666e30bf2a5dca7e007519bdff9a4186b"
+    },
+    {
+      "source_root": "repository",
+      "path": "research/pregame_2027/information_chain/DECISION.md",
+      "access": "public_repository",
+      "entry_ids": [
+        "D04"
+      ],
+      "sha256": "3e800251a52adddcdc7bfdee188aa7e319e7f6a379377345d7e2dad98dd838d7"
+    },
+    {
+      "source_root": "repository",
+      "path": "research/pregame_2027/information_chain/PROTOCOL.md",
+      "access": "public_repository",
+      "entry_ids": [
+        "D04"
+      ],
+      "sha256": "940f2d9a144342dc99704ce9e3fa2589dded32739205276efc7452e1369d8587"
+    },
+    {
+      "source_root": "repository",
+      "path": "research/pregame_2027/information_chain/results.json",
+      "access": "public_repository",
+      "entry_ids": [
+        "D04"
+      ],
+      "sha256": "c8297f7d3484770a79b8dfe564cc5cfa24ec3806232433fb5decc2c81bf45719"
+    },
+    {
+      "source_root": "independent_review_archive",
+      "path": "INDEPENDENT_MODEL_REVIEW.md",
+      "access": "local_only",
+      "entry_ids": [],
+      "role": "context_not_additional_experiment",
+      "sha256": "b6a386dd074682cbace7df7da5014198a4e46c8db10f29c8af9aaedde3d5e21e"
+    },
+    {
+      "source_root": "independent_review_archive",
+      "path": "PREGAME_ALERT_DESIGN_ADDENDUM.md",
+      "access": "local_only",
+      "entry_ids": [],
+      "role": "context_not_additional_experiment",
+      "sha256": "54f381834ec1902c2daffe8f7f28b647ba8bc6717d305cb2d539bd521b9b237a"
+    },
+    {
+      "source_root": "repository",
+      "path": "docs/MLB_2027_LINEUP_OBSERVATION_FINAL.md",
+      "access": "public_repository",
+      "entry_ids": [
+        "S01"
+      ],
+      "sha256": "79893805e8c42c063b908f530d64fc919c9f59aae43ee400824a070fd4aa6186"
+    },
+    {
+      "source_root": "repository",
+      "path": "research/pregame_2027/component_readiness/RESULTS.md",
+      "access": "public_repository",
+      "entry_ids": [
+        "S02"
+      ],
+      "sha256": "e38880ad466f58c1a8bf04454d62a6498b15bea9372ecc882e563d82fb0fd625"
+    },
+    {
+      "source_root": "repository",
+      "path": "docs/MLB_2027_PROJECTION_COMPARISON_PROPOSAL.md",
+      "access": "public_repository",
+      "entry_ids": [
+        "S03"
+      ],
+      "sha256": "329790091c575abedc4bdd5017635780fe13f7211838e7ff3d6cd7424021e67e"
+    },
+    {
+      "source_root": "repository",
+      "path": "docs/MLB_2027_SCORE_MODEL_PROPOSAL.md",
+      "access": "public_repository",
+      "entry_ids": [
+        "P01"
+      ],
+      "sha256": "08c6df7c231410ff0218cda798730add6b85d5f971ec3c1e203c652d3192921c"
+    },
+    {
+      "source_root": "repository",
+      "path": "docs/MLB_2027_MATCHED_PAPER_PILOT_PROPOSAL.md",
+      "access": "public_repository",
+      "entry_ids": [
+        "P02"
+      ],
+      "sha256": "8bb28b5b152a63f907591629496783da89cc2deb3f1329b60e76323b34d52681"
+    },
+    {
+      "source_root": "repository",
+      "path": "docs/MLB_2027_MODERN_ML_PROPOSAL.md",
+      "access": "public_repository",
+      "entry_ids": [
+        "P03"
+      ],
+      "sha256": "3c91a4836471fdda32eac4e66129959a4ba25311dc498c44a171aba4262746d8"
+    }
+  ]
+}

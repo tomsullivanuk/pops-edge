@@ -1,5 +1,7 @@
 # 2027 pregame model: experiment 01 proposal
 
+Canonical research inventory: [MLB model experiment register](MLB_MODEL_EXPERIMENT_REGISTER.md) — 23 completed campaigns/studies/diagnostics/evaluations, with stable IDs, source lineage and current decisions. Use it for cross-experiment discussion; dated proposals and decisions below retain their history.
+
 October 12, 2026. Status: **approved offline comparison completed October 12; continuation gate failed**.
 Repository inspected at main `9564b12dcd80f0b3347b4860b95984763f2e3061`.
 
