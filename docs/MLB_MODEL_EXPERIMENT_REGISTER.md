@@ -2,7 +2,7 @@
 
 Canonical index for discussion of the in-house regular-season winner model and its supporting research. Updated October 14, 2026; documentation only. Main verified at `9564b12dcd80f0b3347b4860b95984763f2e3061`; this record is proposed on draft PR #86 and is not merged product authority.
 
-**Current decision: retain the ten-input starter reference and pause further model experiments.** Four recent comparisons failed their agreed continuation gates; the subsequent information-chain diagnostic was inconclusive and explicitly stopped. Earlier positive and uncertain findings remain evidence. No new experiment, paper-alert implementation, trading, purchase, credential, production collector, pin or schedule change is authorized by this register. Existing postseason T−6h studies remain separate and intact.
+**Current decision: retain the ten-input starter reference; one explicitly authorized v3.5 fixed-input campaign is running (M16).** Four recent comparisons failed their agreed continuation gates; the subsequent information-chain diagnostic was inconclusive and explicitly stopped. Earlier positive and uncertain findings remain evidence. No new experiment, paper-alert implementation, trading, purchase, credential, production collector, pin or schedule change is authorized by this register. Existing postseason T−6h studies remain separate and intact.
 
 ## How to read and count this record
 
@@ -15,6 +15,8 @@ For winner comparisons, lower Brier and natural-log loss are better. A **gain** 
 2024–2026 have repeatedly informed development. Chronological fitting, training-only selection and annual refitting prevent particular leakage mechanisms; they do not restore untouched holdouts. Retrospective actual lineup/starter identities do not establish their live publication time. The historical sportsbook **opening consensus** is the agreed development proxy, not Kalshi, a same-time executable quote or a closing-price guarantee. The 2024 market subset varies: original 2,291 games; several later studies used 2,278 after 13 post-inspection exclusions. Those suspected quote artifacts were not independently established errors. Do not silently carry those exclusions into a new study. Recent comparisons retain the original common cohort where stated.
 
 The recent 0.001 average annual Brier gate and C01's 0.5% component gate were campaign-specific engineering continuation decisions. Do not apply them retrospectively to older “promising” rules or interpret them as return thresholds. Probability advantage in percentage points, net expected return after price/depth/fees/delay, and forecast uncertainty are separate quantities. None of the entries establishes profitable selection or superiority to Kalshi.
+
+There is additionally **one running winner-model campaign, M16 / experiment 05**, outside the completed count. Its execution protocol is frozen before baseball results. No other proposal is activated.
 
 ## Overview
 
@@ -35,6 +37,7 @@ The recent 0.001 average annual Brier gate and C01's 0.5% component gate were ca
 | [M13](#m13-experiment-01-strength-rating) | Opponent-adjusted ridge rating | Mean annual gain +0.000334224 | Continuation gate failed |
 | [M14](#m14-experiment-02-modern-learners) | Fixed-input TabPFN-v2 / CatBoost | Mean gains +0.000057915 / −0.000479901 | Both continuation gates failed |
 | [M15](#m15-experiment-04-steamer-offense) | Preseason Steamer vs lagged offense | Mean annual gain +0.000474075 | Information and market gates failed |
+| [M16](#m16-experiment-05-v35-core) | Fixed-input v3.5 core; saved v2/CatBoost controls | Running; no result yet | Authorized bounded campaign; no promotion |
 | [C01](#c01-experiment-03-pitcher-batter-component) | Partial pooling for K/BB/other | Mean relative log-loss reduction 0.095041% | Small gain; 0.5% gate failed |
 | [D01](#d01-original-market-comparison) | Existing forecasts vs opening consensus | Seasonal minus market +0.002895 (adverse) | Market better point estimate; interval spans zero |
 | [D02](#d02-deletions-and-calibration) | Conditional feature deletions/calibration | Removing starter raises Brier +0.001539213 | Starter contribution supported; others uncertain |
@@ -150,6 +153,10 @@ The original October 9 independent review and pregame design addendum were read 
 
 **Evidence/decision:** 2024 control Brier 0.242807313 versus Steamer 0.241801625 (gain +0.001005688); 2025 control 0.243867523 versus Steamer 0.243925061 (gain −0.000057538). Equal-year gain +0.000474075 [−0.000423151,+0.001021038]. Information gate failed (size, two positive years, positive interval); market gate failed. Common 4,716 (2,291 / 2,425) pooled Steamer Brier / log loss 0.243305559 / 0.679481939 versus book 0.241753881 / 0.676802837. Close this specification without retuning. Raw archive vintage/revisions are not independently verified as contemporaneous releases; byte-identical year-label reconciliation does not establish as-of availability. [Results](../research/pregame_2027/experiment_04/RESULTS.md), [protocol](../research/pregame_2027/experiment_04/PROTOCOL.md), [full metrics](../research/pregame_2027/experiment_04/results.json).
 
+### M16 Experiment 05: v3.5 core
+
+**Running, not completed.** Owner explicitly authorized the v3.5 fixed-input comparison after personally accepting the license; pinned core acquisition and synthetic full-context capacity passed. Same ten inputs, chronological2024–2026 folds, original shared native/sportsbook cohorts and continuation rule as M14. Saved v2/CatBoost remain unchanged; native v3.5 temperature1.0 and four estimators fixed before results. No payroll/WAR inputs or additional tuning. [Frozen protocol](../research/pregame_2027/experiment_05/PROTOCOL.md), [configuration](../research/pregame_2027/experiment_05/SETTINGS.json). Results and independent review will be appended after execution; this is not a continuation success or policy authority.
+
 ## Player component study
 
 ### C01 Experiment 03: pitcher-batter component
@@ -217,7 +224,7 @@ Saved winner probabilities changed by mean absolute 2.228 / 2.231 percentage poi
 | S03 | [Projection comparison record](MLB_2027_PROJECTION_COMPARISON_PROPOSAL.md) | Access/import/readiness and approvals feed M15. Not a separate executed winner experiment. |
 | P01 | [Score-model proposal](MLB_2027_SCORE_MODEL_PROPOSAL.md) | Discussed, unexecuted run-distribution family. M05 did not execute it; no training authority follows. |
 | P02 | [Matched paper-pilot proposal](MLB_2027_MATCHED_PAPER_PILOT_PROPOSAL.md) | Unexecuted forward paper workflow; T−90/60/30 remains proposed. Same-time forecasts and selected executable-price/depth/fee/delay entries require separate evaluation and agreement. |
-| P03 | [Modern learner/version discussion](MLB_2027_MODERN_ML_PROPOSAL.md) | TabPFN-3.5 alternative unexecuted; actual tested v2 is M14. Historical proposal text is superseded by appended decisions where applicable. |
+| P03 | [Modern learner/version discussion](MLB_2027_MODERN_ML_PROPOSAL.md) | TabPFN-3.5 proposal advanced to explicitly authorized running campaign M16 / experiment05 on October16 after Owner acceptance. [Core acquisition and synthetic capacity](../research/pregame_2027/v35_preparation/CAPACITY.md) passed locally without credential setup; frozen fixed-input execution is now recorded at M16; this proposal is not a second campaign. Actual tested v2 is M14; payroll/WAR remain separate. Historical proposal text is superseded by appended decisions where applicable. |
 | P04 | Team payroll hypothesis — Tom, October 16, 2026 | Proposed, unexecuted: payroll may proxy management's valuation of players and add information beyond lagged team results, potentially early in the season; salary is not true ability. Caveats include team-control salary constraints, contract timing, and dead money versus payroll for the currently contributing roster. No provider, exact payroll definition or test design selected. Historical pregame availability and incremental value against the existing ten-input starter reference need checking before execution. Research remains paused; this note authorizes no acquisition or model run. |
 
 Replay checks, optimizer amendments and failed invalid acquisition/encoding attempts stay in their parent campaign histories. They neither inflate the campaign count nor disappear because a corrected run completed. Supporting licensed raw provider data, credentials and unrelated private information remain outside this public register.
@@ -228,8 +235,8 @@ Replay checks, optimizer amendments and failed invalid acquisition/encoding atte
 2. What distinct missing information or representation hypothesis is supported strongly enough to justify another bounded test? M03's starter contribution is supported; M15/D04 do not identify a stable upstream offense advantage or a causal translation failure. A new proposal should explain what it changes beyond the tested specifications.
 3. What prospective evidence would justify continuing after reused development seasons? Agree any forward population, decision time, coverage accounting, practical-size criterion and stopping rule before observations; another historical gain alone cannot supply fresh confirmation.
 
-These questions organize discussion, not an automatic research checklist or a request to approve an unspecified next experiment. The current pause remains in force.
+These questions organize discussion, not an automatic research checklist or a request to approve an unspecified next experiment. The pause remains for other proposals; M16 is the sole authorized running comparison.
 
 ## Maintaining the register
 
-Use the stable ID when discussing an existing result. For any newly approved distinct hypothesis, add a proposed entry with linked frozen inputs, comparison, decision time, population, validation and gate **before execution**; transition it after execution with all results and failures. Do not infer authorization from a proposal or this maintenance instruction. Record annual evaluation extensions under the appropriate campaign with exact cohort/chronology, and separate new questions when appropriate. Current next gate is Owner discussion of the evidence; no next model is prescribed or authorized here.
+Use the stable ID when discussing an existing result. For any newly approved distinct hypothesis, add a proposed entry with linked frozen inputs, comparison, decision time, population, validation and gate **before execution**; transition it after execution with all results and failures. Do not infer authorization from a proposal or this maintenance instruction. Record annual evaluation extensions under the appropriate campaign with exact cohort/chronology, and separate new questions when appropriate. Current execution authority is limited to M16; any other next model requires Owner discussion and approval.

@@ -1,0 +1,14 @@
+{
+  "scope": "Files frozen before baseball execution; commit recorded in private execution_start/provenance",
+  "files": {
+    "PREFLIGHT_REVIEW.md": "663795874a04e5e929272dc97ab15553c375459f18dce3e8111c874992f2c914",
+    "PROTOCOL.md": "563a6871e89b10d08aa5ec68d813977e4cda16331827cc19175a4b6ab9f9d98d",
+    "SETTINGS.json": "1d4ef64ec9772666bae44220416fcd2bab5a99cea059f468845e366a37a2dace",
+    "comparison_pins.json": "68544ae441763d4109c09857c8f37239813e7d2d1112a333ff12737243c905f4",
+    "input_manifest.json": "8ae387f6041e58b49491dbbe523c40e210ccdccedb261acf9f6ded8ae7f8955b",
+    "local_model.py": "ca6748d4977c737250fef8d8e6ac8f0b50880aa69b0fc2556535efdde5687a0d",
+    "measurement.py": "5ebfc3f19ccd3dd7be4ba820071a3174f9b7611b837e96ff9a305d6a50b40a75",
+    "requirements.lock.txt": "3b135ac2a22248974757d078011e0e19f8107a09b9817be88b4e2ef6b687ccb8",
+    "run.py": "9462d8f03a9465e2ee2be5b763015168e80813cc4ea5d0d64bf88d9dffb0a789"
+  }
+}
