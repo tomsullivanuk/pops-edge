@@ -1,0 +1,50 @@
+[
+  {
+    "evaluation_games": 2426,
+    "fit_seconds": 10.062076249858364,
+    "max_process_rss_mib": 2112.734375,
+    "mps_driver_bytes_after_prediction": 3227074560,
+    "no_outer_labels_in_fit": true,
+    "predict_seconds": 6.470846792217344,
+    "resolved_temperature": 1.0,
+    "training_games": 4852,
+    "training_years": [
+      2022,
+      2023
+    ],
+    "year": 2024
+  },
+  {
+    "evaluation_games": 2426,
+    "fit_seconds": 16.142120708944276,
+    "max_process_rss_mib": 2307.40625,
+    "mps_driver_bytes_after_prediction": 3276472320,
+    "no_outer_labels_in_fit": true,
+    "predict_seconds": 7.60627037496306,
+    "resolved_temperature": 1.0,
+    "training_games": 7278,
+    "training_years": [
+      2022,
+      2023,
+      2024
+    ],
+    "year": 2025
+  },
+  {
+    "evaluation_games": 2428,
+    "fit_seconds": 27.873660208890215,
+    "max_process_rss_mib": 2385.140625,
+    "mps_driver_bytes_after_prediction": 4441538560,
+    "no_outer_labels_in_fit": true,
+    "predict_seconds": 9.426699083065614,
+    "resolved_temperature": 1.0,
+    "training_games": 9704,
+    "training_years": [
+      2022,
+      2023,
+      2024,
+      2025
+    ],
+    "year": 2026
+  }
+]

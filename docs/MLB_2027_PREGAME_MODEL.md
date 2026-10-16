@@ -1,6 +1,6 @@
 # 2027 pregame model: experiment 01 proposal
 
-Canonical research inventory: [MLB model experiment register](MLB_MODEL_EXPERIMENT_REGISTER.md) — 23 completed campaigns/studies/diagnostics/evaluations, with stable IDs, source lineage and current decisions. Use it for cross-experiment discussion; dated proposals and decisions below retain their history.
+Canonical research inventory: [MLB model experiment register](MLB_MODEL_EXPERIMENT_REGISTER.md) — 24 completed campaigns/studies/diagnostics/evaluations, with stable IDs, source lineage and current decisions. Use it for cross-experiment discussion; dated proposals and decisions below retain their history.
 
 October 12, 2026. Status: **approved offline comparison completed October 12; continuation gate failed**.
 Repository inspected at main `9564b12dcd80f0b3347b4860b95984763f2e3061`.
@@ -176,3 +176,8 @@ Tom approved the matched winner comparison at `1d64e15`; implementation was froz
 ## Approved information-chain diagnostic completed
 
 Tom approved a one-session no-fit batting/translation diagnostic, frozen at `b87d364`. [Decision memo](../research/pregame_2027/information_chain/DECISION.md): 349,025 comparable initial-nine opportunities; Steamer is slightly worse in 2024 and better in 2025, with equal-year MSE gain +0.000070274 and 14-day interval [−0.000049266,+0.000172273]. Saved winner models visibly respond (about 2.23 pp mean absolute probability change). Weighted side-level accuracy is worse, but it is not the model's home-away differential target and does not locate a causal aggregation failure. Independent raw-value, score, trace and block verification passes. Conclusion inconclusive; explicitly stop without a fifth fit or translator rewrite. Existing failed gates remain failed; raw events/traces stay private.
+
+
+## October 16: v3.5 core comparison completed
+
+The authorized [experiment 05 / M16](MLB_MODEL_EXPERIMENT_REGISTER.md#m16-experiment-05-v35-core) completed under a pre-result freeze. Mean annual Brier gain versus the unchanged ten-input logistic is −0.000026672 (14-day interval [−0.000269930,+0.000185215]), versus required +0.001; pooled log loss also worsens. The continuation gate fails. Sportsbook opening consensus remains better on both scores in every year on original shared cohorts. Saved v2/CatBoost forecasts remain unchanged. Local feasibility passed; no automatic promotion, tuning, alternate model or follow-on experiment is authorized. Preserve reused-development limitations, the research pause and separate unexecuted payroll/WAR hypotheses. No production/T−6h or policy change.

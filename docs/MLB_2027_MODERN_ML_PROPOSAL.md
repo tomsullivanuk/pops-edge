@@ -1,6 +1,6 @@
 # Modern ML: one proposed next comparison
 
-Canonical research inventory: [MLB model experiment register](MLB_MODEL_EXPERIMENT_REGISTER.md) — 23 completed campaigns/studies/diagnostics/evaluations, with stable IDs, source lineage and current decisions. Use it for cross-experiment discussion; dated proposals and decisions below retain their history.
+Canonical research inventory: [MLB model experiment register](MLB_MODEL_EXPERIMENT_REGISTER.md) — 24 completed campaigns/studies/diagnostics/evaluations, with stable IDs, source lineage and current decisions. Use it for cross-experiment discussion; dated proposals and decisions below retain their history.
 
 October 12, 2026. **Setup due diligence now identifies a consumer-eligibility blocker for 3.5.** Read the [access/compute review](MLB_2027_MODEL_ACCESS_COMPUTE_REVIEW.md) before this conditional proposal; v2 is an explicit alternative requiring a new decision.
 
@@ -197,3 +197,8 @@ Tom explicitly chose v2 in the interim. The [frozen execution protocol](../resea
 The authorized local comparison is complete; this supersedes earlier pending-status entries. [Experiment 02 results](../research/pregame_2027/experiment_02/RESULTS.md) record exact reference replay, 7,280 chronological development forecasts, and independent score/bootstrap verification. TabPFN-v2 improved average annual Brier by 0.000057915 versus the required 0.001; CatBoost worsened it by 0.000479901. Both fail their frozen gates. Sportsbook opening consensus remains better on both proper scores in each year on the original common population. These are reused development seasons, not untouched holdouts. Retain the reference and promote neither learner; no further tuning is authorized automatically.
 
 The pinned v2 checkpoint worked on local Metal without paid compute or model-service uploads. The separate 3.5 licensing inquiry remains pending. Existing collectors, T−6h studies, production pins and schedules remain intact; draft PR 86 remains for review and is not approved for merge.
+
+
+## October 16: v3.5 core comparison completed
+
+The authorized [experiment 05 / M16](MLB_MODEL_EXPERIMENT_REGISTER.md#m16-experiment-05-v35-core) completed under a pre-result freeze. Mean annual Brier gain versus the unchanged ten-input logistic is −0.000026672 (14-day interval [−0.000269930,+0.000185215]), versus required +0.001; pooled log loss also worsens. The continuation gate fails. Sportsbook opening consensus remains better on both scores in every year on original shared cohorts. Saved v2/CatBoost forecasts remain unchanged. Local feasibility passed; no automatic promotion, tuning, alternate model or follow-on experiment is authorized. Preserve reused-development limitations, the research pause and separate unexecuted payroll/WAR hypotheses. No production/T−6h or policy change.

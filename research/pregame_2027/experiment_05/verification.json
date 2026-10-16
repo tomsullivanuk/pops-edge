@@ -1,0 +1,61 @@
+{
+  "status": "passed",
+  "full_unique_games": 7280,
+  "market_common_games": 7144,
+  "baseline_saved_columns_unchanged": true,
+  "original_v2_hashes_unchanged": true,
+  "freeze_files_verified": true,
+  "scalar_score_max_difference": 1.1102230246251565e-16,
+  "team_histories_independently_reconstructed": 12132,
+  "starter_stored_lineage_chronology_checked": 12132,
+  "starter_lineage_sources": [
+    {
+      "path": "native_starter_2026-09-28/lineage.json",
+      "sha256": "586675da77bb3a881c345863bdb692997b58ec77f19a0485800a3b4bcca2fcc9"
+    },
+    {
+      "path": "native_2025_comparison_2026-09-29/starter_lineage.json",
+      "sha256": "68f5602253b8c8fbc9a5fc82ad392697f13b1012e273692cc9ee4a8cf0e4e4cd"
+    },
+    {
+      "path": "native_2026_evaluation_2026-09-30/starter_lineage.json",
+      "sha256": "53aa4a4e869f1fd0d51d7e83614cbe6cdaba20b5d21099d92eb5d991a732dd2a"
+    }
+  ],
+  "raw_starter_rate_builder_rerun": false,
+  "folds": [
+    {
+      "year": 2024,
+      "training_games": 4852,
+      "evaluation_games": 2426,
+      "saved_context_replay_max_difference": 0.0,
+      "later_test_mutation_max_difference": 0.0,
+      "batch_isolation_max_difference": 3.5762786865234375e-07,
+      "outer_labels_not_used_by_fit": true,
+      "no_calibration_or_tuning": true
+    },
+    {
+      "year": 2025,
+      "training_games": 7278,
+      "evaluation_games": 2426,
+      "saved_context_replay_max_difference": 0.0,
+      "later_test_mutation_max_difference": 0.0,
+      "batch_isolation_max_difference": 5.960464477539063e-08,
+      "outer_labels_not_used_by_fit": true,
+      "no_calibration_or_tuning": true
+    },
+    {
+      "year": 2026,
+      "training_games": 9704,
+      "evaluation_games": 2428,
+      "saved_context_replay_max_difference": 0.0,
+      "later_test_mutation_max_difference": 0.0,
+      "batch_isolation_max_difference": 2.384185791015625e-07,
+      "outer_labels_not_used_by_fit": true,
+      "no_calibration_or_tuning": true
+    }
+  ],
+  "gate_reconstructed": true,
+  "network_attempts": [],
+  "same_assistant_separate_verification": true
+}

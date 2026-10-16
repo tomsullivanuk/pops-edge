@@ -196,3 +196,8 @@ Next step: resolve an accurately described eligibility basis or obtain an applic
 ## October 16 follow-up: acceptance and local v3.5 capacity verified
 
 Tom personally completed the v3.5 license review; the official Licenses page subsequently showed Accepted. The documented manual download route acquired the pinned default core checkpoint without creating/configuring credentials. Actual file checksum matches the advertised pin. Network-disabled synthetic Metal smoke and full 9,704 × 10 context checks passed; the full-context fit took 25.176 seconds and initial 128-row prediction 0.543 seconds. Native temperature resolved to 1.0. No baseball fit, paid compute, data upload, new terms acceptance by the agent, production change or publication occurred. [Detailed capacity evidence and next gate](../research/pregame_2027/v35_preparation/CAPACITY.md) supersede the earlier pending-access state. Any later credential/grant requirement still needs separate authorization.
+
+
+## October 16: v3.5 core comparison completed
+
+The authorized [experiment 05 / M16](MLB_MODEL_EXPERIMENT_REGISTER.md#m16-experiment-05-v35-core) completed under a pre-result freeze. Mean annual Brier gain versus the unchanged ten-input logistic is −0.000026672 (14-day interval [−0.000269930,+0.000185215]), versus required +0.001; pooled log loss also worsens. The continuation gate fails. Sportsbook opening consensus remains better on both scores in every year on original shared cohorts. Saved v2/CatBoost forecasts remain unchanged. Local feasibility passed; no automatic promotion, tuning, alternate model or follow-on experiment is authorized. Preserve reused-development limitations, the research pause and separate unexecuted payroll/WAR hypotheses. No production/T−6h or policy change.

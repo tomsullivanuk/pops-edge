@@ -2,11 +2,11 @@
   "schema_version": 1,
   "purpose": "Source-level provenance for canonical register; no raw licensed data or host paths. Hashes pin inspected source bytes, not revalidated historical fits.",
   "completed_entry_counts": {
-    "winner_model_campaigns": 15,
+    "winner_model_campaigns": 16,
     "component_studies": 1,
     "diagnostics": 4,
     "annual_evaluation_refit_campaigns": 3,
-    "total": 23
+    "total": 24
   },
   "original_report_packages": 17,
   "source_root_definitions": {
@@ -354,7 +354,7 @@
       "entry_ids": [
         "P01"
       ],
-      "sha256": "08c6df7c231410ff0218cda798730add6b85d5f971ec3c1e203c652d3192921c"
+      "sha256": "5d51f9b52cef110fdcac51434842e1577bc2e231b00eaaa8069b625c0a1faec7"
     },
     {
       "source_root": "repository",
@@ -372,7 +372,44 @@
       "entry_ids": [
         "P03"
       ],
-      "sha256": "3c91a4836471fdda32eac4e66129959a4ba25311dc498c44a171aba4262746d8"
+      "sha256": "cb5e3076aad18aaffe356029fdf0cf07de3da3f35f3deef5d325a17f29d5819e"
+    },
+    {
+      "source_root": "repository",
+      "path": "research/pregame_2027/experiment_05/RESULTS.md",
+      "access": "public_repository",
+      "entry_ids": [
+        "M16"
+      ],
+      "sha256": "96f3db7382aac2eb03aba59b9943aa0f075050283995cc7a6ef9e22af4928093"
+    },
+    {
+      "source_root": "repository",
+      "path": "research/pregame_2027/experiment_05/PROTOCOL.md",
+      "access": "public_repository",
+      "entry_ids": [
+        "M16"
+      ],
+      "sha256": "563a6871e89b10d08aa5ec68d813977e4cda16331827cc19175a4b6ab9f9d98d"
+    },
+    {
+      "source_root": "repository",
+      "path": "research/pregame_2027/experiment_05/results.json",
+      "access": "public_repository",
+      "entry_ids": [
+        "M16"
+      ],
+      "sha256": "370a1a2d59d78365ca605e54f97bb99e7793411dfaca36fe6bf40f0b0f8eb0c6"
+    },
+    {
+      "source_root": "repository",
+      "path": "research/pregame_2027/experiment_05/REVIEW.md",
+      "access": "public_repository",
+      "entry_ids": [
+        "M16"
+      ],
+      "sha256": "8beb201eeb56583d8cf8315d90ae87d438c59fd762710d8256134d472926cd4e"
     }
-  ]
+  ],
+  "snapshot_note": "Updated October 16 for completed M16. Initial October 14 register review covers its earlier 23-entry/40-source snapshot; M16 has separate review and verification."
 }

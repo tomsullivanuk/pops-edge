@@ -1,6 +1,6 @@
 # Player information assessment: WAR and richer pregame inputs
 
-Canonical research inventory: [MLB model experiment register](MLB_MODEL_EXPERIMENT_REGISTER.md) — 23 completed campaigns/studies/diagnostics/evaluations, with stable IDs, source lineage and current decisions. Use it for cross-experiment discussion; dated proposals and decisions below retain their history.
+Canonical research inventory: [MLB model experiment register](MLB_MODEL_EXPERIMENT_REGISTER.md) — 24 completed campaigns/studies/diagnostics/evaluations, with stable IDs, source lineage and current decisions. Use it for cross-experiment discussion; dated proposals and decisions below retain their history.
 
 October 12, 2026. **Read-only assessment; no new experiment or acquisition authorized.**
 Main verified as `9564b12dcd80f0b3347b4860b95984763f2e3061`. Examine information
