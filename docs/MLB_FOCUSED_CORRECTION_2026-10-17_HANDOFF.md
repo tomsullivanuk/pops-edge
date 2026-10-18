@@ -1,0 +1,7 @@
+# Independent review handoff — focused MLB correction
+
+Candidate directory: `/Users/tom/.codex/.chatgpt-projects/g-p-6a6cba0d8b288191820b710ce15a39e4/pops-edge-focused-correction-20261017`, copied from clean production checkout at `9564b12dcd80f0b3347b4860b95984763f2e3061`, without `.git`. Compare the four changed code/test files against that revision; no branch, commit, PR, or deployment was made. Read root `AGENTS.md` and the linked [implementer review](MLB_FOCUSED_CORRECTION_2026-10-17_REVIEW.md).
+
+Review `forecast_standalone_activation.py` for exact version-2/unversioned replay preservation, version-3 complete ordered replay detection, and handling of genuine new or reverted states. Review `forecast_prospective_market_selection.py` for target-specific rejection attribution while keeping unsupported/ambiguous date-only market selection fail-closed. Tests are in `tests/test_forecast_standalone_activation.py` and `tests/test_forecast_prospective_market_selection.py`.
+
+Do not treat this handoff as acceptance or run production reconciliation. Recheck the retained October 17 failure pages and October 16 catalog read-only under normal approved archive inspection, rerun the three environment-blocked launch-job rehearsals with kernel boot identity available, and report any scientific or replay concern before considering rollout. No archive repair or missed-capture backfill is authorized.
