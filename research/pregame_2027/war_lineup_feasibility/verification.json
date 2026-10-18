@@ -1,0 +1,18 @@
+{
+  "status": "accepted_for_blocked_feasibility_documentation",
+  "model_fits": 0,
+  "completed_register_entries": 24,
+  "proposal_id": "P05",
+  "aggregate_audit_replay_byte_identical": true,
+  "four_projection_hashes_and_twenty_raw_hashes_match_prior_experiment04_manifest": true,
+  "local_links_checked": 66,
+  "reviewed_snapshot_sha256": {
+    "PROTOCOL.md": "87a1efa0b34b95a0c229eacb340c43786a00da0385707fdd97903edd3ffd3b94",
+    "FINDINGS.md": "b76fb78fbca2006ae80dbaa6177e1fb022a75fc978e25f926ec3b7483934c6da",
+    "audit.py": "791bce33f709679782aa28d5c3dd83743ad30ce191483dc2180447c9e40725a3",
+    "audit_results.json": "af614e564db7382f4e21949c5cc5b65346ff770a94be872c5d3c20b56b1ad68d"
+  },
+  "register_sha256": "7778efbd29a493aae2b78f4a6765e7893a33ed74bab36a3d39dbc92e9ba48015",
+  "reviewer": "delegated_read_only_war_feasibility_review",
+  "limitation": "Execution remains blocked on dated observed WAR/PA, compatible components/definition and chronology. No fitted performance or global historical-source availability claim."
+}

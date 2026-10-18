@@ -874,3 +874,8 @@ Tom approved the matched winner comparison at `1d64e15`; implementation was froz
 ## October 16: v3.5 core comparison completed
 
 The authorized [experiment 05 / M16](MLB_MODEL_EXPERIMENT_REGISTER.md#m16-experiment-05-v35-core) completed under a pre-result freeze. Mean annual Brier gain versus the unchanged ten-input logistic is −0.000026672 (14-day interval [−0.000269930,+0.000185215]), versus required +0.001; pooled log loss also worsens. The continuation gate fails. Sportsbook opening consensus remains better on both scores in every year on original shared cohorts. Saved v2/CatBoost forecasts remain unchanged. Local feasibility passed; no automatic promotion, tuning, alternate model or follow-on experiment is authorized. Preserve reused-development limitations, the research pause and separate unexecuted payroll/WAR hypotheses. No production/T−6h or policy change.
+
+
+## October 18: approved lineup-WAR design, data gate blocked
+
+Tom approved [P05](MLB_MODEL_EXPERIMENT_REGISTER.md#supporting-work-and-proposals-outside-the-completed-count): preseason, prior-game observed and player-level PA-dependent blended position-player WAR rates, each replacing recent team features and each adding to baseline, with fixed starter inputs. Retained exports have WAR/PA, but compatible dated observed WAR/PA and defensible publication/version semantics are not established; no fitting or substitute experiment ran. The six-arm protocol and independently reviewed audit preserve the approved design and stop dependent execution at that exact data gap. Completed count stays 24; payroll and production/T−6h studies remain separate.

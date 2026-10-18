@@ -1,0 +1,11 @@
+# Independent WAR feasibility/protocol review
+
+October 18, 2026. Reviewer: delegated read-only Codex agent `war_feasibility_review`, separate from the author. **Accepted for blocked-feasibility documentation; dependent model execution remains blocked.** No model performance conclusion or training authorization follows.
+
+Independently inspected actual four retained projection CSVs and their hashes, numeric/identity counts, Retrosheet source headers and current official methodology documents. Confirmed available WAR/PA fields do not establish prior-game observed fWAR, compatible advanced components or publication/version semantics. Audit's scoped absence claim does not assert global historical dataset unavailability. Sources distinguish the 2024 retrospective update from 2019 documented date-filter behavior, without claiming current export semantics were tested.
+
+Reviewed six arms, exact team-term/interactions removal with starter/progress retention, unweighted starting-nine sums, no extra exposure input, distinct raw positive-PA versus zero-PA/blend behavior, training-only shared blend selection, cohorts, practical/market gates, April–May diagnostics and stop boundary. Requested one clarification: use the same intercept/home-field specification **refitted per arm**, rather than implying shared fitted coefficients. That wording was corrected before publication.
+
+[Protocol](PROTOCOL.md), [findings](FINDINGS.md), [audit code](audit.py), [aggregate evidence](audit_results.json), [canonical register](../../../docs/MLB_MODEL_EXPERIMENT_REGISTER.md). Exact reviewed snapshot hashes are recorded in verification.json. No provider raw data, names/individual rates or credentials are published. Review did not acquire datasets, rerun provider WAR calculations, fit models or mutate files.
+
+Remaining blocker is substantive data admission, not a documentation defect: establish dated cumulative position-player WAR+PA and compatible definition/version/cutoff basis, or return a materially revised/exploratory design to Tom before fitting. Preseason vintage remains qualified. No paid services, credentials, data uploads, production changes or merge are authorized. Next permitted step is publishing this audit/protocol to existing draft PR #86 and reporting the gap.

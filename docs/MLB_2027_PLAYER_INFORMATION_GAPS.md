@@ -308,3 +308,8 @@ Tom approved the matched winner comparison at `1d64e15`; implementation was froz
 ## Approved information-chain diagnostic completed
 
 Tom approved a one-session no-fit batting/translation diagnostic, frozen at `b87d364`. [Decision memo](../research/pregame_2027/information_chain/DECISION.md): 349,025 comparable initial-nine opportunities; Steamer is slightly worse in 2024 and better in 2025, with equal-year MSE gain +0.000070274 and 14-day interval [−0.000049266,+0.000172273]. Saved winner models visibly respond (about 2.23 pp mean absolute probability change). Weighted side-level accuracy is worse, but it is not the model's home-away differential target and does not locate a causal aggregation failure. Independent raw-value, score, trace and block verification passes. Conclusion inconclusive; explicitly stop without a fifth fit or translator rewrite. Existing failed gates remain failed; raw events/traces stay private.
+
+
+## October 18: approved lineup-WAR design, data gate blocked
+
+Tom approved [P05](MLB_MODEL_EXPERIMENT_REGISTER.md#supporting-work-and-proposals-outside-the-completed-count): preseason, prior-game observed and player-level PA-dependent blended position-player WAR rates, each replacing recent team features and each adding to baseline, with fixed starter inputs. Retained exports have WAR/PA, but compatible dated observed WAR/PA and defensible publication/version semantics are not established; no fitting or substitute experiment ran. The six-arm protocol and independently reviewed audit preserve the approved design and stop dependent execution at that exact data gap. Completed count stays 24; payroll and production/T−6h studies remain separate.

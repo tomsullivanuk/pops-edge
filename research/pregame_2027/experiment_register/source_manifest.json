@@ -409,7 +409,60 @@
         "M16"
       ],
       "sha256": "8beb201eeb56583d8cf8315d90ae87d438c59fd762710d8256134d472926cd4e"
+    },
+    {
+      "source_root": "repository",
+      "path": "research/pregame_2027/war_lineup_feasibility/PROTOCOL.md",
+      "access": "public_repository",
+      "entry_ids": [
+        "P05"
+      ],
+      "role": "approved_but_data_blocked_not_completed_experiment",
+      "sha256": "87a1efa0b34b95a0c229eacb340c43786a00da0385707fdd97903edd3ffd3b94"
+    },
+    {
+      "source_root": "repository",
+      "path": "research/pregame_2027/war_lineup_feasibility/FINDINGS.md",
+      "access": "public_repository",
+      "entry_ids": [
+        "P05"
+      ],
+      "role": "approved_but_data_blocked_not_completed_experiment",
+      "sha256": "b76fb78fbca2006ae80dbaa6177e1fb022a75fc978e25f926ec3b7483934c6da"
+    },
+    {
+      "source_root": "repository",
+      "path": "research/pregame_2027/war_lineup_feasibility/audit_results.json",
+      "access": "public_repository",
+      "entry_ids": [
+        "P05"
+      ],
+      "role": "approved_but_data_blocked_not_completed_experiment",
+      "sha256": "af614e564db7382f4e21949c5cc5b65346ff770a94be872c5d3c20b56b1ad68d"
+    },
+    {
+      "source_root": "repository",
+      "path": "research/pregame_2027/war_lineup_feasibility/REVIEW.md",
+      "access": "public_repository",
+      "entry_ids": [
+        "P05"
+      ],
+      "role": "approved_but_data_blocked_not_completed_experiment",
+      "sha256": "4011299f94ba99df7ff1a67f898bf713620ebe8f9ad4fdf95a7b7058ae4858d2"
+    },
+    {
+      "source_root": "repository",
+      "path": "research/pregame_2027/war_lineup_feasibility/audit.py",
+      "access": "public_repository",
+      "entry_ids": [
+        "P05"
+      ],
+      "role": "approved_but_data_blocked_not_completed_experiment",
+      "sha256": "791bce33f709679782aa28d5c3dd83743ad30ce191483dc2180447c9e40725a3"
     }
   ],
-  "snapshot_note": "Updated October 16 for completed M16. Initial October 14 register review covers its earlier 23-entry/40-source snapshot; M16 has separate review and verification."
+  "snapshot_note": "Updated October 18 for P05 approved but data blocked: completed count24 unchanged. Earlier reviews retain their exact historical snapshots; P05 has separate review.",
+  "approved_data_blocked_proposals": [
+    "P05"
+  ]
 }
