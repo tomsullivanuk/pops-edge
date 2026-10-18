@@ -428,7 +428,7 @@
         "P05"
       ],
       "role": "approved_but_data_blocked_not_completed_experiment",
-      "sha256": "b76fb78fbca2006ae80dbaa6177e1fb022a75fc978e25f926ec3b7483934c6da"
+      "sha256": "dda93ccb2442b111588937104963358805e6e8047ac2202e983f07d0544aeb40"
     },
     {
       "source_root": "repository",
@@ -448,7 +448,7 @@
         "P05"
       ],
       "role": "approved_but_data_blocked_not_completed_experiment",
-      "sha256": "4011299f94ba99df7ff1a67f898bf713620ebe8f9ad4fdf95a7b7058ae4858d2"
+      "sha256": "880492327da27838aa376fef05d440baa113b7553259c74da0a37f8ff89eb09b"
     },
     {
       "source_root": "repository",
@@ -459,9 +459,29 @@
       ],
       "role": "approved_but_data_blocked_not_completed_experiment",
       "sha256": "791bce33f709679782aa28d5c3dd83743ad30ce191483dc2180447c9e40725a3"
+    },
+    {
+      "source_root": "repository",
+      "path": "research/pregame_2027/war_lineup_feasibility/SOURCE_FOLLOWUP.md",
+      "access": "public_repository",
+      "entry_ids": [
+        "P05"
+      ],
+      "sha256": "2cca448a3e1286bf28eb0417c8d30e3839d311b6cb98b288a47d968404f84f11",
+      "role": "source_feasibility_not_completed_experiment"
+    },
+    {
+      "source_root": "repository",
+      "path": "research/pregame_2027/war_lineup_feasibility/source_sample_receipt.json",
+      "access": "public_repository",
+      "entry_ids": [
+        "P05"
+      ],
+      "sha256": "aab1b649194b430874ba10362efa3ba4d5b7d87623a76f1e8cdd4ba4ed8f5007",
+      "role": "source_feasibility_not_completed_experiment"
     }
   ],
-  "snapshot_note": "Updated October 18 for P05 approved but data blocked: completed count24 unchanged. Earlier reviews retain their exact historical snapshots; P05 has separate review.",
+  "snapshot_note": "Updated October 18 for P05 approved but data blocked: completed count24 unchanged. Earlier reviews retain their exact historical snapshots; P05 has separate review. Subsequent bounded browser sample confirms access and sampled full-season defensive proration; no protocol/fits/count changes.",
   "approved_data_blocked_proposals": [
     "P05"
   ]

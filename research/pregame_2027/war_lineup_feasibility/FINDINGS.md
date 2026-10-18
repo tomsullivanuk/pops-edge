@@ -36,3 +36,7 @@ Completed experiment count remains 24. This is **P05: approved, feasibility bloc
 ## Smallest next decision
 
 Locate an applicable provider-supported daily/archive source or valid component reconstruction with explicit cutoff/version semantics, then audit it before activating this protocol. If only retrospectively revised/reconstructed data is obtainable, discuss its exact limitations and whether Tom wants that exploratory experiment before fitting. A preseason-only test, different WAR definition or offense-only substitute would materially change the approved comparison and is not silently authorized. We stop the dependent execution here and report the blocker; no conclusion about the usefulness of lineup WAR follows.
+
+## Subsequent source-access investigation
+
+The retained-input audit above is preserved as its original scope. The later [browser/export follow-up](SOURCE_FOLLOWUP.md) obtained six small date-filtered exports through existing access: access is technically established, but sampled historical defensive values match full-season PA proration within 6×10⁻⁸ runs. These exports cannot supply strictly prior-game WAR unchanged. The official preseason archive is accessible, while exact original vintage remains unresolved. No fits or protocol changes occurred; P05 stays data-blocked.
