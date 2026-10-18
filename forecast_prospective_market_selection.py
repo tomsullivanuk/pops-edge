@@ -89,12 +89,15 @@ retrospective catalogs, or fall back to an older nonempty catalog.
 
 def prepare_prospective_markets(catalog, series_values, schedule):
     """Finish parsing, identity matching and series lookup before request time."""
-    from kalshi_mlb_adapter import reconcile_market, _dt
+    from kalshi_mlb_adapter import reconcile_market, _dt, _canon
 
     markets, games, diagnostic = catalog
     if diagnostic != "latest-completed-live-catalog":
         return (), diagnostic
     candidates = {}; rejection_codes=set()
+    target_games=tuple(game for game in games if game.event.canonical_event_id==schedule.canonical_event_id)
+    target_names=({ _canon(game.home_team.display_name) for game in target_games } |
+                  { _canon(game.away_team.display_name) for game in target_games })
     proposition = f"winner:{schedule.canonical_event_id}:{schedule.home_participant_id}"
     for market in markets:
         authority_schedules=getattr(games,"schedules",(schedule,))
@@ -102,7 +105,12 @@ def prepare_prospective_markets(catalog, series_values, schedule):
         date_allowed=getattr(games,"allow_date_only",False) and len({x.scheduled_start for x in matches})==1 and matches and matches[0].scheduled_start==schedule.scheduled_start
         matched, _, issues = reconcile_market(market, games, authority_schedules if date_allowed else (schedule,),allow_date_only=bool(date_allowed),blocked_event_ids=getattr(games,"blocked_event_ids",()))
         if matched is None:
-            rejection_codes.update(x.code for x in issues if x.code not in {"no-matching-event"})
+            labels=(market.get("yes_sub_title") or market.get("yes_label"),market.get("no_sub_title") or market.get("no_label"))
+            # A catalog-wide parser error is not evidence that this target's
+            # market identity was rejected. Attribute only clearly matching
+            # structured participant labels; otherwise report unavailable.
+            if target_names and all(not label or _canon(label) in target_names for label in labels) and any(labels):
+                rejection_codes.update(x.code for x in issues if x.code not in {"no-matching-event"})
             continue
         game, yes_participant = matched
         if (game.event.canonical_event_id != schedule.canonical_event_id or

@@ -170,6 +170,16 @@ class MarketSelectionTests(unittest.TestCase):
                 result=select_prospective_market((({**markets[0],**changes},),games,reason),state.bucket("market_series"),schedule,self.at)
                 self.assertEqual(result,(None,"market-identity-rejected:settlement-yes-conflict" if changes.get("yes_sub_title")=="Away Club" else "market-unavailable"))
 
+    def test_unrelated_market_parse_error_is_not_target_identity_rejection(self):
+        boundary,state=load_projection(self.archive,self.at)
+        markets,games,reason=load_prospective_catalog(boundary)
+        schedule=state.bucket("outcome_histories")[0].observations[-1]
+        unrelated={**markets[0],"yes_sub_title":"Other Club","no_sub_title":"Another Club","rules_primary":"unparseable settlement rule"}
+        target_malformed={**markets[0],"rules_primary":"unparseable settlement rule"}
+        select=lambda market:select_prospective_market(((market,),games,reason),state.bucket("market_series"),schedule,self.at)
+        self.assertEqual(select(unrelated),(None,"market-unavailable"))
+        self.assertEqual(select(target_malformed),(None,"market-identity-rejected:malformed-settlement-identity"))
+
     def test_absent_catalog_and_corrupt_selected_page_fail_closed(self):
         boundary,_=load_projection(self.archive,self.at)
         with patch.object(boundary,"entries",return_value=()):

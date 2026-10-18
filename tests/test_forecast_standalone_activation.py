@@ -693,6 +693,26 @@ class ActivationTests(unittest.TestCase):
         legacy=reconcile_outcomes_from_raw(archive=None,mlb_raw=union,collected_at=at,prior_state=state,derive_only=True,derivation_rule=None)
         self.assertEqual((len(legacy),[len(item.observations) for item in legacy]),(2,[2,2]))  # Exact historic branching rule for replay.
 
+    def test_unresolved_multidate_replay_does_not_invent_schedule_transitions(self):
+        original_day="2026-10-16";makeup_day="2026-10-18";game_pk=849817
+        postponed=self._reschedule_game(game_pk,original_day,"2026-10-17T00:00:00Z","Postponed",rescheduleDate=makeup_day)
+        interim=self._reschedule_game(game_pk,makeup_day,"2026-10-18T21:00:00Z","Scheduled",rescheduledFromDate=original_day)
+        current=self._reschedule_game(game_pk,makeup_day,"2026-10-18T21:08:00Z","Scheduled",rescheduledFromDate=original_day)
+        interim["lastUpdated"]="2026-10-17T13:00:00Z";current["lastUpdated"]="2026-10-17T14:00:00Z"
+        at=datetime(2026,10,17,16,tzinfo=timezone.utc)
+        state=lambda history:SimpleNamespace(bucket=lambda name:(history,) if name=="outcome_histories" else ())
+        history=reconcile_outcomes_from_raw(archive=None,mlb_raw=self._schedule_page(original_day,postponed),collected_at=at-timedelta(hours=3),prior_state=SimpleNamespace(bucket=lambda _:()),derive_only=True)[0]
+        for offset,game in ((2,interim),(1,current)):
+            history=reconcile_outcomes_from_raw(archive=None,mlb_raw=self._schedule_page(makeup_day,game),collected_at=at-timedelta(hours=offset),prior_state=state(history),derive_only=True)[0]
+        union=merge_mlb_schedule_responses((self._schedule_page(original_day,postponed),self._schedule_page(makeup_day,current)))
+        self.assertEqual(reconcile_outcomes_from_raw(archive=None,mlb_raw=union,collected_at=at,prior_state=state(history),derive_only=True),())
+        old=reconcile_outcomes_from_raw(archive=None,mlb_raw=union,collected_at=at,prior_state=state(history),derive_only=True,derivation_rule=PREVIOUS_OUTCOME_RECONCILIATION_RULE_VERSION)
+        self.assertEqual((len(old),len(old[0].observations)),(1,5))
+        changed=copy.deepcopy(current);changed["gameDate"]="2026-10-18T21:09:00Z"
+        new_union=merge_mlb_schedule_responses((self._schedule_page(original_day,postponed),self._schedule_page(makeup_day,changed)))
+        new=reconcile_outcomes_from_raw(archive=None,mlb_raw=new_union,collected_at=at,prior_state=state(history),derive_only=True)
+        self.assertEqual((len(new),new[0].latest.scheduled_start.isoformat()),(1,"2026-10-18T21:09:00+00:00"))
+
     def test_outcome_conflict_retains_all_received_pages_without_authority(self):
         original_day="2026-09-22";makeup_day="2026-09-23";game_pk=824785
         postponed=self._reschedule_game(game_pk,original_day,"2026-09-22T23:05:00Z","Postponed",rescheduleDate=makeup_day,rescheduleGameDate=f"{makeup_day}T23:05:00Z")

@@ -42,7 +42,8 @@ MLB_CORRECTION_LOOKBACK_DAYS=7
 ACQUISITION_UNION_RULE_VERSION="provider-pages-canonical-union-4"
 MLB_MULTIDATE_LINEAGE_RULE_VERSION="mlb-explicit-schedule-evolution-lineage-2"
 SUPPORTING_DERIVATION_RULE_VERSION="kalshi-mlb-postseason-unique-date-5"
-OUTCOME_RECONCILIATION_RULE_VERSION="mlb-outcome-sequential-history-2"
+PREVIOUS_OUTCOME_RECONCILIATION_RULE_VERSION="mlb-outcome-sequential-history-2"
+OUTCOME_RECONCILIATION_RULE_VERSION="mlb-outcome-sequential-history-3"
 SUPPORTED_DERIVATION_UNION_RULES={
     "kalshi-mlb-explicit-rules-schedule-instant-4":"provider-pages-canonical-union-3",
     "kalshi-mlb-explicit-rules-schedule-instant-2":"provider-pages-canonical-union-1",
@@ -1196,7 +1197,7 @@ def reconcile_outcomes_from_raw(*,archive:NamespaceArchive|None,mlb_raw:bytes,co
     try:payload=json.loads(mlb_raw,object_pairs_hook=lambda pairs:_unique_object(pairs,"MLB"))
     except (UnicodeDecodeError,json.JSONDecodeError) as exc:raise OperationsError("malformed-response","MLB response is malformed") from exc
     response=MLBStatsAPIResponse("https://statsapi.mlb.com/api/v1/schedule",(),collected_at,200,"https://statsapi.mlb.com/api/v1/schedule",payload,mlb_raw);facts=MLBStatsAPIAdapter().parse_response(response);games=tuple(x.game for x in facts.games if x.game)
-    if derivation_rule not in (None,OUTCOME_RECONCILIATION_RULE_VERSION):raise OperationsError("acquisition-incompatible","unsupported Outcome reconciliation rule")
+    if derivation_rule not in (None,PREVIOUS_OUTCOME_RECONCILIATION_RULE_VERSION,OUTCOME_RECONCILIATION_RULE_VERSION):raise OperationsError("acquisition-incompatible","unsupported Outcome reconciliation rule")
     results=MLBOutcomeAdapter().parse_response(response,canonical_games=games);state=prior_state or replay_pr17_archive(archive,analysis_boundary=collected_at);prior={x.canonical_event_id:x for x in state.bucket("outcome_histories")};changed=[];ignored_replayed_predecessors=0
     raw_pages=(tuple(mlb_pages) or (mlb_raw,)) if not derive_only else ()
     pages=tuple(_mlb_page_tuple(item,index) for index,item in enumerate(raw_pages))
@@ -1210,6 +1211,18 @@ def reconcile_outcomes_from_raw(*,archive:NamespaceArchive|None,mlb_raw:bytes,co
             grouped.setdefault(result.observation.canonical_event_id,[]).append(result.observation)
         for event_id,observations in sorted(grouped.items()):
             history=prior.get(event_id);event_changed=False
+            if derivation_rule==OUTCOME_RECONCILIATION_RULE_VERSION and history is not None and len(observations)>1:
+                # A whole-date union may repeat previously observed states from
+                # several schedule dates. Only suppress a complete, ordered
+                # replay ending at the current state; any new or reverted state
+                # still passes through normal graph validation.
+                earlier=iter(semantic(item) for item in history.observations[:-1])
+                repeated=(semantic(observations[-1])==semantic(history.latest) and
+                          all(any(prior_semantic==semantic(item) for prior_semantic in earlier)
+                              for item in observations[:-1]))
+                if repeated:
+                    ignored_replayed_predecessors+=len(observations)-1
+                    continue
             for position,observation in enumerate(observations):
                 if derivation_rule is None:history=prior.get(event_id)  # Exact historical replay of unversioned bundles.
                 current=semantic(observation)
