@@ -393,3 +393,7 @@ PR2 does not authorize purchasing, scraping, scheduling, ingestion, domain
 implementation, valuation, reports, fabricated historical forecasts, model
 weights, Kelly/wagering, Kalshi mutations, World Cup changes, live workflows,
 publishing/tagging, staging/commit/push, or PR3 implementation.
+
+## October 12, 2026 — separate 2027 pregame planning
+
+The [2027 product and experiment record](MLB_2027_PREGAME_MODEL.md) records the reopened native-model direction and one proposed strength-rating experiment. The parent authorized a single finite official MLB live-feed lineup observation for two October 12 playoff games, with 15/five-minute cadence, 240-request cap and October 13 00:30 UTC deadline. Baseline feeds had probable pitchers and empty batting orders. Complete published orders and probable pitchers must not be labelled explicitly confirmed without source evidence. The single observer is active, with first successful polls at 13:00:56–57 UTC; final results are pending; no duplicate observer, purchase or credential change is authorized. Timing findings inform product readiness without blocking offline modeling or changing accepted T−6h studies. Earlier source-investigation conclusions remain historical.

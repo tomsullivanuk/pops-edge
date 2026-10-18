@@ -1,0 +1,15 @@
+{
+  "completed_count": 24,
+  "winner_model_campaigns": 16,
+  "component_studies": 1,
+  "diagnostics": 4,
+  "annual_evaluation_refit_campaigns": 3,
+  "source_records_checked": 44,
+  "source_hash_mismatches": 0,
+  "links_checked_in_current_register_and_new_docs": 80,
+  "hub_count_links_checked": 6,
+  "register_sha256": "615a47e5d2ce66dbf192ac323ef88fa45e0f3bb3e4083810e0fe079eb77fbb89",
+  "results_sha256": "96f3db7382aac2eb03aba59b9943aa0f075050283995cc7a6ef9e22af4928093",
+  "independent_review_accepted": true,
+  "scope": "Documentation/source hash checks; numerical/model replay scope recorded in experiment05 verification/review."
+}

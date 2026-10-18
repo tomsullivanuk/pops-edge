@@ -1,0 +1,14 @@
+[
+  {
+    "url": "https://www.retrosheet.org/downloads/plays/2023plays.zip",
+    "bytes": 7498178,
+    "sha256": "0129befd7944f60a858e5fdc265a44ed20afaa568679b37fca1083e3c083b20e",
+    "acquired_utc": "2026-10-12T21:02:04.405368+00:00"
+  },
+  {
+    "url": "https://www.retrosheet.org/downloads/2023/2023csvs.zip",
+    "bytes": 9939843,
+    "sha256": "7faea3925007ea469fb8a72393b3b1b901a4156e248ec07854d7aa2eb389d1ed",
+    "acquired_utc": "2026-10-12T21:02:08.173655+00:00"
+  }
+]

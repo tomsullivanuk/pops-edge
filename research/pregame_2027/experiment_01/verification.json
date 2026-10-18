@@ -1,0 +1,20 @@
+{
+  "annual_scores_independently_recomputed": true,
+  "exact_replay_files": {
+    "models.json": "3f08bbcc3ff5061f98311f7364d1bb6b2eacb5bfc981d24c888f92c4dad8b476",
+    "predictions.json": "98b61976e6ae0b4ecf817a76c34426e00b75f691f8c39d4bf4e2fa6e2f95fd53",
+    "provenance.json": "a2846e906888255fc111e59cf8cfb1f328853f7d30e55469f865ed64516c0143",
+    "rating_lineage.json": "00ef7a55aa62d485706bee9dae67c055b12a067be9e005c79d0d9ae68c8fe66c",
+    "reference_models.json": "6eea1c2911b15787786510d3ede58f8259bc22f686cfd57502cebdbd1247aefd",
+    "reference_replay.json": "1d5102795fb946246f2436c69cd1aaf1667123d487b238a370a48cbcf7e1eacc",
+    "results.json": "025fae500c41d1c81e67915ada3f6047059c10b103211d641db8d47dc55ef460"
+  },
+  "full_raw_player_feature_rebuild_performed": false,
+  "gate_failed": true,
+  "independent_rating_solver_dates": 15,
+  "lineage_days_checked": 914,
+  "maximum_independent_rating_difference": 3.4416913763379853e-15,
+  "maximum_probability_reconstruction_difference": 2.220446049250313e-16,
+  "reused_seasons_not_fresh_holdouts": true,
+  "unique_paired_games": 7280
+}

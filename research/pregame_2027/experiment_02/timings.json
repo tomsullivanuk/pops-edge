@@ -1,0 +1,50 @@
+[
+  {
+    "catboost_fit_predict_seconds": 0.4478470419999212,
+    "evaluation_games": 2426,
+    "max_process_rss_mib": 1774.96875,
+    "mps_driver_bytes_after_prediction": 1156136960,
+    "no_outer_labels_in_fit": true,
+    "tabpfn_fit_seconds": 8.334474125062115,
+    "tabpfn_predict_seconds": 5.0144492499530315,
+    "training_games": 4852,
+    "training_years": [
+      2022,
+      2023
+    ],
+    "year": 2024
+  },
+  {
+    "catboost_fit_predict_seconds": 1.7821364580886438,
+    "evaluation_games": 2426,
+    "max_process_rss_mib": 1774.96875,
+    "mps_driver_bytes_after_prediction": 2231402496,
+    "no_outer_labels_in_fit": true,
+    "tabpfn_fit_seconds": 21.28981504193507,
+    "tabpfn_predict_seconds": 9.662908166996203,
+    "training_games": 7278,
+    "training_years": [
+      2022,
+      2023,
+      2024
+    ],
+    "year": 2025
+  },
+  {
+    "catboost_fit_predict_seconds": 3.866512375068851,
+    "evaluation_games": 2428,
+    "max_process_rss_mib": 2003.890625,
+    "mps_driver_bytes_after_prediction": 2229878784,
+    "no_outer_labels_in_fit": true,
+    "tabpfn_fit_seconds": 55.248061541933566,
+    "tabpfn_predict_seconds": 12.35529358300846,
+    "training_games": 9704,
+    "training_years": [
+      2022,
+      2023,
+      2024,
+      2025
+    ],
+    "year": 2026
+  }
+]

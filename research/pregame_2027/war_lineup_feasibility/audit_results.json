@@ -1,0 +1,269 @@
+{
+  "scope": "Retained four year-labelled projection CSVs, all20extracted Retrosheet CSV headers and retained exact lineup/identity joins. No provider export acquisition, fitting or scoring.",
+  "status": "blocked_dated_observed_WAR_not_established",
+  "season_inputs": [
+    2022,
+    2023,
+    2024,
+    2025
+  ],
+  "eligible_native_games": 9704,
+  "evaluation_games": {
+    "2024": 2426,
+    "2025": 2426
+  },
+  "evaluation_market_common": {
+    "2024": 2291,
+    "2025": 2425
+  },
+  "exports": {
+    "2022": {
+      "filename": "fangraphs-leaderboard-projections-2022.csv",
+      "sha256": "7b83f846f57da46ea23225cc74b6c9704d8f23586326d04c62d4038eb3776a9c",
+      "rows": 3304,
+      "identified_usable_rows": 3303,
+      "unidentified_rows": 1,
+      "invalid_WAR_PA_rows": 0,
+      "zero_PA_identified_rows": 0,
+      "negative_WAR_identified_rows": 2074,
+      "native_games": 2429,
+      "initial_lineup_slots": 43722,
+      "required_player_ids": 678,
+      "matched_required_player_ids": 676,
+      "missing_projection_slots": 110,
+      "zero_or_invalid_rate_target_slots": 0,
+      "matched_rate_slots": 43612,
+      "games_both_nines_rate_available": 2319,
+      "has_explicit_season_date_system_columns": [],
+      "release_timestamp_verified": false,
+      "archive_revision_verified": false,
+      "season_association": "Owner year-labelled replacements; byte-identical to prior imported files"
+    },
+    "2023": {
+      "filename": "fangraphs-leaderboard-projections-2023.csv",
+      "sha256": "4fbe5ab77afe81b318171fb4b30bf69ff0c9731d387cdbc45cc87628aa3ea148",
+      "rows": 3591,
+      "identified_usable_rows": 3590,
+      "unidentified_rows": 1,
+      "invalid_WAR_PA_rows": 0,
+      "zero_PA_identified_rows": 0,
+      "negative_WAR_identified_rows": 2401,
+      "native_games": 2423,
+      "initial_lineup_slots": 43614,
+      "required_player_ids": 643,
+      "matched_required_player_ids": 641,
+      "missing_projection_slots": 43,
+      "zero_or_invalid_rate_target_slots": 0,
+      "matched_rate_slots": 43571,
+      "games_both_nines_rate_available": 2380,
+      "has_explicit_season_date_system_columns": [],
+      "release_timestamp_verified": false,
+      "archive_revision_verified": false,
+      "season_association": "Owner year-labelled replacements; byte-identical to prior imported files"
+    },
+    "2024": {
+      "filename": "fangraphs-leaderboard-projections- 2024.csv",
+      "sha256": "9ca0ec996bd1c8d8174a202d6b64b3e36c3af7c86531f60f322a36ef8892fcc8",
+      "rows": 3711,
+      "identified_usable_rows": 3710,
+      "unidentified_rows": 1,
+      "invalid_WAR_PA_rows": 0,
+      "zero_PA_identified_rows": 0,
+      "negative_WAR_identified_rows": 2675,
+      "native_games": 2426,
+      "initial_lineup_slots": 43668,
+      "required_player_ids": 645,
+      "matched_required_player_ids": 645,
+      "missing_projection_slots": 0,
+      "zero_or_invalid_rate_target_slots": 0,
+      "matched_rate_slots": 43668,
+      "games_both_nines_rate_available": 2426,
+      "has_explicit_season_date_system_columns": [],
+      "release_timestamp_verified": false,
+      "archive_revision_verified": false,
+      "season_association": "Owner year-labelled replacements; byte-identical to prior imported files"
+    },
+    "2025": {
+      "filename": "fangraphs-leaderboard-projections-2025.csv",
+      "sha256": "563ac2095fb4a6d35cda3ace2e37a36080bbfd38440bf898af25b44007a8d6bf",
+      "rows": 4140,
+      "identified_usable_rows": 4138,
+      "unidentified_rows": 2,
+      "invalid_WAR_PA_rows": 0,
+      "zero_PA_identified_rows": 0,
+      "negative_WAR_identified_rows": 2898,
+      "native_games": 2426,
+      "initial_lineup_slots": 43668,
+      "required_player_ids": 661,
+      "matched_required_player_ids": 660,
+      "missing_projection_slots": 116,
+      "zero_or_invalid_rate_target_slots": 0,
+      "matched_rate_slots": 43552,
+      "games_both_nines_rate_available": 2310,
+      "has_explicit_season_date_system_columns": [],
+      "release_timestamp_verified": false,
+      "archive_revision_verified": false,
+      "season_association": "Owner year-labelled replacements; byte-identical to prior imported files"
+    }
+  },
+  "raw_inventory": [
+    {
+      "path_alias": "retrosheet_raw/2022allplayers.csv",
+      "sha256": "a51da885ace4058b9a2380261fb6b1359e1187e1950522b0b99c738658dbcad8",
+      "columns": 24,
+      "WAR_columns": [],
+      "advanced_fielding_baserunning_columns": []
+    },
+    {
+      "path_alias": "retrosheet_raw/2022gameinfo.csv",
+      "sha256": "e31c013d209959bb80c21bfca99bc8d9a46d0a63ec5f561c286ebd8df60d53a3",
+      "columns": 43,
+      "WAR_columns": [],
+      "advanced_fielding_baserunning_columns": []
+    },
+    {
+      "path_alias": "retrosheet_raw/2022pitching.csv",
+      "sha256": "7dfbfcd354484a70d4f1040a78a352996887687c01ab77763435c8cf8a7de15d",
+      "columns": 42,
+      "WAR_columns": [],
+      "advanced_fielding_baserunning_columns": []
+    },
+    {
+      "path_alias": "retrosheet_raw/2022plays.csv",
+      "sha256": "c4fb40bc1778788f2172e6666888a683e6dd6fdcc37ad2fabf979bd2a7549a52",
+      "columns": 177,
+      "WAR_columns": [],
+      "advanced_fielding_baserunning_columns": []
+    },
+    {
+      "path_alias": "retrosheet_raw/2022teamstats.csv",
+      "sha256": "b9c24b96f9aaf3f905142e28fbfd94d3c02a41ae4d75c89cf339e994c07ab1c7",
+      "columns": 111,
+      "WAR_columns": [],
+      "advanced_fielding_baserunning_columns": []
+    },
+    {
+      "path_alias": "retrosheet_raw/2023allplayers.csv",
+      "sha256": "46feadd548aead347486c4f32ee91b69fb08a9be94ac74771cd042b13837c75e",
+      "columns": 24,
+      "WAR_columns": [],
+      "advanced_fielding_baserunning_columns": []
+    },
+    {
+      "path_alias": "retrosheet_raw/2023gameinfo.csv",
+      "sha256": "5b8d058f6034d1f7f83a61cc9a03916db1c683fe052ca3346a64fc3bfad45906",
+      "columns": 43,
+      "WAR_columns": [],
+      "advanced_fielding_baserunning_columns": []
+    },
+    {
+      "path_alias": "retrosheet_raw/2023pitching.csv",
+      "sha256": "be61d107ff7d9cb59d025cc29de4f8e2ad1e649e41e6e027eb525b684a62c289",
+      "columns": 42,
+      "WAR_columns": [],
+      "advanced_fielding_baserunning_columns": []
+    },
+    {
+      "path_alias": "retrosheet_raw/2023plays.csv",
+      "sha256": "6bb43ed0037cdf1a0f6b5ad631646afa3b23a28a77cfa61a05f940cf9b4f2d23",
+      "columns": 177,
+      "WAR_columns": [],
+      "advanced_fielding_baserunning_columns": []
+    },
+    {
+      "path_alias": "retrosheet_raw/2023teamstats.csv",
+      "sha256": "f55819c311e734a7cb24afde1b74401ba2d5c5e6a96fccf5485b0a70b54c5abb",
+      "columns": 111,
+      "WAR_columns": [],
+      "advanced_fielding_baserunning_columns": []
+    },
+    {
+      "path_alias": "retrosheet_raw/2024allplayers.csv",
+      "sha256": "f2db65240b30c27d9b976ec9240c0a9835eb3e86a3da74c45c299ee5bbd24688",
+      "columns": 24,
+      "WAR_columns": [],
+      "advanced_fielding_baserunning_columns": []
+    },
+    {
+      "path_alias": "retrosheet_raw/2024gameinfo.csv",
+      "sha256": "1ff621223673db3ee28fd56d38649495055d6355c84d173ebece280c4aa51099",
+      "columns": 43,
+      "WAR_columns": [],
+      "advanced_fielding_baserunning_columns": []
+    },
+    {
+      "path_alias": "retrosheet_raw/2024pitching.csv",
+      "sha256": "69037ac7ff37e47b0dd0e8d876ed21b5cf35d503905b551505c965fa7f877e22",
+      "columns": 42,
+      "WAR_columns": [],
+      "advanced_fielding_baserunning_columns": []
+    },
+    {
+      "path_alias": "retrosheet_raw/2024plays.csv",
+      "sha256": "59cdb1efcaebcdcbb6df7cca4ee3094f95f8e6499569f6ba00cd621eb3daa062",
+      "columns": 177,
+      "WAR_columns": [],
+      "advanced_fielding_baserunning_columns": []
+    },
+    {
+      "path_alias": "retrosheet_raw/2024teamstats.csv",
+      "sha256": "978454bedb5e783fe43d30bf2fa301278f8eb2370f44986c46f0069200e38efe",
+      "columns": 111,
+      "WAR_columns": [],
+      "advanced_fielding_baserunning_columns": []
+    },
+    {
+      "path_alias": "retrosheet_raw/2025allplayers.csv",
+      "sha256": "20f3f1f3573eb0e985a32808b94c61107e926e6b1798c16e3e76da30791c5117",
+      "columns": 24,
+      "WAR_columns": [],
+      "advanced_fielding_baserunning_columns": []
+    },
+    {
+      "path_alias": "retrosheet_raw/2025gameinfo.csv",
+      "sha256": "d56becd2427fe846f562cf94c7569c6dad97764caf79037047f3897a6c9e914b",
+      "columns": 43,
+      "WAR_columns": [],
+      "advanced_fielding_baserunning_columns": []
+    },
+    {
+      "path_alias": "retrosheet_raw/2025pitching.csv",
+      "sha256": "1c7556cf743939d396464d32a88eaee42c6264aa91520c49ffaa1a5f08eff64e",
+      "columns": 42,
+      "WAR_columns": [],
+      "advanced_fielding_baserunning_columns": []
+    },
+    {
+      "path_alias": "retrosheet_raw/2025plays.csv",
+      "sha256": "2c58a5ceeae9b653dddc8b4d20fa9b3810bfd3a6d40c29786509c5e060a5f23f",
+      "columns": 177,
+      "WAR_columns": [],
+      "advanced_fielding_baserunning_columns": []
+    },
+    {
+      "path_alias": "retrosheet_raw/2025teamstats.csv",
+      "sha256": "9f37b2a1ff6a7786ca03de1918f8c2364590b06bb703b077d590200f32ddc943",
+      "columns": 111,
+      "WAR_columns": [],
+      "advanced_fielding_baserunning_columns": []
+    }
+  ],
+  "projection_pins": {
+    "projection/fangraphs-leaderboard-projections-2022.csv": "7b83f846f57da46ea23225cc74b6c9704d8f23586326d04c62d4038eb3776a9c",
+    "projection/fangraphs-leaderboard-projections-2023.csv": "4fbe5ab77afe81b318171fb4b30bf69ff0c9731d387cdbc45cc87628aa3ea148",
+    "projection/fangraphs-leaderboard-projections- 2024.csv": "9ca0ec996bd1c8d8174a202d6b64b3e36c3af7c86531f60f322a36ef8892fcc8",
+    "projection/fangraphs-leaderboard-projections-2025.csv": "563ac2095fb4a6d35cda3ace2e37a36080bbfd38440bf898af25b44007a8d6bf"
+  },
+  "joins_sha256": "aa59fa3721b412727648f245d2d9b616618549c684c32a9d41ba03afc16e70d0",
+  "bridge_sha256": "26d806d5b6d85590c404ba3cc0f6bcf7725872e5b22ea649b88339878fc7e02b",
+  "observed_WAR_snapshots_found_in_scoped_inputs": 0,
+  "observed_WAR_PA_columns_in_extracted_raw": [],
+  "projected_2026_export_in_scoped_inputs": false,
+  "model_fits": 0,
+  "retained_raw_data_modified": false,
+  "limitations": [
+    "Scope is retained inspected sources, not a global historical-data availability claim.",
+    "Some retained Retrosheet annual bundles contain unextracted traditional fielding; no FanGraphs advanced WAR component archive established.",
+    "Projection season provenance is Owner supplied; no original preseason publication/revision timestamp proved."
+  ]
+}

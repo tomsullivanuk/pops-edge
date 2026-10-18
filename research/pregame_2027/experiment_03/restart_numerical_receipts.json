@@ -1,0 +1,28 @@
+[
+  {
+    "model": "baseline",
+    "gamma": 0.1,
+    "rows": 181577,
+    "iterations": 61,
+    "seconds": 1.0644143749959767,
+    "success": true,
+    "message": "CONVERGENCE: NORM OF PROJECTED GRADIENT <= PGTOL",
+    "gradient_infinity": 5.723101733711467e-10,
+    "objective": 0.7733165642701292,
+    "equivalent_summed_objective": 140416.50179047725,
+    "equivalent_summed_gradient_infinity": 0.0001039183643502127
+  },
+  {
+    "model": "baseline",
+    "gamma": 1.0,
+    "rows": 181577,
+    "iterations": 58,
+    "seconds": 0.9951207080157474,
+    "success": true,
+    "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+    "gradient_infinity": 2.6684222170921877e-09,
+    "objective": 0.7733173384374883,
+    "equivalent_summed_objective": 140416.6423614638,
+    "equivalent_summed_gradient_infinity": 0.00048452410091294815
+  }
+]

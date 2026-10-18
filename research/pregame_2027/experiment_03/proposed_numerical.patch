@@ -1,0 +1,27 @@
+--- a/research/pregame_2027/experiment_03/run.py
++++ b/research/pregame_2027/experiment_03/run.py
+@@ -80,7 +80,7 @@
+     norm=logsumexp(eta,axis=1);loss=np.sum(norm-eta[np.arange(len(y)),y])+0.5*np.sum(penalty[:,None]*w*w)
+     p=np.exp(eta-norm[:,None]);p[np.arange(len(y)),y]-=1
+     grad=z.T@p[:,:2]+penalty[:,None]*w
+-    return float(loss),np.asarray(grad).ravel()
++    return float(loss)/len(y),np.asarray(grad).ravel()/len(y)
+ 
+ 
+ def matrix(a,idx,model,stats=None):
+@@ -100,11 +100,11 @@
+ 
+ def fit(a,train,model,gamma,path):
+     z,stats=matrix(a,train,model);pen=np.full(z.shape[1],100.);pen[:10]=gamma;pen[0]=0
+-    start=time.monotonic();res=minimize(objective,np.zeros(2*z.shape[1]),args=(z,a['y'][train],pen),jac=True,method='L-BFGS-B',options={'maxiter':1000,'gtol':1e-6,'ftol':0,'maxls':40})
+-    receipt={'model':model,'gamma':gamma,'rows':len(train),'iterations':int(res.nit),'seconds':time.monotonic()-start,'success':bool(res.success),'message':str(res.message),'gradient_infinity':float(np.abs(res.jac).max()),'objective':float(res.fun),'stats':stats}
+-    path.with_suffix('.json').write_text(json.dumps(receipt,indent=2)+'\n');np.save(path.with_suffix('.npy'),res.x)
++    start=time.monotonic();res=minimize(objective,np.zeros(2*z.shape[1]),args=(z,a['y'][train],pen),jac=True,method='L-BFGS-B',options={'maxiter':1000,'gtol':1e-9,'ftol':0,'maxls':40})
++    receipt={'model':model,'gamma':gamma,'rows':len(train),'iterations':int(res.nit),'seconds':time.monotonic()-start,'success':bool(res.success),'message':str(res.message),'gradient_infinity':float(np.abs(res.jac).max()),'objective':float(res.fun),'equivalent_summed_objective':float(res.fun)*len(train),'equivalent_summed_gradient_infinity':float(np.abs(res.jac).max())*len(train),'stats':stats}
++    Path(str(path)+'.json').write_text(json.dumps(receipt,indent=2)+'\n');np.save(Path(str(path)+'.npy'),res.x)
+     print(model,gamma,len(train),'iter',res.nit,'gradient',receipt['gradient_infinity'],'seconds',round(receipt['seconds'],1),flush=True)
+-    if not res.success or receipt['gradient_infinity']>1e-6 or not np.isfinite(res.fun):raise RuntimeError('Frozen convergence requirement failed; stop specification')
++    if not res.success or receipt['gradient_infinity']>1e-9 or not np.isfinite(res.fun):raise RuntimeError('Frozen convergence requirement failed; stop specification')
+     return res.x,stats
+ 
+ 

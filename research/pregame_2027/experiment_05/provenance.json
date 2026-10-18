@@ -1,0 +1,30 @@
+{
+  "checkpoint_sha256": "ece4d67eadfea42eb0e610df5189bea60cb7f31073d81e9c7a019b76eacf0be3",
+  "comparison_pins_sha256": "68544ae441763d4109c09857c8f37239813e7d2d1112a333ff12737243c905f4",
+  "freeze_commit": "a0985289188856cca58f9c9600f099cd59d93d08",
+  "input_manifest_sha256": "8ae387f6041e58b49491dbbe523c40e210ccdccedb261acf9f6ded8ae7f8955b",
+  "model_script_sha256": "ca6748d4977c737250fef8d8e6ac8f0b50880aa69b0fc2556535efdde5687a0d",
+  "network_attempts": [],
+  "outputs": {
+    "execution_start.json": "c823698955649cb0ec0e5c3c7917952233180c23437501f3c695cedfe49fd101",
+    "predictions.json": "3411719ce555b5e647a66eeb223f7b6a92ba2fb6e1710f33203f0daa44326dbb",
+    "predictions_2024.json": "6ae30965942e8476dd8d0630456b36e37c4798ff110e6f98f9925c38129e8981",
+    "predictions_2025.json": "2d869a9fbc018c49c2a39d98a989eb71f045d9eb45f22418cb472222d57966d7",
+    "predictions_2026.json": "569244fb04637b0bf849429e82f7353eb5658c604355a5ee4f0f41514459933a",
+    "reference_models.json": "6eea1c2911b15787786510d3ede58f8259bc22f686cfd57502cebdbd1247aefd",
+    "reference_replay.json": "1d5102795fb946246f2436c69cd1aaf1667123d487b238a370a48cbcf7e1eacc",
+    "tabpfn_v35_2024.tabpfn_fit": "831ffce7cc1a399ae4812a55d5da3933ffd7d64144fd5677dfa97195a35c9a87",
+    "tabpfn_v35_2025.tabpfn_fit": "65973a951197bedd5052591b205e32d6b8176f3d8343587ea2176b1772793af5",
+    "tabpfn_v35_2026.tabpfn_fit": "69fb49b72334492c0a03430aef35412be0db6128f506353338760f2b51ea0832",
+    "timing_2024.json": "11bd6c49be13c920c052ca97fa867f542b0f472bf5f866b4ddbe7f1a46506168",
+    "timing_2025.json": "e12f0df1689d2fb7e3c6c7662dc7edcc50359d5375956513e4af44ec72d17c19",
+    "timing_2026.json": "b51d9094f39146a61f145bc2c365ffe40555fc4c4e48fac1b9a9035093f316bd",
+    "timings.json": "1e14682fa64d1f4fdd45d6abe3138653889733e89f59f5a35a27740339a40cae"
+  },
+  "protocol_sha256": "563a6871e89b10d08aa5ec68d813977e4cda16331827cc19175a4b6ab9f9d98d",
+  "python": "3.14.5",
+  "script_sha256": "9462d8f03a9465e2ee2be5b763015168e80813cc4ea5d0d64bf88d9dffb0a789",
+  "settings_sha256": "1d4ef64ec9772666bae44220416fcd2bab5a99cea059f468845e366a37a2dace",
+  "tabpfn": "9.1.0",
+  "torch": "2.14.1"
+}

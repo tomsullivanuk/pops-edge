@@ -1,0 +1,17 @@
+{
+  "input_manifest_sha256": "06911eba7841b5d826810f1264c2455261b32e5f56919ed48f2582e4400f6124",
+  "numpy": "2.5.3",
+  "output_hashes": {
+    "models.json": "3f08bbcc3ff5061f98311f7364d1bb6b2eacb5bfc981d24c888f92c4dad8b476",
+    "predictions.json": "98b61976e6ae0b4ecf817a76c34426e00b75f691f8c39d4bf4e2fa6e2f95fd53",
+    "rating_lineage.json": "00ef7a55aa62d485706bee9dae67c055b12a067be9e005c79d0d9ae68c8fe66c",
+    "reference_models.json": "6eea1c2911b15787786510d3ede58f8259bc22f686cfd57502cebdbd1247aefd",
+    "reference_replay.json": "1d5102795fb946246f2436c69cd1aaf1667123d487b238a370a48cbcf7e1eacc",
+    "results.json": "025fae500c41d1c81e67915ada3f6047059c10b103211d641db8d47dc55ef460"
+  },
+  "protocol_sha256": "6067e86953c6efd4af262d0b9afb67732fc48debb8714d8336aa3c0ef07062c3",
+  "python": "3.14.5 (v3.14.5:5607950ef23, May 10 2026, 07:38:09) [Clang 21.0.0 (clang-2100.0.123.102)]",
+  "scipy": "1.18.1",
+  "script_sha256": "681ebc30d49293401c634f78fdf9a70216e8697877e10f5042c4fac8503e5f34",
+  "sklearn": "1.9.1"
+}

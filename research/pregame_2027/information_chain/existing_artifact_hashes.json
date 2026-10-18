@@ -1,0 +1,12 @@
+{
+  "scope": "verification-time hashes of unchanged experiment04 inputs; underlying source pins were frozen in experiment04",
+  "hashes": {
+    "experiment_04/features.npz": "c24d28fa42c4b2d63679c0038cf1bd54568d60d0fece20fc8e8befeb07434bd4",
+    "experiment_04/control_2024_model.json": "4b0a8935aef19e6386f33b6501662e64e625d802bb6f0393fab53094747727d3",
+    "experiment_04/steamer_2024_model.json": "6532161ecc1c635bd8019555a0cad80aaa8c7a4d70ccf7e13d6ca8a9c71d847d",
+    "experiment_04/control_2025_model.json": "268d822240eb566ca7629de123dcfd8953676ddc292565f01f5014afaa5a8c95",
+    "experiment_04/steamer_2025_model.json": "a2df7890a035740a60fac4cb75cb9b9a49cd6dfb9bd1010f67c683a96acf5c65",
+    "experiment_04/predictions_private.json": "cf5815a81cb3bfbbdea2abafde1723ccf1c8392e43a61c5c132c496feb10671b",
+    "experiment_04/slot_weights.json": "2d20089d360208a19cf8dc33bc66d8d3a10306c22b790102df01f8632a71aa65"
+  }
+}
