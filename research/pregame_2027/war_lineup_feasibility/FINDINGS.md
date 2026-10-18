@@ -40,3 +40,7 @@ Locate an applicable provider-supported daily/archive source or valid component 
 ## Subsequent source-access investigation
 
 The retained-input audit above is preserved as its original scope. The later [browser/export follow-up](SOURCE_FOLLOWUP.md) obtained six small date-filtered exports through existing access: access is technically established, but sampled historical defensive values match full-season PA proration within 6×10⁻⁸ runs. These exports cannot supply strictly prior-game WAR unchanged. The official preseason archive is accessible, while exact original vintage remains unresolved. No fits or protocol changes occurred; P05 stays data-blocked.
+
+## Internal-calculation feasibility
+
+The subsequent [component-by-component reconstruction assessment](INTERNAL_RECONSTRUCTION.md) inspected the retained annual ZIP members directly: per-game batting and position-specific defensive outs exist for all four years. These support counts/exposure and some deterministic adjustments, but not exact advanced fielding/catcher/XBR measurement. Internal assembly with dated provider components is credible; a past-only metric using frozen constants and estimated defense would be a separately defined WAR-like estimate, not silently approved raw observed fWAR. No player WAR calculation, measurement-model fit or winner fit ran.
