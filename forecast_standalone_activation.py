@@ -39,6 +39,7 @@ RETROSPECTIVE_WINDOW_START=datetime(2026,3,25,0,0,tzinfo=ZoneInfo("America/New_Y
 RETROSPECTIVE_WINDOW_SECONDS=14_169_600
 MLB_DATE_RULE_VERSION="eastern-unresolved-obligations-lookback-2"
 MLB_CORRECTION_LOOKBACK_DAYS=7
+EMPTY_SUPPORTING_DERIVATION_RULE_VERSION="mlb-empty-supporting-interval-1"
 ACQUISITION_UNION_RULE_VERSION="provider-pages-canonical-union-4"
 MLB_MULTIDATE_LINEAGE_RULE_VERSION="mlb-explicit-schedule-evolution-lineage-2"
 SUPPORTING_DERIVATION_RULE_VERSION="kalshi-mlb-postseason-unique-date-5"
@@ -171,6 +172,7 @@ def initialize_activation(archive:NamespaceArchive,at:datetime)->tuple[str,str]:
 
 def refresh_supporting_from_raw(*,archive:NamespaceArchive|None,mlb_raw:bytes,kalshi_raw:bytes,collected_at:datetime,catalog_pages:Iterable[KalshiCatalogPage]=(),mlb_pages:Iterable[bytes]=(),prior_state:Any=None,derive_only:bool=False,acquisition_command:str="refresh-supporting",retrospective_cutoff_at:datetime|None=None,supporting_session_id:str|None=None,supporting_provider_calls:int|None=None,requested_date_window:tuple[str,str]|None=None,supporting_correction_reason:str|None=None,predecessor_completion_manifest_id:str|None=None,union_rule:str=ACQUISITION_UNION_RULE_VERSION)->Mapping[str,Any]|tuple[Any,...]:
     """Decode live-shaped MLB/Kalshi material into established PR17 authority."""
+    mlb_pages=tuple(mlb_pages);catalog_pages=tuple(catalog_pages)
     if archive is not None and not derive_only and acquisition_command == "refresh-supporting" and prior_state is None:
         from forecast_supporting_replay import SupportingReplayArchive, prepared_derivation_state
         archive = SupportingReplayArchive(archive)
@@ -189,6 +191,13 @@ def refresh_supporting_from_raw(*,archive:NamespaceArchive|None,mlb_raw:bytes,ka
     try:mlb_payload=json.loads(mlb_raw,object_pairs_hook=lambda pairs:_unique_object(pairs,"MLB"));kalshi_payload=json.loads(kalshi_raw,object_pairs_hook=lambda pairs:_unique_object(pairs,"Kalshi"))
     except (UnicodeDecodeError,json.JSONDecodeError) as exc:raise OperationsError("malformed-response","provider JSON is malformed") from exc
     if not isinstance(mlb_payload,dict) or not isinstance(kalshi_payload,dict) or set(kalshi_payload)!={"markets","cursor"} or not isinstance(kalshi_payload["markets"],list):raise OperationsError("incomplete-response","supporting provider shape is incomplete")
+    # Admission validates original ordinary pages, including empty pages in a
+    # mixed interval. Legacy scientific reconstruction retains its original rules.
+    if not derive_only and acquisition_command=="refresh-supporting" and mlb_pages:
+        from forecast_standalone_schedule_reconciliation import validate_date_page
+        for index,page in enumerate(mlb_pages):
+            identity,_,raw,_,_=_page_material(page,index,collected_at)
+            validate_date_page(raw,date.fromisoformat(identity))
     response=MLBStatsAPIResponse("https://statsapi.mlb.com/api/v1/schedule",(),collected_at,200,"https://statsapi.mlb.com/api/v1/schedule",mlb_payload,mlb_raw)
     lineage_descriptors=mlb_payload.get("_popsEdgeMlbLineages",[])
     if not isinstance(lineage_descriptors,list):raise OperationsError("provider-data-invalid","MLB derived lineage authority is malformed")
@@ -198,6 +207,9 @@ def refresh_supporting_from_raw(*,archive:NamespaceArchive|None,mlb_raw:bytes,ka
     for item in facts.games:
         if item.game and item.schedule_observation:fact_groups.setdefault(item.game.event.canonical_event_id,[]).append(item)
     selected_facts=tuple((items[0] if items[0].game.game_pk in resume_game_pks else items[-1]) for _,items in sorted(fact_groups.items()));games=tuple(x.game for x in selected_facts);schedules=tuple(x.schedule_observation for x in selected_facts)
+    if not games and not derive_only and acquisition_command == "refresh-supporting" and supporting_session_id is None:
+        state=prior_state or replay_pr17_archive(archive,analysis_boundary=collected_at)
+        return _refresh_empty_supporting(archive,mlb_raw,kalshi_raw,tuple(mlb_pages),tuple(catalog_pages),collected_at,state)
     if not games or len(games)!=len(schedules) or sum(map(len,fact_groups.values()))!=len(facts.games):raise OperationsError("provider-data-invalid","MLB schedule authority is incomplete")
     outcomes=MLBOutcomeAdapter().parse_response(response,canonical_games=games)
     if any(x.observation is None or x.observation.validation_status is not ValidationStatus.VALID for x in outcomes):raise OperationsError("provider-data-invalid","MLB outcome/status authority is invalid")
@@ -627,6 +639,63 @@ def adapt_kalshi_candles(payload:Mapping[str,Any],*,market_ticker:str,target_at:
     return {"pages":[{"position":0,"cursor":"initial","next_cursor":None,"terminal":True,"candles":candles}]}
 
 
+def validate_empty_supporting_pages(union, pages, collected_at, prior_state):
+    """Verify complete original date pages; the empty union alone proves nothing."""
+    from forecast_standalone_schedule_reconciliation import validate_date_page
+    histories={}
+    for history in prior_state.bucket("outcome_histories"):
+        old=histories.get(history.canonical_event_id)
+        if old is None or len(history.observations)>len(old.observations):histories[history.canonical_event_id]=history
+    expected=tuple(day.isoformat() for day in required_mlb_query_dates(trusted_at=collected_at,histories=histories.values()))
+    material=tuple(_page_material(page,index,collected_at) for index,page in enumerate(pages))
+    if tuple(item[0] for item in material)!=expected:
+        raise OperationsError("acquisition-incomplete","Empty supporting interval requires every requested schedule date exactly once")
+    for identity,endpoint,raw,_,_ in material:
+        if endpoint!=canonical_mlb_schedule_request(identity)[1]:
+            raise OperationsError("acquisition-page-conflict","Empty supporting page endpoint differs from requested date")
+        validate_date_page(raw,date.fromisoformat(identity))
+    derived=merge_mlb_schedule_responses(tuple(item[2] for item in material))
+    if derived!=b'{"dates":[]}' or _canonical_json_digest(union)!=hashlib.sha256(derived).hexdigest():
+        raise OperationsError("acquisition-union-conflict","Empty supporting pages do not reproduce the empty interval")
+
+
+def _refresh_empty_supporting(archive, mlb_raw, kalshi_raw, mlb_pages, catalog_pages, collected_at, state):
+    validate_empty_supporting_pages(mlb_raw,mlb_pages,collected_at,state)
+    # Rebuild from actual catalog bytes, rather than trusting page.markets fields.
+    if not 1<=len(catalog_pages)<=MAX_CATALOG_PAGES:
+        raise OperationsError("pagination-bound","Empty supporting catalog page bound is invalid")
+    verified=[];requested=set();prior_completion=_page_material(mlb_pages[-1],len(mlb_pages)-1,collected_at)[4]
+    for index,page in enumerate(catalog_pages):
+        if (page.position!=index or page.request_cursor in requested or
+                _page_material(page,index,collected_at)[1]!=encoded_kalshi_catalog_path(page.request_cursor)):
+            raise OperationsError("acquisition-page-conflict","Catalog page order, request identity or endpoint is invalid")
+        requested.add(page.request_cursor)
+        _,_,_,started,completed=_page_material(page,index,collected_at)
+        if started<prior_completion or completed<started:
+            raise OperationsError("acquisition-chronology-conflict","Catalog chronology is not monotonic after schedule completion")
+        prior_completion=completed
+        if len(page.raw)>MAX_RESPONSE_BYTES:raise OperationsError("transport-oversized","Catalog response exceeds bound")
+        try:payload=json.loads(page.raw,object_pairs_hook=lambda pairs:_unique_object(pairs,"Kalshi"))
+        except (UnicodeDecodeError,json.JSONDecodeError) as exc:raise OperationsError("malformed-response","Catalog JSON is malformed") from exc
+        if (not isinstance(payload,dict) or set(payload)!={"markets","cursor"} or
+                not isinstance(payload["markets"],list) or not isinstance(payload["cursor"],str) or
+                payload["cursor"]!=page.next_cursor or tuple(payload["markets"])!=page.markets):
+            raise OperationsError("acquisition-page-conflict","Catalog page fields differ from exact response")
+        verified.append(page)
+    union=merge_kalshi_catalog_pages(verified)
+    if _canonical_json_digest(kalshi_raw)!=hashlib.sha256(union).hexdigest():
+        raise OperationsError("acquisition-union-conflict","Catalog union differs from complete pages")
+    with archive.mutation_lock():
+        mlb=publish_verified_acquisition(archive=archive,provider="mlb-stats-api",union_raw=mlb_raw,pages=mlb_pages,
+            contracts=(),collected_at=collected_at,protocol_id=None,command="refresh-supporting",empty_supporting=True)
+        kalshi=publish_verified_acquisition(archive=archive,provider="kalshi",union_raw=kalshi_raw,pages=catalog_pages,
+            contracts=(),collected_at=collected_at,protocol_id=None,command="refresh-supporting",
+            dependencies=(mlb["acquisition_id"],),empty_supporting=True)
+    return {"mlb_manifest_id":mlb["manifest_entry_id"],"kalshi_manifest_id":kalshi["manifest_entry_id"],
+        "supporting_session_manifest_id":None,"events":0,"contracts":0,"mapped":0,"missing":0,"ambiguous":0,
+        "catalog_pages":len(catalog_pages),"mlb_pages":len(mlb_pages),"disposition":"unchanged"}
+
+
 def canonical_mlb_schedule_request(query_date:date|str)->tuple[str,str]:
     """Return the canonical bounded-transport path and absolute MLB endpoint."""
     from mlb_stats_api import MLBStatsAPIClient
@@ -683,9 +752,12 @@ def preserve_supporting_response(*,archive:NamespaceArchive,session_id:str,provi
     return entry.manifest_entry_id
 
 
-def publish_verified_acquisition(*,archive:NamespaceArchive,provider:str,union_raw:bytes,pages:Iterable[Any],contracts:Iterable[Any],collected_at:datetime,protocol_id:str|None,command:str,dependencies:Iterable[str]=(),fail_after_pages:int|None=None,retrospective_cutoff_at:datetime|None=None,supporting_session_id:str|None=None,correction_reason:str|None=None,schedule_reconciled_at:datetime|None=None)->Mapping[str,Any]:
+def publish_verified_acquisition(*,archive:NamespaceArchive,provider:str,union_raw:bytes,pages:Iterable[Any],contracts:Iterable[Any],collected_at:datetime,protocol_id:str|None,command:str,dependencies:Iterable[str]=(),fail_after_pages:int|None=None,retrospective_cutoff_at:datetime|None=None,supporting_session_id:str|None=None,correction_reason:str|None=None,schedule_reconciled_at:datetime|None=None,empty_supporting:bool=False)->Mapping[str,Any]:
     """Preserve exact pages, then bind contracts to their verified derived union."""
     from forecast_standalone_operations import DesignAuthority,Disposition,_entry_values,pr17_contract_bundle,request_identity
+    contract_values=tuple(contracts)
+    if empty_supporting and (command!="refresh-supporting" or supporting_session_id is not None or contract_values):
+        raise OperationsError("acquisition-incompatible","Empty supporting rule requires ordinary zero-contract acquisition")
     page_items=tuple(pages);page_values=tuple(_page_material(item,index,collected_at) for index,item in enumerate(page_items))
     if not page_values:raise OperationsError("acquisition-incomplete","provider acquisition has no exact pages")
     if schedule_reconciled_at is not None and (command!="reconcile-prospective-schedule" or schedule_reconciled_at.tzinfo is None or schedule_reconciled_at<page_values[-1][4]):
@@ -701,7 +773,7 @@ def publish_verified_acquisition(*,archive:NamespaceArchive,provider:str,union_r
     group_material={"provider":provider,"command":command,"collected_at":collected_at,"pages":tuple((identity,endpoint,started,completed,hashlib.sha256(raw).hexdigest(),*partitions[index]) for index,(identity,endpoint,raw,started,completed) in enumerate(page_values)),"union_rule":ACQUISITION_UNION_RULE_VERSION}
     correction_suffix=(":correction:"+hashlib.sha256(correction_reason.encode()).hexdigest() if correction_reason else "")
     group_id=(supporting_session_id+":"+provider+correction_suffix if supporting_session_id else "provider-acquisition:"+hashlib.sha256(canonical_bytes(group_material)).hexdigest());descriptors=[]
-    contract_values=tuple(contracts);serialized=tuple(sorted(x.to_json() for x in contract_values));union_digest=_canonical_json_digest(union_raw)
+    serialized=tuple(sorted(x.to_json() for x in contract_values));union_digest=_canonical_json_digest(union_raw)
     if supporting_session_id:
         existing_bundles=[]
         for existing in archive.entries():
@@ -742,6 +814,7 @@ def publish_verified_acquisition(*,archive:NamespaceArchive,provider:str,union_r
     acquisition_completed_at=page_values[-1][4];normalized={"schema_version":"1","record_kind":"pr17c1-acquisition-bundle","acquisition_id":group_id,"family":command,"provider":provider,"dependencies":tuple(sorted(set(dependencies))),"command_started_at":collected_at,"command_started_at_iso":collected_at.isoformat(),"acquisition_completed_at":acquisition_completed_at,"pages":tuple(descriptors),"union_rule":ACQUISITION_UNION_RULE_VERSION,"normalized_union_sha256":union_digest,"contracts":serialized}
     if retrospective_cutoff_at is not None:normalized["retrospective_cutoff_at"]=retrospective_cutoff_at
     if command=="reconcile-outcomes":normalized["derivation_rule"]=OUTCOME_RECONCILIATION_RULE_VERSION
+    if empty_supporting:normalized["derivation_rule"]=EMPTY_SUPPORTING_DERIVATION_RULE_VERSION
     if supporting_session_id:
         normalized["page_record_kind"]="pr17c2-supporting-session-page"
         normalized["supporting_session_id"]=supporting_session_id;normalized["derivation_rule"]=SUPPORTING_DERIVATION_RULE_VERSION
@@ -1087,6 +1160,11 @@ def _verify_acquisition_bundle(archive:NamespaceArchive,value:Mapping[str,Any],*
     """Replay gate for page completeness, lineage, raw bytes and union identity."""
     if value.get("schema_version")!="1" or value.get("union_rule") not in SUPPORTED_ACQUISITION_UNION_RULES:raise OperationsError("acquisition-incompatible","unknown acquisition envelope")
     provider=value.get("provider");pages=value.get("pages");group=value.get("acquisition_id")
+    if value.get("family")=="refresh-supporting" and value.get("derivation_rule") not in (None,EMPTY_SUPPORTING_DERIVATION_RULE_VERSION):
+        raise OperationsError("acquisition-incompatible","Unknown ordinary supporting derivation rule")
+    if value.get("derivation_rule")==EMPTY_SUPPORTING_DERIVATION_RULE_VERSION and (
+            value.get("family")!="refresh-supporting" or value.get("union_rule")!=ACQUISITION_UNION_RULE_VERSION):
+        raise OperationsError("acquisition-incompatible","Empty supporting derivation requires its declared ordinary union rule")
     if provider not in {"kalshi","mlb-stats-api"} or not isinstance(pages,list) or not pages:raise OperationsError("acquisition-incomplete","acquisition page manifest is incomplete")
     def dt(raw):return datetime.fromisoformat(raw["datetime_utc"]) if isinstance(raw,dict) else datetime.fromisoformat(raw) if isinstance(raw,str) else raw
     command_start=dt(value.get("command_started_at"));acquisition_completed=dt(value.get("acquisition_completed_at"))

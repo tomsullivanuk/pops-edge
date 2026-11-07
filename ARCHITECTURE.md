@@ -1,5 +1,20 @@
 # Pops' Edge Architecture
 
+## Ordinary supporting intervals with no games
+
+A complete, validated empty interval is a successful supporting observation, not
+missing schedule authority. Ordinary acquisition retains exact explicit-zero MLB
+pages for every required date and a complete Kalshi catalog. Paired zero-contract
+envelopes declare `mlb-empty-supporting-interval-1`; replay validates their original
+request-date set, page authority, chronology, canonical unions and dependency.
+Legacy envelope semantics and nonempty contract derivation remain unchanged.
+
+Empty acquisition cannot delete existing scientific state, resolve an unresolved
+Outcome, repair missed prospective Evidence, certify an unobserved completed date,
+close a study or enrol another season. Normal lifecycle maintenance may proceed
+only after its actual prerequisites validate. Polling and startup safeguards are
+unchanged. See [operating contract](operations/PROSPECTIVE_PROJECTION.md#validated-empty-supporting-intervals).
+
 ## v1.3 Part 2 — Performance presentation
 
 The existing local server gains separate read-only NFL and MLB reader adapters and shared area navigation. NFL consumes replay-validated saved weekly reports; MLB exposes permitted assets of the established saved entry with retained package checks. No shared scientific schema, new scoring authority or provider action is introduced. See [contract](docs/PERFORMANCE_READERS_v1.3.md).
