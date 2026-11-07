@@ -6,6 +6,42 @@ checkpoint does not create Evidence, change Coverage, approve Policy, or permit
 backfill. It is local to one namespace, mode and filesystem; never copy it to a
 new deployment archive and treat its signatures as verified there.
 
+## Validated empty supporting intervals
+
+Ordinary `refresh-supporting` may complete with `events: 0`, `contracts: 0` and
+`disposition: unchanged`. This is normal for an off-day or off-season interval,
+not a reason to skip otherwise-due lifecycle maintenance. It does not resolve any
+existing Outcome obligation or assert that a season/study is closed.
+
+The original MLB pages must cover exactly the existing request-date rule, once
+each in its canonical order. Each empty response requires explicit integer
+`totalGames: 0`; original date identity, totals, shape, hashes and chronology must
+validate. The original complete Kalshi catalog chain and its exact union still
+validate even when the schedule has no games. The two existing manifest-last
+acquisition envelopes preserve exact pages, zero contracts and their dependency,
+using `derivation_rule: mlb-empty-supporting-interval-1` with union rule 4.
+
+Replay independently validates those pages and the original date selection from
+the prior scientific state. Unknown rules or inconsistent dependencies fail
+closed. Legacy ordinary envelopes retain their original derivation, including
+rejection of unmarked empty material; nonempty canonical outputs are unchanged.
+Ordinary admission also checks original pages in mixed intervals so that a valid
+game cannot conceal an undeclared empty page. Retrospective session semantics are
+unchanged. Later independent success preserves earlier failed invocations.
+
+Today's or tomorrow's before-completion empty response does not certify that
+completed date retrospectively. Unknown calendar dates and missed captures remain
+visible. No new schedule dates, backfill, polling change, retry policy or startup
+exception is introduced. Source fencing, immutable publication and all normal
+post-startup integrity checks remain required.
+
+This format needs a compatible reader before any authorized rollout. A reader
+that only implements the legacy nonempty supporting derivation cannot replay the
+new empty envelopes. Keep collector and report-worker compatibility as a separate
+deployment gate; do not alter old Evidence or silently skip unknown material.
+Reporting changes, formal closure and next-season enrolment are outside this
+correction. This documentation does not activate the candidate or repin a job.
+
 ## Supporting and outcome replay reuse
 
 Ordinary `refresh-supporting` and `reconcile-outcomes` use disposable invocation-local full-namespace

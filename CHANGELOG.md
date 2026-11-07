@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased — Validated empty MLB supporting intervals
+
+- Admit complete explicit-zero ordinary schedule intervals without blocking normal
+  lifecycle maintenance; retain original MLB pages and complete catalog provenance.
+- Version zero-contract envelopes and independently replay date coverage and source
+  dependencies, preserving legacy and retrospective derivation semantics.
+- Preserve polling, pins, collection/startup gates, unresolved Outcomes and historical
+  Coverage. No reporting, deployment or automatic off-season policy change.
+
 ## Unreleased — NFL refresh computation
 
 - Reuse pure parsing within one refresh under bounded memory/entry limits;

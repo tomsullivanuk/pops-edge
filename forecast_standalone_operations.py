@@ -1177,7 +1177,7 @@ def _contracts_from_entry(archive:NamespaceArchive,entry:Mapping[str,Any],prior_
                 if _is_supporting_session_authority_rejection(exc):return ()
                 raise
             if entry.get("manifest_entry_id") not in {verified["mlb_manifest_id"],verified["kalshi_manifest_id"]}:return ()
-        from forecast_standalone_activation import refresh_supporting_from_raw,reconcile_outcomes_from_raw,verify_acquisition_bundle
+        from forecast_standalone_activation import refresh_supporting_from_raw,reconcile_outcomes_from_raw,verify_acquisition_bundle,validate_empty_supporting_pages,EMPTY_SUPPORTING_DERIVATION_RULE_VERSION
         union,payloads=verify_acquisition_bundle(archive,value,include_union=True)
         from forecast_standalone_research import deserialize_v3
         stored=tuple(deserialize_v3(payload) for payload in payloads)
@@ -1192,6 +1192,11 @@ def _contracts_from_entry(archive:NamespaceArchive,entry:Mapping[str,Any],prior_
             if reconciled_at!=datetime.fromisoformat(entry["acquired_at"]["datetime_utc"]):raise OperationsError("schedule-date-conflict","Manual reconciliation chronology conflicts with manifest")
             expected=schedule_contracts(union=union,started=reconciled_at,prior_state=prior,union_rule=value.get("union_rule"))
         elif family=="reconcile-outcomes" and provider=="mlb-stats-api":expected=reconcile_outcomes_from_raw(archive=None,mlb_raw=union,collected_at=started,prior_state=prior,derive_only=True,derivation_rule=value.get("derivation_rule"))
+        elif family=="refresh-supporting" and provider=="mlb-stats-api" and value.get("derivation_rule")==EMPTY_SUPPORTING_DERIVATION_RULE_VERSION:
+            if value.get("dependencies")!=[]:raise OperationsError("acquisition-dependency-conflict","Empty MLB acquisition cannot have dependencies")
+            pages=tuple((page["request_identity"],page["endpoint"],archive.read_verified("raw",page["raw_sha256"])) for page in value["pages"])
+            validate_empty_supporting_pages(union,pages,started,prior)
+            expected=()
         elif family in {"refresh-supporting","refresh-retrospective-supporting"} and provider=="mlb-stats-api":expected=tuple(x for x in refresh_supporting_from_raw(archive=None,mlb_raw=union,kalshi_raw=b'{"cursor":"","markets":[]}',collected_at=started,prior_state=prior,derive_only=True,acquisition_command=family,union_rule=value.get("union_rule")) if type(x).__name__!="ProviderMarketSeries")
         elif family in {"refresh-supporting","refresh-retrospective-supporting"} and provider=="kalshi":
             dependencies=value.get("dependencies",())
@@ -1205,7 +1210,18 @@ def _contracts_from_entry(archive:NamespaceArchive,entry:Mapping[str,Any],prior_
                     candidate=archive.read_json_verified("normalized",normalized_id)
                     mlb_union,_=verify_acquisition_bundle(archive,candidate,include_union=True);mlb_union_rule=candidate.get("union_rule");break
             if mlb_union is None:raise OperationsError("acquisition-dependency-conflict","MLB dependency is absent")
-            expected=tuple(x for x in refresh_supporting_from_raw(archive=None,mlb_raw=mlb_union,kalshi_raw=union,collected_at=started,prior_state=prior,derive_only=True,acquisition_command=family,union_rule=mlb_union_rule) if type(x).__name__=="ProviderMarketSeries")
+            empty=value.get("derivation_rule")==EMPTY_SUPPORTING_DERIVATION_RULE_VERSION
+            dependency_empty=candidate.get("derivation_rule")==EMPTY_SUPPORTING_DERIVATION_RULE_VERSION
+            if empty or dependency_empty:
+                if (not empty or not dependency_empty or family!="refresh-supporting" or candidate.get("family")!=family or
+                        candidate.get("command_started_at_iso")!=value.get("command_started_at_iso") or
+                        candidate.get("union_rule")!=value.get("union_rule")):
+                    raise OperationsError("acquisition-dependency-conflict","Empty supporting dependency rules or command boundaries differ")
+                pages=tuple((page["request_identity"],page["endpoint"],archive.read_verified("raw",page["raw_sha256"])) for page in candidate["pages"])
+                validate_empty_supporting_pages(mlb_union,pages,started,prior)
+                expected=()
+            else:
+                expected=tuple(x for x in refresh_supporting_from_raw(archive=None,mlb_raw=mlb_union,kalshi_raw=union,collected_at=started,prior_state=prior,derive_only=True,acquisition_command=family,union_rule=mlb_union_rule) if type(x).__name__=="ProviderMarketSeries")
         else:raise OperationsError("acquisition-incompatible","unsupported PR17C1 acquisition family")
         expected_payloads=tuple(sorted(x.to_json() for x in expected))
         if tuple(sorted(payloads))!=expected_payloads:

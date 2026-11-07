@@ -64,7 +64,8 @@ def supporting_worker(config, at, ready, proceed, output, under_lock):
             if 'statsapi.mlb.com' in base:
                 from urllib.parse import parse_qs, urlsplit
                 day = parse_qs(urlsplit(path).query)['date'][0]
-                return canonical_bytes({'dates':[x for x in json.loads(mlb)['dates'] if x['date']==day]})
+                dates=[x for x in json.loads(mlb)['dates'] if x['date']==day]
+                return canonical_bytes({'dates':dates,'totalGames':sum(len(x['games']) for x in dates)})
             return catalog
         return load_live_supporting(archive=NamespaceArchive(config), purpose='schedule',
             at=at, public_get=fake_get, clock=lambda:at)
