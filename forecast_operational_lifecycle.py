@@ -66,7 +66,11 @@ def run_cycle(*, archive, state: OperationalState, clock, run):
         try:
             started = clock()
             entries = state.entries()
-            if any(x.completed_at > started for x in entries):
+            # The independent collector can append while the heartbeat scan runs.
+            # Validate against the completed read, while retaining the cycle start
+            # as the scheduling boundary for this invocation.
+            observed_at = clock()
+            if any(x.completed_at > observed_at for x in entries):
                 raise OperationsError("trusted-clock-invalid", "future cycle phase record")
             latest = {}
             for item in entries:

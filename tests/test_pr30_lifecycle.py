@@ -299,6 +299,56 @@ class LifecycleAcceptanceTests(unittest.TestCase):
         at=at or self.at
         self.state.append(OperationalHeartbeat('1',command,at,at,disposition,0,0,0,failure))
 
+    def test_concurrent_collector_heartbeat_is_not_a_future_cycle_record(self):
+        original_entries=self.state.entries
+        def entries_during_collector_append():
+            self.heartbeat('capture-prospective',self.at+timedelta(seconds=1),'no-due-work')
+            return original_entries()
+        times=iter((self.at,self.at+timedelta(seconds=2)))
+        with patch.object(self.state,'entries',side_effect=entries_during_collector_append):
+            result=run_cycle(archive=self.archive,state=self.state,
+                             clock=lambda:next(times,self.at+timedelta(seconds=2)),
+                             run=lambda _: {'disposition':'success','provider_calls':0})
+        self.assertEqual(result['disposition'],'success')
+
+        # A record beyond the completed read still fails closed.
+        self.heartbeat('capture-prospective',self.at+timedelta(seconds=3),'no-due-work')
+        times=iter((self.at,self.at+timedelta(seconds=2)))
+        with self.assertRaisesRegex(OperationsError,'trusted-clock-invalid'):
+            run_cycle(archive=self.archive,state=self.state,
+                      clock=lambda:next(times,self.at+timedelta(seconds=2)),
+                      run=lambda _:self.fail('future record reached a phase'))
+
+    def test_live_health_scan_allows_concurrent_collector_but_rejects_future(self):
+        original_entries=OperationalState.entries
+        current=[self.at]
+        injected=[False]
+        def entries_during_collector_append(state):
+            if not injected[0]:
+                injected[0]=True
+                at=self.at+timedelta(seconds=1)
+                state.append(OperationalHeartbeat('1','capture-prospective',at,at,
+                                                  'no-due-work',0,0,0,None))
+                current[0]=self.at+timedelta(seconds=2)
+            return original_entries(state)
+        with patch.object(OperationalState,'entries',entries_during_collector_append):
+            result=execute('health-report',self.config,clock=lambda:current[0],
+                           free_disk=lambda _:10**9)
+        self.assertIn('capture-prospective',dict(result['command_dispositions']))
+
+        with self.assertRaisesRegex(OperationsError,'trusted-clock-invalid'):
+            health_from_operational_state(archive=self.archive,state=self.state,
+                trusted_at=self.at+timedelta(seconds=2),
+                clock=lambda:self.at+timedelta(seconds=1),free_disk=lambda _:10**9)
+
+        future=self.at+timedelta(seconds=3)
+        self.state.append(OperationalHeartbeat('1','capture-prospective',future,future,
+                                              'no-due-work',0,0,0,None))
+        current[0]=self.at+timedelta(seconds=2)
+        with self.assertRaisesRegex(OperationsError,'trusted-clock-invalid'):
+            execute('health-report',self.config,clock=lambda:current[0],
+                    free_disk=lambda _:10**9)
+
     def test_lock_timeout_health_failure_and_later_recovery_remain_truthful(self):
         rebuild_index(self.archive)
         for command in ('capture-prospective','refresh-supporting','reconcile-outcomes',

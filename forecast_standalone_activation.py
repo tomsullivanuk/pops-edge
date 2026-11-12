@@ -1687,8 +1687,19 @@ def operational_observations(entries, trusted_at):
         blockers=blockers,supporting=supporting,outcome=outcome,inspection=inspection,index_age=index_age)
 
 
-def health_from_operational_state(*,archive:NamespaceArchive,state:OperationalState,trusted_at:datetime,free_disk:Callable[[Any],int])->HealthReport:
-    observed=operational_observations(state.entries(),trusted_at)
+def health_from_operational_state(*,archive:NamespaceArchive,state:OperationalState,trusted_at:datetime,free_disk:Callable[[Any],int],clock:Callable[[],datetime]|None=None)->HealthReport:
+    entries=state.entries()
+    if clock is not None:
+        # The independent collector may append while the heartbeat scan runs.
+        # Live health uses the time after that read; fixed-time callers retain
+        # their explicit as-of boundary.
+        observed_at=clock()
+        if (trusted_at.tzinfo is None or trusted_at.utcoffset() is None or
+                observed_at.tzinfo is None or observed_at.utcoffset() is None or
+                observed_at<trusted_at):
+            raise OperationsError("trusted-clock-invalid","health clock moved backwards during observation")
+        trusted_at=observed_at
+    observed=operational_observations(entries,trusted_at)
     latest,valid=observed["latest"],observed["valid"]
     failures,superseded,skips=(observed[key] for key in ("failures","superseded","skips"))
     collector=latest.get("capture-prospective");secondary=valid.get("sync-secondary")
