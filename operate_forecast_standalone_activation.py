@@ -199,7 +199,7 @@ def execute(command,config,*,clock=lambda:datetime.now(timezone.utc),transport_f
         elif command=="health-report":
             calls=0
             disk=free_disk or (lambda root:shutil.disk_usage(root).free)
-            output=json.loads(health_from_operational_state(archive=archive,state=state,trusted_at=started,free_disk=disk).to_json());disposition="success" if output["ready"] else "not-ready"
+            output=json.loads(health_from_operational_state(archive=archive,state=state,trusted_at=started,free_disk=disk,clock=clock).to_json());disposition="success" if output["ready"] else "not-ready"
         else:raise OperationsError("command-boundary",command)
         return output
     except OperationsError as exc:
