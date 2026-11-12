@@ -1570,9 +1570,11 @@ class OperationalState:
             fd=os.open(path,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)
             with os.fdopen(fd,"w",encoding="utf-8") as stream:stream.write(item.to_json()+"\n")
         except FileExistsError:pass
-    def entries(self)->tuple[OperationalHeartbeat,...]:
+    def _paths(self):
+        return tuple(sorted(self.root.glob("*.json"))) if self.root.exists() else ()
+    def _read_paths(self,paths)->tuple[OperationalHeartbeat,...]:
         values=[]
-        for path in sorted(self.root.glob("*.json")) if self.root.exists() else ():
+        for path in paths:
             try:
                 content=path.read_text();expected=path.stem.rsplit("-",1)[-1]
                 raw=json.loads(content)
@@ -1587,6 +1589,16 @@ class OperationalState:
             if identity in identities:raise OperationsError("heartbeat-conflict","duplicate command chronology")
             identities.add(identity)
         return tuple(values)
+    def entries(self)->tuple[OperationalHeartbeat,...]:
+        return self._read_paths(self._paths())
+    def snapshot(self):
+        paths=self._paths()
+        return self._read_paths(paths),frozenset(paths)
+    def added_entries(self,seen_paths):
+        paths=tuple(path for path in self._paths() if path not in seen_paths)
+        if len(paths)>4096:
+            raise OperationsError("health-inspection-incomplete","too many new operational heartbeats during scan")
+        return self._read_paths(paths)
 
 
 JOB_SCHEDULES={"prospective":{"StartInterval":30},"lifecycle":{"StartCalendarInterval":{"Minute":7}}}
@@ -1688,16 +1700,32 @@ def operational_observations(entries, trusted_at):
 
 
 def health_from_operational_state(*,archive:NamespaceArchive,state:OperationalState,trusted_at:datetime,free_disk:Callable[[Any],int],clock:Callable[[],datetime]|None=None)->HealthReport:
-    entries=state.entries()
-    if clock is not None:
-        # The independent collector may append while the heartbeat scan runs.
-        # Live health uses the time after that read; fixed-time callers retain
-        # their explicit as-of boundary.
-        observed_at=clock()
+    if clock is None:
+        entries=state.entries()
+    else:
+        # The first scan fixes its file list before reading it. Catch up on
+        # heartbeats appended during that read before assessing live cadence.
+        entries,seen_paths=state.snapshot()
+        catchup_started=clock()
         if (trusted_at.tzinfo is None or trusted_at.utcoffset() is None or
-                observed_at.tzinfo is None or observed_at.utcoffset() is None or
-                observed_at<trusted_at):
+                catchup_started.tzinfo is None or catchup_started.utcoffset() is None or
+                catchup_started<trusted_at):
             raise OperationsError("trusted-clock-invalid","health clock moved backwards during observation")
+        added=state.added_entries(seen_paths)
+        observed_at=clock()
+        if (observed_at.tzinfo is None or observed_at.utcoffset() is None or
+                observed_at<catchup_started):
+            raise OperationsError("trusted-clock-invalid","health clock moved backwards during catch-up")
+        if observed_at-catchup_started>timedelta(seconds=30):
+            raise OperationsError("health-inspection-incomplete","operational heartbeat catch-up exceeded 30 seconds")
+        identities={(item.command,item.started_at,item.completed_at) for item in entries}
+        for item in added:
+            identity=(item.command,item.started_at,item.completed_at)
+            if identity in identities:raise OperationsError("heartbeat-conflict","duplicate command chronology")
+            identities.add(identity)
+        entries=(*entries,*added)
+        if any(item.completed_at>observed_at for item in entries):
+            raise OperationsError("trusted-clock-invalid","heartbeat chronology is future-dated")
         trusted_at=observed_at
     observed=operational_observations(entries,trusted_at)
     latest,valid=observed["latest"],observed["valid"]

@@ -320,34 +320,65 @@ class LifecycleAcceptanceTests(unittest.TestCase):
                       run=lambda _:self.fail('future record reached a phase'))
 
     def test_live_health_scan_allows_concurrent_collector_but_rejects_future(self):
-        original_entries=OperationalState.entries
+        original_read=OperationalState._read_paths
         current=[self.at]
         injected=[False]
-        def entries_during_collector_append(state):
+        prior=self.at-timedelta(seconds=30)
+        concurrent=self.at+timedelta(minutes=2,seconds=30)
+        self.heartbeat('capture-prospective',prior,'no-due-work')
+        def read_during_collector_append(state,paths):
             if not injected[0]:
                 injected[0]=True
-                at=self.at+timedelta(seconds=1)
-                state.append(OperationalHeartbeat('1','capture-prospective',at,at,
+                state.append(OperationalHeartbeat('1','capture-prospective',concurrent,concurrent,
                                                   'no-due-work',0,0,0,None))
-                current[0]=self.at+timedelta(seconds=2)
-            return original_entries(state)
-        with patch.object(OperationalState,'entries',entries_during_collector_append):
+                current[0]=self.at+timedelta(minutes=3)
+            return original_read(state,paths)
+        with patch.object(OperationalState,'_read_paths',read_during_collector_append):
             result=execute('health-report',self.config,clock=lambda:current[0],
                            free_disk=lambda _:10**9)
         self.assertIn('capture-prospective',dict(result['command_dispositions']))
+        self.assertNotIn('capture-prospective:stale-or-absent',result['current_blockers'])
+        self.assertEqual(result['scheduler_age_seconds'],30)
+        self.assertEqual(result['health_generated_at']['datetime_utc'],current[0].isoformat())
+        self.assertEqual(dict(result['last_valid_completions'])['capture-prospective']['datetime_utc'],concurrent.isoformat())
 
         with self.assertRaisesRegex(OperationsError,'trusted-clock-invalid'):
             health_from_operational_state(archive=self.archive,state=self.state,
                 trusted_at=self.at+timedelta(seconds=2),
                 clock=lambda:self.at+timedelta(seconds=1),free_disk=lambda _:10**9)
 
-        future=self.at+timedelta(seconds=3)
+        future=self.at+timedelta(minutes=3,seconds=1)
         self.state.append(OperationalHeartbeat('1','capture-prospective',future,future,
                                               'no-due-work',0,0,0,None))
-        current[0]=self.at+timedelta(seconds=2)
+        current[0]=self.at+timedelta(minutes=3)
         with self.assertRaisesRegex(OperationsError,'trusted-clock-invalid'):
             execute('health-report',self.config,clock=lambda:current[0],
                     free_disk=lambda _:10**9)
+
+    def test_live_health_catchup_preserves_collector_failure(self):
+        self.heartbeat('capture-prospective',self.at-timedelta(seconds=30),'no-due-work')
+        original_read=OperationalState._read_paths
+        current=[self.at]
+        injected=[False]
+        def read_during_failure(state,paths):
+            if not injected[0]:
+                injected[0]=True
+                failed_at=self.at+timedelta(minutes=2,seconds=30)
+                state.append(OperationalHeartbeat('1','capture-prospective',failed_at,failed_at,
+                                                  'failed',0,0,0,'lock-timeout'))
+                current[0]=self.at+timedelta(minutes=3)
+            return original_read(state,paths)
+        with patch.object(OperationalState,'_read_paths',read_during_failure):
+            result=execute('health-report',self.config,clock=lambda:current[0],
+                           free_disk=lambda _:10**9)
+        self.assertFalse(result['ready'])
+        self.assertIn('capture-prospective:lock-timeout',result['current_blockers'])
+
+    def test_live_health_catchup_timeout_is_visible(self):
+        times=iter((self.at+timedelta(minutes=3),self.at+timedelta(minutes=3,seconds=31)))
+        with self.assertRaisesRegex(OperationsError,'health-inspection-incomplete'):
+            health_from_operational_state(archive=self.archive,state=self.state,
+                trusted_at=self.at,clock=lambda:next(times),free_disk=lambda _:10**9)
 
     def test_lock_timeout_health_failure_and_later_recovery_remain_truthful(self):
         rebuild_index(self.archive)
