@@ -1,0 +1,886 @@
+{
+  "annual_full": {
+    "2024": {
+      "native": {
+        "games": 2426,
+        "brier": 0.24313430808069328,
+        "log_loss": 0.679227637314904
+      },
+      "control": {
+        "games": 2426,
+        "brier": 0.24280731298199865,
+        "log_loss": 0.6785846662472311
+      },
+      "steamer": {
+        "games": 2426,
+        "brier": 0.24180162494106008,
+        "log_loss": 0.6764761031874686
+      }
+    },
+    "2025": {
+      "native": {
+        "games": 2426,
+        "brier": 0.2438857476025804,
+        "log_loss": 0.6805903780643378
+      },
+      "control": {
+        "games": 2426,
+        "brier": 0.2438675227590855,
+        "log_loss": 0.680544390938296
+      },
+      "steamer": {
+        "games": 2426,
+        "brier": 0.2439250608567127,
+        "log_loss": 0.6806729107668891
+      }
+    }
+  },
+  "pooled_full": {
+    "native": {
+      "games": 4852,
+      "brier": 0.24351002784163683,
+      "log_loss": 0.6799090076896209
+    },
+    "control": {
+      "games": 4852,
+      "brier": 0.24333741787054206,
+      "log_loss": 0.6795645285927635
+    },
+    "steamer": {
+      "games": 4852,
+      "brier": 0.2428633428988864,
+      "log_loss": 0.6785745069771789
+    }
+  },
+  "annual_market_common": {
+    "2024": {
+      "native": {
+        "games": 2291,
+        "brier": 0.24399862643450404,
+        "log_loss": 0.6809931006871147
+      },
+      "control": {
+        "games": 2291,
+        "brier": 0.2436522499343135,
+        "log_loss": 0.6803251010930076
+      },
+      "steamer": {
+        "games": 2291,
+        "brier": 0.24266447922327347,
+        "log_loss": 0.6782507853581727
+      },
+      "sportsbook": {
+        "games": 2291,
+        "brier": 0.24228832789141516,
+        "log_loss": 0.6786198957472561
+      }
+    },
+    "2025": {
+      "native": {
+        "games": 2425,
+        "brier": 0.24386001748032202,
+        "log_loss": 0.6805386000370579
+      },
+      "control": {
+        "games": 2425,
+        "brier": 0.24385116028409004,
+        "log_loss": 0.6805114870182728
+      },
+      "steamer": {
+        "games": 2425,
+        "brier": 0.2439112139097287,
+        "log_loss": 0.6806450610810553
+      },
+      "sportsbook": {
+        "games": 2425,
+        "brier": 0.24124896590373396,
+        "log_loss": 0.6750861843688711
+      }
+    }
+  },
+  "pooled_market_common": {
+    "native": {
+      "games": 4716,
+      "brier": 0.24392735274623195,
+      "log_loss": 0.6807593932917823
+    },
+    "control": {
+      "games": 4716,
+      "brier": 0.24375453101959937,
+      "log_loss": 0.6804209420321017
+    },
+    "steamer": {
+      "games": 4716,
+      "brier": 0.24330555887014663,
+      "log_loss": 0.6794819385871782
+    },
+    "sportsbook": {
+      "games": 4716,
+      "brier": 0.2417538807285384,
+      "log_loss": 0.676802836779363
+    }
+  },
+  "bootstrap": {
+    "14": {
+      "sign": "control loss minus steamer loss; positive favors steamer",
+      "equal_average_annual_brier": [
+        -0.00042315089172321476,
+        0.0010210378633005316
+      ],
+      "annual": {
+        "2024": {
+          "brier": [
+            -0.00036268032397743065,
+            0.0019384356124645783
+          ],
+          "log_loss": [
+            -0.0007225512364450774,
+            0.004033504142661519
+          ]
+        },
+        "2025": {
+          "brier": [
+            -0.0011079674296291164,
+            0.000653037707083503
+          ],
+          "log_loss": [
+            -0.0022841044639557062,
+            0.0013264714026664807
+          ]
+        }
+      },
+      "replicates": 5000,
+      "seed": 20261012,
+      "block_days": 14
+    },
+    "7": {
+      "sign": "control loss minus steamer loss; positive favors steamer",
+      "equal_average_annual_brier": [
+        -0.00038847583872243,
+        0.001162100178779425
+      ],
+      "annual": {
+        "2024": {
+          "brier": [
+            -0.00022297001596977914,
+            0.002082910251890135
+          ],
+          "log_loss": [
+            -0.000427876150902247,
+            0.004337054919958339
+          ]
+        },
+        "2025": {
+          "brier": [
+            -0.0011736512502727849,
+            0.0008494662543522925
+          ],
+          "log_loss": [
+            -0.0024285182689647534,
+            0.0017156085536713303
+          ]
+        }
+      },
+      "replicates": 5000,
+      "seed": 20261012,
+      "block_days": 7
+    }
+  },
+  "market_bootstrap": {
+    "14": {
+      "sign": "sportsbook loss minus steamer loss; positive favors steamer",
+      "equal_average_annual_brier": [
+        -0.0032863683263565442,
+        0.00019773383013558854
+      ],
+      "annual": {
+        "2024": {
+          "brier": [
+            -0.0031483516165589417,
+            0.0023063033476327104
+          ],
+          "log_loss": [
+            -0.0065413645767284975,
+            0.0071219157958580595
+          ]
+        },
+        "2025": {
+          "brier": [
+            -0.004967995919940306,
+            -0.0003900904370681971
+          ],
+          "log_loss": [
+            -0.010314549849829577,
+            -0.000872188470693481
+          ]
+        }
+      },
+      "replicates": 5000,
+      "seed": 20261012,
+      "block_days": 14
+    },
+    "7": {
+      "sign": "sportsbook loss minus steamer loss; positive favors steamer",
+      "equal_average_annual_brier": [
+        -0.003108374602596527,
+        6.889812413413299e-05
+      ],
+      "annual": {
+        "2024": {
+          "brier": [
+            -0.0029098142804311923,
+            0.0019486769496566837
+          ],
+          "log_loss": [
+            -0.005778338618553943,
+            0.006394384185753257
+          ]
+        },
+        "2025": {
+          "brier": [
+            -0.004652426449410637,
+            -0.0007106850173770457
+          ],
+          "log_loss": [
+            -0.009664778196468755,
+            -0.0015205992033046165
+          ]
+        }
+      },
+      "replicates": 5000,
+      "seed": 20261012,
+      "block_days": 7
+    }
+  },
+  "information_gate": {
+    "average_annual_brier_gain": 0.00047407497165567747,
+    "annual_brier_gains": [
+      0.0010056880409385627,
+      -5.753809762720774e-05
+    ],
+    "gain_at_least_0_001": false,
+    "positive_both_years": false,
+    "no_worse_pooled_log_loss": true,
+    "primary_interval_positive": false,
+    "same_coverage": true,
+    "passes": false
+  },
+  "market_gate": {
+    "lower_pooled_brier": false,
+    "lower_pooled_log_loss": false,
+    "no_worse_annual_brier": false,
+    "passes": false
+  },
+  "calibration": {
+    "2024": {
+      "native": {
+        "intercept": -0.020163805689939186,
+        "slope": 0.9871392886521542,
+        "mean_probability": 0.5270772574529861,
+        "home_win_rate": 0.5218466611706513,
+        "diagnostic_only": true,
+        "bins": [
+          {
+            "lower": 0.0,
+            "upper": 0.1,
+            "games": 0,
+            "mean_probability": null,
+            "home_win_rate": null
+          },
+          {
+            "lower": 0.1,
+            "upper": 0.2,
+            "games": 0,
+            "mean_probability": null,
+            "home_win_rate": null
+          },
+          {
+            "lower": 0.2,
+            "upper": 0.3,
+            "games": 6,
+            "mean_probability": 0.2890650885701477,
+            "home_win_rate": 0.3333333333333333
+          },
+          {
+            "lower": 0.3,
+            "upper": 0.4,
+            "games": 147,
+            "mean_probability": 0.3698229789276755,
+            "home_win_rate": 0.3741496598639456
+          },
+          {
+            "lower": 0.4,
+            "upper": 0.5,
+            "games": 718,
+            "mean_probability": 0.45711917842575883,
+            "home_win_rate": 0.4568245125348189
+          },
+          {
+            "lower": 0.5,
+            "upper": 0.6,
+            "games": 1096,
+            "mean_probability": 0.547470416081418,
+            "home_win_rate": 0.5328467153284672
+          },
+          {
+            "lower": 0.6,
+            "upper": 0.7,
+            "games": 428,
+            "mean_probability": 0.6355854169270766,
+            "home_win_rate": 0.6448598130841121
+          },
+          {
+            "lower": 0.7,
+            "upper": 0.8,
+            "games": 31,
+            "mean_probability": 0.7200436634657138,
+            "home_win_rate": 0.6774193548387096
+          },
+          {
+            "lower": 0.8,
+            "upper": 0.9,
+            "games": 0,
+            "mean_probability": null,
+            "home_win_rate": null
+          },
+          {
+            "lower": 0.9,
+            "upper": 1.0,
+            "games": 0,
+            "mean_probability": null,
+            "home_win_rate": null
+          }
+        ]
+      },
+      "control": {
+        "intercept": -0.015823261780624737,
+        "slope": 0.9517857679828635,
+        "mean_probability": 0.5269144308725031,
+        "home_win_rate": 0.5218466611706513,
+        "diagnostic_only": true,
+        "bins": [
+          {
+            "lower": 0.0,
+            "upper": 0.1,
+            "games": 0,
+            "mean_probability": null,
+            "home_win_rate": null
+          },
+          {
+            "lower": 0.1,
+            "upper": 0.2,
+            "games": 0,
+            "mean_probability": null,
+            "home_win_rate": null
+          },
+          {
+            "lower": 0.2,
+            "upper": 0.3,
+            "games": 8,
+            "mean_probability": 0.283545236703983,
+            "home_win_rate": 0.375
+          },
+          {
+            "lower": 0.3,
+            "upper": 0.4,
+            "games": 163,
+            "mean_probability": 0.36494064002624726,
+            "home_win_rate": 0.3803680981595092
+          },
+          {
+            "lower": 0.4,
+            "upper": 0.5,
+            "games": 725,
+            "mean_probability": 0.4557213243309895,
+            "home_win_rate": 0.4413793103448276
+          },
+          {
+            "lower": 0.5,
+            "upper": 0.6,
+            "games": 1030,
+            "mean_probability": 0.5472995555083373,
+            "home_win_rate": 0.5514563106796116
+          },
+          {
+            "lower": 0.6,
+            "upper": 0.7,
+            "games": 452,
+            "mean_probability": 0.6365095779604172,
+            "home_win_rate": 0.6172566371681416
+          },
+          {
+            "lower": 0.7,
+            "upper": 0.8,
+            "games": 48,
+            "mean_probability": 0.7233727401483074,
+            "home_win_rate": 0.7083333333333334
+          },
+          {
+            "lower": 0.8,
+            "upper": 0.9,
+            "games": 0,
+            "mean_probability": null,
+            "home_win_rate": null
+          },
+          {
+            "lower": 0.9,
+            "upper": 1.0,
+            "games": 0,
+            "mean_probability": null,
+            "home_win_rate": null
+          }
+        ]
+      },
+      "steamer": {
+        "intercept": -0.01993621650837964,
+        "slope": 0.9852713457148319,
+        "mean_probability": 0.527038152497193,
+        "home_win_rate": 0.5218466611706513,
+        "diagnostic_only": true,
+        "bins": [
+          {
+            "lower": 0.0,
+            "upper": 0.1,
+            "games": 0,
+            "mean_probability": null,
+            "home_win_rate": null
+          },
+          {
+            "lower": 0.1,
+            "upper": 0.2,
+            "games": 0,
+            "mean_probability": null,
+            "home_win_rate": null
+          },
+          {
+            "lower": 0.2,
+            "upper": 0.3,
+            "games": 10,
+            "mean_probability": 0.2815107021262103,
+            "home_win_rate": 0.1
+          },
+          {
+            "lower": 0.3,
+            "upper": 0.4,
+            "games": 183,
+            "mean_probability": 0.36251252501750103,
+            "home_win_rate": 0.34972677595628415
+          },
+          {
+            "lower": 0.4,
+            "upper": 0.5,
+            "games": 720,
+            "mean_probability": 0.45688962295634417,
+            "home_win_rate": 0.45
+          },
+          {
+            "lower": 0.5,
+            "upper": 0.6,
+            "games": 1024,
+            "mean_probability": 0.5491366093762353,
+            "home_win_rate": 0.55859375
+          },
+          {
+            "lower": 0.6,
+            "upper": 0.7,
+            "games": 426,
+            "mean_probability": 0.6396464386309006,
+            "home_win_rate": 0.6056338028169014
+          },
+          {
+            "lower": 0.7,
+            "upper": 0.8,
+            "games": 62,
+            "mean_probability": 0.7237708387365245,
+            "home_win_rate": 0.7419354838709677
+          },
+          {
+            "lower": 0.8,
+            "upper": 0.9,
+            "games": 1,
+            "mean_probability": 0.8000674704645901,
+            "home_win_rate": 1.0
+          },
+          {
+            "lower": 0.9,
+            "upper": 1.0,
+            "games": 0,
+            "mean_probability": null,
+            "home_win_rate": null
+          }
+        ]
+      }
+    },
+    "2025": {
+      "native": {
+        "intercept": 0.08740139598473286,
+        "slope": 0.8432225071502947,
+        "mean_probability": 0.5248604078005096,
+        "home_win_rate": 0.5424567188788129,
+        "diagnostic_only": true,
+        "bins": [
+          {
+            "lower": 0.0,
+            "upper": 0.1,
+            "games": 0,
+            "mean_probability": null,
+            "home_win_rate": null
+          },
+          {
+            "lower": 0.1,
+            "upper": 0.2,
+            "games": 0,
+            "mean_probability": null,
+            "home_win_rate": null
+          },
+          {
+            "lower": 0.2,
+            "upper": 0.3,
+            "games": 13,
+            "mean_probability": 0.27562463439736445,
+            "home_win_rate": 0.23076923076923078
+          },
+          {
+            "lower": 0.3,
+            "upper": 0.4,
+            "games": 133,
+            "mean_probability": 0.3654643229049731,
+            "home_win_rate": 0.40601503759398494
+          },
+          {
+            "lower": 0.4,
+            "upper": 0.5,
+            "games": 771,
+            "mean_probability": 0.457987497072189,
+            "home_win_rate": 0.5019455252918288
+          },
+          {
+            "lower": 0.5,
+            "upper": 0.6,
+            "games": 1078,
+            "mean_probability": 0.5470510631296366,
+            "home_win_rate": 0.5463821892393321
+          },
+          {
+            "lower": 0.6,
+            "upper": 0.7,
+            "games": 392,
+            "mean_probability": 0.6380408079705898,
+            "home_win_rate": 0.6454081632653061
+          },
+          {
+            "lower": 0.7,
+            "upper": 0.8,
+            "games": 39,
+            "mean_probability": 0.7225659258879935,
+            "home_win_rate": 0.7692307692307693
+          },
+          {
+            "lower": 0.8,
+            "upper": 0.9,
+            "games": 0,
+            "mean_probability": null,
+            "home_win_rate": null
+          },
+          {
+            "lower": 0.9,
+            "upper": 1.0,
+            "games": 0,
+            "mean_probability": null,
+            "home_win_rate": null
+          }
+        ]
+      },
+      "control": {
+        "intercept": 0.08473790547443891,
+        "slope": 0.8513516992448642,
+        "mean_probability": 0.5253899804152494,
+        "home_win_rate": 0.5424567188788129,
+        "diagnostic_only": true,
+        "bins": [
+          {
+            "lower": 0.0,
+            "upper": 0.1,
+            "games": 0,
+            "mean_probability": null,
+            "home_win_rate": null
+          },
+          {
+            "lower": 0.1,
+            "upper": 0.2,
+            "games": 0,
+            "mean_probability": null,
+            "home_win_rate": null
+          },
+          {
+            "lower": 0.2,
+            "upper": 0.3,
+            "games": 9,
+            "mean_probability": 0.2743396049821742,
+            "home_win_rate": 0.3333333333333333
+          },
+          {
+            "lower": 0.3,
+            "upper": 0.4,
+            "games": 141,
+            "mean_probability": 0.36887329384336254,
+            "home_win_rate": 0.425531914893617
+          },
+          {
+            "lower": 0.4,
+            "upper": 0.5,
+            "games": 746,
+            "mean_probability": 0.4576405473169024,
+            "home_win_rate": 0.4959785522788204
+          },
+          {
+            "lower": 0.5,
+            "upper": 0.6,
+            "games": 1097,
+            "mean_probability": 0.5465464974505969,
+            "home_win_rate": 0.5515041020966271
+          },
+          {
+            "lower": 0.6,
+            "upper": 0.7,
+            "games": 397,
+            "mean_probability": 0.6375574875045797,
+            "home_win_rate": 0.6272040302267002
+          },
+          {
+            "lower": 0.7,
+            "upper": 0.8,
+            "games": 36,
+            "mean_probability": 0.7234506408224771,
+            "home_win_rate": 0.8055555555555556
+          },
+          {
+            "lower": 0.8,
+            "upper": 0.9,
+            "games": 0,
+            "mean_probability": null,
+            "home_win_rate": null
+          },
+          {
+            "lower": 0.9,
+            "upper": 1.0,
+            "games": 0,
+            "mean_probability": null,
+            "home_win_rate": null
+          }
+        ]
+      },
+      "steamer": {
+        "intercept": 0.08677420321653247,
+        "slope": 0.8427110694494774,
+        "mean_probability": 0.5250430824648986,
+        "home_win_rate": 0.5424567188788129,
+        "diagnostic_only": true,
+        "bins": [
+          {
+            "lower": 0.0,
+            "upper": 0.1,
+            "games": 0,
+            "mean_probability": null,
+            "home_win_rate": null
+          },
+          {
+            "lower": 0.1,
+            "upper": 0.2,
+            "games": 0,
+            "mean_probability": null,
+            "home_win_rate": null
+          },
+          {
+            "lower": 0.2,
+            "upper": 0.3,
+            "games": 8,
+            "mean_probability": 0.2740096990033756,
+            "home_win_rate": 0.25
+          },
+          {
+            "lower": 0.3,
+            "upper": 0.4,
+            "games": 147,
+            "mean_probability": 0.3677937530511899,
+            "home_win_rate": 0.3945578231292517
+          },
+          {
+            "lower": 0.4,
+            "upper": 0.5,
+            "games": 758,
+            "mean_probability": 0.4581130444697716,
+            "home_win_rate": 0.49340369393139843
+          },
+          {
+            "lower": 0.5,
+            "upper": 0.6,
+            "games": 1078,
+            "mean_probability": 0.5470091547782175,
+            "home_win_rate": 0.5538033395176253
+          },
+          {
+            "lower": 0.6,
+            "upper": 0.7,
+            "games": 393,
+            "mean_probability": 0.6365966972975045,
+            "home_win_rate": 0.6463104325699746
+          },
+          {
+            "lower": 0.7,
+            "upper": 0.8,
+            "games": 42,
+            "mean_probability": 0.7235404802944627,
+            "home_win_rate": 0.7380952380952381
+          },
+          {
+            "lower": 0.8,
+            "upper": 0.9,
+            "games": 0,
+            "mean_probability": null,
+            "home_win_rate": null
+          },
+          {
+            "lower": 0.9,
+            "upper": 1.0,
+            "games": 0,
+            "mean_probability": null,
+            "home_win_rate": null
+          }
+        ]
+      }
+    }
+  },
+  "strata_diagnostic_only": {
+    "2024": {
+      "fallback_False": {
+        "native": {
+          "games": 2426,
+          "brier": 0.24313430808069328,
+          "log_loss": 0.679227637314904
+        },
+        "control": {
+          "games": 2426,
+          "brier": 0.24280731298199865,
+          "log_loss": 0.6785846662472311
+        },
+        "steamer": {
+          "games": 2426,
+          "brier": 0.24180162494106008,
+          "log_loss": 0.6764761031874686
+        }
+      },
+      "cold_True": {
+        "native": {
+          "games": 104,
+          "brier": 0.23530223011988244,
+          "log_loss": 0.6629658043138551
+        },
+        "control": {
+          "games": 104,
+          "brier": 0.23348344023127632,
+          "log_loss": 0.6592300278075877
+        },
+        "steamer": {
+          "games": 104,
+          "brier": 0.23160083787073887,
+          "log_loss": 0.6550747788569228
+        }
+      },
+      "cold_False": {
+        "native": {
+          "games": 2322,
+          "brier": 0.24348509882484673,
+          "log_loss": 0.6799559881469922
+        },
+        "control": {
+          "games": 2322,
+          "brier": 0.24322491968573473,
+          "log_loss": 0.6794515406648551
+        },
+        "steamer": {
+          "games": 2322,
+          "brier": 0.24225850773835267,
+          "log_loss": 0.6774346465683372
+        }
+      }
+    },
+    "2025": {
+      "fallback_True": {
+        "native": {
+          "games": 116,
+          "brier": 0.2506098258399432,
+          "log_loss": 0.6943486036511429
+        },
+        "control": {
+          "games": 116,
+          "brier": 0.24831774279819613,
+          "log_loss": 0.689579164206457
+        },
+        "steamer": {
+          "games": 116,
+          "brier": 0.2478646994253843,
+          "log_loss": 0.688787806406532
+        }
+      },
+      "fallback_False": {
+        "native": {
+          "games": 2310,
+          "brier": 0.24354808826252236,
+          "log_loss": 0.6798994888140912
+        },
+        "control": {
+          "games": 2310,
+          "brier": 0.24364404850603924,
+          "log_loss": 0.6800906966962584
+        },
+        "steamer": {
+          "games": 2310,
+          "brier": 0.24372722619265824,
+          "log_loss": 0.6802654095139893
+        }
+      },
+      "cold_True": {
+        "native": {
+          "games": 112,
+          "brier": 0.24068496654996333,
+          "log_loss": 0.6737401836802561
+        },
+        "control": {
+          "games": 112,
+          "brier": 0.2414360047209804,
+          "log_loss": 0.6752889399760696
+        },
+        "steamer": {
+          "games": 112,
+          "brier": 0.2440513088411989,
+          "log_loss": 0.6802644294402346
+        }
+      },
+      "cold_False": {
+        "native": {
+          "games": 2314,
+          "brier": 0.2440406687252654,
+          "log_loss": 0.6809219345773097
+        },
+        "control": {
+          "games": 2314,
+          "brier": 0.24398521075401539,
+          "log_loss": 0.6807987602156379
+        },
+        "steamer": {
+          "games": 2314,
+          "brier": 0.2439189503233236,
+          "log_loss": 0.6806926816867618
+        }
+      }
+    }
+  },
+  "coverage": {
+    "full": 4852,
+    "market_common": 4716,
+    "dropped": 0
+  },
+  "reused_development": true,
+  "kalshi_or_returns_tested": false
+}

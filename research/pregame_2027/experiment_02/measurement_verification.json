@@ -1,0 +1,7 @@
+{
+  "bootstrap_all_5000_replicates_independently_reweighted_by_game": true,
+  "calibration_score_equations_verified": true,
+  "maximum_bootstrap_bound_difference": 2.42861286636753e-17,
+  "maximum_calibration_score_equation_residual": 3.795574965437254e-14,
+  "pooled_scores_independently_verified": true
+}

@@ -1,0 +1,8 @@
+{
+  "slots_checked": 174672,
+  "MLBAMIDs": 1022,
+  "RetroIDs": 1022,
+  "MLBAM_to_Retro_conflicts": 0,
+  "Retro_to_MLBAM_conflicts": 0,
+  "evidence": "same verified game, designated team side and initial batting-order slot; no name inference"
+}

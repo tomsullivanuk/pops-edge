@@ -1,0 +1,43 @@
+{
+  "bootstrap": {
+    "block_lengths": [
+      14,
+      7
+    ],
+    "replicates": 5000,
+    "seed": 20261012
+  },
+  "effort_cap_focused_days": 5,
+  "features": [
+    "x_win60",
+    "x_rd60",
+    "x_rd10",
+    "progress_centered",
+    "progress_x_win60",
+    "progress_x_rd60",
+    "progress_x_rd10",
+    "starter_kbb",
+    "starter_hr",
+    "starter_ip"
+  ],
+  "largest_fold_rows": 9704,
+  "maximum_fold_wall_seconds": 1800,
+  "post_fit_calibration": false,
+  "saved_v2_and_catboost_only": true,
+  "seed": 20261012,
+  "tabpfn": {
+    "average_before_softmax": false,
+    "balance_probabilities": false,
+    "batch_rows": 128,
+    "device": "mps",
+    "estimators": 4,
+    "fit_mode": "fit_with_cache",
+    "max_batched_estimator_rows": 0,
+    "memory_fraction": 0.5,
+    "n_preprocessing_jobs": 1,
+    "precision": "float32",
+    "random_state": 20261012,
+    "softmax_temperature": 1.0,
+    "version": "v3.5"
+  }
+}

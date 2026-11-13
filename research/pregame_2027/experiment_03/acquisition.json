@@ -1,0 +1,20 @@
+[
+  {
+    "url": "https://www.retrosheet.org/downloads/2022/2022csvs.zip",
+    "bytes": 9783836,
+    "sha256": "73a3a5cb1a12905d842e9aa1f2be112a34db8a011b54d7249273b624d9448486",
+    "acquired_utc": "2026-10-12T21:12:57.930151+00:00"
+  },
+  {
+    "url": "https://www.retrosheet.org/downloads/2024/2024csvs.zip",
+    "bytes": 9879666,
+    "sha256": "f438fb7574ba068ae66976d4c2597fd8a5f5838f4b56702515f8afb941630b28",
+    "acquired_utc": "2026-10-12T21:13:01.925847+00:00"
+  },
+  {
+    "url": "https://www.retrosheet.org/downloads/2025/2025csvs.zip",
+    "bytes": 9943553,
+    "sha256": "3d1e0e81d5913a635ae7a80366b811b777b832b488274124b4e38e04dd892753",
+    "acquired_utc": "2026-10-12T21:13:12.365569+00:00"
+  }
+]

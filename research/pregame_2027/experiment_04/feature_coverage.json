@@ -1,0 +1,30 @@
+{
+  "2022": {
+    "games": 2429,
+    "fallback_slots": 110,
+    "fallback_games": 110,
+    "cold_control_slots": 571,
+    "unidentified_projection_rows": 1
+  },
+  "2023": {
+    "games": 2423,
+    "fallback_slots": 43,
+    "fallback_games": 43,
+    "cold_control_slots": 108,
+    "unidentified_projection_rows": 1
+  },
+  "2024": {
+    "games": 2426,
+    "fallback_slots": 0,
+    "fallback_games": 0,
+    "cold_control_slots": 109,
+    "unidentified_projection_rows": 1
+  },
+  "2025": {
+    "games": 2426,
+    "fallback_slots": 116,
+    "fallback_games": 116,
+    "cold_control_slots": 114,
+    "unidentified_projection_rows": 2
+  }
+}

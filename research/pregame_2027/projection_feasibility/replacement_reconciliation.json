@@ -1,0 +1,46 @@
+{
+  "2022": {
+    "replacement_filename": "fangraphs-leaderboard-projections-2022.csv",
+    "previous_filename": "fangraphs-leaderboard-projections-2.csv",
+    "bytes": 2859055,
+    "sha256": "7b83f846f57da46ea23225cc74b6c9704d8f23586326d04c62d4038eb3776a9c",
+    "byte_identical_to_previous": true,
+    "normalized_records_identical": true,
+    "rows": 3304,
+    "year_label_basis": "Owner supplied replacement immediately labelled by selected export year",
+    "prior_mapping_correction": false
+  },
+  "2023": {
+    "replacement_filename": "fangraphs-leaderboard-projections-2023.csv",
+    "previous_filename": "fangraphs-leaderboard-projections-3.csv",
+    "bytes": 3111077,
+    "sha256": "4fbe5ab77afe81b318171fb4b30bf69ff0c9731d387cdbc45cc87628aa3ea148",
+    "byte_identical_to_previous": true,
+    "normalized_records_identical": true,
+    "rows": 3591,
+    "year_label_basis": "Owner supplied replacement immediately labelled by selected export year",
+    "prior_mapping_correction": false
+  },
+  "2024": {
+    "replacement_filename": "fangraphs-leaderboard-projections- 2024.csv",
+    "previous_filename": "fangraphs-leaderboard-projections.csv",
+    "bytes": 3213054,
+    "sha256": "9ca0ec996bd1c8d8174a202d6b64b3e36c3af7c86531f60f322a36ef8892fcc8",
+    "byte_identical_to_previous": true,
+    "normalized_records_identical": true,
+    "rows": 3711,
+    "year_label_basis": "Owner supplied replacement immediately labelled by selected export year",
+    "prior_mapping_correction": false
+  },
+  "2025": {
+    "replacement_filename": "fangraphs-leaderboard-projections-2025.csv",
+    "previous_filename": "fangraphs-leaderboard-projections-4.csv",
+    "bytes": 3723702,
+    "sha256": "563ac2095fb4a6d35cda3ace2e37a36080bbfd38440bf898af25b44007a8d6bf",
+    "byte_identical_to_previous": true,
+    "normalized_records_identical": true,
+    "rows": 4140,
+    "year_label_basis": "Owner supplied replacement immediately labelled by selected export year",
+    "prior_mapping_correction": false
+  }
+}

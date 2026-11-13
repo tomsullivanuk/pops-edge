@@ -1,0 +1,18 @@
+{
+  "checkpoint_sha256": "cf8c519c01eaf1613ee91239006d57b1c806ff5f23ac1aeb1315ba1015210e49",
+  "file": {
+    "blobId": "b47280e206e18597b2be09b4177b71c16954904e",
+    "lfs": {
+      "pointerSize": 133,
+      "sha256": "cf8c519c01eaf1613ee91239006d57b1c806ff5f23ac1aeb1315ba1015210e49",
+      "size": 29009539
+    },
+    "rfilename": "tabpfn-v2-classifier-v2_default.ckpt",
+    "size": 29009539
+  },
+  "license_sha256": "08b1851b4b6136b5fb0cb124d3258e0d91e3e1623f1be5904b77e4d270d112d8",
+  "license_url": "https://huggingface.co/Prior-Labs/TabPFN-v2-clf/raw/f851f2a3c941544733b712d8c0f96dfae9b28862/LICENSE.txt",
+  "model_card_url": "https://huggingface.co/Prior-Labs/TabPFN-v2-clf",
+  "repository": "Prior-Labs/TabPFN-v2-clf",
+  "revision": "f851f2a3c941544733b712d8c0f96dfae9b28862"
+}

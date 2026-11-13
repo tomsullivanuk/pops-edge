@@ -1,0 +1,22 @@
+{
+  "raw_event_values_verified": 349025,
+  "source_hashes": {
+    "2024plays.csv": "59cdb1efcaebcdcbb6df7cca4ee3094f95f8e6499569f6ba00cd621eb3daa062",
+    "2025plays.csv": "2c58a5ceeae9b653dddc8b4d20fa9b3810bfd3a6d40c29786509c5e060a5f23f"
+  },
+  "duplicate_event_keys": 0,
+  "hitter_totals_reconciled": 87305,
+  "scalar_score_max_difference": 1.734723475976807e-18,
+  "saved_trace_max_logit_difference": 4.440892098500626e-16,
+  "saved_trace_probability_change_difference": 2.220446049250313e-16,
+  "bootstrap_interval_max_differences": {
+    "opportunity_14": 1.344139643338904e-16,
+    "opportunity_7": 1.032702569292443e-16,
+    "hitter_game_14": 9.161508357502512e-18,
+    "hitter_game_7": 5.095750210681871e-18,
+    "complete_side_14": 2.710505431213761e-20,
+    "complete_side_7": 1.8973538018496328e-19
+  },
+  "no_new_model_fits": true,
+  "scope": "same-assistant independent raw-event/scalar/trace/multiplicity-weight checks; not external review"
+}

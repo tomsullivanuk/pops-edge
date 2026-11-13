@@ -1,0 +1,80 @@
+{
+  "sample_rule": "all regular-season games",
+  "sample_games": 2429,
+  "season_game_types": {
+    "regular": 2429,
+    "allstar": 1,
+    "wildcard": 9,
+    "divisionseries": 18,
+    "lcs": 11,
+    "worldseries": 5
+  },
+  "sample_game_types": {
+    "regular": 2429
+  },
+  "counts": {
+    "play_rows": 189536,
+    "pa": 182449,
+    "unknown_batter_hand": 0,
+    "unknown_pitcher_hand": 0,
+    "pa_by_initial_batter": 175570,
+    "starter_pa": 106910,
+    "starter_iw": 65,
+    "iw": 509,
+    "k_safe": 50,
+    "label_BB": 14420,
+    "starter_label_BB": 8069,
+    "label_other": 126323,
+    "starter_label_other": 75288,
+    "label_K": 41197,
+    "starter_label_K": 23488,
+    "non_pa_rows": 7087
+  },
+  "sample_pitching_rows": 20693,
+  "sample_team_rows": 4858,
+  "initial_starters": 4858,
+  "sample_date_range": [
+    "20240320",
+    "20240930"
+  ],
+  "issues": {
+    "initial_lineup_disagreement": 2,
+    "first_pa_not_recorded_starter": 2
+  },
+  "suspended_games": {
+    "BOS202406260": {
+      "original": "20240626",
+      "resume": "20240826",
+      "play_dates": [
+        "20240626",
+        "20240826"
+      ],
+      "in_sample": true
+    },
+    "CHA202408270": {
+      "original": "20240827",
+      "resume": "20240828",
+      "play_dates": [
+        "20240827",
+        "20240828"
+      ],
+      "in_sample": true
+    },
+    "SLN202405210": {
+      "original": "20240521",
+      "resume": "20240522",
+      "play_dates": [
+        "20240521",
+        "20240522"
+      ],
+      "in_sample": true
+    }
+  },
+  "source_hashes": {
+    "2024allplayers.csv": "f2db65240b30c27d9b976ec9240c0a9835eb3e86a3da74c45c299ee5bbd24688",
+    "2024gameinfo.csv": "1ff621223673db3ee28fd56d38649495055d6355c84d173ebece280c4aa51099",
+    "2024pitching.csv": "69037ac7ff37e47b0dd0e8d876ed21b5cf35d503905b551505c965fa7f877e22",
+    "2024plays.csv": "59cdb1efcaebcdcbb6df7cca4ee3094f95f8e6499569f6ba00cd621eb3daa062",
+    "2024teamstats.csv": "978454bedb5e783fe43d30bf2fa301278f8eb2370f44986c46f0069200e38efe"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "repository": {
+    "research/pregame_2027/experiment_01/input_manifest.json": "06911eba7841b5d826810f1264c2455261b32e5f56919ed48f2582e4400f6124",
+    "research/pregame_2027/experiment_01/run.py": "681ebc30d49293401c634f78fdf9a70216e8697877e10f5042c4fac8503e5f34",
+    "research/pregame_2027/experiment_02/PROTOCOL.md": "d0551372315bc0962be35f821fa2ad80b7da7aebbe4107195719b65c6d221641",
+    "research/pregame_2027/experiment_02/SETTINGS.json": "d3c1c393454542d3ede4fde9baf79c8ad390f1bc1c8b06652ba318885e255320",
+    "research/pregame_2027/experiment_02/provenance.json": "f8daefb6677efcc1ae251993e10708dac79bf96c83ba3d5c6d0ab9b33c429d9f",
+    "research/pregame_2027/experiment_02/results.json": "2a2d410892b606edb242c128268ee0466c6fa0223957475b9fb315885a23736a"
+  },
+  "retained_v2_output": {
+    "predictions.json": "4985830c0abf446ef43be4d919112a2f809020b5831abb64740f263d0e8a656f",
+    "provenance.json": "f8daefb6677efcc1ae251993e10708dac79bf96c83ba3d5c6d0ab9b33c429d9f"
+  }
+}

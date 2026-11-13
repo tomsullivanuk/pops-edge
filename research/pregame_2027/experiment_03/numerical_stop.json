@@ -1,0 +1,14 @@
+{
+  "model": "baseline",
+  "gamma": 0.1,
+  "rows": 181577,
+  "iterations": 61,
+  "seconds": 1.0156037920387462,
+  "success": true,
+  "message": "CONVERGENCE: RELATIVE REDUCTION OF F <= FACTR*EPSMCH",
+  "gradient_infinity": 0.00010391837730386409,
+  "objective": 140416.50179047725,
+  "accepted": false,
+  "validation_scores_produced": false,
+  "outer_forecasts_produced": false
+}

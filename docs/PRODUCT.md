@@ -1,5 +1,7 @@
 # PRODUCT
 
+Canonical research inventory: [MLB model experiment register](MLB_MODEL_EXPERIMENT_REGISTER.md) — 24 completed campaigns/studies/diagnostics/evaluations, with stable IDs, source lineage and current decisions. Use it for cross-experiment discussion; dated proposals and decisions below retain their history.
+
 ## v1.3 Part 2 — adopted Performance readers
 
 The Owner adopted weekly NFL results alongside the established MLB reader. Performance is read-only; cumulative NFL charts/season aggregates and Administration update controls are explicitly deferred. See [reader contract](PERFORMANCE_READERS_v1.3.md). The implementation candidate adds the previously deferred reader without changing measurement authority.
@@ -834,3 +836,46 @@ The Owner adopted and authorized implementation of the [bounded update workflow]
 The Owner authorized regular-season and postseason winner-probability evaluation, preserving all accepted regular-season lineage and adding a separate prospective postseason cohort from scheduled start October 11, 2026 00:00 America/Chicago. T−6h remains the observation target. Earlier postseason games are outside this extension; historical backfill and native-model changes are excluded.
 
 MLB Performance selects Regular season or Postseason and presents separate population, Coverage and scores; the established regular-season report remains the default. The manual Performance update prepares both reports when postseason collection authority is configured, with visible postseason failure while retaining the previous valid package. The MLB Bet Sheet offers All phases/Regular season/Postseason filtering of saved rows, and admits supported postseason pregame winner markets from the same boundary using existing identity and price checks. Navigation never starts acquisition. This adopted scope supersedes the earlier postseason deferral in the bounded Bet Sheet scope. [Decision](MLB_PHASE_EVALUATION_2026-10-09.md).
+
+## 2027 in-house pregame direction — October 12, 2026
+
+The Owner requested a separate regular-season in-house winner model aimed at selective, understandable Kalshi opportunities, starting with paper alerts. T−6h remains authoritative for existing studies but is not a constraint on this product. Lineups before first pitch are a working assumption, with observed timing investigated separately. Model disagreement is not demonstrated undervaluation; forecast scoring and cost/depth/latency-aware selected returns require separate evidence. No wagering, purchases, new credentials or production changes are authorized.
+
+The [first experiment and decision record](MLB_2027_PREGAME_MODEL.md) proposes one bounded opponent-adjusted team-strength challenger and a lineup-ready three-check window. Both are proposals for discussion; no model execution or alert implementation is approved. Existing native-model findings and all regular/postseason protocols remain unchanged.
+
+October 12 follow-up: Tom approved the single offline strength-rating comparison, five focused working-day cap and continuation gate after discussion. The [execution protocol](../research/pregame_2027/experiment_01/PROTOCOL.md) freezes inputs and evaluation before fitting. This supersedes the preceding pending-model-execution statement for that comparison only. Paper-alert implementation, new collection, wagering and production changes remain unapproved.
+
+October 12 result: the [single strength experiment](../research/pregame_2027/experiment_01/RESULTS.md) completed and failed its continuation gate (average annual Brier gain 0.000334 <0.001). Keep the existing native reference; no challenger promotion or further model sweep is authorized. Paper workflow discussion remains possible but forecast and selected-return evidence are unestablished. Existing studies and production state remain unchanged.
+
+October 12 research discussion: Tom’s hypothesis is that modern AI methods may improve native forecasts against the agreed sportsbook proxy. The [current modern-ML proposal](MLB_2027_MODERN_ML_PROPOSAL.md) recommends a conditional single TabPFN core comparison with a bounded boosting control, before larger player/pitch models. This is not approved training, model admission, access/license acceptance or production scope; the failed strength challenger remains closed.
+
+October 12 setup review: the [actual license/access and compute assessment](MLB_2027_MODEL_ACCESS_COMPUTE_REVIEW.md) identifies 3.5 consumer eligibility as unresolved for the personal hobby use. Local compute is plausible but unbenchmarked; v2 is an explicit, unapproved alternative. No installation, license acceptance, model acquisition or training has occurred.
+
+
+## Completed bounded v2 comparison — October 12
+
+The authorized local comparison is complete; this supersedes earlier pending-status entries. [Experiment 02 results](../research/pregame_2027/experiment_02/RESULTS.md) record exact reference replay, 7,280 chronological development forecasts, and independent score/bootstrap verification. TabPFN-v2 improved average annual Brier by 0.000057915 versus the required 0.001; CatBoost worsened it by 0.000479901. Both fail their frozen gates. Sportsbook opening consensus remains better on both proper scores in each year on the original common population. These are reused development seasons, not untouched holdouts. Retain the reference and promote neither learner; no further tuning is authorized automatically.
+
+The pinned v2 checkpoint worked on local Metal without paid compute or model-service uploads. The separate 3.5 licensing inquiry remains pending. Existing collectors, T−6h studies, production pins and schedules remain intact; draft PR 86 remains for review and is not approved for merge.
+
+
+## Player-information assessment and final lineup evidence — October 12
+
+The [WAR/player-input gap assessment](MLB_2027_PLAYER_INFORMATION_GAPS.md) distinguishes retained winner inputs, tested extensions, owned raw information and missing player-quality measures. Recommend discussing one timestamped preseason lineup-offense projection comparison against our lagged rates, holding lineups/weights/game learner fixed; external vintage, membership/export access and identity readiness must be verified first. This is a read-only proposal, with no new acquisition or fit authorized.
+
+The [final two-game lineup observation](MLB_2027_LINEUP_OBSERVATION_FINAL.md) supersedes interim pending status: all four complete orders appeared more than three hours before scheduled starts. Preserve the process-loss gap, first-game premature Warmup stop and corrected second-game stop; actual first pitch and explicit pitcher confirmation remain unknown. The single observer has ended. This supports the practical working assumption for two games, not general reliability or model edge; T−6h studies remain intact.
+
+
+## Approved Steamer comparison completed
+
+Tom approved the matched winner comparison at `1d64e15`; implementation was frozen at `43d8161` before fitting. [Experiment 04 results](../research/pregame_2027/experiment_04/RESULTS.md): 2024 control-minus-Steamer Brier +0.001005688, 2025 −0.000057538; average +0.000474075 versus required +0.001, with 14-day interval [−0.000423151,+0.001021038]. Both information-improvement and sportsbook-competitiveness gates fail. Exact prediction replay and separate measurement/bootstrap checks pass, with every game retained and declared missing-player fallbacks. Close this tested specification without retuning, promotion or integration. Reused-development and archive-vintage limitations remain explicit; production/T−6h protocols stay intact.
+
+
+## October 16: v3.5 core comparison completed
+
+The authorized [experiment 05 / M16](MLB_MODEL_EXPERIMENT_REGISTER.md#m16-experiment-05-v35-core) completed under a pre-result freeze. Mean annual Brier gain versus the unchanged ten-input logistic is −0.000026672 (14-day interval [−0.000269930,+0.000185215]), versus required +0.001; pooled log loss also worsens. The continuation gate fails. Sportsbook opening consensus remains better on both scores in every year on original shared cohorts. Saved v2/CatBoost forecasts remain unchanged. Local feasibility passed; no automatic promotion, tuning, alternate model or follow-on experiment is authorized. Preserve reused-development limitations, the research pause and separate unexecuted payroll/WAR hypotheses. No production/T−6h or policy change.
+
+
+## October 18: approved lineup-WAR design, data gate blocked
+
+Tom approved [P05](MLB_MODEL_EXPERIMENT_REGISTER.md#supporting-work-and-proposals-outside-the-completed-count): preseason, prior-game observed and player-level PA-dependent blended position-player WAR rates, each replacing recent team features and each adding to baseline, with fixed starter inputs. Retained exports have WAR/PA, but compatible dated observed WAR/PA and defensible publication/version semantics are not established; no fitting or substitute experiment ran. The six-arm protocol and independently reviewed audit preserve the approved design and stop dependent execution at that exact data gap. Completed count stays 24; payroll and production/T−6h studies remain separate.

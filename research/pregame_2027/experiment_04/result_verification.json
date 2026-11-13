@@ -1,0 +1,15 @@
+{
+  "control_vs_steamer_block14": 3.903127820947816e-18,
+  "control_vs_steamer_block7": 5.366800753803247e-18,
+  "sportsbook_vs_steamer_block14": 6.152847328855238e-18,
+  "sportsbook_vs_steamer_block7": 7.196391919872536e-18,
+  "saved_probability_replay": {
+    "control_2024": 0.0,
+    "steamer_2024": 0.0,
+    "control_2025": 0.0,
+    "steamer_2025": 0.0
+  },
+  "scalar_score_max_difference": 1.1102230246251565e-16,
+  "coverage_all_games_retained": true,
+  "verification_scope": "same-assistant independent arithmetic/replay and all bootstrap Brier draws; no external reviewer"
+}

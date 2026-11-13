@@ -1,0 +1,30 @@
+{
+  "rows": 729517,
+  "sources": {
+    "2022plays.csv": "c4fb40bc1778788f2172e6666888a683e6dd6fdcc37ad2fabf979bd2a7549a52",
+    "2022pitching.csv": "7dfbfcd354484a70d4f1040a78a352996887687c01ab77763435c8cf8a7de15d",
+    "2022gameinfo.csv": "e31c013d209959bb80c21bfca99bc8d9a46d0a63ec5f561c286ebd8df60d53a3",
+    "2022teamstats.csv": "b9c24b96f9aaf3f905142e28fbfd94d3c02a41ae4d75c89cf339e994c07ab1c7",
+    "2022allplayers.csv": "a51da885ace4058b9a2380261fb6b1359e1187e1950522b0b99c738658dbcad8",
+    "2023plays.csv": "6bb43ed0037cdf1a0f6b5ad631646afa3b23a28a77cfa61a05f940cf9b4f2d23",
+    "2023allplayers.csv": "46feadd548aead347486c4f32ee91b69fb08a9be94ac74771cd042b13837c75e",
+    "2023gameinfo.csv": "5b8d058f6034d1f7f83a61cc9a03916db1c683fe052ca3346a64fc3bfad45906",
+    "2023teamstats.csv": "f55819c311e734a7cb24afde1b74401ba2d5c5e6a96fccf5485b0a70b54c5abb",
+    "2023pitching.csv": "be61d107ff7d9cb59d025cc29de4f8e2ad1e649e41e6e027eb525b684a62c289",
+    "2024allplayers.csv": "f2db65240b30c27d9b976ec9240c0a9835eb3e86a3da74c45c299ee5bbd24688",
+    "2024pitching.csv": "69037ac7ff37e47b0dd0e8d876ed21b5cf35d503905b551505c965fa7f877e22",
+    "2024plays.csv": "59cdb1efcaebcdcbb6df7cca4ee3094f95f8e6499569f6ba00cd621eb3daa062",
+    "2024gameinfo.csv": "1ff621223673db3ee28fd56d38649495055d6355c84d173ebece280c4aa51099",
+    "2024teamstats.csv": "978454bedb5e783fe43d30bf2fa301278f8eb2370f44986c46f0069200e38efe",
+    "2025plays.csv": "2c58a5ceeae9b653dddc8b4d20fa9b3810bfd3a6d40c29786509c5e060a5f23f",
+    "2025teamstats.csv": "9f37b2a1ff6a7786ca03de1918f8c2364590b06bb703b077d590200f32ddc943",
+    "2025gameinfo.csv": "d56becd2427fe846f562cf94c7569c6dad97764caf79037047f3897a6c9e914b",
+    "2025allplayers.csv": "20f3f1f3573eb0e985a32808b94c61107e926e6b1798c16e3e76da30791c5117",
+    "2025pitching.csv": "1c7556cf743939d396464d32a88eaee42c6264aa91520c49ffaa1a5f08eff64e"
+  },
+  "history_decay_day": "complete-game availability date",
+  "window": "D-365 through D-1 inclusive",
+  "pid_count": 1512,
+  "bid_count": 1052,
+  "game_count": 9719
+}

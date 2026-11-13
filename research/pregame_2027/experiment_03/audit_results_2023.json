@@ -1,0 +1,106 @@
+{
+  "sample_rule": "all regular-season games",
+  "sample_games": 2430,
+  "season_game_types": {
+    "regular": 2430,
+    "allstar": 1,
+    "wildcard": 8,
+    "divisionseries": 14,
+    "lcs": 14,
+    "worldseries": 5
+  },
+  "sample_game_types": {
+    "regular": 2430
+  },
+  "counts": {
+    "play_rows": 191073,
+    "pa": 184104,
+    "unknown_batter_hand": 0,
+    "unknown_pitcher_hand": 0,
+    "pa_by_initial_batter": 177226,
+    "starter_pa": 106321,
+    "starter_iw": 58,
+    "iw": 474,
+    "k_safe": 74,
+    "label_K": 41843,
+    "starter_label_K": 23508,
+    "label_other": 126442,
+    "starter_label_other": 74408,
+    "label_BB": 15345,
+    "starter_label_BB": 8347,
+    "non_pa_rows": 6969
+  },
+  "sample_pitching_rows": 20630,
+  "sample_team_rows": 4860,
+  "initial_starters": 4860,
+  "sample_date_range": [
+    "20230330",
+    "20231001"
+  ],
+  "issues": {
+    "initial_lineup_disagreement": 2
+  },
+  "suspended_games": {
+    "BOS202307210": {
+      "original": "20230721",
+      "resume": "20230722",
+      "play_dates": [
+        "20230721",
+        "20230722"
+      ],
+      "in_sample": true
+    },
+    "CIN202307170": {
+      "original": "20230717",
+      "resume": "20230718",
+      "play_dates": [
+        "20230717",
+        "20230718"
+      ],
+      "in_sample": true
+    },
+    "CLE202308230": {
+      "original": "20230823",
+      "resume": "20230824",
+      "play_dates": [
+        "20230823",
+        "20230824"
+      ],
+      "in_sample": true
+    },
+    "DET202309270": {
+      "original": "20230927",
+      "resume": "20230928",
+      "play_dates": [
+        "20230927",
+        "20230928"
+      ],
+      "in_sample": true
+    },
+    "SLN202307140": {
+      "original": "20230714",
+      "resume": "20230715",
+      "play_dates": [
+        "20230714",
+        "20230715"
+      ],
+      "in_sample": true
+    },
+    "WAS202305130": {
+      "original": "20230513",
+      "resume": "20230514",
+      "play_dates": [
+        "20230513",
+        "20230514"
+      ],
+      "in_sample": true
+    }
+  },
+  "source_hashes": {
+    "2023allplayers.csv": "46feadd548aead347486c4f32ee91b69fb08a9be94ac74771cd042b13837c75e",
+    "2023gameinfo.csv": "5b8d058f6034d1f7f83a61cc9a03916db1c683fe052ca3346a64fc3bfad45906",
+    "2023pitching.csv": "be61d107ff7d9cb59d025cc29de4f8e2ad1e649e41e6e027eb525b684a62c289",
+    "2023plays.csv": "6bb43ed0037cdf1a0f6b5ad631646afa3b23a28a77cfa61a05f940cf9b4f2d23",
+    "2023teamstats.csv": "f55819c311e734a7cb24afde1b74401ba2d5c5e6a96fccf5485b0a70b54c5abb"
+  }
+}

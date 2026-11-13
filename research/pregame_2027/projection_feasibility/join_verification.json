@@ -1,0 +1,9 @@
+{
+  "identity_candidate_games": 9704,
+  "independent_post_join_score_mismatches": 0,
+  "two_sides_unique_nine_and_player_registry_checks": "passed",
+  "lineup_slots": 174672,
+  "unique_batter_ids_across_years": 1022,
+  "scores_used_for_join_selection": false,
+  "projection_player_crosswalk_built": false
+}

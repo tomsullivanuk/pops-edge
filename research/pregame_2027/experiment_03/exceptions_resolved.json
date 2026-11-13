@@ -1,0 +1,22 @@
+{
+  "2022": {
+    "zero_completed_PA_starters": 1,
+    "initial_batter_replaced_before_any_PA": 2,
+    "other_issues": {}
+  },
+  "2023": {
+    "zero_completed_PA_starters": 0,
+    "initial_batter_replaced_before_any_PA": 2,
+    "other_issues": {}
+  },
+  "2024": {
+    "zero_completed_PA_starters": 2,
+    "initial_batter_replaced_before_any_PA": 2,
+    "other_issues": {}
+  },
+  "2025": {
+    "zero_completed_PA_starters": 0,
+    "initial_batter_replaced_before_any_PA": 3,
+    "other_issues": {}
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "status": "local_preparation_complete_model_access_paused",
+  "owner_research_authorized": true,
+  "eligibility_basis_not_asserted": true,
+  "checkpoint_downloaded": false,
+  "model_constructed_or_used": false,
+  "terms_accepted": false,
+  "new_credentials": false,
+  "paid_compute": false,
+  "data_transmitted": false,
+  "input_manifest": {
+    "path": "../experiment_02/input_manifest.json",
+    "sha256": "8ae387f6041e58b49491dbbe523c40e210ccdccedb261acf9f6ded8ae7f8955b",
+    "files_checked": 38,
+    "mismatches": []
+  },
+  "packages": {
+    "python": "3.14.5",
+    "tabpfn": "9.1.0",
+    "torch": "2.14.1",
+    "numpy": "2.5.3",
+    "scipy": "1.18.1",
+    "scikit-learn": "1.9.1",
+    "catboost": "1.2.10"
+  },
+  "mps": {
+    "built": true,
+    "available_in_sandbox": false,
+    "available_host_read_only_check": true,
+    "recommended_max_memory_bytes": 12713115648,
+    "v35_capacity_tested": false
+  },
+  "candidate": {
+    "repository": "Prior-Labs/tabpfn_3_5",
+    "revision": "06bf2ba35c80a92a3b9abb436b99cf49e7a0365e",
+    "filename": "tabpfn-v3.5-20260909.safetensors",
+    "bytes": 876027932,
+    "advertised_lfs_sha256": "ece4d67eadfea42eb0e610df5189bea60cb7f31073d81e9c7a019b76eacf0be3",
+    "locally_verified_weight_hash": null,
+    "metadata_gated": false,
+    "license_text_sha256": "9570fdd687bb76ed45499412ad57d6ba949848e6d731f1242572bb57f2f73ae1"
+  },
+  "source_urls": [
+    "https://huggingface.co/api/models/Prior-Labs/tabpfn_3_5?blobs=true",
+    "https://huggingface.co/Prior-Labs/tabpfn_3_5/raw/main/LICENSE",
+    "https://huggingface.co/Prior-Labs/tabpfn_3_5/raw/main/README.md",
+    "https://raw.githubusercontent.com/PriorLabs/TabPFN/main/README.md",
+    "https://docs.priorlabs.ai/models",
+    "https://priorlabs.ai/general-terms-and-conditions",
+    "https://priorlabs.ai/aup"
+  ]
+}

@@ -1,0 +1,472 @@
+{
+  "2024": {
+    "baseline": {
+      "K": [
+        {
+          "lower": 0.0,
+          "upper": 0.1,
+          "PA": 1528,
+          "mean_probability": 0.082200902806095,
+          "frequency": 0.08573298429319372
+        },
+        {
+          "lower": 0.1,
+          "upper": 0.2,
+          "PA": 40726,
+          "mean_probability": 0.16276931598457775,
+          "frequency": 0.16286892893974364
+        },
+        {
+          "lower": 0.2,
+          "upper": 0.3,
+          "PA": 51671,
+          "mean_probability": 0.2433325012154641,
+          "frequency": 0.24297962106403978
+        },
+        {
+          "lower": 0.3,
+          "upper": 0.4,
+          "PA": 11958,
+          "mean_probability": 0.3338573046470786,
+          "frequency": 0.3204549255728383
+        },
+        {
+          "lower": 0.4,
+          "upper": 0.5,
+          "PA": 939,
+          "mean_probability": 0.4279680509581179,
+          "frequency": 0.3514376996805112
+        },
+        {
+          "lower": 0.5,
+          "upper": 0.6,
+          "PA": 23,
+          "mean_probability": 0.5138147323474422,
+          "frequency": 0.30434782608695654
+        }
+      ],
+      "BB": [
+        {
+          "lower": 0.0,
+          "upper": 0.1,
+          "PA": 87509,
+          "mean_probability": 0.06969341615841641,
+          "frequency": 0.06694168599801163
+        },
+        {
+          "lower": 0.1,
+          "upper": 0.2,
+          "PA": 19262,
+          "mean_probability": 0.11925622007260277,
+          "frequency": 0.11405876855985879
+        },
+        {
+          "lower": 0.2,
+          "upper": 0.3,
+          "PA": 74,
+          "mean_probability": 0.21500058178103557,
+          "frequency": 0.1891891891891892
+        }
+      ],
+      "other": [
+        {
+          "lower": 0.3,
+          "upper": 0.4,
+          "PA": 23,
+          "mean_probability": 0.38654756777127713,
+          "frequency": 0.5217391304347826
+        },
+        {
+          "lower": 0.4,
+          "upper": 0.5,
+          "PA": 899,
+          "mean_probability": 0.4705868909807177,
+          "frequency": 0.5550611790878754
+        },
+        {
+          "lower": 0.5,
+          "upper": 0.6,
+          "PA": 9787,
+          "mean_probability": 0.5653154337703158,
+          "frequency": 0.5870031674670482
+        },
+        {
+          "lower": 0.6,
+          "upper": 0.7,
+          "PA": 40781,
+          "mean_probability": 0.658312401981733,
+          "frequency": 0.6629803094578357
+        },
+        {
+          "lower": 0.7,
+          "upper": 0.8,
+          "PA": 46957,
+          "mean_probability": 0.7439166049913154,
+          "frequency": 0.7474497944928339
+        },
+        {
+          "lower": 0.8,
+          "upper": 0.9,
+          "PA": 8169,
+          "mean_probability": 0.8257595930798708,
+          "frequency": 0.8185824458318032
+        },
+        {
+          "lower": 0.9,
+          "upper": 1.0,
+          "PA": 229,
+          "mean_probability": 0.9187761136915544,
+          "frequency": 0.9170305676855895
+        }
+      ]
+    },
+    "challenger": {
+      "K": [
+        {
+          "lower": 0.0,
+          "upper": 0.1,
+          "PA": 1521,
+          "mean_probability": 0.08200280507548337,
+          "frequency": 0.08744247205785667
+        },
+        {
+          "lower": 0.1,
+          "upper": 0.2,
+          "PA": 39199,
+          "mean_probability": 0.16313950796036106,
+          "frequency": 0.16051429883415394
+        },
+        {
+          "lower": 0.2,
+          "upper": 0.3,
+          "PA": 53078,
+          "mean_probability": 0.24363913302493487,
+          "frequency": 0.24181393421003053
+        },
+        {
+          "lower": 0.3,
+          "upper": 0.4,
+          "PA": 12262,
+          "mean_probability": 0.33275820987004257,
+          "frequency": 0.32107323438264557
+        },
+        {
+          "lower": 0.4,
+          "upper": 0.5,
+          "PA": 762,
+          "mean_probability": 0.4268321841317844,
+          "frequency": 0.3674540682414698
+        },
+        {
+          "lower": 0.5,
+          "upper": 0.6,
+          "PA": 23,
+          "mean_probability": 0.5148984591998261,
+          "frequency": 0.4782608695652174
+        }
+      ],
+      "BB": [
+        {
+          "lower": 0.0,
+          "upper": 0.1,
+          "PA": 88119,
+          "mean_probability": 0.06975675070409201,
+          "frequency": 0.06743154143828232
+        },
+        {
+          "lower": 0.1,
+          "upper": 0.2,
+          "PA": 18636,
+          "mean_probability": 0.11885118218794304,
+          "frequency": 0.11311440223223868
+        },
+        {
+          "lower": 0.2,
+          "upper": 0.3,
+          "PA": 90,
+          "mean_probability": 0.21477969867681013,
+          "frequency": 0.2111111111111111
+        }
+      ],
+      "other": [
+        {
+          "lower": 0.3,
+          "upper": 0.4,
+          "PA": 25,
+          "mean_probability": 0.3777909841783065,
+          "frequency": 0.48
+        },
+        {
+          "lower": 0.4,
+          "upper": 0.5,
+          "PA": 805,
+          "mean_probability": 0.4722679740995671,
+          "frequency": 0.5428571428571428
+        },
+        {
+          "lower": 0.5,
+          "upper": 0.6,
+          "PA": 9584,
+          "mean_probability": 0.566162662836305,
+          "frequency": 0.5854549248747913
+        },
+        {
+          "lower": 0.6,
+          "upper": 0.7,
+          "PA": 42186,
+          "mean_probability": 0.6581369959544972,
+          "frequency": 0.6628502346750107
+        },
+        {
+          "lower": 0.7,
+          "upper": 0.8,
+          "PA": 46263,
+          "mean_probability": 0.7436968312301768,
+          "frequency": 0.7494325919201089
+        },
+        {
+          "lower": 0.8,
+          "upper": 0.9,
+          "PA": 7750,
+          "mean_probability": 0.825340083576521,
+          "frequency": 0.8232258064516129
+        },
+        {
+          "lower": 0.9,
+          "upper": 1.0,
+          "PA": 232,
+          "mean_probability": 0.9183683788139898,
+          "frequency": 0.9224137931034483
+        }
+      ]
+    }
+  },
+  "2025": {
+    "baseline": {
+      "K": [
+        {
+          "lower": 0.0,
+          "upper": 0.1,
+          "PA": 2290,
+          "mean_probability": 0.08035748103618032,
+          "frequency": 0.0816593886462882
+        },
+        {
+          "lower": 0.1,
+          "upper": 0.2,
+          "PA": 39464,
+          "mean_probability": 0.16249613138328067,
+          "frequency": 0.15974052300831137
+        },
+        {
+          "lower": 0.2,
+          "upper": 0.3,
+          "PA": 52483,
+          "mean_probability": 0.2432732788474168,
+          "frequency": 0.24419335784920831
+        },
+        {
+          "lower": 0.3,
+          "upper": 0.4,
+          "PA": 11532,
+          "mean_probability": 0.3324822365833269,
+          "frequency": 0.31807145334720777
+        },
+        {
+          "lower": 0.4,
+          "upper": 0.5,
+          "PA": 658,
+          "mean_probability": 0.42360725402062593,
+          "frequency": 0.40577507598784196
+        },
+        {
+          "lower": 0.5,
+          "upper": 0.6,
+          "PA": 2,
+          "mean_probability": 0.5092876127233997,
+          "frequency": 0.0
+        }
+      ],
+      "BB": [
+        {
+          "lower": 0.0,
+          "upper": 0.1,
+          "PA": 85232,
+          "mean_probability": 0.06989923569980168,
+          "frequency": 0.06806129153369626
+        },
+        {
+          "lower": 0.1,
+          "upper": 0.2,
+          "PA": 21159,
+          "mean_probability": 0.11910532408380665,
+          "frequency": 0.11399404508719693
+        },
+        {
+          "lower": 0.2,
+          "upper": 0.3,
+          "PA": 38,
+          "mean_probability": 0.2087427732563775,
+          "frequency": 0.13157894736842105
+        }
+      ],
+      "other": [
+        {
+          "lower": 0.3,
+          "upper": 0.4,
+          "PA": 6,
+          "mean_probability": 0.3930892409472102,
+          "frequency": 0.3333333333333333
+        },
+        {
+          "lower": 0.4,
+          "upper": 0.5,
+          "PA": 522,
+          "mean_probability": 0.4783332344306233,
+          "frequency": 0.5268199233716475
+        },
+        {
+          "lower": 0.5,
+          "upper": 0.6,
+          "PA": 9623,
+          "mean_probability": 0.5666447579089657,
+          "frequency": 0.5823547750181856
+        },
+        {
+          "lower": 0.6,
+          "upper": 0.7,
+          "PA": 41967,
+          "mean_probability": 0.6572735639508174,
+          "frequency": 0.6617818762360903
+        },
+        {
+          "lower": 0.7,
+          "upper": 0.8,
+          "PA": 45272,
+          "mean_probability": 0.7437871532956145,
+          "frequency": 0.7464216292631207
+        },
+        {
+          "lower": 0.8,
+          "upper": 0.9,
+          "PA": 8715,
+          "mean_probability": 0.826902359722246,
+          "frequency": 0.8294893861158922
+        },
+        {
+          "lower": 0.9,
+          "upper": 1.0,
+          "PA": 324,
+          "mean_probability": 0.9166515240774785,
+          "frequency": 0.9074074074074074
+        }
+      ]
+    },
+    "challenger": {
+      "K": [
+        {
+          "lower": 0.0,
+          "upper": 0.1,
+          "PA": 1876,
+          "mean_probability": 0.07944187512680304,
+          "frequency": 0.07835820895522388
+        },
+        {
+          "lower": 0.1,
+          "upper": 0.2,
+          "PA": 37837,
+          "mean_probability": 0.16309849734611534,
+          "frequency": 0.15646060734201972
+        },
+        {
+          "lower": 0.2,
+          "upper": 0.3,
+          "PA": 54349,
+          "mean_probability": 0.24417700472663606,
+          "frequency": 0.24134758689212313
+        },
+        {
+          "lower": 0.3,
+          "upper": 0.4,
+          "PA": 11881,
+          "mean_probability": 0.3321329141922872,
+          "frequency": 0.3246359734029122
+        },
+        {
+          "lower": 0.4,
+          "upper": 0.5,
+          "PA": 486,
+          "mean_probability": 0.4206009319281794,
+          "frequency": 0.41358024691358025
+        }
+      ],
+      "BB": [
+        {
+          "lower": 0.0,
+          "upper": 0.1,
+          "PA": 86855,
+          "mean_probability": 0.06969493150469251,
+          "frequency": 0.0679293074664671
+        },
+        {
+          "lower": 0.1,
+          "upper": 0.2,
+          "PA": 19529,
+          "mean_probability": 0.11827658789375152,
+          "frequency": 0.11833683240309284
+        },
+        {
+          "lower": 0.2,
+          "upper": 0.3,
+          "PA": 45,
+          "mean_probability": 0.2128580563593194,
+          "frequency": 0.15555555555555556
+        }
+      ],
+      "other": [
+        {
+          "lower": 0.4,
+          "upper": 0.5,
+          "PA": 350,
+          "mean_probability": 0.4816328616721714,
+          "frequency": 0.5371428571428571
+        },
+        {
+          "lower": 0.5,
+          "upper": 0.6,
+          "PA": 9440,
+          "mean_probability": 0.568069829364955,
+          "frequency": 0.579343220338983
+        },
+        {
+          "lower": 0.6,
+          "upper": 0.7,
+          "PA": 43749,
+          "mean_probability": 0.6571132683172135,
+          "frequency": 0.662552286909415
+        },
+        {
+          "lower": 0.7,
+          "upper": 0.8,
+          "PA": 44579,
+          "mean_probability": 0.7434265408650863,
+          "frequency": 0.74905224433029
+        },
+        {
+          "lower": 0.8,
+          "upper": 0.9,
+          "PA": 7970,
+          "mean_probability": 0.8258071664064072,
+          "frequency": 0.8306148055207027
+        },
+        {
+          "lower": 0.9,
+          "upper": 1.0,
+          "PA": 341,
+          "mean_probability": 0.9170106762940949,
+          "frequency": 0.9208211143695014
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "status": "passed",
+  "independent_count_totals": {
+    "rows": 7760,
+    "pa": 7496,
+    "K": 1733,
+    "BB": 590,
+    "iw": 13,
+    "regular_pa": 7343
+  },
+  "positive_bfp_pitcher_keys_match": true,
+  "two_archives_parsed_plays_identical": true,
+  "model_fits": 0,
+  "transfer_bytes": 17438021,
+  "extracted_bytes": 114285832,
+  "same_assistant_separate_check": true
+}

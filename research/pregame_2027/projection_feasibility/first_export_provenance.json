@@ -1,0 +1,13 @@
+{
+  "source": "Owner-supplied exact export-page URL",
+  "url": "https://www.fangraphs.com/projections?type=steamer_2024&stats=bat&pos=all&team=0&players=0&lg=all&z=1791788191&sortcol=1&sortdir=desc&pageitems=30&statgroup=dashboard&fantasypreset=dashboard",
+  "query_type": "steamer_2024",
+  "query_stats": "bat",
+  "selected_year": 2024,
+  "artifact_sha256": "9ca0ec996bd1c8d8174a202d6b64b3e36c3af7c86531f60f322a36ef8892fcc8",
+  "provenance_scope": "supports reported historical 2024 Steamer batter selection; browser action not independently observed",
+  "original_release_timestamp_verified": false,
+  "archive_immutability_verified": false,
+  "generic_page_title_not_selection_evidence": true,
+  "further_owner_question_for_first_file_needed": false
+}

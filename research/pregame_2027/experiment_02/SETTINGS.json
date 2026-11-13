@@ -1,0 +1,99 @@
+{
+  "bootstrap": {
+    "block_lengths": [
+      14,
+      7
+    ],
+    "replicates": 5000,
+    "seed": 20261012
+  },
+  "catboost": {
+    "boosting_type": "Plain",
+    "bootstrap_type": "Bernoulli",
+    "early_stopping_rounds": 50,
+    "eval_metric": "Logloss",
+    "final_iterations": "round weighted-by-validation-games mean of selected best inner iterations, minimum 1",
+    "grid": [
+      {
+        "depth": 3,
+        "l2_leaf_reg": 3,
+        "learning_rate": 0.03
+      },
+      {
+        "depth": 3,
+        "l2_leaf_reg": 3,
+        "learning_rate": 0.08
+      },
+      {
+        "depth": 3,
+        "l2_leaf_reg": 10,
+        "learning_rate": 0.03
+      },
+      {
+        "depth": 3,
+        "l2_leaf_reg": 10,
+        "learning_rate": 0.08
+      },
+      {
+        "depth": 5,
+        "l2_leaf_reg": 3,
+        "learning_rate": 0.03
+      },
+      {
+        "depth": 5,
+        "l2_leaf_reg": 3,
+        "learning_rate": 0.08
+      },
+      {
+        "depth": 5,
+        "l2_leaf_reg": 10,
+        "learning_rate": 0.03
+      },
+      {
+        "depth": 5,
+        "l2_leaf_reg": 10,
+        "learning_rate": 0.08
+      }
+    ],
+    "loss_function": "Logloss",
+    "max_iterations": 1000,
+    "random_seed": 20261012,
+    "random_strength": 1.0,
+    "selection": "lowest pooled inner-fold Brier; tie lowest pooled log loss then grid order",
+    "subsample": 0.8,
+    "task_type": "CPU",
+    "thread_count": 4
+  },
+  "effort_cap_focused_days": 5,
+  "features": [
+    "x_win60",
+    "x_rd60",
+    "x_rd10",
+    "progress_centered",
+    "progress_x_win60",
+    "progress_x_rd60",
+    "progress_x_rd10",
+    "starter_kbb",
+    "starter_hr",
+    "starter_ip"
+  ],
+  "largest_fold_rows": 9704,
+  "maximum_fold_wall_seconds": 1800,
+  "post_fit_calibration": false,
+  "seed": 20261012,
+  "tabpfn": {
+    "average_before_softmax": false,
+    "balance_probabilities": false,
+    "batch_rows": 128,
+    "device": "mps",
+    "estimators": 4,
+    "fit_mode": "fit_with_cache",
+    "max_batched_estimator_rows": 0,
+    "memory_fraction": 0.5,
+    "n_preprocessing_jobs": 1,
+    "precision": "float32",
+    "random_state": 20261012,
+    "softmax_temperature": 0.9,
+    "version": "v2"
+  }
+}
