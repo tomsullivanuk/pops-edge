@@ -2,6 +2,7 @@
 import argparse
 import base64
 import csv
+from datetime import datetime, timezone
 import io
 import json
 import os
@@ -22,6 +23,7 @@ import nfl_comparison_board as board
 import retrieve_kalshi_nfl as kalshi
 from nfl_performance import Performance
 from nfl_refresh_replay import RefreshPerformance
+from nfl_inbox import classify, newest, LABELS
 
 MAX_REQUEST=24*1024*1024
 
@@ -31,9 +33,12 @@ def baseline_time(value):
 
 
 class Workflow:
-    def __init__(self,root):
-        self.root=Path(root).resolve();self.inbox=self.root/'Downloads/NFL';self.data=self.root/'Data/NFL'
-        self.inbox.mkdir(parents=True,exist_ok=True);self.data.mkdir(parents=True,exist_ok=True)
+    def __init__(self,root,inbox=None):
+        self.root=Path(root).resolve();self.inbox=Path(inbox).expanduser().resolve() if inbox is not None else self.root/'Downloads/NFL';self.data=self.root/'Data/NFL'
+        # A configured shared folder must already exist. Never manufacture an
+        # empty substitute when iCloud or its configured location is unavailable.
+        if inbox is None:self.inbox.mkdir(parents=True,exist_ok=True)
+        self.data.mkdir(parents=True,exist_ok=True)
         self.lock=threading.Lock();self.status=dict(state='inputs',message='Select an ELWAY workbook and activity export.')
         self.performance_status=dict(state='idle',message='');self.files={};self.candidate=None;self.activity=None;self.review_id=None;self.boards={}
         for path in sorted((self.data/'boards').glob('*/comparison.json')):
@@ -112,12 +117,57 @@ class Workflow:
 
     def catalog(self):
         self.files={};listing=[]
-        for p in sorted(self.inbox.glob('*')):
-            if p.is_symlink() or not p.is_file() or p.suffix.lower() not in ('.xlsx','.csv'):continue
-            identity=source.digest(str(p).encode());self.files[identity]=p
-            fingerprint=source.digest(p.read_bytes()) if 0<p.stat().st_size<=excel.MAX_BYTES else None
-            listing.append(dict(id=identity,name=p.name,kind=p.suffix.lower(),fingerprint=fingerprint))
-        return dict(files=listing,inbox=str(self.inbox),status=self.status,boards=sorted(self.boards),performance=self.performance_config())
+        shared='com~apple~CloudDocs' in self.inbox.parts
+        folder=dict(source='icloud' if shared else 'local',available=False,
+                    label='iCloud Drive / '+str(self.inbox).split('com~apple~CloudDocs/',1)[-1] if shared else 'Local NFL downloads',message='')
+        try:
+            # iterdir raises for a missing/unreadable directory; glob would
+            # silently make that condition look like an empty, healthy inbox.
+            for p in sorted(self.inbox.iterdir()):
+                if p.is_symlink() or not p.is_file() or p.suffix.lower() not in ('.xlsx','.csv'):continue
+                identity=source.digest(str(p).encode())
+                info=p.stat()
+                raw=p.read_bytes() if 0<info.st_size<=excel.MAX_BYTES else b''
+                fingerprint=source.digest(raw) if raw else None
+                input_kind,input_error=classify(p.name,raw)
+                if not fingerprint:input_error='Use a nonempty file up to 8 MB.'
+                after=p.stat()
+                if (after.st_mtime_ns,after.st_size)!=(info.st_mtime_ns,info.st_size):raise OSError('Input changed while scanning')
+                self.files[identity]=p
+                listing.append(dict(id=identity,name=p.name,kind=p.suffix.lower(),fingerprint=fingerprint,
+                                    input_kind=input_kind,input_error=input_error,modified_ns=info.st_mtime_ns,
+                                    modified_at=datetime.fromtimestamp(info.st_mtime,timezone.utc).isoformat()))
+            folder.update(available=True,message=f'{len(listing)} files available on this Mac.' if listing else 'No Excel or CSV files here yet. Save your downloads in this folder and check again.')
+        except OSError:
+            self.files={};listing=[]
+            folder['message']='Cannot read the downloads folder. Check its location, access permissions and iCloud downloads, then check again.'
+        return dict(files=listing,latest_inputs=newest(listing),inbox=str(self.inbox),input_folder=folder,status=self.status,boards=sorted(self.boards),performance=self.performance_config())
+
+    def automatic_inputs(self,kinds):
+        state=self.catalog()
+        if not state['input_folder']['available']:raise ValueError(state['input_folder']['message'])
+        selected={kind:state['latest_inputs'][kind] for kind in kinds}
+        for kind,item in selected.items():
+            if item['state']!='ready':raise ValueError(LABELS[kind]+': '+item['message'])
+        specs={kind:{key:item[key] for key in ('id','fingerprint')} for kind,item in selected.items()}
+        return specs,selected
+
+    def generate_latest(self,payload):
+        if set(payload)-{'performance_week','retry_missing'}:raise ValueError('Automatic refresh accepts only comparison options')
+        try:
+            specs,selected=self.automatic_inputs(('forecast','activity'))
+        except (ValueError,OSError) as exc:
+            if self.performance_config().get('enabled'):
+                self.performance_status=dict(state='attention',message='Weekly baseline check unconfirmed: '+str(exc)+'. Latest inputs could not be confirmed. Any previous baseline remains unchanged.')
+                self.status=dict(state='attention',message=str(exc)+'. Previous sheets remain available.')
+            raise
+        return self.generate(dict(payload,**specs),automatic_inputs=selected)
+
+    def accounting_latest(self,payload):
+        if payload:raise ValueError('Automatic accounting takes no file or path parameters')
+        specs,selected=self.automatic_inputs(('activity','pnl'))
+        result=self.update_accounting(specs)
+        return dict(result,used_inputs=selected)
 
     def file_bytes(self,spec,kind,with_time=False):
         if not isinstance(spec,dict) or set(spec) not in ({'id'},{'id','fingerprint'}):raise ValueError('Select a file from the NFL inbox')
@@ -132,7 +182,7 @@ class Workflow:
         if 'fingerprint' in spec and source.digest(raw)!=spec['fingerprint']:raise ValueError('Selected file changed; select it again before refreshing')
         return raw,path.name
 
-    def generate(self,payload):
+    def generate(self,payload,automatic_inputs=None):
         if not self.lock.acquire(False):raise ValueError('A generation is already running')
         config={}
         try:
@@ -146,7 +196,7 @@ class Workflow:
             elif target is not None or retry:
                 raise ValueError(config['message'])
             attempt=self.data/'refreshes'/uuid.uuid4().hex
-            source.write_once(attempt/'started.json',source.encode(dict(at=kalshi.utc(),forecast_sha256=source.digest(raw),activity_sha256=source.digest(activity),scope='all workbook weeks')))
+            source.write_once(attempt/'started.json',source.encode(dict(at=kalshi.utc(),forecast_sha256=source.digest(raw),activity_sha256=source.digest(activity),scope='all workbook weeks',**({'automatic_inputs':automatic_inputs,'selection_rule':'latest-local-modification-time-v1'} if automatic_inputs else {}))))
             self.status=dict(state='running',message='Checking the selected files…')
             threading.Thread(target=self.run,args=(raw,name,activity,attempt,target,retry,file_time),daemon=True).start()
             return self.status
@@ -352,14 +402,16 @@ def handler(workflow,token,mlb_reports=None,mlb_update_config=None):
                     return self.send(200,mlb.start(payload['date']))
                 if self.path=='/api/generate':return self.send(200,workflow.generate(payload))
                 if self.path=='/api/accounting':return self.send(200,workflow.update_accounting(payload))
+                if self.path=='/api/generate-latest':return self.send(200,workflow.generate_latest(payload))
+                if self.path=='/api/accounting-latest':return self.send(200,workflow.accounting_latest(payload))
                 return self.send(404,dict(error='Unknown action'))
             except Exception as exc:return self.send(400,dict(error=str(exc)))
     return Handler
 
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--root',type=Path,default=Path.home()/'PopsEdge');p.add_argument('--port',type=int,default=8766);p.add_argument('--no-browser',action='store_true');p.add_argument('--mlb-reports',type=Path,help='Existing saved MLB reporting output root');p.add_argument('--mlb-update-config',type=Path,help='Trusted local configuration for explicit report updates');args=p.parse_args()
-    workflow=Workflow(args.root);server=ThreadingHTTPServer(('127.0.0.1',args.port),handler(workflow,secrets.token_hex(32),args.mlb_reports,args.mlb_update_config))
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--root',type=Path,default=Path.home()/'PopsEdge');p.add_argument('--inbox',type=Path,help='Existing NFL input folder, including an iCloud Drive folder; data archives remain under --root');p.add_argument('--port',type=int,default=8766);p.add_argument('--no-browser',action='store_true');p.add_argument('--mlb-reports',type=Path,help='Existing saved MLB reporting output root');p.add_argument('--mlb-update-config',type=Path,help='Trusted local configuration for explicit report updates');args=p.parse_args()
+    workflow=Workflow(args.root,args.inbox);server=ThreadingHTTPServer(('127.0.0.1',args.port),handler(workflow,secrets.token_hex(32),args.mlb_reports,args.mlb_update_config))
     url=f'http://127.0.0.1:{server.server_port}/';print('NFL Bet Sheet: '+url,flush=True)
     if not args.no_browser:webbrowser.open(url)
     try:server.serve_forever()

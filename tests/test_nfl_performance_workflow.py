@@ -76,7 +76,7 @@ class IntegrationTests(unittest.TestCase):
         html=Path(app.__file__).with_suffix('.html').read_text()
         self.assertIn('Model comparison week',html);self.assertIn('Retry missing comparison prices',html)
         self.assertIn('Automatic — next eligible week',html)
-        self.assertIn('<summary>Advanced options</summary>',html)
+        self.assertIn('<summary>Details &amp; options</summary>',html)
 
 if __name__=='__main__':unittest.main()
 
