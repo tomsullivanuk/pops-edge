@@ -47,11 +47,15 @@ It installs no packages. Control-C stops the app.
 
 1. Manually copy the complete ELWAY All weeks table into a single-sheet Excel
    workbook, retaining heading, game count, footnotes and Updated timestamp.
-2. Place that workbook and a recent Kalshi activity CSV in
-   `~/PopsEdge/Downloads/NFL/`.
-3. In **Import & Refresh**, select both inbox files and click **Refresh Bet Sheet**.
-   Reuse the same workbook if only prices need updating. There is no manual
-   Review import step, row checkbox, reviewer field or external file chooser.
+2. Save the workbook and your Kalshi All Activity and realized P&L CSV exports
+   in iCloud Drive / PopsEdge/Downloads/NFL. Wait for them to sync to the Mini;
+   keep that folder downloaded there. The application must be configured with
+   its existing local iCloud path (see below).
+3. In **Import & Refresh**, check the three automatically discovered filenames
+   and saved times, then click **Refresh Bet Sheet**. No file picking is needed.
+   Reuse the same workbook when only prices need updating. **Update accounting**
+   uses All Activity and realized P&L separately, without refreshing prices.
+   Each action rescans the folder and validates its required inputs.
 4. The app automatically validates inputs, archives exact copies, captures each
    workbook week's official schedule and public Kalshi prices, and builds the
    comparisons. Progress identifies the operation/week. An entirely undated week
@@ -93,8 +97,8 @@ later weeks from being attempted. Successful captures remain; old captures for
 failed weeks retain their original times. TBD dates alone require no attention.
 
 Only one refresh runs per app instance; use one instance per data root. Local
-requests use Host/Origin/token checks and fixed actions. Inbox selection accepts
-neither arbitrary paths nor uploads. There is no scheduler, automatic retry,
+requests use Host/Origin/token checks and fixed actions. Browser requests cannot select an arbitrary input folder. The compact workflow
+automatically discovers files only in the configured folder; it has no uploader. There is no scheduler, automatic retry,
 account/order action or hosted service.
 
 ## Recorded wagers
@@ -207,3 +211,27 @@ The season view now supports a separate two-file accounting update. See
 and realized P&L exports, reconciliation, retained history and review cases.
 This extends the legacy activity behavior described above without rewriting saved
 weekly bundles or refreshing prices.
+
+
+## Configure the shared input folder
+
+The data root and input folder are independent. Keep --root pointed at existing
+local application data. Set only --inbox to the existing iCloud folder:
+
+```sh
+python nfl_refresh.py --root "$HOME/PopsEdge" \
+  --inbox "$HOME/Library/Mobile Documents/com~apple~CloudDocs/PopsEdge/Downloads/NFL"
+```
+
+The repository launcher accepts the same arguments and supports
+`POPS_EDGE_NFL_INBOX` as a trusted local environment setting. Missing or
+unreadable shared folders fail visibly; no empty substitute is created. Without
+an explicit setting, the existing local inbox remains the compatibility default.
+A configured path on the Air does not configure the Mini. Preserve the Mini's
+actual existing --root, report worker and activation settings during rollout.
+
+See [automatic input rules](NFL_AUTOMATIC_INPUTS.md) for recency, export type
+recognition, ties and failures. The compact screen puts update buttons first,
+then three file rows and a small Check for new files control. Details & options
+contains technical folder information and inactive-capture status. Failures and
+active weekly baseline checks remain visible.

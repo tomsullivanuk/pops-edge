@@ -323,5 +323,13 @@ After a restart, `reconcile-acquisitions` can immutably abandon an unambiguous i
 The owner-authorized Excel import, full-season public price refresh and
 settlement display are described in [the refresh guide](docs/NFL_REFRESH_GUIDE.md).
 Run `python nfl_refresh.py` or open `Open NFL Bet Sheet.command`. The code is merged; the local launcher still uses its configured checkout.
+
+The import screen automatically finds the newest saved ELWAY workbook, Kalshi
+All Activity and realized P&L export. Click Refresh Bet Sheet or Update accounting;
+no file picking is required. Configure the existing shared iCloud folder using
+`--inbox PATH` (or `POPS_EDGE_NFL_INBOX` with the repository launcher), keeping
+the existing local data root unchanged. See [input rules](docs/NFL_AUTOMATIC_INPUTS.md)
+for saved-time recency, tied files and visible failures. This source change does
+not repoint or deploy an existing Mini runtime.
 Prior CLI imports remain supported. The root `VERSION` file supplies the app
 version badge; it does not itself create a Git tag or release.

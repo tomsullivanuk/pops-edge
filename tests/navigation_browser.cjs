@@ -14,10 +14,11 @@ const assert=require('node:assert/strict');
  const nav=async(locator)=>{await Promise.all([page.waitForNavigation({waitUntil:'domcontentloaded'}),locator.click()]);};
  await page.goto(origin+'/');
  await page.locator('#importTab').click();
- await page.waitForFunction(()=>document.querySelector('#forecast').options.length>1);
+ await page.waitForFunction(()=>document.querySelector('#forecastName').closest('tr').dataset.state==='ready');
+ assert.equal(await page.locator('#forecast,#activity,#pnl,#accountingActivity').count(),0);
  const picked={};
  for(const id of ['forecast','activity','pnl']) {
-   const el=page.locator('#'+id);await el.selectOption({index:1});picked[id]=await el.inputValue();
+   picked[id]=await page.locator('#'+id+'Name').innerText();
  }
  await page.locator('#sheetTab').click();
  const frame=page.frameLocator('#board');
@@ -54,15 +55,17 @@ const assert=require('node:assert/strict');
  assert(await page.frameLocator('#board').locator('#omitCompleted').isChecked());
  assert.equal(await page.frameLocator('#board').locator('th button[data-column="1"]').evaluate(b=>b.closest('th').getAttribute('aria-sort')),direction);
  await page.locator('#importTab').click();
- for(const id of Object.keys(picked))assert.equal(await page.locator('#'+id).inputValue(),picked[id]);
- // Emulate a replaced inbox file in the GET response; no actual source is changed.
+ for(const id of Object.keys(picked))assert.equal(await page.locator('#'+id+'Name').innerText(),picked[id]);
+ // An invalid newest input is visible and blocks refresh, without an older fallback.
  await page.route('**/api/state',async route=>{
    const response=await route.fetch();const state=await response.json();
-   state.files.find(f=>f.id===picked.forecast).fingerprint='replacement';
+   state.latest_inputs.forecast.state='invalid';
+   state.latest_inputs.forecast.message='Newest workbook is invalid. Download it again.';
    await route.fulfill({response,json:state});
  });
- await page.reload();await page.locator('#selectionNotice').filter({hasText:'missing or changed'}).waitFor();
- assert.equal(await page.locator('#forecast').inputValue(),'');
+ await page.reload();await page.locator('#inputIssues').filter({hasText:'Newest workbook is invalid'}).waitFor();
+ assert.equal(await page.locator('#forecastName').innerText(),picked.forecast);
+ assert(await page.locator('#generate').isDisabled());
  assert.equal(await page.locator('#importTab').getAttribute('aria-selected'),'true');
  await page.unroute('**/api/state');
  await nav(page.locator('.sports').getByRole('link',{name:'MLB',exact:true}));
@@ -81,6 +84,6 @@ const assert=require('node:assert/strict');
  assert(await page.locator('input[name=from]').isVisible());
  assert.deepEqual(errors,[]);
  assert.equal(posts,0);
- console.log('Browser round trips, Back, filters, tabs, file-change warning, one-table layout and mobile controls passed');
+ console.log('Browser round trips, Back, filters, tabs, automatic inputs, invalid-newest warning, one-table layout and mobile controls passed');
  } finally {await browser.close();}
 })().catch(e=>{console.error(e);process.exit(1)});

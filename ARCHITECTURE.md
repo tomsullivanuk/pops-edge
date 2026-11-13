@@ -2059,3 +2059,13 @@ The canonical regular-season prospective Protocol remains unchanged. A separatel
 An archive may hold the original retrospective Protocol and the two canonical, disjoint prospective Protocols. Initialization appends postseason authority and opportunities for already known admitted schedule states together, without quotes or capture attempts. Supporting replay maintains archived cohort opportunities even when capture configuration disables a cohort. The collector shares catalog preparation, binds each opportunity to its Protocol and rejects overlapping eligible opportunities before acquisition. Existing attempts prevent repeat provider calls.
 
 Each report belongs to one Protocol. Regular-season delivery retains its existing root and package selection; postseason delivery uses its `postseason/` child root with independent immutable packages and selection. Readers filter or select phase without acquisition. Saved Bet Sheet view version 3 records phase; version 2 remains readable. [Activation/rollback constraints](docs/MLB_PHASE_EVALUATION_2026-10-09_HANDOFF.md).
+
+
+## Automatic NFL inputs — approved implementation, November 13, 2026
+
+The Owner approved the compact update screen and automatic discovery of the
+latest saved workbook, All Activity and realized P&L in the configured shared
+folder. This supersedes manual file selection described in historical NFL scope
+sections. Update actions remain explicit and research authority is unchanged.
+See [the automatic-input contract](docs/NFL_AUTOMATIC_INPUTS.md).
+Implementation does not itself deploy the Mini runtime.
