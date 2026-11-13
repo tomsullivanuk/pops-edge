@@ -1,10 +1,24 @@
 """Automatic input choice is operational convenience, never publication evidence."""
 import csv
 import io
+import sys
+import stat
 from nfl_activity import REQUIRED
 from nfl_accounting import PNL_FIELDS
 
 LABELS = {'forecast': 'ELWAY workbook', 'activity': 'Kalshi All Activity', 'pnl': 'Kalshi realized P&L'}
+
+
+def is_dataless(info):
+    """Darwin SF_DATALESS means content is not local; compressed is not dataless."""
+    return sys.platform == 'darwin' and bool(getattr(info, 'st_flags', 0) & getattr(stat, 'SF_DATALESS', 0x40000000))
+
+
+def filename_kind(name):
+    lower = name.lower()
+    return ('forecast' if lower.endswith('.xlsx') else
+            'pnl' if 'kalshi' in lower and ('realized' in lower or 'pnl' in lower) else
+            'activity' if 'kalshi' in lower and ('activity' in lower or 'all-activity' in lower) else None)
 
 
 def classify(name, raw):
@@ -12,9 +26,7 @@ def classify(name, raw):
     lower = name.lower()
     if lower.endswith('.xlsx'):
         return 'forecast', None
-    hint = ('pnl' if 'kalshi' in lower and ('realized' in lower or 'pnl' in lower)
-            else 'activity' if 'kalshi' in lower and ('activity' in lower or 'all-activity' in lower)
-            else None)
+    hint = filename_kind(name)
     try:
         fields = next(csv.reader(io.StringIO(raw.decode('utf-8-sig'))), [])
         kinds = [kind for kind, required in [('activity', REQUIRED), ('pnl', PNL_FIELDS)] if required.issubset(fields)]
@@ -33,7 +45,7 @@ def classify(name, raw):
 def newest(files):
     selected = {}
     for kind, label in LABELS.items():
-        candidates = [f for f in files if f.get('input_kind') == kind]
+        candidates = [f for f in files if f.get('input_kind') == kind or kind in f.get('possible_kinds', ())]
         if not candidates:
             selected[kind] = dict(state='missing', message=f'No {label} found.')
             continue
@@ -43,5 +55,5 @@ def newest(files):
             selected[kind] = dict(state='ambiguous', message=f'Multiple {label} files have the same newest saved time. Keep one latest copy in this folder.', names=[f['name'] for f in latest])
             continue
         item = latest[0]
-        selected[kind] = dict(item, state='invalid' if item.get('input_error') else 'ready', message=item.get('input_error') or '')
+        selected[kind] = dict(item, state='not_downloaded' if item.get('not_downloaded') else 'invalid' if item.get('input_error') else 'ready', message=item.get('input_error') or '')
     return selected

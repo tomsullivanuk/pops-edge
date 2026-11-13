@@ -23,7 +23,7 @@ import nfl_comparison_board as board
 import retrieve_kalshi_nfl as kalshi
 from nfl_performance import Performance
 from nfl_refresh_replay import RefreshPerformance
-from nfl_inbox import classify, newest, LABELS
+from nfl_inbox import classify, newest, LABELS, is_dataless, filename_kind
 
 MAX_REQUEST=24*1024*1024
 
@@ -127,17 +127,24 @@ class Workflow:
                 if p.is_symlink() or not p.is_file() or p.suffix.lower() not in ('.xlsx','.csv'):continue
                 identity=source.digest(str(p).encode())
                 info=p.stat()
-                raw=p.read_bytes() if 0<info.st_size<=excel.MAX_BYTES else b''
+                unavailable=is_dataless(info)
+                # Do not open iCloud placeholders: even a tiny read can block on hydration.
+                raw=p.read_bytes() if not unavailable and 0<info.st_size<=excel.MAX_BYTES else b''
                 fingerprint=source.digest(raw) if raw else None
                 input_kind,input_error=classify(p.name,raw)
                 if not fingerprint:input_error='Use a nonempty file up to 8 MB.'
+                if unavailable:
+                    input_kind=filename_kind(p.name)
+                    input_error='Not downloaded on this Mac. Download this file in Finder, then check again.'
                 after=p.stat()
                 if (after.st_mtime_ns,after.st_size)!=(info.st_mtime_ns,info.st_size):raise OSError('Input changed while scanning')
                 self.files[identity]=p
                 listing.append(dict(id=identity,name=p.name,kind=p.suffix.lower(),fingerprint=fingerprint,
-                                    input_kind=input_kind,input_error=input_error,modified_ns=info.st_mtime_ns,
+                                    input_kind=input_kind,input_error=input_error,not_downloaded=unavailable,
+                                    possible_kinds=['activity','pnl'] if unavailable and input_kind is None else [],
+                                    modified_ns=info.st_mtime_ns,
                                     modified_at=datetime.fromtimestamp(info.st_mtime,timezone.utc).isoformat()))
-            folder.update(available=True,message=f'{len(listing)} files available on this Mac.' if listing else 'No Excel or CSV files here yet. Save your downloads in this folder and check again.')
+            folder.update(available=True,message=f'{len(listing)} files found; {sum(bool(f["not_downloaded"]) for f in listing)} not downloaded on this Mac.' if listing else 'No Excel or CSV files here yet. Save your downloads in this folder and check again.')
         except OSError:
             self.files={};listing=[]
             folder['message']='Cannot read the downloads folder. Check its location, access permissions and iCloud downloads, then check again.'
@@ -173,7 +180,9 @@ class Workflow:
         if not isinstance(spec,dict) or set(spec) not in ({'id'},{'id','fingerprint'}):raise ValueError('Select a file from the NFL inbox')
         path=self.files.get(spec['id'])
         if not path or path.is_symlink() or path.resolve().parent!=self.inbox or path.suffix.lower()!=kind:raise ValueError('Selected inbox file is unavailable')
-        if not 0<path.stat().st_size<=excel.MAX_BYTES:raise ValueError('Use a nonempty file up to 8 MB')
+        info=path.stat()
+        if is_dataless(info):raise ValueError('Selected file is not downloaded on this Mac. Download it in Finder, then check again.')
+        if not 0<info.st_size<=excel.MAX_BYTES:raise ValueError('Use a nonempty file up to 8 MB')
         if with_time:
             raw,file_time=forecast_time.read_file(path)
             if 'fingerprint' in spec and source.digest(raw)!=spec['fingerprint']:raise ValueError('Selected file changed; select it again before refreshing')
